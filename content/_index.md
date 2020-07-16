@@ -13,7 +13,7 @@ Plan provisoire:
     + Environnement python
     + git
     + Programmer proprement en python
-    + Le futur: intégration continue, docker, codecov
+    + Aller plus loin dans la reproductibilité : intégration continue, docker, codecov
 * Partie 1: Manipuler des données
     + Données structurées: pandas
     + Données géographiques: geopandas
@@ -24,7 +24,8 @@ Plan provisoire:
 * Partie 2: Visualiser
     + matplotlib + seaborn
     + cartographie
+    + visualisation dynamique
 * Partie 3: ML (tronc commun)
 * Partie 4:
-    + Econométrie
-    + ML avancé
+    + Econométrie (un peu data scientist ; surtout data economist)
+    + ML avancé (surtout data scientist)
