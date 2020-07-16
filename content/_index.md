@@ -1,11 +1,11 @@
 ---
-title: "Site en construction"
+title: "Homepage"
 date: 2020-07-16T12:00:00Z
 draft: false
 weight: 10
 ---
 
-:construction: Ce site est en construction
+:warning: :construction: **Ce site est en construction** :construction:
 
 Plan provisoire:
 
