@@ -13,6 +13,7 @@ Plan provisoire:
     + Environnement python
     + git
     + Programmer proprement en python
+    + Le futur: intégration continue, docker, codecov
 * Partie 1: Manipuler des données
     + Données structurées: pandas
     + Données géographiques: geopandas
