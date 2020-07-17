@@ -29,3 +29,6 @@ Plan provisoire:
 * Partie 4:
     + Econométrie (un peu data scientist ; surtout data economist)
     + ML avancé (surtout data scientist)
+    
+
+Validation: projet (sous gitlab/github obligatoirement)
