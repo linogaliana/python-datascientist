@@ -78,8 +78,3 @@ interface `git`, etc.
 
 
 
-
-<div class="bottom-panel" id="bottom-panel">
-    <div class="popup-wrapper" id="popup-wrapper"></div> 
-</div> 
-<script src="./footnotes.js"></script>
