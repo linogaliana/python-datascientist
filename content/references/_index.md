@@ -10,8 +10,13 @@ weight: 100
 * *Python for Data Analysis*, Wes McKinney
 * *Modern Pandas*, Tom Augspurger. Disponible [ici](https://tomaugspurger.github.io/modern-1-intro.html)
 
+## Sites *web*
+
+* [`realpython`](https://realpython.com/)
+
 ## MOOC
 
-* Machine Learning par Andrew Y. Ng
-* openclassroom
+* Andrew Y. Ng, *Machine Learning* ([sur coursera](https://www.coursera.org/learn/machine-learning)) 
+* Apprenez à programmer en Python
+([sur openclassroom](https://openclassrooms.com/fr/courses/235344-apprenez-a-programmer-en-python))
 
