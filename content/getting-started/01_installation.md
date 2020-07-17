@@ -59,5 +59,13 @@ interface `git`, etc.
 * fonctionalités classiques d'un éditeur dont manque `Jupyter`: autocomplétion, diagnostic du code, etc.
 * intégration avec les environnements `Conda`
 
+## Exécution dans un environnement temporaire
+
+* Binder [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
+* Google
+* Kaggle
+
+## Docker
+
  
 # Installer et configurer git
