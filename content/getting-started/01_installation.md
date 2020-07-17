@@ -75,3 +75,11 @@ interface `git`, etc.
 **TODO**
  
 # Installer et configurer git
+
+
+
+
+<div class="bottom-panel" id="bottom-panel">
+    <div class="popup-wrapper" id="popup-wrapper"></div> 
+</div> 
+<script src="./footnotes.js"></script>
