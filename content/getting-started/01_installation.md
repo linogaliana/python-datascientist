@@ -21,7 +21,10 @@ Pour cette raison, en supplément des notions relatives
 à `Python`, ce cours montrera comment utiliser `git` avec `python` et 
 évoquera un
 certain nombre de critères de qualité du code qui sont devenus
-des standards dans la communauté *open-source* et dans l'industrie. 
+des standards dans la communauté *open-source*, dans l'industrie et dans
+l'administration. Ces compétences ne sont pas adhérentes à Python et seront
+utiles pour tout projet ultérieur.
+ 
 Le projet final devra impérativement
 être associé à un dépôt `git` (nous reviendrons dessus) et répondre à 
 ces critères de qualité, qui serviront toute la vie.
@@ -52,7 +55,9 @@ Passer par `Anaconda` permet:
 plus développé de Python, il est recommandé d'installer un éditeur plus complet et d'éditer des 
 scripts au format `.py` plutôt que des notebooks. L'éditeur le plus complet est 
 `PyCharm` (privilégier [Pycharm Community Edition](https://www.jetbrains.com/pycharm/)
-)^[D'autres éditeurs sont très bien faits, notamment `Visual Studio`]: 
+)^[1]: 
+
+^[1]: D'autres éditeurs sont très bien faits, notamment `Visual Studio`
 
 * nombreux *plugins* pour une pleine utilisation de l'écosystème `Python`: éditeur de `Markdown`, 
 interface `git`, etc. 
@@ -67,5 +72,6 @@ interface `git`, etc.
 
 ## Docker
 
+**TODO**
  
 # Installer et configurer git
