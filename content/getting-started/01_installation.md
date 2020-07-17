@@ -55,9 +55,9 @@ Passer par `Anaconda` permet:
 plus développé de Python, il est recommandé d'installer un éditeur plus complet et d'éditer des 
 scripts au format `.py` plutôt que des notebooks. L'éditeur le plus complet est 
 `PyCharm` (privilégier [Pycharm Community Edition](https://www.jetbrains.com/pycharm/)
-)^[1]: 
+)[^1]: 
 
-^[1]: D'autres éditeurs sont très bien faits, notamment `Visual Studio`
+[^1]: D'autres éditeurs sont très bien faits, notamment `Visual Studio`
 
 * nombreux *plugins* pour une pleine utilisation de l'écosystème `Python`: éditeur de `Markdown`, 
 interface `git`, etc. 
