@@ -64,11 +64,53 @@ interface `git`, etc.
 * fonctionalités classiques d'un éditeur dont manque `Jupyter`: autocomplétion, diagnostic du code, etc.
 * intégration avec les environnements `Conda`
 
+Au-delà de l'utilisation de Jupyter à des fins pédagogiques et à des fins de publicisation, je recommande
+d'utiliser privilégier `PyCharm`
+
 ## Exécution dans un environnement temporaire
 
-* Binder [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
-* Google
-* Kaggle
+Avec les dépôts sur `Github` ou `Gitlab`, on dissocie environnement de stockage des codes et
+d'exécution de ceux-ci. Sur le
+[dépôt github de ce cours](https://github.com/linogaliana/python-datascientist), on peut
+naviguer dans les fichiers (et voir tout l'historique de modification de ceux-ci). Mais,
+comment exécuter les scripts sans passer par un poste local ? 
+
+Depuis quelques années, des services en ligne permettant de
+lancer une instance `Jupyter` en ligne (analogue à celle que vous pouvez
+lancer en local en utilisant `Anaconda`) ont émergé. Parmi celles-ci :
+
+* **__Binder__** [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master) ;
+* [Google collaboratory](https://colab.research.google.com/notebooks/welcome.ipynb) ;
+* [Kaggle](https://www.kaggle.com/notebooks) ;
+
+Attention, les performances de ces solutions peuvent être variables. Par défaut, 
+
+### Binder [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
+
+En cliquant sur cette icône
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master),
+qu'on peut retrouver un peu partout dans ce site ou sur le dépôt
+[github](https://github.com/linogaliana/python-datascientist), vous pouvez lancer un environnement propre,
+disposant de toutes les dépendances nécessaires pour ce cours et disposant d'une copie
+(un *clone* en langage `git`) du dépôt `Github`.
+
+**Attention: il n'y a pas de garantie de perennité de service** (notamment avec `binder` où
+10 minutes d'inactivité mènent à l'extinction du service). Il s'agit plus d'un service pour griffoner
+dans le même environnement que celui du dépôt `git` que de solutions durables.
+
+### Google collaboratory
+
+Il s'agit d'un mélange de notebook jupyter et de Google docs, possiblement connectés à Google Drive
+(ou mieux à
+[github](https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb)). 
+
+
+### Kaggle
+
+`Kaggle` n'héberge pas que des compétitions de code mais donne la possibilité d'exécuter des notebooks, 
+comme les solutions précédentes.
+
+Interface avec github? 
 
 ## Docker
 
