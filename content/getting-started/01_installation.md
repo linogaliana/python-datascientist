@@ -138,6 +138,10 @@ Interface avec github?
  
 # Installer et configurer git
 
+## git, kesako ?
+
+Explication sommaire de git
+
 ## Installer et tester git bash
 
 `git` est un langage en tant que  tel qui mériterait un cours à part entière.
