@@ -71,10 +71,23 @@ x[:(K-1)]
 
 puisque l'indexation en Python commence à 0. 
 
-One important–and extremely useful–thing to know about array slices is that they return views rather than copies of the array data. This is one area in which NumPy array slicing differs from Python list slicing: in lists, slices will be copies. 
 
-Despite the nice features of array views, it is sometimes useful to instead explicitly copy the data within an array or a subarray. 
+-----
+
+Un élément déterminant dans la performance de `numpy` par rapport aux listes, lorsqu'il est question de 
+*slicing* est qu'un array ne renvoie pas une
+copie de l'élément en question (copie qui coûte de la mémoire et du temps) mais simplement une vue de celui-ci
+**DETAILS** 
+
+Lorsqu'il est nécessaire d'effectuer une copie, par exemple pour ne pas altérer l'array sous-jacent, on peut 
+utiliser la méthode `copy`:
+
+```python
 x2_sub_copy = x2[:2, :2].copy()
+```
+
+-----
+
 
 Boolean masks (e.g., arr[arr > 0])
 
