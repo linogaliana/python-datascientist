@@ -16,6 +16,7 @@ weight: 100
 ## Sites *web*
 
 * [`realpython`](https://realpython.com/)
+* [An introduction to Pandas](http://synesthesiam.com/posts/an-introduction-to-pandas.html)
 
 ## MOOC
 
