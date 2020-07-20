@@ -167,3 +167,7 @@ Le contenu du dépôt est maintenant disponible dans le dossier désiré.
 ## Configurer jupyter pour utiliser le plugin git
  
 ## Configurer pycharm pour utiliser le plugin git
+
+## Pratiquer git
+
+Faire un petit notebook
