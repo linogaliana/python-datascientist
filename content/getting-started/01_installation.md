@@ -65,9 +65,15 @@ interface `git`, etc.
 * intégration avec les environnements `Conda`
 
 Au-delà de l'utilisation de Jupyter à des fins pédagogiques et à des fins de publicisation, je recommande
-d'utiliser privilégier `PyCharm`
+de privilégier `PyCharm` pour la pratique quotidienne de `Python`
 
-## Exécution dans un environnement temporaire
+## Exécution dans un environnement temporaire sur un serveur distant
+
+Les technologies dominantes dans le domaine du traitement des données ont amené à une évolution des pratiques
+depuis quelques années. La multiplication de données volumineuses qui dépassent les capacités en RAM
+voire en stockage de machines personnelles, les progrès dans les technologies de stockage type *cloud*,
+l'adhésion de la communauté aux outils de versionning (le plus connu étant `git`) sont autant de facteurs
+ayant amené à repenser la manière de traiter des données. 
 
 Avec les dépôts sur `Github` ou `Gitlab`, on dissocie environnement de stockage des codes et
 d'exécution de ceux-ci. Sur le
@@ -82,8 +88,21 @@ lancer en local en utilisant `Anaconda`) ont émergé. Parmi celles-ci :
 * **__Binder__** [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master) ;
 * [Google collaboratory](https://colab.research.google.com/notebooks/welcome.ipynb) ;
 * [Kaggle](https://www.kaggle.com/notebooks) ;
+* Il est aussi possible d'exécuter des codes sur les services d'intégration continue de 
+[gitlab (service gitlab CI)](https://medium.com/metro-platform/continuous-integration-for-python-3-in-gitlab-e1b4446be76b)
+ou de [github (via travis)](https://docs.travis-ci.com/user/languages/python/). Il s'agit d'une approche
+*bash* c'est-à-dire que les scripts sont exécutés par une console à chaque intéraction avec le dépôt
+distant gitlab/github, sans session ouverte pour les éditer. Cette approche est très appropriée
+pour assurer la reproductibilité d'une chaîne de traitement (on peut aller jusq'au
+déploiement de visualisations automatiques).
 
-Attention, les performances de ces solutions peuvent être variables. Par défaut, 
+Attention, les performances de ces solutions peuvent être variables. Les serveurs publics mis à disposition
+ne sont pas forcément des foudres de guerre. Avec les serveurs publics mis à disposition gratuitement,
+on vérifie plutôt la reproductibilité des scripts avec des jeux d'exemples.
+Quand on est dans une entreprise ou administration, qui dispose de serveurs propres,
+on peut aller plus loin en utilisant ces outils 
+pour automatiser l'ensemble de la chaîne de traitement. 
+
 
 ### Binder [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
 
@@ -100,9 +119,10 @@ dans le même environnement que celui du dépôt `git` que de solutions durables
 
 ### Google collaboratory
 
-Il s'agit d'un mélange de notebook jupyter et de Google docs, possiblement connectés à Google Drive
-(ou mieux à
-[github](https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb)). 
+Il s'agit d'un mélange de notebook jupyter et de Google docs. Il est possible de connecter les
+*notebooks* ouverts à Google Drive ou à
+[github](https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb)),
+la deuxième solution étant préférable. 
 
 
 ### Kaggle
