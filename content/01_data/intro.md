@@ -11,7 +11,7 @@ d'une représentation particulière des données, classique
 
 # Retour sur numpy
 
-## Array numpy
+## Le concept d'array
 
 `pandas` est lui-même construit à partir du package `numpy`, qu'il est utile de comprendre
 pour être à l'aise avec `pandas`. `numpy` est une librairie bas-niveau 
@@ -29,12 +29,15 @@ de mémoire
 
 L'array numpy peut être unidimensionnel et s'apparenter à un vecteur (1d-array) ou
 multidimensionnel (Nd-array). Un DataFrame sera construit à partir d'une collection
-d'array unidimensionnel (les variables de la table),
-ce qui permettra d'effectuer des opérations cohérentes
+d'array uni-dimensionnels (les variables de la table), ce qui permettra d'effectuer des opérations cohérentes
 (et optimisées) avec le type de la variable.
-Les données géographiques constitueront une construction un peu plus complexe
-(la dimension géographique constitue un tableau plus profond, au moins bidimensionnel
-(coordonnées d'un point)). 
+
+Les données géographiques constitueront une construction un peu plus complexe. 
+La dimension géographique prend la forme d'un tableau plus profond, au moins bidimensionnel
+(coordonnées d'un point). 
+
+Le fichier []
+
 
 ## Indexation et slicing
 
