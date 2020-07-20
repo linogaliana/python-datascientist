@@ -138,5 +138,28 @@ Interface avec github?
  
 # Installer et configurer git
 
+## Installer et tester git bash
 
+`git` est un langage en tant que  tel qui mériterait un cours à part entière.
+L'utilisation qu'on va en faire sera relativement modeste et se bornera à valider des modifications
+d'un script en local (opérations qu'on appelle `add` et `commit`), intéragir avec un dépôt distant
+(`pull` et `push`). Le projet final amènera à collaborer en groupe, ce qui peut amener à résoudre des
+conflits (l'une des forces de `git`). 
 
+Le meilleur moyen d'utiliser `git` est, en premier lieu, d'installer [git bash](https://git-scm.com/downloads). Une fois
+installé, lancer le logiciel ; une ligne de commande s'ouvre qu'on peut tester (les pluggins `git` de
+jupyter et pycharm ne rendent pas indispensable l'usage de la ligne de commande mais il est toujours bon
+de savoir l'utiliser).
+
+Se placer avec la commande `cd` dans un dossier de travail, par exemple `Mes Documents\testgit`, où on va
+récupérer automatiquement le dépôt du cours disponible sur
+[github](https://github.com/linogaliana/python-datascientist). La commande pour récupérer un dépôt distant
+est `git clone` (on crée un clone local, qu'on est ensuite libre de faire évoluer):
+
+![Récupération d'un dépôt sur github via git bash](./pictures/gitbash2.png)
+
+Le contenu du dépôt est maintenant disponible dans le dossier désiré. 
+
+## Configurer jupyter pour utiliser le plugin git
+ 
+## Configurer pycharm pour utiliser le plugin git
