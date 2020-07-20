@@ -106,6 +106,9 @@ Quand on est dans une entreprise ou administration, qui dispose de serveurs prop
 on peut aller plus loin en utilisant ces outils 
 pour automatiser l'ensemble de la chaîne de traitement. 
 
+**Attention: il n'y a pas de garantie de perennité de service** (notamment avec `binder` où
+10 minutes d'inactivité mènent à l'extinction du service). Il s'agit plus d'un service pour griffoner
+dans le même environnement que celui du dépôt `git` que de solutions durables.
 
 ### Binder [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
 
@@ -116,9 +119,7 @@ qu'on peut retrouver un peu partout dans ce site ou sur le dépôt
 disposant de toutes les dépendances nécessaires pour ce cours et disposant d'une copie
 (un *clone* en langage `git`) du dépôt `Github`.
 
-**Attention: il n'y a pas de garantie de perennité de service** (notamment avec `binder` où
-10 minutes d'inactivité mènent à l'extinction du service). Il s'agit plus d'un service pour griffoner
-dans le même environnement que celui du dépôt `git` que de solutions durables.
+
 
 ### Google collaboratory
 
