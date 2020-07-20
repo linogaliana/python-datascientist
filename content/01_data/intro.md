@@ -36,15 +36,40 @@ Les données géographiques constitueront une construction un peu plus complexe.
 La dimension géographique prend la forme d'un tableau plus profond, au moins bidimensionnel
 (coordonnées d'un point). 
 
-Le fichier []
+Le fichier
+[numpy.ipynb](https://github.com/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb) 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/pandas_intro?filepath=/static/notebooks/numpy.ipynb)
+présente quelques mises en pratique des concepts développés ci-dessous
 
 
 ## Indexation et slicing
 
-x[start:stop:step]
+La structure la plus simple imaginable est l'array unidimensionnel:
 
-In a one-dimensional array,
-the ith value (counting from zero) can be accessed by specifying the desired index in square brackets
+```python
+np.arange(10)
+# array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+```
+
+L'indexation est dans ce cas similaire à celle d'une liste: 
+
+* le premier élément est 0
+* le énième élément est acessible à la position $n-1$
+
+La logique d'accès aux éléments est ainsi la suivante:
+
+```python
+x[start:stop:step]
+```
+
+Avec un *array* unidimensionnel, l'opération de *slicing* (garder une coupe du *array*) est très simple. 
+Par exemple, pour garder les K premiers éléments d'un *array*, on fera:
+
+```python
+x[:(K-1)]
+```
+
+puisque l'indexation en Python commence à 0. 
 
 One important–and extremely useful–thing to know about array slices is that they return views rather than copies of the array data. This is one area in which NumPy array slicing differs from Python list slicing: in lists, slices will be copies. 
 
