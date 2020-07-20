@@ -75,6 +75,9 @@ voire en stockage de machines personnelles, les progrès dans les technologies d
 l'adhésion de la communauté aux outils de versionning (le plus connu étant `git`) sont autant de facteurs
 ayant amené à repenser la manière de traiter des données. 
 
+
+## Exécution dans un environnement temporaire
+
 Avec les dépôts sur `Github` ou `Gitlab`, on dissocie environnement de stockage des codes et
 d'exécution de ceux-ci. Sur le
 [dépôt github de ce cours](https://github.com/linogaliana/python-datascientist), on peut
