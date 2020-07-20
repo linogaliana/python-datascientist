@@ -9,10 +9,14 @@ weight: 100
 
 * *Python for Data Analysis*, Wes McKinney
 * *Modern Pandas*, Tom Augspurger. Disponible [ici](https://tomaugspurger.github.io/modern-1-intro.html)
+* *Python for Data Science Handbook*, Jack VanderPlas
+([en ligne](https://jakevdp.github.io/PythonDataScienceHandbook/) et
+[codes sur github](https://github.com/jakevdp/PythonDataScienceHandbook]))
 
 ## Sites *web*
 
 * [`realpython`](https://realpython.com/)
+* [An introduction to Pandas](http://synesthesiam.com/posts/an-introduction-to-pandas.html)
 
 ## MOOC
 
