@@ -88,24 +88,9 @@ x2_sub_copy = x2[:2, :2].copy()
 
 -----
 
+# Vector sparse
 
-
-
-## Théorème central-limite
-
-
------->
-
-## Sorting
-
-
-Sometimes we're not interested in sorting the entire array, but simply want to find the k smallest values in the array. NumPy provides this in the np.partition function. np.partition takes an array and a number K; the result is a new array with the smallest K values to the left of the partition, and the remaining values to the right, in arbitrary order:
-
-x = np.array([7, 2, 3, 1, 6, 5, 4])
-np.partition(x, 3)
-
-Reprendre: 
-https://jakevdp.github.io/PythonDataScienceHandbook/02.08-sorting.html#Example:-k-Nearest-Neighbors
+https://chrisalbon.com/machine_learning/vectors_matrices_and_arrays/create_a_sparse_matrix/
 
 # Le DataFrame pandas
 
