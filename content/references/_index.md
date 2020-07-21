@@ -17,6 +17,7 @@ weight: 100
 
 * [`realpython`](https://realpython.com/)
 * [An introduction to Pandas](http://synesthesiam.com/posts/an-introduction-to-pandas.html)
+* [Le site de Chris Albon](https://chrisalbon.com/)
 
 ## MOOC
 
