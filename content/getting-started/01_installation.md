@@ -76,8 +76,6 @@ l'adhésion de la communauté aux outils de versionning (le plus connu étant `g
 ayant amené à repenser la manière de traiter des données. 
 
 
-## Exécution dans un environnement temporaire
-
 Avec les dépôts sur `Github` ou `Gitlab`, on dissocie environnement de stockage des codes et
 d'exécution de ceux-ci. Sur le
 [dépôt github de ce cours](https://github.com/linogaliana/python-datascientist), on peut
@@ -89,18 +87,27 @@ lancer une instance `Jupyter` en ligne (analogue à celle que vous pouvez
 lancer en local en utilisant `Anaconda`) ont émergé. Parmi celles-ci :
 
 * **__Binder__** [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master) ;
-* [Google collaboratory](https://colab.research.google.com/notebooks/welcome.ipynb) ;
-* [Kaggle](https://www.kaggle.com/notebooks) ;
-* Il est aussi possible d'exécuter des codes sur les services d'intégration continue de 
+* **Google collaboratory**
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
+;
+
+
+Il est aussi possible d'exécuter des codes sur les services d'intégration continue de 
 [gitlab (service gitlab CI)](https://medium.com/metro-platform/continuous-integration-for-python-3-in-gitlab-e1b4446be76b)
 ou de [github (via travis)](https://docs.travis-ci.com/user/languages/python/). Il s'agit d'une approche
-*bash* c'est-à-dire que les scripts sont exécutés par une console à chaque intéraction avec le dépôt
+*bash* c'est-à-dire que les scripts sont exécutés par une console à chaque interaction avec le dépôt
 distant gitlab/github, sans session ouverte pour les éditer. Cette approche est très appropriée
 pour assurer la reproductibilité d'une chaîne de traitement (on peut aller jusq'au
-déploiement de visualisations automatiques).
+déploiement de visualisations automatiques) mais n'est pas très pratique pour
+le griffonnage.
+
+[Kaggle](https://www.kaggle.com/notebooks) propose des compétitions de code mais
+donne également la possibilité d'exécuter des notebooks,
+comme les solutions précédentes.
+
 
 Attention, les performances de ces solutions peuvent être variables. Les serveurs publics mis à disposition
-ne sont pas forcément des foudres de guerre. Avec les serveurs publics mis à disposition gratuitement,
+ne sont pas forcément des foudres de guerre. Avec ceux-ci,
 on vérifie plutôt la reproductibilité des scripts avec des jeux d'exemples.
 Quand on est dans une entreprise ou administration, qui dispose de serveurs propres,
 on peut aller plus loin en utilisant ces outils 
@@ -121,24 +128,21 @@ disposant de toutes les dépendances nécessaires pour ce cours et disposant d'u
 
 
 
-### Google collaboratory
+### Google collaboratory [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb)
 
 Il s'agit d'un mélange de notebook jupyter et de Google docs. Il est possible de connecter les
 *notebooks* ouverts à Google Drive ou à
-[github](https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb)),
-la deuxième solution étant préférable. 
+[github](https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb),
+la deuxième solution étant préférable. L'icone
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb)
+fournit un raccourci pour lancer le notebook dans un environnement dédié.
 
 
-### Kaggle
+### Docker
 
-`Kaggle` n'héberge pas que des compétitions de code mais donne la possibilité d'exécuter des notebooks, 
-comme les solutions précédentes.
-
-Interface avec github? 
-
-## Docker
-
-**TODO**
+Derrière ces outils pour exécuter de manière simple des scripts Python sur un serveur temporaire se cache
+`Docker`. `Docker` est une technologie qui vise à permettre la construction de machines autosuffisantes
+(que l'on nomme containeurs) répliquant un environnement contrôlé (que l'on nomme image).
  
 # Installer et configurer git
 
