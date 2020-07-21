@@ -89,7 +89,6 @@ x2_sub_copy = x2[:2, :2].copy()
 -----
 
 
-Boolean masks (e.g., arr[arr > 0])
 
 ## Reshaping
 
@@ -201,11 +200,6 @@ np.eye(3)
 
 ## Sorting
 
-Although Python has built-in sort and sorted functions to work with lists, we won't discuss them here because NumPy's np.sort function turns out to be much more efficient and useful for our purposes. By default np.sort uses an O[NlogN], quicksort algorithm, though mergesort and heapsort are also available. For most applications, the default quicksort is more than sufficient.
-
-rand = np.random.RandomState(42)
-X = rand.randint(0, 10, (4, 6))
-print(X)
 
 Sometimes we're not interested in sorting the entire array, but simply want to find the k smallest values in the array. NumPy provides this in the np.partition function. np.partition takes an array and a number K; the result is a new array with the smallest K values to the left of the partition, and the remaining values to the right, in arbitrary order:
 
