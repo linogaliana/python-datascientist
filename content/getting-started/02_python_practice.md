@@ -44,7 +44,8 @@ avant un rendu de projet que la fonction ne produit pas le résultat espéré.
 # Les tests
 
 Tester ses fonctions peut apparaître formaliste mais c'est, en fait, souvent d'un grand secours car cela permet de
-détecter et corriger des bugs précoces (ou au moins d'être conscient de leur existence), vérifier que
+détecter et corriger des bugs précoces (ou au moins d'être conscient de leur existence). 
+Au-delà de la correction de *bug*, cela permet de vérifier que
 la fonction produit bien un résultat espéré dans une expérience contrôlée. 
 
 On peut partir du principe suivant: *"toute fonctionnalité non testée comporte un bug"*
@@ -68,11 +69,47 @@ en début de script
 from .context import sample
 ```
 
-unittest
+Pour automatiser les tests, on peut utiliser le package `unittest`
+([doc ici](https://docs.python.org/3/library/unittest.html))
+
 
 # Style de programmation et de documentation
 
 ## Un code propre
+
+### Import des modules
+
+Un module est un ensemble de fonctions stockées dans un fichier `.py`. Lorsqu'on écrit dans un script
+
+```python
+import modu
+```
+
+`Python` commence par chercher le fichier `modu.py` dans le dossier de travail. Il n'est donc pas une bonne
+idée d'appeler un fichier du nom d'un module standard de python, par exemple `math.py` ou `os.py`. Si le fichier
+`modu.py` n'est pas trouvé dans le dossier de travail, `Python` va chercher dans le chemin et s'il ne le trouve pas
+retournera une erreur.
+
+Une fois que `modu.py` est trouvé, il sera exécuté dans un environnement isolé (relié de manière cohérente
+aux dépendances renseignées) et le résultat rendu disponible à l'interpréteur `Python` pour un usage
+dans la session via le *namespace* (espace où python associe les noms donnés aux objets). 
+
+En premier lieu, ne **jamais** utiliser la syntaxe suivante:
+
+```python
+# A NE PAS UTILISER
+from modu import *
+x = sqrt(4)  # Is sqrt part of modu? A builtin? Defined above?
+``` 
+
+L'utilisation de la syntaxe `import *` créé une ambiguité sur les fonctions disponibles dans l'environnement. Le code
+est ainsi moins clair, moins compartimenté et ainsi moins robuste. La syntaxe à privilégier est la suivante:
+
+```python
+import modu
+x = modu.sqrt(4)  # Is sqrt part of modu? A builtin? Defined above?
+``` 
+
 
 ## Un code documenté {.docfonctions}
 Doc: 
