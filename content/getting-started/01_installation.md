@@ -218,10 +218,19 @@ est `git clone` (on crée un clone local, qu'on est ensuite libre de faire évol
 ![Récupération d'un dépôt sur github via git bash](./pictures/gitbash2.png)
 
 Le contenu du dépôt est maintenant disponible dans le dossier désiré. 
-
-## Configurer jupyter pour utiliser le plugin git
  
 ## Configurer pycharm pour utiliser le plugin git
+
+Aller dans `File > Settings > Version Control > Git` pour définir le chemin vers lequel `Pycharm` doit trouver
+l'exécutable `git`. Si `git` a été installé dans un chemin standard, `Pycharm` le trouve ; sinon, 
+il faut lui donner (dans le dossier d'installation `git`, bien choisir l'exécutable présent dans 
+le sous-dossier `cmd/git.exe`) 
+
+![Récupération d'un dépôt sur github via git bash](./pictures/vcspycharm2.png)
+
+
+## Configurer jupyter pour utiliser le plugin git
+
 
 ## Pratiquer git
 
