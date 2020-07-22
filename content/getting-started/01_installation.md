@@ -224,11 +224,13 @@ Le contenu du dépôt est maintenant disponible dans le dossier désiré.
 Aller dans `File > Settings > Version Control > Git` pour définir le chemin vers lequel `Pycharm` doit trouver
 l'exécutable `git`. Si `git` a été installé dans un chemin standard, `Pycharm` le trouve ; sinon, 
 il faut lui donner (dans le dossier d'installation `git`, bien choisir l'exécutable présent dans 
-le sous-dossier `cmd/git.exe`) 
+le sous-dossier `cmd/git.exe`) ^[2]
 
 ![Récupération d'un dépôt sur github via git bash](./pictures/vcspycharm2.png)
 
-
+^[2:] Si la case `Use credential helper` est cochée, il est recommandé de la décocher car en cas
+de mot de passe tapé trop vite, les tentatives de connexion au dépôt distant seront
+systématiquement refusées 
 
 
 ## Configurer jupyter pour utiliser le plugin git
