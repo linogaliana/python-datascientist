@@ -139,13 +139,11 @@ known and referenced PEPs ever created is PEP8, which is the “Python community
 
 ## Documenter ces fonctions
 
-# Gestion des dépendances
-
-En premier lieu, dans un script, il est 
-
-# Tester
-
-
 
 # Partager
 
+Ce point est ici évoqué en dernier mais, en fait, il est essentiel. Tout travail n'a pas vocation à être public
+ou dépasser le cadre d'une équipe. Cependant, les mêmes exigences qui s'appliquent lorsqu'un code est public méritent
+de s'appliquer avec un projet personnel. Avant de partager un code avec d'autres, on le partage avec le *"futur moi"*.
+Reprendre un code écrit il y a plusieurs semaines est coûteux et mérite d'anticiper en adoptant des bonnes pratiques qui
+rendront quasi-indolore la ré-appropriation du code.  
