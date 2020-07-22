@@ -110,6 +110,22 @@ import modu
 x = modu.sqrt(4)  # Is sqrt part of modu? A builtin? Defined above?
 ``` 
 
+### Structuration du code
+
+Il est commun de trouver sur internet des codes très longs, généralement dans un fichier `__init__.py`
+(méthode pour passer d'un module à un package, qui est un ensemble plus structuré de fonctions).
+Avoir des scripts longs est peu désirable (c'est même mauvais) ;
+cela rend le code difficilement à s'approprier et à faire évoluer. Mieux vaut avoir des scripts relativement courts
+(sans l'être à l'excès...) qui font éventuellement appels à des fonctions définies dans d'autres scripts.
+
+Pour la même raison, la multiplication de conditions logiques `if`...`else if`...`else` est généralement très mauvais
+signe (on parle de [code spaghetti](https://fr.wikipedia.org/wiki/Programmation_spaghetti)) ; mieux vaut
+utiliser des méthodes génériques dans ce type de circonstances.
+
+Avoir des 
+
+ When the project complexity grows, there may be sub-packages and sub-sub-packages in a deep directory structure.
+ In this case, importing a single item from a sub-sub-package will require executing all __init__.py files met while traversing the tree.
 
 ## Un code documenté {.docfonctions}
 Doc: 
