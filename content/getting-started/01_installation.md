@@ -146,9 +146,51 @@ Derrière ces outils pour exécuter de manière simple des scripts Python sur un
  
 # Installer et configurer git
 
+## Pourquoi utiliser la gestion de version ?
+
+Nos travaux statistiques évoluent constamment (productions annuelles, nouvelles enquêtes, etc.) et nous travaillons souvent à plusieurs. En outre, le maintien de la qualité de nos chaînes de traitement nécessite un archivage détaillé et facilement accessible. 
+
+Tous les statisticiens se sont déjà demandé (ou à leurs collègues) : 
+
+* quelle était la bonne version d'un programme 
+* qui était l'auteur d'un bout de code en particulier
+* si un changement était important ou juste un essai
+* comment fusionner des programmes
+* etc.
+
+Il existe un outil informatique puissant afin de répondre à tous ces besoins : la gestion de version (*version control system* (VCS) en anglais). Ses avantages sont incontestables et permettent de facilement :
+
+* enregistrer l'historique des modifications d'un ensemble de fichiers 
+* revenir à des versions précédentes d'un ou plusieurs fichiers
+* rechercher les modifications qui ont pu créer des erreurs
+* partager ses modifications et récupérer celles des autres
+* proposer des modifications, les discuter, sans pour autant modifier la dernière version existante
+* identifier les auteurs et la date des modifications
+
+En outre, ces outils fonctionnent avec tous les langages informatiques
+(texte, R, Python, SAS, $\LaTeX$, Java, etc.) car reposent sur la comparaison des lignes
+et des caractères des programmes.
+
+L'intérêt de `git` dépasse le cadre collaboratif. Même dans une utilisation personnelle de `python` utiliser 
+`git` rend ***
+
+
 ## git, kesako ?
 
-Explication sommaire de git
+`git` est un système de contrôle de version dont la vocation est de permettre de tracer les modifications faites
+entre deux versions d'un fichier. Il s'agit d'un outil particulièrement adapté à la programmation puisque `git` permet
+un suivi ligne à ligne des modifications faites à un fichier. 
+
+Les modifications sont visibles par tout membre d'un projet et de manière très fine. Il est ainsi possible de
+visualiser à quel moment chaque ligne d'un fichier a été modifiée:
+
+![Exemple sur la page d'entrée du cours [ici](https://github.com/linogaliana/python-datascientist/blame/master/content/_index.md)](static/pictures/intro/gitblame.png)
+
+Et il est possible de comparer l'évolution de l'état d'un fichier entre deux versions:
+
+![Exemple sur la page d'entrée du cours [ici](https://github.com/linogaliana/python-datascientist/blame/master/content/_index.md)](static/pictures/intro/sidebyside.png)
+
+
 
 ## Installer et tester git bash
 
