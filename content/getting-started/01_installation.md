@@ -229,6 +229,8 @@ le sous-dossier `cmd/git.exe`)
 ![Récupération d'un dépôt sur github via git bash](./pictures/vcspycharm2.png)
 
 
+
+
 ## Configurer jupyter pour utiliser le plugin git
 
 
