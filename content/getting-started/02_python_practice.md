@@ -41,36 +41,6 @@ mais directement dans les fichiers sources avec certaines normes (cf. [plus tard
 * Les tests génériques des fonctions. Ce n'est pas obligatoire mais c'est recommandé: ça évite de découvrir deux jours
 avant un rendu de projet que la fonction ne produit pas le résultat espéré.
 
-# Les tests
-
-Tester ses fonctions peut apparaître formaliste mais c'est, en fait, souvent d'un grand secours car cela permet de
-détecter et corriger des bugs précoces (ou au moins d'être conscient de leur existence). 
-Au-delà de la correction de *bug*, cela permet de vérifier que
-la fonction produit bien un résultat espéré dans une expérience contrôlée. 
-
-On peut partir du principe suivant: *"toute fonctionnalité non testée comporte un bug"*
-
-Le fichier `tests/context.py` sert à définir le contexte dans lequel le test de la fonction s'exécute, de manière
-isolée.
-
-```python
-import os
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-import sample
-```
-
-Chaque fichier du dossier de test
-(par exemple `test_basic.py` et `test_advanced.py`) incorpore ensuite la ligne suivante,
-en début de script
-
-```python
-from .context import sample
-```
-
-Pour automatiser les tests, on peut utiliser le package `unittest`
-([doc ici](https://docs.python.org/3/library/unittest.html))
 
 
 # Style de programmation et de documentation
@@ -128,6 +98,10 @@ Avoir des
  In this case, importing a single item from a sub-sub-package will require executing all __init__.py files met while traversing the tree.
 
 ## Un code documenté {.docfonctions}
+
+sphinx
+https://docs.python-guide.org/writing/documentation/
+
 Doc: 
 https://www.python.org/dev/peps/pep-0257/
 
@@ -139,7 +113,47 @@ known and referenced PEPs ever created is PEP8, which is the “Python community
 
 ## Documenter ces fonctions
 
+# Les tests
 
+Tester ses fonctions peut apparaître formaliste mais c'est, en fait, souvent d'un grand secours car cela permet de
+détecter et corriger des bugs précoces (ou au moins d'être conscient de leur existence). 
+Au-delà de la correction de *bug*, cela permet de vérifier que
+la fonction produit bien un résultat espéré dans une expérience contrôlée. 
+
+On peut partir du principe suivant: *"toute fonctionnalité non testée comporte un bug"*
+
+Le fichier `tests/context.py` sert à définir le contexte dans lequel le test de la fonction s'exécute, de manière
+isolée.
+
+```python
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import sample
+```
+
+Chaque fichier du dossier de test
+(par exemple `test_basic.py` et `test_advanced.py`) incorpore ensuite la ligne suivante,
+en début de script
+
+```python
+from .context import sample
+```
+
+Pour automatiser les tests, on peut utiliser le package `unittest`
+([doc ici](https://docs.python.org/3/library/unittest.html))
+
+```python
+import unittest
+
+def fun(x):
+    return x + 1
+
+class MyTest(unittest.TestCase):
+    def test(self):
+        self.assertEqual(fun(3), 4)
+```
 # Partager
 
 Ce point est ici évoqué en dernier mais, en fait, il est essentiel. Tout travail n'a pas vocation à être public
@@ -147,3 +161,4 @@ ou dépasser le cadre d'une équipe. Cependant, les mêmes exigences qui s'appli
 de s'appliquer avec un projet personnel. Avant de partager un code avec d'autres, on le partage avec le *"futur moi"*.
 Reprendre un code écrit il y a plusieurs semaines est coûteux et mérite d'anticiper en adoptant des bonnes pratiques qui
 rendront quasi-indolore la ré-appropriation du code.  
+
