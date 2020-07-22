@@ -237,6 +237,8 @@ systématiquement refusées
 
 https://github.com/jupyterlab/jupyterlab-git
 
+## Présentation des fonctionalités de github et gitlab
+
 ## Pratiquer git
 
 Faire un petit notebook
