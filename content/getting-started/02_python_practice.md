@@ -45,7 +45,21 @@ avant un rendu de projet que la fonction ne produit pas le résultat espéré.
 
 # Style de programmation et de documentation
 
-## Un code propre
+> The code is read much more often than it is written.
+> 
+> Guido Van Rossum [créateur de Python]
+
+`Python` est un langage très lisible. Avec un peu d'effort sur le nom des objets, sur la gestion
+des dépendances et sur la structure du programme, on peut
+très bien comprendre un script sans avoir besoin de l'exécuter. La communauté Python a abouti à un certain
+nombre de normes, dites PEP (Python Enhancement Proposal), qui constituent un standard
+dans l'écosystème Python. Les deux normes les plus connues sont 
+la norme PEP8 (code) et la norme PEP257 (documentation). 
+
+La plupart de ces recommandations ne sont pas propres à `Python`, on les retrouve aussi dans `R`
+(cf. [ici](https://linogaliana.gitlab.io/documentationR/comment-nommer-les-objets-dans-r.html)). 
+On retrouve de nombreux conseils dans [cet ouvrage](https://docs.python-guide.org/writing/style/) qu'il est
+recommandé de suivre. La suite se concentrera sur des éléments complémentaires.
 
 ### Import des modules
 
@@ -91,11 +105,29 @@ cela rend le code difficilement à s'approprier et à faire évoluer. Mieux vaut
 Pour la même raison, la multiplication de conditions logiques `if`...`else if`...`else` est généralement très mauvais
 signe (on parle de [code spaghetti](https://fr.wikipedia.org/wiki/Programmation_spaghetti)) ; mieux vaut
 utiliser des méthodes génériques dans ce type de circonstances.
+ 
+### Ecrire des fonctions
 
-Avoir des 
+Les fonctions sont un objet central en `Python`. La fonction idéale est une fonction qui agit de manière compartimentée:
+elle prend un certain nombre d'*inputs* et est reliée au monde extérieur uniquement par les dépendances,
+elle effectue des opérations sans interaction avec le monde extérieur et retourne un résultat.
+Cette définition assez consensuelle masque un certain nombre d'enjeux:
 
- When the project complexity grows, there may be sub-packages and sub-sub-packages in a deep directory structure.
- In this case, importing a single item from a sub-sub-package will require executing all __init__.py files met while traversing the tree.
+* Une bonne gestion des dépendances nécessite d'avoir appliqué les recommandations évoquées antérieurement 
+* Isoler du monde extérieur nécessite de ne pas faire appel à un objet extérieur à l'environnement de la fonction
+
+La fonction la plus lisible est celle qui utilise exclusivement des arguments positionnels avec des noms explicites
+
+```python
+def ***
+```
+
+Dans le cadre d'une utilisation avancée des fonctions (par exemple un gros modèle de microsimulation), il est 
+difficile d'anticiper tous les objets qui seront nécessaires à l'utilisateur. Dans ce cas, on retrouve généralement
+dans la définition d'une fonction le mot-clé `**kwargs` (équivalent du `...` en `R`) qui capture les 
+arguments supplémentaires et les stocke sous forme de dictionnaire. Il s'agit d'une technique avancée de
+programmation qui est à utiliser avec parcimonie.
+
 
 ## Un code documenté {.docfonctions}
 
