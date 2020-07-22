@@ -139,11 +139,12 @@ https://www.python.org/dev/peps/pep-0257/
 
 ## Privilégier des fonctions imbriquées
 
-Python has a system of community-generated proposals known as Python Enhancement Proposals (PEPs)
-Perhaps one of the most widely
-known and referenced PEPs ever created is PEP8, which is the “Python community Bible” for properly styling your code.
+TO DO
 
-## Documenter ces fonctions
+# Documenter ces fonctions
+
+TO DO
+https://docs.python-guide.org/writing/documentation/
 
 # Les tests
 
