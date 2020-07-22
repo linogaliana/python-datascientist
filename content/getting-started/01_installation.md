@@ -175,7 +175,7 @@ L'intérêt de `git` dépasse le cadre collaboratif. Même dans une utilisation 
 `git` rend ***
 
 
-## git, kesako ? ![](https://www.linuxjournal.com/sites/default/files/styles/360_250/public/nodeimage/story/git-icon.png?itok=w7zB9vuE =100x)
+## git, kesako ? {{< rawhtml >}} <img src="https://www.linuxjournal.com/sites/default/files/styles/360_250/public/nodeimage/story/git-icon.png?itok=w7zB9vuE" width="100"> {{< /rawhtml >}}
 
 `git` est un système de contrôle de version dont la vocation est de permettre de tracer les modifications faites
 entre deux versions d'un fichier. Il s'agit d'un outil particulièrement adapté à la programmation puisque `git` permet
@@ -235,6 +235,7 @@ systématiquement refusées
 
 ## Configurer jupyter pour utiliser le plugin git
 
+https://github.com/jupyterlab/jupyterlab-git
 
 ## Pratiquer git
 
