@@ -190,6 +190,11 @@ Et il est possible de comparer l'évolution de l'état d'un fichier entre deux v
 
 ![Exemple sur la page d'entrée du cours [ici](https://github.com/linogaliana/python-datascientist/blame/master/content/_index.md)](static/pictures/intro/sidebyside.png)
 
+L'utilisation de `git` devient une norme dans les administrations, les entreprises et le monde académique. 
+Des éléments supplémentaires, avec exemples via `Rstudio` (très peu de différences avec `Pycharm`),
+peuvent être trouvés
+[ici](https://linogaliana.gitlab.io/collaboratif/git.html) 
+
 
 
 ## Installer et tester git bash
