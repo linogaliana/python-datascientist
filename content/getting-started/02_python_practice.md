@@ -14,7 +14,7 @@ La structure basique d'un projet développé en `Python` est la suivante, qu'on 
 
 
 ```python
-README.rst
+README.md
 LICENSE
 setup.py
 requirements.txt
@@ -28,19 +28,34 @@ tests/test_basic.py
 tests/test_advanced.py
 ```
 
-Quelques explications:
 
-* Le code python est stocké dans un module nommé `monmodule`. C'est le coeur du code dans le projet. 
-* Le fichier `setup.py` sert à construire le package `monmodule` pour en faire un code utilisable.
+Quelques explications et parallèles avec les packages `R`^[1] :
+
+* Le code python est stocké dans un module nommé `monmodule`. C'est le coeur du code dans le projet. Contrairement
+à `R`, il est possible d'avoir une arborescence avec plusieurs modules dans un seul package. Un bon exemple
+de package dont le fonctionnement adopte une arborescence à plusieurs niveaux est `scikit`
+* Le fichier `setup.py` sert à construire le package `monmodule` pour en faire un code utilisable. Il n'est pas
+obligatoire quand le projet n'a pas vocation à être sur `PyPi` mais il est assez facile à créer en suivant ce
+[*template*](https://packaging.python.org/tutorials/packaging-projects/#creating-setup-py). C'est l'équivalent
+du fichier `Description` dans un package `R`
+([exemple](https://github.com/Rdatatable/data.table/blob/master/DESCRIPTION))
 * Le fichier `requirements.txt`  permet de contrôler les dépendances du projet.  Il s'agit des
 dépendances nécessaires pour faire tourner les fonctions (par exemple `numpy`), les tester et
-construire automatiquement la documentation (par exemple `sphinx`)
+construire automatiquement la documentation (par exemple `sphinx`). Dans un package `R`, le fichier qui contrôle
+l'environnement est le `NAMESPACE`.
 * Le dossier `docs` stocke la documentation du package.
 La documentation propre aux fonctions (obtenue en faisant `help(mafonction)`) n'est pas stockée à cet endroit
-mais directement dans les fichiers sources avec certaines normes (cf. [plus tard](#docfonctions))
+mais directement dans les fichiers sources avec certaines normes (cf. [plus tard](#docfonctions)). 
+Les éléments qui s'en rapprochent dans un package `R` sont les vignettes.
 * Les tests génériques des fonctions. Ce n'est pas obligatoire mais c'est recommandé: ça évite de découvrir deux jours
-avant un rendu de projet que la fonction ne produit pas le résultat espéré.
+avant un rendu de projet que la fonction ne produit pas le résultat espéré. 
+* Le `README.md` permet de créer une présentation du package qui s'affiche automatiquement sur
+github/gitlab et le fichier `LICENSE` vise à protéger la propriété intellectuelle. Un certain nombre de licences
+standards existent et peuvent être utilisées comme *template* grâce au site <https://choosealicense.com/>
 
+^[1]: La structure nécessaire des projets nécessaire pour pouvoir construire un package `R` est plus contrainte.
+Les packages `devtools`, `usethis` et `testthat` ont grandement facilité l'élaboration d'un package `R`. A cet égard,
+il est recommandé de lire l'incontournable [livre d'Hadley Wickham](http://r-pkgs.had.co.nz/)
 
 
 # Style de programmation et de documentation
