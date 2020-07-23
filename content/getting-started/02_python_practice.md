@@ -78,6 +78,9 @@ recommandé de suivre. La suite se concentrera sur des éléments complémentair
 
 ### Import des modules
 
+Les éléments suivants concernent plutôt les scripts finaux, qui appellent de multiples fonctions, que des
+scripts qui définissent des fonctions.
+
 Un module est un ensemble de fonctions stockées dans un fichier `.py`. Lorsqu'on écrit dans un script
 
 ```python
@@ -113,7 +116,7 @@ x = modu.sqrt(4)  # Is sqrt part of modu? A builtin? Defined above?
 
 Il est commun de trouver sur internet des codes très longs, généralement dans un fichier `__init__.py`
 (méthode pour passer d'un module à un package, qui est un ensemble plus structuré de fonctions).
-Avoir des scripts longs est peu désirable (c'est même mauvais) ;
+Contrairement à la légende, avoir des scripts longs est peu désirable et est même mauvais ;
 cela rend le code difficilement à s'approprier et à faire évoluer. Mieux vaut avoir des scripts relativement courts
 (sans l'être à l'excès...) qui font éventuellement appels à des fonctions définies dans d'autres scripts.
 
@@ -123,20 +126,34 @@ utiliser des méthodes génériques dans ce type de circonstances.
  
 ### Ecrire des fonctions
 
-Les fonctions sont un objet central en `Python`. La fonction idéale est une fonction qui agit de manière compartimentée:
+Les fonctions sont un objet central en `Python`.
+La fonction idéale est une fonction agit de manière compartimentée:
 elle prend un certain nombre d'*inputs* et est reliée au monde extérieur uniquement par les dépendances,
 elle effectue des opérations sans interaction avec le monde extérieur et retourne un résultat.
 Cette définition assez consensuelle masque un certain nombre d'enjeux:
 
-* Une bonne gestion des dépendances nécessite d'avoir appliqué les recommandations évoquées antérieurement 
-* Isoler du monde extérieur nécessite de ne pas faire appel à un objet extérieur à l'environnement de la fonction
+* Une bonne gestion des dépendances nécessite d'avoir appliqué les recommandations évoquées précédemment 
+* Isoler du monde extérieur nécessite de ne pas faire appel à un objet extérieur à l'environnement de la fonction.
+Autrement dit, aucun objet hors de la portée (*scope*) de la fonction ne doit être altéré ou utilisé.
 
-La fonction la plus lisible est celle qui utilise exclusivement des arguments positionnels avec des noms explicites
+Par exemple, le script suivant est mauvais au sens où il utilise un objet `y` hors du *scope* de la fonction `add`
 
 ```python
-def ***
+def add(x):
+    return x + y
 ```
 
+Il faudrait revoir la fonction pour y ajouter un élément `y`:
+
+```python
+def add(x, y):
+    return x + y
+```
+
+`Pycharm` offre des outils de diagnostics très pratiques pour détecter et corriger ce type d'erreur. 
+
+La fonction la plus lisible (mais la plus contraignante) est celle
+qui utilise exclusivement des arguments positionnels avec des noms explicites. 
 Dans le cadre d'une utilisation avancée des fonctions (par exemple un gros modèle de microsimulation), il est 
 difficile d'anticiper tous les objets qui seront nécessaires à l'utilisateur. Dans ce cas, on retrouve généralement
 dans la définition d'une fonction le mot-clé `**kwargs` (équivalent du `...` en `R`) qui capture les 
