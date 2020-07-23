@@ -76,7 +76,7 @@ La plupart de ces recommandations ne sont pas propres à `Python`, on les retrou
 On retrouve de nombreux conseils dans [cet ouvrage](https://docs.python-guide.org/writing/style/) qu'il est
 recommandé de suivre. La suite se concentrera sur des éléments complémentaires.
 
-### Import des modules
+## Import des modules
 
 Les éléments suivants concernent plutôt les scripts finaux, qui appellent de multiples fonctions, que des
 scripts qui définissent des fonctions.
@@ -112,7 +112,7 @@ import modu
 x = modu.sqrt(4)  # Is sqrt part of modu? A builtin? Defined above?
 ``` 
 
-### Structuration du code
+## Structuration du code
 
 Il est commun de trouver sur internet des codes très longs, généralement dans un fichier `__init__.py`
 (méthode pour passer d'un module à un package, qui est un ensemble plus structuré de fonctions).
@@ -124,7 +124,7 @@ Pour la même raison, la multiplication de conditions logiques `if`...`else if`.
 signe (on parle de [code spaghetti](https://fr.wikipedia.org/wiki/Programmation_spaghetti)) ; mieux vaut
 utiliser des méthodes génériques dans ce type de circonstances.
  
-### Ecrire des fonctions
+## Ecrire des fonctions
 
 Les fonctions sont un objet central en `Python`.
 La fonction idéale est une fonction agit de manière compartimentée:
@@ -152,8 +152,11 @@ def add(x, y):
 
 `Pycharm` offre des outils de diagnostics très pratiques pour détecter et corriger ce type d'erreur. 
 
+## :warning: aux arguments optionnels
+
 La fonction la plus lisible (mais la plus contraignante) est celle
 qui utilise exclusivement des arguments positionnels avec des noms explicites. 
+
 Dans le cadre d'une utilisation avancée des fonctions (par exemple un gros modèle de microsimulation), il est 
 difficile d'anticiper tous les objets qui seront nécessaires à l'utilisateur. Dans ce cas, on retrouve généralement
 dans la définition d'une fonction le mot-clé `**kwargs` (équivalent du `...` en `R`) qui capture les 
@@ -161,19 +164,17 @@ arguments supplémentaires et les stocke sous forme de dictionnaire. Il s'agit d
 programmation qui est à utiliser avec parcimonie.
 
 
-## Un code documenté {.docfonctions}
+## Privilégier des fonctions imbriquées
+
+TO DO
+
+# Documenter les fonctions
 
 sphinx
 https://docs.python-guide.org/writing/documentation/
 
 Doc: 
 https://www.python.org/dev/peps/pep-0257/
-
-## Privilégier des fonctions imbriquées
-
-TO DO
-
-# Documenter ces fonctions
 
 TO DO
 https://docs.python-guide.org/writing/documentation/
