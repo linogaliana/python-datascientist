@@ -54,7 +54,7 @@ avant un rendu de projet que la fonction ne produit pas le résultat espéré.
 github/gitlab et le fichier `LICENSE` vise à protéger la propriété intellectuelle. Un certain nombre de licences
 standards existent et peuvent être utilisées comme *template* grâce au site <https://choosealicense.com/>
 
-^[1]: La structure nécessaire des projets nécessaire pour pouvoir construire un package `R` est plus contrainte.
+^[1:] La structure nécessaire des projets nécessaire pour pouvoir construire un package `R` est plus contrainte.
 Les packages `devtools`, `usethis` et `testthat` ont grandement facilité l'élaboration d'un package `R`. A cet égard,
 il est recommandé de lire l'incontournable [livre d'Hadley Wickham](http://r-pkgs.had.co.nz/)
 
@@ -252,7 +252,7 @@ class MyTest(unittest.TestCase):
         self.assertEqual(fun(3), 4)
 ```
 
-^[2]: Le code équivalent avec `R` serait `testthat::expect_equal(fun(3),4)`
+^[2:] Le code équivalent avec `R` serait `testthat::expect_equal(fun(3),4)`
 
 Parler de codecov
 
