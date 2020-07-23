@@ -163,10 +163,11 @@ dans la définition d'une fonction le mot-clé `**kwargs` (équivalent du `...` 
 arguments supplémentaires et les stocke sous forme de dictionnaire. Il s'agit d'une technique avancée de
 programmation qui est à utiliser avec parcimonie.
 
-
+<!----
 ## Privilégier des fonctions imbriquées
 
 TO DO
+----->
 
 # Documenter les fonctions
 
