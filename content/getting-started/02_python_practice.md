@@ -43,7 +43,8 @@ du fichier `Description` dans un package `R`
 dépendances nécessaires pour faire tourner les fonctions (par exemple `numpy`), les tester et
 construire automatiquement la documentation (par exemple `sphinx`). Dans un package `R`, le fichier qui contrôle
 l'environnement est le `NAMESPACE`.
-* Le dossier `docs` stocke la documentation du package.
+* **VERIFIER SI
+C'EST VRAI ->** Le dossier `docs` stocke la documentation du package.
 La documentation propre aux fonctions (obtenue en faisant `help(mafonction)`) n'est pas stockée à cet endroit
 mais directement dans les fichiers sources avec certaines normes (cf. [plus tard](#docfonctions)). 
 Les éléments qui s'en rapprochent dans un package `R` sont les vignettes.
@@ -171,14 +172,27 @@ TO DO
 
 # Documenter les fonctions
 
-sphinx
-https://docs.python-guide.org/writing/documentation/
+La documentation des fonctions s'appelle la `docstrings`. Elle prend la forme suivante:
 
-Doc: 
-https://www.python.org/dev/peps/pep-0257/
+```python
+def square_and_rooter(x):
+    """Return the square root of self times self."""
+    ...
+```
 
-TO DO
-https://docs.python-guide.org/writing/documentation/
+Avec `PyCharm`, lorsqu'on utilise trois guillemets sous la définition d'une fonction, un *template* minimal à
+completer est automatiquement généré. Les normes à suivre pour que la *docstrings* soit reconnue par le package
+[sphinx](https://docs.python-guide.org/writing/documentation/) sont présentées dans la PEP257. Néanmoins, 
+elles ont été enrichies par le style de *docstrings* `NumPy` qui est plus riche et permet ainsi des documentations
+plus explicites
+([voir ici](https://docs.python-guide.org/writing/documentation/#writing-docstrings) et
+[ici](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html)).
+
+Suivre ces canons formels permet une lecture simplifiée du code source de la documentation. Mais cela a surtout
+l'avantage, lors de la génération d'un package, de permettre une mise en forme automatique des fichiers 
+`help` d'une fonction à partir de la *docstrings*. L'outil canonique pour ce type de construction automatique est
+[sphinx](https://pypi.org/project/Sphinx/) (dont l'équivalent `R` est `Roxygen`)
+
 
 # Les tests
 
