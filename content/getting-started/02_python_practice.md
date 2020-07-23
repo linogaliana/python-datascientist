@@ -269,7 +269,7 @@ outils d'intégration continue, la production de contenu (par exemple des visual
 finaux écrits avec markdown). Il est recommandé d'immédiatement connecter un projet à `git`, même avec un
 dépôt qui aura vocation à être personnel.
 
-**Lien vers TP git**
+**Lien vers TP git + intro python**
 
 Un fichier à ne pas négliger est le `.gitignore`. Il s'agit d'un garde-fou car tous fichiers (notamment des
 données, potentiellement volumineuses ou confidentielles) n'ont pas vocation
