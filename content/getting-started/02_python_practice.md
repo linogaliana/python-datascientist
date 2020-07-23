@@ -43,10 +43,9 @@ du fichier `Description` dans un package `R`
 dépendances nécessaires pour faire tourner les fonctions (par exemple `numpy`), les tester et
 construire automatiquement la documentation (par exemple `sphinx`). Dans un package `R`, le fichier qui contrôle
 l'environnement est le `NAMESPACE`.
-* **VERIFIER SI
-C'EST VRAI ->** Le dossier `docs` stocke la documentation du package.
-La documentation propre aux fonctions (obtenue en faisant `help(mafonction)`) n'est pas stockée à cet endroit
-mais directement dans les fichiers sources avec certaines normes (cf. [plus tard](#docfonctions)). 
+* Le dossier `docs` stocke la documentation du package. Le mieux est de le générer à partir de
+[sphinx](https://docs.readthedocs.io/en/stable/intro/getting-started-with-sphinx.html) et non de l'éditer
+manuellement. (cf. [plus tard](#docfonctions)). 
 Les éléments qui s'en rapprochent dans un package `R` sont les vignettes.
 * Les tests génériques des fonctions. Ce n'est pas obligatoire mais c'est recommandé: ça évite de découvrir deux jours
 avant un rendu de projet que la fonction ne produit pas le résultat espéré. 
@@ -170,7 +169,7 @@ programmation qui est à utiliser avec parcimonie.
 TO DO
 ----->
 
-# Documenter les fonctions
+# Documenter les fonctions {.docfonctions}
 
 La documentation des fonctions s'appelle la `docstrings`. Elle prend la forme suivante:
 
@@ -194,24 +193,36 @@ l'avantage, lors de la génération d'un package, de permettre une mise en forme
 [sphinx](https://pypi.org/project/Sphinx/) (dont l'équivalent `R` est `Roxygen`)
 
 
-# Les tests
+# Les tests {.tests}
 
 Tester ses fonctions peut apparaître formaliste mais c'est, en fait, souvent d'un grand secours car cela permet de
 détecter et corriger des bugs précoces (ou au moins d'être conscient de leur existence). 
 Au-delà de la correction de *bug*, cela permet de vérifier que
 la fonction produit bien un résultat espéré dans une expérience contrôlée. 
 
-On peut partir du principe suivant: *"toute fonctionnalité non testée comporte un bug"*
+En fait, il existe deux types de tests:
+
+* tests unitaires: on teste seulement une fonctionalité ou propriété
+* tests d'intégration: on teste l'intégration de la fonction dans un ensemble plus large de fonctionalité
+
+Ici, on va plutôt se focaliser sur la notion de test unitaire ; la notion de
+test d'intégration nécessitant d'avoir une chaîne plus complète de fonctions (mais il ne faut
+pas la négliger)
+
+
+On peut partir du principe suivant:
+
+> toute fonctionnalité non testée comporte un bug
 
 Le fichier `tests/context.py` sert à définir le contexte dans lequel le test de la fonction s'exécute, de manière
-isolée.
+isolée. On peut adopter le modèle suivant, en changeant `import monmodule` par le nom de module adéquat
 
 ```python
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import sample
+import monmodule
 ```
 
 Chaque fichier du dossier de test
@@ -223,7 +234,11 @@ from .context import sample
 ```
 
 Pour automatiser les tests, on peut utiliser le package `unittest`
-([doc ici](https://docs.python.org/3/library/unittest.html))
+([doc ici](https://docs.python.org/3/library/unittest.html)). L'idée est que dans un cadre contrôlé
+(on connaît l'*input* et en tant que concepteur de la fonction on connaît l'*output* ou, *a minima*
+ les propriétés de l'*output*) on peut tester la sortie d'une fonction. 
+ 
+La structure canonique de test est la suivante^[2]
 
 ```python
 import unittest
@@ -235,11 +250,175 @@ class MyTest(unittest.TestCase):
     def test(self):
         self.assertEqual(fun(3), 4)
 ```
+
+^[2]: Le code équivalent avec `R` serait `testthat::expect_equal(fun(3),4)`
+
+Parler de codecov
+
 # Partager
 
-Ce point est ici évoqué en dernier mais, en fait, il est essentiel. Tout travail n'a pas vocation à être public
-ou dépasser le cadre d'une équipe. Cependant, les mêmes exigences qui s'appliquent lorsqu'un code est public méritent
+Ce point est ici évoqué en dernier mais, en fait, il est essentiel et mérite d'être une réflexion prioritaire.
+Tout travail n'a pas vocation à être public
+ou à dépasser le cadre d'une équipe. Cependant, les mêmes exigences qui s'appliquent lorsqu'un code est public méritent
 de s'appliquer avec un projet personnel. Avant de partager un code avec d'autres, on le partage avec le *"futur moi"*.
 Reprendre un code écrit il y a plusieurs semaines est coûteux et mérite d'anticiper en adoptant des bonnes pratiques qui
 rendront quasi-indolore la ré-appropriation du code.  
 
+L'intégration d'un projet avec `git` fiabilise grandement le processus d'écriture du code mais aussi, grâce aux
+outils d'intégration continue, la production de contenu (par exemple des visualisations html ou des rapports
+finaux écrits avec markdown). Il est recommandé d'immédiatement connecter un projet à `git`, même avec un
+dépôt qui aura vocation à être personnel.
+
+**Lien vers TP git**
+
+Un fichier à ne pas négliger est le `.gitignore`. Il s'agit d'un garde-fou car tous fichiers (notamment des
+données, potentiellement volumineuses ou confidentielles) n'ont pas vocation
+à être partagés. Le site [gitignore.io](https://www.toptal.com/developers/gitignore) est très pratique. Le fichier
+suivant est par exemple proposé pour les utilisateurs de `Python`, auquel on peut ajouter
+quelques lignes adaptées aux utilisateurs de données:
+
+```markdown
+*.html
+*.pdf
+*.csv
+*.tsv
+*.json
+*.xml
+*.shp
+*.xls
+*.xlsx
+
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+```
