@@ -272,6 +272,12 @@ dépôt qui aura vocation à être personnel.
 
 **Lien vers TP git + intro python**
 
+## Intégration continue avec python
+
+TO DO
+
+## Ne pas négliger le .gitignore
+
 Un fichier à ne pas négliger est le `.gitignore`. Il s'agit d'un garde-fou car tous fichiers (notamment des
 données, potentiellement volumineuses ou confidentielles) n'ont pas vocation
 à être partagés. Le site [gitignore.io](https://www.toptal.com/developers/gitignore) est très pratique. Le fichier
