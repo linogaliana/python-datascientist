@@ -5,7 +5,8 @@ draft: false
 weight: 30
 ---
 
-https://docs.python-guide.org/
+Une référence utile à lire est le
+[*Hitchhiker’s Guide to Python*](https://docs.python-guide.org/#writing-great-python-code)
 
 # Structure d'un projet en python
 
