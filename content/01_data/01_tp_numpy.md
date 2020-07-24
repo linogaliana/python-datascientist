@@ -1,8 +1,4 @@
 ---
-title: "Retour sur numpy"
-date: 2020-07-16T13:00:00Z
-draft: false
-weight: 100
 jupyter:
   jupytext:
     formats: ipynb,md
@@ -15,6 +11,10 @@ jupyter:
     display_name: Python 3
     language: python
     name: python3
+title: "Retour sur numpy"
+date: 2020-07-16T13:00:00Z
+draft: false
+weight: 100
 ---
 
 # Retour sur numpy
