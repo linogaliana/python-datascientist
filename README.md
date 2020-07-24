@@ -11,3 +11,7 @@ Supports associés au site disponible à l'adresse <https://linogaliana-teaching
 Syllabus disponible [là](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/)
 
 
+# Contribuer
+
+Pour éditer des notebooks bien intégrés dans le site web, utiliser `jupytext`
+![](./static/pictures/intro/jupytext.png)
