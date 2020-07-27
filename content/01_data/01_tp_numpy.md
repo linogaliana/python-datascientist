@@ -72,9 +72,6 @@ Y = np.random.normal(0,np.sqrt(2),1000)
 np.var(Y)
 ```
 
-```python
-Il existe 
-```
 
 ```python
 np.linspace(0, 1, 5)
