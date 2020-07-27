@@ -33,32 +33,7 @@ présente quelques mises en pratique des concepts développés ci-dessous
 
 ## Indexation et slicing
 
-La structure la plus simple imaginable est l'array unidimensionnel:
 
-```python
-np.arange(10)
-# array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-```
-
-L'indexation est dans ce cas similaire à celle d'une liste: 
-
-* le premier élément est 0
-* le énième élément est acessible à la position $n-1$
-
-La logique d'accès aux éléments est ainsi la suivante:
-
-```python
-x[start:stop:step]
-```
-
-Avec un *array* unidimensionnel, l'opération de *slicing* (garder une coupe du *array*) est très simple. 
-Par exemple, pour garder les K premiers éléments d'un *array*, on fera:
-
-```python
-x[:(K-1)]
-```
-
-puisque l'indexation en Python commence à 0. 
 
 
 -----

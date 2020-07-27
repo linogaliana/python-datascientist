@@ -80,7 +80,8 @@ La dimension géographique prend la forme d'un tableau plus profond, au moins bi
 
 ## Créer un array
 
-On peut créer un `array` de plusieurs manières. Pour créer un `array` à partir d'une liste, il suffit d'utiliser la méthode `array`:
+On peut créer un `array` de plusieurs manières. Pour créer un `array` à partir d'une liste,
+il suffit d'utiliser la méthode `array`:
 
 ```python
 np.array([1,2,5])
@@ -88,11 +89,13 @@ np.array([["a","z","e"],["r","t"],["y"]])
 ```
 
 Il existe aussi des méthodes pratiques pour créer des array:
-    
-* séquences logiques : `np.arange` (séquence linéaire) ou `np.linspace`
-* séquences ordonnées: fonctions de génération de nombres aléatoires: `np.rand.uniform`, `np.rand.normal`, etc.
-* _array_ rempli de zéros, de 1 ou d'un nombre désiré : `np.zeros`, `np.ones` ou `np.full`
+
+* séquences logiques : `np.arange` (suite) ou `np.linspace` (interpolation linéaire entre deux bornes)
+* séquences ordonnées: _array_ rempli de zéros, de 1 ou d'un nombre désiré : `np.zeros`, `np.ones` ou `np.full`
+* séquences aléatoires: fonctions de génération de nombres aléatoires: `np.rand.uniform`, `np.rand.normal`, etc. 
 * tableau sous forme de matrice identité: `np.eye`
+
+Il est possible d'ajouter un argument `dtype` pour contraindre le type du *array*:
 
 ```python
 np.arange(0,10)
@@ -105,12 +108,15 @@ np.eye(3)
 ```
 
 **Exercice :**
+
 Générer:
 
 * $X$ une variable aléatoire, 1000 répétitions d'une loi $U(0,1)$
 * $Y$ une variable aléatoire, 1000 répétitions d'une loi normale de moyenne nulle et de variance égale à 2
 * Vérifier la variance de $Y$ avec `np.var`
 
+
+**Correction** 
 ```python
 X = np.random.uniform(0,1,1000)
 Y = np.random.normal(0,np.sqrt(2),1000)
@@ -118,44 +124,48 @@ Y = np.random.normal(0,np.sqrt(2),1000)
 np.var(Y)
 ```
 
-
-```python
-np.linspace(0, 1, 5)
-
-# Un tableau de longueur 10, rempli d'entiers qui valent 0
-np.zeros(10, dtype=int)
-
-# Un tableau de taille 3x5 rempli de nombres à virgule flottante de valeur 1
-np.ones((3, 5), dtype=float)
-
-# Un tableau 3x5 rempli de 3,14
-np.full((3, 5), 3.14)
-```
-
-<!-- #region -->
 ## Indexation et slicing
 
-La logique générale de l'indexation d'un *array* unidimensionnel est la suivante:
+### Logique générale
+
+La structure la plus simple imaginable est l'array unidimensionnel:
+
+```python
+x = np.arange(10)
+```
+
+L'indexation est dans ce cas similaire à celle d'une liste: 
+
+* le premier élément est 0
+* le énième élément est accessible à la position $n-1$
+
+La logique d'accès aux éléments est ainsi la suivante:
 
 ```python
 x[start:stop:step]
 ```
 
-Pour sélectionner uniquement un éléments, on fera ainsi:
-<!-- #endregion -->
+Avec un *array* unidimensionnel, l'opération de *slicing* (garder une coupe du *array*) est très simple. 
+Par exemple, pour garder les *K* premiers éléments d'un *array*, on fera:
+
+```python
+x[:(K-1)]
+```
+
+Pour sélectionner uniquement un élément, on fera ainsi:
+
 
 ```python
 x = np.arange(10)
 x[2]
 ```
 
-<!-- #region -->
 En l'occurrence, on sélectionne le K$^{eme}$ élément en utilisant
 
 ```python
 x[K-1]
 ```
-<!-- #endregion -->
+
 
 **Exercice**
 
@@ -174,10 +184,29 @@ x[:5]
 # x2[0,:] # La première ligne
 ```
 
-## Filtres logiques
+
+-----
+
+Un élément déterminant dans la performance de `numpy` par rapport aux listes, lorsqu'il est question de 
+*slicing* est qu'un array ne renvoie pas une
+copie de l'élément en question (copie qui coûte de la mémoire et du temps) mais simplement une vue de celui-ci
+**DETAILS** 
+
+Lorsqu'il est nécessaire d'effectuer une copie, par exemple pour ne pas altérer l'array sous-jacent, on peut 
+utiliser la méthode `copy`:
+
+```python
+x2_sub_copy = x2[:2, :2].copy()
+```
+
+-----
+
+### Filtres logiques
 
 
-On peut également sélectionner des données à partir de conditions logiques (opération qu'on appelle un *boolean mask*), ce qui sera pratique lorsqu'il sera nécessaire d'effectuer des opérations de filtre sur les données (`pandas` reprend cette logique).
+On peut également sélectionner des données à partir de conditions logiques
+(opération qu'on appelle un *boolean mask*), ce qui sera pratique lorsqu'il sera
+nécessaire d'effectuer des opérations de filtre sur les données (`pandas` reprend cette logique).
 
 Pour des opérations de comparaison simples, les comparateurs logiques peuvent être suffisants:
 
@@ -197,7 +226,6 @@ Néanmoins, `numpy` propose un certain nombre de fonctions logiques très pratiq
 * is_nan
 * any ; all ; notamment avex `axis = 0`
 
-<!-- #region -->
 **Exercice**
 
 Soit
@@ -214,7 +242,6 @@ y = np.array([np.nan, 0, 1])
 1. Utiliser `count_nonzero` sur `y`
 2. Utiliser `is_nan` sur `y` et compter le nombre de valeurs non NaN
 2. Vérifier que `x` comporte au moins une valeur positive dans son ensemble, dans chaque array et en
-<!-- #endregion -->
 
 ```python
 x = np.random.normal(0, size=(3, 4))
@@ -228,19 +255,9 @@ np.any(x>0)
 np.any(x>0, axis = 0)
 ```
 
+Pour sélectionner les observations relatives à la condition logique,
+il suffit d'utiliser la logique de *slicing* de `numpy` qui fonctionne avec les conditions logiques
 
-
-```python
-
-```
-
-```python
-
-```
-
-Pour sélectionner les observations relatives à la condition logique, il suffit d'utiliser la logique de *slicing* de `numpy` qui fonctionne avec les conditions logiques
-
-<!-- #region -->
 **Exercice**
 
 Soit 
@@ -252,7 +269,8 @@ x = np.random.normal(size=10000)
 1. Ne conserver que les valeurs dont la valeur absolue est supérieure à 1.96
 2. Compter le nombre de valeurs supérieures à 1.96 en valeur absolue et leur proportion dans l'ensemble
 3. Sommer les valeurs absolues de toutes les observations supérieures (en valeur absolue) à 1.96 et rapportez les à la somme des valeurs de `x` (en valeur absolue) 
-<!-- #endregion -->
+
+
 
 ```python
 x = np.random.normal(size=10000)
