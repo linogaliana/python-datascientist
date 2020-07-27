@@ -193,9 +193,9 @@ copie de l'élément en question (copie qui coûte de la mémoire et du temps) m
 Lorsqu'il est nécessaire d'effectuer une copie, par exemple pour ne pas altérer l'array sous-jacent, on peut 
 utiliser la méthode `copy`:
 
-```python
-x2_sub_copy = x2[:2, :2].copy()
-```
+~~~python
+x_sub_copy = x[:2, :2].copy()
+~~~
 
 -----
 
@@ -416,7 +416,8 @@ la structure complexe. Pour plus de détails, se rendre
 
 ## Application: k-nearest neighbor fait-main
 
-L'idée de cet exercice vient de [là](https://jakevdp.github.io/PythonDataScienceHandbook/02.08-sorting.html#Example:-k-Nearest-Neighbors)
+L'idée de cet exercice vient de
+[là](https://jakevdp.github.io/PythonDataScienceHandbook/02.08-sorting.html#Example:-k-Nearest-Neighbors)
 
 
 1. Utiliser 
