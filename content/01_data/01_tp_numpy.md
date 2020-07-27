@@ -234,13 +234,13 @@ Si on désire faire un ré-ordonnement partiel pour trouver les _k_ valeurs les 
 np.partition(x, 3)
 ```
 
-```python
 ## Broadcasting
 
 Le broadcasting désigne un ensemble de règles pour appliquer une opération qui normalement ne s'applique que sur une seule valeur à l'ensemble des membres d'un tableau Numpy. 
 
 Le broadcasting nous permet d'appliquer ces opérations sur des tableaux de dimensions différentes.
 
+```python
 a = np.array([0, 1, 2])
 
 b = np.array([5, 5, 5])
@@ -342,6 +342,4 @@ np.reshape
 np.concatenate
 np.split, np.hsplit, and np.vsplit
 
-```python
 
-```
