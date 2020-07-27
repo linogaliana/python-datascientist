@@ -19,18 +19,64 @@ weight: 100
 
 # Retour sur numpy
 
-Paramètres pour le notebook
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/NumPy_logo.svg/1200px-NumPy_logo.svg.png)
+
+Il est recommandé de régulièrement se référer à
+la [cheatsheet numpy](https://www.datacamp.com/community/blog/python-numpy-cheat-sheet) et à la
+[doc officielle](https://numpy.org/doc/stable/) en cas de doute
+sur une fonction. 
+
+Dans ce chapitre, on ne dérogera pas à la convention qui s'est imposée d'importer `numpy` de la
+manière suivante:
+
+```python
+import numpy as np
+```
+
+
+
+Si les scripts suivants sont exécutés dans un `notebook`, il est recommandé d'utiliser les paramètres suivants
+pour contrôler le rendu
 
 ```python
 from IPython.core.interactiveshell import InteractiveShell
 InteractiveShell.ast_node_interactivity = "all"
 ```
 
-```python
-import numpy as np
-```
 
-Le concept central de `numpy` est l'`array`
+## Le concept d'array
+
+Le concept central de `NumPy` (`Numerical Python`) est
+l'**`array`** qui est un tableau de données multidimensionnel.
+
+L'array numpy peut être unidimensionnel et s'apparenter à un vecteur (1d-array),
+bidimensionnel et ainsi s'apparenter à une matrice (2d-array) ou, de manière plus générale, 
+prendre la forme d'un objet
+multidimensionnel (Nd-array). 
+
+Les tableaux simples (uni ou bi-dimensionnels) sont faciles à se représenter seront particulièrement
+utilisés dans le paradigme des DataFrames mais 
+la possibilité d'avoir des objets multidimensionnel permettra d'exploiter des
+structures très complexes.
+
+Un DataFrame sera construit à partir d'une collection
+d'array uni-dimensionnels (les variables de la table), ce qui permettra d'effectuer des opérations cohérentes
+(et optimisées) avec le type de la variable.
+
+
+Par rapport à une liste,
+
+* un *array* ne peut contenir qu'un type de données (`integer`, `string`, etc.),
+ contrairement à une liste.
+* les opérations implémentées par `numpy` seront plus efficaces et demanderont moins
+de mémoire
+
+
+
+Les données géographiques constitueront une construction un peu plus complexe qu'un DataFrame traditionnel. 
+La dimension géographique prend la forme d'un tableau plus profond, au moins bidimensionnel
+(coordonnées d'un point). 
+
 
 ## Créer un array
 

@@ -14,48 +14,16 @@ facilitant le maniement de ces données.
 `pandas` est lui-même construit à partir du package `numpy`, qu'il est utile de comprendre
 pour être à l'aise avec `pandas`. `numpy` est une librairie bas-niveau 
 pour stocker et manipuler des données. 
-`numpy` est au coeur de l'écosystème de la *data science* car la plupart des librairies
+`numpy` est au coeur de l'écosystème de la *data science* car la plupart des librairies, même celles
+qui manient des objets destructurés,
 utilisent des objets construits à partir de `numpy`
+
+**Continuer cette intro en fonction des différents chapitres de la partie**
 
 # Retour sur numpy
 
-Il est recommandé de régulièrement se référer à
-la [cheatsheet numpy](https://www.datacamp.com/community/blog/python-numpy-cheat-sheet) et à la
-[doc officielle](https://numpy.org/doc/stable/) en cas de doute
-sur une fonction. 
 
-
-## Le concept d'array
-
-Le concept central de `NumPy` (`Numerical Python`) est
-l'**`array`** qui est un tableau de données multidimensionnel.
-
-L'array numpy peut être unidimensionnel et s'apparenter à un vecteur (1d-array),
-bidimensionnel et ainsi s'apparenter à une matrice (2d-array) ou, de manière plus générale, 
-prendre la forme d'un objet
-multidimensionnel (Nd-array). 
-Les tableaux simples (uni ou bi-dimensionnels) sont faciles à se représenter seront particulièrement
-utilisés dans le paradigme des DataFrames mais 
-la possibilité d'avoir des objets multidimensionnel permettra d'exploiter des
-structures très complexes.
-
-Un DataFrame sera construit à partir d'une collection
-d'array uni-dimensionnels (les variables de la table), ce qui permettra d'effectuer des opérations cohérentes
-(et optimisées) avec le type de la variable.
-
-
-Par rapport à une liste,
-
-* un *array* ne peut contenir qu'un type de données (`integer`, `string`, etc.),
- contrairement à une liste.
-* les opérations implémentées par `numpy` seront plus efficaces et demanderont moins
-de mémoire
-
-
-
-Les données géographiques constitueront une construction un peu plus complexe. 
-La dimension géographique prend la forme d'un tableau plus profond, au moins bidimensionnel
-(coordonnées d'un point). 
+A MODIFIER
 
 Le fichier
 [numpy.ipynb](https://github.com/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb) 
