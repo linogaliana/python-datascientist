@@ -19,6 +19,7 @@ weight: 100
 
 # Retour sur numpy
 
+
 ![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/NumPy_logo.svg/1200px-NumPy_logo.svg.png)
 
 Il est recommandé de régulièrement se référer à
@@ -28,6 +29,7 @@ sur une fonction.
 
 Dans ce chapitre, on ne dérogera pas à la convention qui s'est imposée d'importer `numpy` de la
 manière suivante:
+
 
 ```python
 import numpy as np
@@ -141,30 +143,30 @@ L'indexation est dans ce cas similaire à celle d'une liste:
 
 La logique d'accès aux éléments est ainsi la suivante:
 
-```python
+~~~python
 x[start:stop:step]
-```
+~~~
 
 Avec un *array* unidimensionnel, l'opération de *slicing* (garder une coupe du *array*) est très simple. 
 Par exemple, pour garder les *K* premiers éléments d'un *array*, on fera:
 
-```python
+~~~python
 x[:(K-1)]
-```
+~~~
+
+En l'occurrence, on sélectionne le K$^{eme}$ élément en utilisant
+
+~~~python
+x[K-1]
+~~~
 
 Pour sélectionner uniquement un élément, on fera ainsi:
-
 
 ```python
 x = np.arange(10)
 x[2]
 ```
 
-En l'occurrence, on sélectionne le K$^{eme}$ élément en utilisant
-
-```python
-x[K-1]
-```
 
 
 **Exercice**
