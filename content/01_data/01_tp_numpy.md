@@ -356,7 +356,27 @@ statdesc(x, axis = 1)
 ```
 
 
-### Ordonner et partionner un array
+### Fonctions de manipulation
+
+Voici quelques fonctions pour modifier un array, 
+
+| Opération | Implémentation |
+|-----------|----------------|
+| Applatir un array | `x.flatten()` (méthode) |
+| Transposer un array | `x.T` (méthode) ou `np.transpose(x)` (fonction) |
+| Ajouter des éléments à la fin | `np.append(x, [1,2])` |
+| Ajouter des éléments à un endroit donné (aux positions 1 et 2) | `np.insert(x, [1,2], 3)` |
+| Supprimer des éléments (aux positions 0 et 3) | `np.delete(x, [0,3])` |
+
+Pour combiner des array, on peut utiliser, selon les cas, 
+les fonctions `np.concatenate`, `np.vstack` ou la méthode `.r_` (concaténation *rowwise*). 
+`np.hstack` ou la méthode `.column_stack` ou `.c_` (concaténation *column-wise*)
+
+```python
+x = np.random.normal(size = 10)
+```
+
+A l'inverse, 
 
 Pour ordonner un array, on utilise `np.sort`
 
@@ -376,7 +396,8 @@ np.partition(x, 3)
 
 ## Broadcasting
 
-Le broadcasting désigne un ensemble de règles pour appliquer une opération qui normalement ne s'applique que sur une seule valeur à l'ensemble des membres d'un tableau Numpy. 
+Le broadcasting désigne un ensemble de règles pour appliquer une opération qui normalement
+ne s'applique que sur une seule valeur à l'ensemble des membres d'un tableau Numpy. 
 
 Le broadcasting nous permet d'appliquer ces opérations sur des tableaux de dimensions différentes.
 
@@ -388,6 +409,10 @@ b = np.array([5, 5, 5])
 a + b
 a + 5
 ```
+
+Le *broadcasting* peut être très pratique pour effectuer de manière efficace des opérations sur des données à
+la structure complexe. Pour plus de détails, se rendre
+[ici](https://jakevdp.github.io/PythonDataScienceHandbook/02.05-computation-on-arrays-broadcasting.html).
 
 ## Application: k-nearest neighbor fait-main
 
