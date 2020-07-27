@@ -17,9 +17,6 @@ draft: false
 weight: 100
 ---
 
-# Retour sur numpy
-
-
 ![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/NumPy_logo.svg/1200px-NumPy_logo.svg.png)
 
 Il est recommandé de régulièrement se référer à
@@ -34,8 +31,6 @@ manière suivante:
 ```python
 import numpy as np
 ```
-
-
 
 Si les scripts suivants sont exécutés dans un `notebook`, il est recommandé d'utiliser les paramètres suivants
 pour contrôler le rendu
@@ -128,7 +123,7 @@ np.var(Y)
 
 ## Indexation et slicing
 
-### Logique générale
+### Logique dans le cas d'un array unidimensionnel
 
 La structure la plus simple imaginable est l'array unidimensionnel:
 
@@ -167,7 +162,8 @@ x = np.arange(10)
 x[2]
 ```
 
-
+Les syntaxes qui permettent de sélectionner des indices particuliers d'une liste fonctionnent également
+avec les arrays:
 
 **Exercice**
 
@@ -203,14 +199,32 @@ x2_sub_copy = x2[:2, :2].copy()
 
 -----
 
+<!---- GARDER ?
+### Généralisation avec des array n-dimensionnels
+
+La généralisation à un array n-dimensionnel n'est pas toujours évidente et implique souvent, pour 
+des structures complexes, des essais erreurs. 
+Nous nous bornerons aux array bidimensionnels. 
+Il ne faut pas oublier le piège de l'indexation 
+qui commence à 0
+ 
+**Exercice**: Soit `x = np.array([[1, 2, 3, 4], [5, 6, 7, 8, 9, 10]])`
+
+**TO DO**
+
+----->
+
 ### Filtres logiques
 
 
-On peut également sélectionner des données à partir de conditions logiques
-(opération qu'on appelle un *boolean mask*), ce qui sera pratique lorsqu'il sera
-nécessaire d'effectuer des opérations de filtre sur les données (`pandas` reprend cette logique).
+Il est également possible, et plus pratique, de sélectionner des données à partir de conditions logiques
+(opération qu'on appelle un *boolean mask*)
+Cette fonctionalité servira principalement à 
+effectuer des opérations de filtre sur les données.
 
-Pour des opérations de comparaison simples, les comparateurs logiques peuvent être suffisants:
+Pour des opérations de comparaison simples, les comparateurs logiques peuvent être suffisants. 
+Ces comparaisons fonctionnent aussi sur les tableaux multidimensionnels grâce au
+*broadcasting* sur lequel nous reviendront:
 
 ```python
 x = np.arange(10)
@@ -222,11 +236,40 @@ x==2
 x2<0
 ```
 
-Néanmoins, `numpy` propose un certain nombre de fonctions logiques très pratiques:
+Pour sélectionner les observations relatives à la condition logique,
+il suffit d'utiliser la logique de *slicing* de `numpy` qui fonctionne avec les conditions logiques
 
-* count_nonzero
-* is_nan
-* any ; all ; notamment avex `axis = 0`
+**Exercice**
+
+Soit 
+
+```python
+x = np.random.normal(size=10000)
+```
+
+1. Ne conserver que les valeurs dont la valeur absolue est supérieure à 1.96
+2. Compter le nombre de valeurs supérieures à 1.96 en valeur absolue et leur proportion dans l'ensemble
+3. Sommer les valeurs absolues de toutes les observations supérieures (en valeur absolue) à 1.96
+et rapportez les à la somme des valeurs de `x` (en valeur absolue) 
+
+
+
+```python
+x = np.random.normal(size=10000)
+
+x2 = x[np.abs(x)>=1.96]
+
+x2.size
+x2.size/x.size
+np.sum(np.abs(x2))/np.sum(np.abs(x))
+```
+
+Lorsque c'est possible, il est recommandé d'utiliser les fonctions logiques de `numpy` (optimisées et 
+qui gèrent bien la dimension). Parmi elles, on peut retrouver:
+
+* `count_nonzero`
+* `is_nan`
+* `any` ; `all` ; notamment avec l'argument `axis`
 
 **Exercice**
 
@@ -240,6 +283,8 @@ un *array* multidimensionnel et
 ```python
 y = np.array([np.nan, 0, 1])
 ```
+
+un *array* unidimensionnel présentant une valeur manquante. 
 
 1. Utiliser `count_nonzero` sur `y`
 2. Utiliser `is_nan` sur `y` et compter le nombre de valeurs non NaN
@@ -257,34 +302,15 @@ np.any(x>0)
 np.any(x>0, axis = 0)
 ```
 
-Pour sélectionner les observations relatives à la condition logique,
-il suffit d'utiliser la logique de *slicing* de `numpy` qui fonctionne avec les conditions logiques
+## Manipuler un array
 
-**Exercice**
-
-Soit 
+### Statistiques sur un array
 
 ```python
-x = np.random.normal(size=10000)
+x = np.random.normal(0, size=(3, 4))
 ```
 
-1. Ne conserver que les valeurs dont la valeur absolue est supérieure à 1.96
-2. Compter le nombre de valeurs supérieures à 1.96 en valeur absolue et leur proportion dans l'ensemble
-3. Sommer les valeurs absolues de toutes les observations supérieures (en valeur absolue) à 1.96 et rapportez les à la somme des valeurs de `x` (en valeur absolue) 
-
-
-
-```python
-x = np.random.normal(size=10000)
-
-x2 = x[np.abs(x)>=1.96]
-
-x2.size
-x2.size/x.size
-np.sum(np.abs(x2))/np.sum(np.abs(x))
-```
-
-## Ordonner et partionner un array
+### Ordonner et partionner un array
 
 Pour ordonner un array, on utilise `np.sort`
 
@@ -299,6 +325,8 @@ Si on désire faire un ré-ordonnement partiel pour trouver les _k_ valeurs les 
 ```python
 np.partition(x, 3)
 ```
+
+
 
 ## Broadcasting
 
