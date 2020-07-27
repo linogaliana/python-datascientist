@@ -270,6 +270,7 @@ qui gèrent bien la dimension). Parmi elles, on peut retrouver:
 * `count_nonzero`
 * `is_nan`
 * `any` ; `all` ; notamment avec l'argument `axis`
+* `np.array_equal` pour vérifier, élément par élément, l'égalité
 
 **Exercice**
 
@@ -304,11 +305,56 @@ np.any(x>0, axis = 0)
 
 ## Manipuler un array
 
-### Statistiques sur un array
+Dans cette section, on utilisera un array multidimensionnel:
 
 ```python
 x = np.random.normal(0, size=(3, 4))
 ```
+
+### Statistiques sur un array
+
+Pour les statistiques descriptives classiques, `numpy` propose un certain nombre de fonctions déjà implémentées,
+qui peuvent être combinées avec l'argument `axis`
+
+**Exercice**
+
+1. Faire la somme de tous les éléments d'un `array`, des éléments en ligne et des éléments en colonne. Vérifier
+la cohérence
+2. Ecrire une fonction `statdesc` pour renvoyer les valeurs suivantes : moyenne, médiane, écart-type, minimum et maximum.
+L'appliquer sur `x` en jouant avec l'argument axis
+
+```python
+x.sum()
+x.sum(axis = 0)
+x.sum(axis = 1)
+# check coherence
+x.sum(axis = 0).sum()
+x.sum(axis = 1).sum()
+```
+
+```python
+def statdesc(x, axis = None):
+    """
+    Statistiques agrégées sur un array numpy
+
+    :param x: Numpy array
+    :param axis: Numpy dimension that should be used
+    :return: A numpy array with mean, median, sd, min and max
+    """
+
+    return np.array([
+        np.mean(x, axis = axis),
+        np.median(x, axis = axis),
+        np.std(x, axis = axis),
+        np.min(x, axis = axis),
+        np.max(x, axis = axis)
+        ])
+
+statdesc(x)
+statdesc(x, axis = 0)
+statdesc(x, axis = 1)
+```
+
 
 ### Ordonner et partionner un array
 
