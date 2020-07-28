@@ -17,24 +17,68 @@ draft: false
 weight: 100
 ---
 
-# Retour sur numpy
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/NumPy_logo.svg/1200px-NumPy_logo.svg.png)
 
-Paramètres pour le notebook
+Il est recommandé de régulièrement se référer à
+la [cheatsheet numpy](https://www.datacamp.com/community/blog/python-numpy-cheat-sheet) et à la
+[doc officielle](https://numpy.org/doc/stable/) en cas de doute
+sur une fonction. 
+
+Dans ce chapitre, on ne dérogera pas à la convention qui s'est imposée d'importer `numpy` de la
+manière suivante:
+
+
+```python
+import numpy as np
+```
+
+Si les scripts suivants sont exécutés dans un `notebook`, il est recommandé d'utiliser les paramètres suivants
+pour contrôler le rendu
 
 ```python
 from IPython.core.interactiveshell import InteractiveShell
 InteractiveShell.ast_node_interactivity = "all"
 ```
 
-```python
-import numpy as np
-```
 
-Le concept central de `numpy` est l'`array`
+## Le concept d'array
+
+Le concept central de `NumPy` (`Numerical Python`) est
+l'**`array`** qui est un tableau de données multidimensionnel.
+
+L'array numpy peut être unidimensionnel et s'apparenter à un vecteur (1d-array),
+bidimensionnel et ainsi s'apparenter à une matrice (2d-array) ou, de manière plus générale, 
+prendre la forme d'un objet
+multidimensionnel (Nd-array). 
+
+Les tableaux simples (uni ou bi-dimensionnels) sont faciles à se représenter seront particulièrement
+utilisés dans le paradigme des DataFrames mais 
+la possibilité d'avoir des objets multidimensionnel permettra d'exploiter des
+structures très complexes.
+
+Un DataFrame sera construit à partir d'une collection
+d'array uni-dimensionnels (les variables de la table), ce qui permettra d'effectuer des opérations cohérentes
+(et optimisées) avec le type de la variable.
+
+
+Par rapport à une liste,
+
+* un *array* ne peut contenir qu'un type de données (`integer`, `string`, etc.),
+ contrairement à une liste.
+* les opérations implémentées par `numpy` seront plus efficaces et demanderont moins
+de mémoire
+
+
+
+Les données géographiques constitueront une construction un peu plus complexe qu'un DataFrame traditionnel. 
+La dimension géographique prend la forme d'un tableau plus profond, au moins bidimensionnel
+(coordonnées d'un point). 
+
 
 ## Créer un array
 
-On peut créer un `array` de plusieurs manières. Pour créer un `array` à partir d'une liste, il suffit d'utiliser la méthode `array`:
+On peut créer un `array` de plusieurs manières. Pour créer un `array` à partir d'une liste,
+il suffit d'utiliser la méthode `array`:
 
 ```python
 np.array([1,2,5])
@@ -42,11 +86,13 @@ np.array([["a","z","e"],["r","t"],["y"]])
 ```
 
 Il existe aussi des méthodes pratiques pour créer des array:
-    
-* séquences logiques : `np.arange` (séquence linéaire) ou `np.linspace`
-* séquences ordonnées: fonctions de génération de nombres aléatoires: `np.rand.uniform`, `np.rand.normal`, etc.
-* _array_ rempli de zéros, de 1 ou d'un nombre désiré : `np.zeros`, `np.ones` ou `np.full`
+
+* séquences logiques : `np.arange` (suite) ou `np.linspace` (interpolation linéaire entre deux bornes)
+* séquences ordonnées: _array_ rempli de zéros, de 1 ou d'un nombre désiré : `np.zeros`, `np.ones` ou `np.full`
+* séquences aléatoires: fonctions de génération de nombres aléatoires: `np.rand.uniform`, `np.rand.normal`, etc. 
 * tableau sous forme de matrice identité: `np.eye`
+
+Il est possible d'ajouter un argument `dtype` pour contraindre le type du *array*:
 
 ```python
 np.arange(0,10)
@@ -59,12 +105,15 @@ np.eye(3)
 ```
 
 **Exercice :**
+
 Générer:
 
 * $X$ une variable aléatoire, 1000 répétitions d'une loi $U(0,1)$
 * $Y$ une variable aléatoire, 1000 répétitions d'une loi normale de moyenne nulle et de variance égale à 2
 * Vérifier la variance de $Y$ avec `np.var`
 
+
+**Correction** 
 ```python
 X = np.random.uniform(0,1,1000)
 Y = np.random.normal(0,np.sqrt(2),1000)
@@ -72,44 +121,49 @@ Y = np.random.normal(0,np.sqrt(2),1000)
 np.var(Y)
 ```
 
-
-```python
-np.linspace(0, 1, 5)
-
-# Un tableau de longueur 10, rempli d'entiers qui valent 0
-np.zeros(10, dtype=int)
-
-# Un tableau de taille 3x5 rempli de nombres à virgule flottante de valeur 1
-np.ones((3, 5), dtype=float)
-
-# Un tableau 3x5 rempli de 3,14
-np.full((3, 5), 3.14)
-```
-
-<!-- #region -->
 ## Indexation et slicing
 
-La logique générale de l'indexation d'un *array* unidimensionnel est la suivante:
+### Logique dans le cas d'un array unidimensionnel
+
+La structure la plus simple imaginable est l'array unidimensionnel:
 
 ```python
-x[start:stop:step]
+x = np.arange(10)
 ```
 
-Pour sélectionner uniquement un éléments, on fera ainsi:
-<!-- #endregion -->
+L'indexation est dans ce cas similaire à celle d'une liste: 
+
+* le premier élément est 0
+* le énième élément est accessible à la position $n-1$
+
+La logique d'accès aux éléments est ainsi la suivante:
+
+~~~python
+x[start:stop:step]
+~~~
+
+Avec un *array* unidimensionnel, l'opération de *slicing* (garder une coupe du *array*) est très simple. 
+Par exemple, pour garder les *K* premiers éléments d'un *array*, on fera:
+
+~~~python
+x[:(K-1)]
+~~~
+
+En l'occurrence, on sélectionne le K$^{eme}$ élément en utilisant
+
+~~~python
+x[K-1]
+~~~
+
+Pour sélectionner uniquement un élément, on fera ainsi:
 
 ```python
 x = np.arange(10)
 x[2]
 ```
 
-<!-- #region -->
-En l'occurrence, on sélectionne le K$^{eme}$ élément en utilisant
-
-```python
-x[K-1]
-```
-<!-- #endregion -->
+Les syntaxes qui permettent de sélectionner des indices particuliers d'une liste fonctionnent également
+avec les arrays:
 
 **Exercice**
 
@@ -128,12 +182,49 @@ x[:5]
 # x2[0,:] # La première ligne
 ```
 
-## Filtres logiques
+
+-----
+
+Un élément déterminant dans la performance de `numpy` par rapport aux listes, lorsqu'il est question de 
+*slicing* est qu'un array ne renvoie pas une
+copie de l'élément en question (copie qui coûte de la mémoire et du temps) mais simplement une vue de celui-ci
+**DETAILS** 
+
+Lorsqu'il est nécessaire d'effectuer une copie, par exemple pour ne pas altérer l'array sous-jacent, on peut 
+utiliser la méthode `copy`:
+
+~~~python
+x_sub_copy = x[:2, :2].copy()
+~~~
+
+-----
+
+<!---- GARDER ?
+### Généralisation avec des array n-dimensionnels
+
+La généralisation à un array n-dimensionnel n'est pas toujours évidente et implique souvent, pour 
+des structures complexes, des essais erreurs. 
+Nous nous bornerons aux array bidimensionnels. 
+Il ne faut pas oublier le piège de l'indexation 
+qui commence à 0
+ 
+**Exercice**: Soit `x = np.array([[1, 2, 3, 4], [5, 6, 7, 8, 9, 10]])`
+
+**TO DO**
+
+----->
+
+### Filtres logiques
 
 
-On peut également sélectionner des données à partir de conditions logiques (opération qu'on appelle un *boolean mask*), ce qui sera pratique lorsqu'il sera nécessaire d'effectuer des opérations de filtre sur les données (`pandas` reprend cette logique).
+Il est également possible, et plus pratique, de sélectionner des données à partir de conditions logiques
+(opération qu'on appelle un *boolean mask*)
+Cette fonctionalité servira principalement à 
+effectuer des opérations de filtre sur les données.
 
-Pour des opérations de comparaison simples, les comparateurs logiques peuvent être suffisants:
+Pour des opérations de comparaison simples, les comparateurs logiques peuvent être suffisants. 
+Ces comparaisons fonctionnent aussi sur les tableaux multidimensionnels grâce au
+*broadcasting* sur lequel nous reviendront:
 
 ```python
 x = np.arange(10)
@@ -145,13 +236,42 @@ x==2
 x2<0
 ```
 
-Néanmoins, `numpy` propose un certain nombre de fonctions logiques très pratiques:
+Pour sélectionner les observations relatives à la condition logique,
+il suffit d'utiliser la logique de *slicing* de `numpy` qui fonctionne avec les conditions logiques
 
-* count_nonzero
-* is_nan
-* any ; all ; notamment avex `axis = 0`
+**Exercice**
 
-<!-- #region -->
+Soit 
+
+```python
+x = np.random.normal(size=10000)
+```
+
+1. Ne conserver que les valeurs dont la valeur absolue est supérieure à 1.96
+2. Compter le nombre de valeurs supérieures à 1.96 en valeur absolue et leur proportion dans l'ensemble
+3. Sommer les valeurs absolues de toutes les observations supérieures (en valeur absolue) à 1.96
+et rapportez les à la somme des valeurs de `x` (en valeur absolue) 
+
+
+
+```python
+x = np.random.normal(size=10000)
+
+x2 = x[np.abs(x)>=1.96]
+
+x2.size
+x2.size/x.size
+np.sum(np.abs(x2))/np.sum(np.abs(x))
+```
+
+Lorsque c'est possible, il est recommandé d'utiliser les fonctions logiques de `numpy` (optimisées et 
+qui gèrent bien la dimension). Parmi elles, on peut retrouver:
+
+* `count_nonzero`
+* `is_nan`
+* `any` ; `all` ; notamment avec l'argument `axis`
+* `np.array_equal` pour vérifier, élément par élément, l'égalité
+
 **Exercice**
 
 Soit
@@ -165,10 +285,11 @@ un *array* multidimensionnel et
 y = np.array([np.nan, 0, 1])
 ```
 
+un *array* unidimensionnel présentant une valeur manquante. 
+
 1. Utiliser `count_nonzero` sur `y`
 2. Utiliser `is_nan` sur `y` et compter le nombre de valeurs non NaN
 2. Vérifier que `x` comporte au moins une valeur positive dans son ensemble, dans chaque array et en
-<!-- #endregion -->
 
 ```python
 x = np.random.normal(0, size=(3, 4))
@@ -182,43 +303,80 @@ np.any(x>0)
 np.any(x>0, axis = 0)
 ```
 
+## Manipuler un array
 
-
-```python
-
-```
+Dans cette section, on utilisera un array multidimensionnel:
 
 ```python
-
+x = np.random.normal(0, size=(3, 4))
 ```
 
-Pour sélectionner les observations relatives à la condition logique, il suffit d'utiliser la logique de *slicing* de `numpy` qui fonctionne avec les conditions logiques
+### Statistiques sur un array
 
-<!-- #region -->
+Pour les statistiques descriptives classiques, `numpy` propose un certain nombre de fonctions déjà implémentées,
+qui peuvent être combinées avec l'argument `axis`
+
 **Exercice**
 
-Soit 
+1. Faire la somme de tous les éléments d'un `array`, des éléments en ligne et des éléments en colonne. Vérifier
+la cohérence
+2. Ecrire une fonction `statdesc` pour renvoyer les valeurs suivantes : moyenne, médiane, écart-type, minimum et maximum.
+L'appliquer sur `x` en jouant avec l'argument axis
 
 ```python
-x = np.random.normal(size=10000)
+x.sum()
+x.sum(axis = 0)
+x.sum(axis = 1)
+# check coherence
+x.sum(axis = 0).sum()
+x.sum(axis = 1).sum()
 ```
-
-1. Ne conserver que les valeurs dont la valeur absolue est supérieure à 1.96
-2. Compter le nombre de valeurs supérieures à 1.96 en valeur absolue et leur proportion dans l'ensemble
-3. Sommer les valeurs absolues de toutes les observations supérieures (en valeur absolue) à 1.96 et rapportez les à la somme des valeurs de `x` (en valeur absolue) 
-<!-- #endregion -->
 
 ```python
-x = np.random.normal(size=10000)
+def statdesc(x, axis = None):
+    """
+    Statistiques agrégées sur un array numpy
 
-x2 = x[np.abs(x)>=1.96]
+    :param x: Numpy array
+    :param axis: Numpy dimension that should be used
+    :return: A numpy array with mean, median, sd, min and max
+    """
 
-x2.size
-x2.size/x.size
-np.sum(np.abs(x2))/np.sum(np.abs(x))
+    return np.array([
+        np.mean(x, axis = axis),
+        np.median(x, axis = axis),
+        np.std(x, axis = axis),
+        np.min(x, axis = axis),
+        np.max(x, axis = axis)
+        ])
+
+statdesc(x)
+statdesc(x, axis = 0)
+statdesc(x, axis = 1)
 ```
 
-## Ordonner et partionner un array
+
+### Fonctions de manipulation
+
+Voici quelques fonctions pour modifier un array, 
+
+| Opération | Implémentation |
+|-----------|----------------|
+| Applatir un array | `x.flatten()` (méthode) |
+| Transposer un array | `x.T` (méthode) ou `np.transpose(x)` (fonction) |
+| Ajouter des éléments à la fin | `np.append(x, [1,2])` |
+| Ajouter des éléments à un endroit donné (aux positions 1 et 2) | `np.insert(x, [1,2], 3)` |
+| Supprimer des éléments (aux positions 0 et 3) | `np.delete(x, [0,3])` |
+
+Pour combiner des array, on peut utiliser, selon les cas, 
+les fonctions `np.concatenate`, `np.vstack` ou la méthode `.r_` (concaténation *rowwise*). 
+`np.hstack` ou la méthode `.column_stack` ou `.c_` (concaténation *column-wise*)
+
+```python
+x = np.random.normal(size = 10)
+```
+
+A l'inverse, 
 
 Pour ordonner un array, on utilise `np.sort`
 
@@ -234,9 +392,12 @@ Si on désire faire un ré-ordonnement partiel pour trouver les _k_ valeurs les 
 np.partition(x, 3)
 ```
 
+
+
 ## Broadcasting
 
-Le broadcasting désigne un ensemble de règles pour appliquer une opération qui normalement ne s'applique que sur une seule valeur à l'ensemble des membres d'un tableau Numpy. 
+Le broadcasting désigne un ensemble de règles pour appliquer une opération qui normalement
+ne s'applique que sur une seule valeur à l'ensemble des membres d'un tableau Numpy. 
 
 Le broadcasting nous permet d'appliquer ces opérations sur des tableaux de dimensions différentes.
 
@@ -249,9 +410,14 @@ a + b
 a + 5
 ```
 
+Le *broadcasting* peut être très pratique pour effectuer de manière efficace des opérations sur des données à
+la structure complexe. Pour plus de détails, se rendre
+[ici](https://jakevdp.github.io/PythonDataScienceHandbook/02.05-computation-on-arrays-broadcasting.html).
+
 ## Application: k-nearest neighbor fait-main
 
-L'idée de cet exercice vient de [là](https://jakevdp.github.io/PythonDataScienceHandbook/02.08-sorting.html#Example:-k-Nearest-Neighbors)
+L'idée de cet exercice vient de
+[là](https://jakevdp.github.io/PythonDataScienceHandbook/02.08-sorting.html#Example:-k-Nearest-Neighbors)
 
 
 1. Utiliser 
