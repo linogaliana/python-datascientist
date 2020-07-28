@@ -90,3 +90,5 @@ Jointure avec données communales (pour avoir population)
 # Reordonner
 
 # Indexation et performance
+
+Ouverture sur dask?
