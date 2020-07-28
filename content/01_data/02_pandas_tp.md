@@ -88,3 +88,5 @@ Equivalent des 5 verbes du tidyverse + groupBy
 Jointure avec données communales (pour avoir population)
 
 # Reordonner
+
+# Indexation et performance
