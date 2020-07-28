@@ -31,9 +31,6 @@ Si vous préfèrez, pour des
 raisons d'accès au réseau ou de performance, importer depuis un poste local, télécharger les données et changer
 les commandes d'import avec le chemin adéquat plutôt que l'url. 
 
-## Import d'un fichier plat
-
-
 
 ## Propriétés d'un DataFrame pandas
 
@@ -41,9 +38,11 @@ les commandes d'import avec le chemin adéquat plutôt que l'url.
 df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
 ```
 
+### Logique de pandas
+
 Concept de `Series`
 
-Les attributs et méthodes utiles
+### Les attributs et méthodes utiles
 
 ```python
 df.shape
@@ -52,6 +51,8 @@ df.columns
 df.count()
 df.describe()
 ```
+
++ dtype
 
 :warning: `head` dans un notebook avec des données confidentielles et `git`
 
@@ -64,7 +65,17 @@ df['Déchets'].hist()
 df['Déchets'].plot(kind = 'hist', logy = True)
 ```
 
-## Filtrer
+## Principales manipulation de données
+
+Equivalent des 5 verbes du tidyverse + groupBy
+
+## Import d'un fichier plat
+
+
+## Calculs à partir de données
+
+## Filtrer et réassigner
+
 
 ## Modifier un dataframe
 
@@ -73,3 +84,7 @@ df['Déchets'].plot(kind = 'hist', logy = True)
 ### Appliquer des fonctions
 
 # Joindre
+
+Jointure avec données communales (pour avoir population)
+
+# Reordonner
