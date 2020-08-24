@@ -37,10 +37,27 @@ les commandes d'import avec le chemin adéquat plutôt que l'url.
 
 ### Logique de pandas
 
-L'objet central dans la logique `pandas` est le `DataFrame`. Il s'agit d'une structure particulière de données
-à deux dimensions, structurées en alignant des lignes et colonnes. 
+L'objet central dans la logique `pandas` est le `DataFrame`.
+Il s'agit d'une structure particulière de données
+à deux dimensions, structurées en alignant des lignes et colonnes. Les colonnes
+peuvent être de type différent. 
+
+Un DataFrame est composé des éléments suivants:
+
+* l'indice de la ligne ;
+* le nom de la colonne ;
+* la valeur de la donnée ;
 
 ![](https://miro.medium.com/max/700/1*6p6nF4_5XpHgcrYRrLYVAw.png)
+
+En fait, un DataFrame est une collection d'objets appelés `Pandas Series`. 
+Ces `Series` sont des objets d'une dimension qui sont des extensions des
+array-unidimensionnels `numpy`. 
+
+
+Pandas, and in particular its Series and DataFrame objects,
+builds on the NumPy array structure and provides efficient access
+to these sorts of "data munging" tasks that occupy much of a data scientist's time.
 
 Concept de `Series`
 
