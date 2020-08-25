@@ -50,6 +50,17 @@ Un DataFrame est composé des éléments suivants:
 
 ![Structuration d'un DataFrame pandas, emprunté à <https://medium.com/epfl-extension-school/selecting-data-from-a-pandas-dataframe-53917dc39953>](https://miro.medium.com/max/700/1*6p6nF4_5XpHgcrYRrLYVAw.png)
 
+
+:warning: Les DataFrames sont assez rapides en Python^[1]
+
+[1:] En `R`, les deux formes de dataframes qui se sont imposées récemment sont les `tibbles` (package `dplyr`)
+et les `data.tables` (package `data.table`). `dplyr` reprend la syntaxe SQL de manière relativement
+transparente ce qui rend la syntaxe très proche de celle de `pandas`. Cependant, 
+alors que `dplyr` supporte très mal les données dont la volumétrie dépasse 1Go, `pandas` s'en
+accomode bien. Les performances de `pandas` sont plus proches de celles de `data.table`, qui est 
+connu pour être une approche efficace avec des données de taille importante. 
+
+
 En fait, un DataFrame est une collection d'objets appelés `Pandas Series`. 
 Ces `Series` sont des objets d'une dimension qui sont des extensions des
 array-unidimensionnels `numpy`. En particulier, pour faciliter le traitement
