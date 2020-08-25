@@ -48,7 +48,7 @@ Un DataFrame est composé des éléments suivants:
 * le nom de la colonne ;
 * la valeur de la donnée ;
 
-![](https://miro.medium.com/max/700/1*6p6nF4_5XpHgcrYRrLYVAw.png)
+![Structuration d'un DataFrame pandas, emprunté à <https://medium.com/epfl-extension-school/selecting-data-from-a-pandas-dataframe-53917dc39953>](https://miro.medium.com/max/700/1*6p6nF4_5XpHgcrYRrLYVAw.png)
 
 En fait, un DataFrame est une collection d'objets appelés `Pandas Series`. 
 Ces `Series` sont des objets d'une dimension qui sont des extensions des
@@ -87,7 +87,8 @@ via une valeur de l'indice. Par
 exemple, `taille['koala']`.
 
 Pour transformer un objet `pandas.Series` en array `numpy`, 
-on utilise la méthode `values`: `taille.values`
+on utilise la méthode `values`: `taille.values`.
+
 
 
 ### Le DataFrame pandas
@@ -116,6 +117,9 @@ df = pd.DataFrame(
 )
 ```
 
+Exo2: multiindex
+
+    df2 = df1.set_index("State", drop = False)
 
 ### Les attributs et méthodes utiles
 
@@ -133,6 +137,9 @@ df.describe()
 
 :warning: `head` dans un notebook avec des données confidentielles et `git`
 
+```python
+df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
+```
 
 Les méthodes par défaut de graphique (approfondies dans le chapitre matplotlib/seaborn)
 
@@ -141,6 +148,14 @@ df['Déchets'].plot()
 df['Déchets'].hist()
 df['Déchets'].plot(kind = 'hist', logy = True)
 ```
+
+## Accéder à des éléments d'un DataFrame
+
+df.loc
+df.iloc
+df[]
+
+Pas df.ix qui est *deprecated*
 
 ## Principales manipulation de données
 
@@ -154,7 +169,7 @@ Equivalent des 5 verbes du tidyverse + groupBy
 ## Import d'un fichier plat
 
 
-## Calculs à partir de données
+## Calculs à partir de données / appliquer des fonctions
 
 ## Filtrer et réassigner
 
