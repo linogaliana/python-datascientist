@@ -57,7 +57,14 @@ de données catégorielles ou temporelles, des types de variables
 supplémentaires sont disponibles dans `pandas` par rapport à
 `numpy` (`categorical`, `datetime64` et `timedelta64`). Ces
 types sont associés à des méthodes optimisées pour faciliter le traitement
-de ces données. 
+de ces données. Il ne faut pas négliger l'attribut `dtype` d'un objet
+`pandas.Series` car cela a une influence déterminante sur les méthodes
+et fonctions pouvant être utilisés (on ne fait pas les mêmes opérations
+sur une donnée temporelle et une donnée catégorielle) et le volume en
+mémoire d'une variable (le type de la variable détermine le volume
+d'information stocké pour chaque élément ; être trop précis est parfois
+néfaste)
+
 
 La différence essentielle avec un objet `numpy` est l'indexation. Dans `numpy`,
 l'indexation est implicite ; elle permet d'accéder à une donnée (celle à
@@ -83,7 +90,10 @@ Pour transformer un objet `pandas.Series` en array `numpy`,
 on utilise la méthode `values`: `taille.values`
 
 
-### Créer un DataFrame pandas
+### Le DataFrame pandas
+
+Collection de pandas.Series avecx des types différents
+
 
 Exo 1
 Aller dans la doc pandas et trouver comment créer le dataFrame pandas suivant
@@ -117,6 +127,8 @@ df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de
 ### Les attributs et méthodes utiles
 
 ```python
+df.axes
+df.ndim
 df.shape
 df.head()
 df.columns
@@ -124,7 +136,7 @@ df.count()
 df.describe()
 ```
 
-+ dtype
+
 
 :warning: `head` dans un notebook avec des données confidentielles et `git`
 
