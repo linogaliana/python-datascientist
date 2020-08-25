@@ -83,6 +83,28 @@ Pour transformer un objet `pandas.Series` en array `numpy`,
 on utilise la méthode `values`: `taille.values`
 
 
+### Créer un DataFrame pandas
+
+Exo 1
+Aller dans la doc pandas et trouver comment créer le dataFrame pandas suivant
+
+```python
+#	taille 	poids
+#chat 	1.0 	3.0
+#chien 	1.5 	5.0
+#koala 	1.0 	2.5
+```
+
+Réponse 1:
+
+```python
+df = pd.DataFrame(
+    {'taille': [1.,1.5,1],
+    'poids' : [3, 5, 2.5]
+    },
+    index = ['chat', 'chien', 'koala']
+)
+```
 
 
 ## Propriétés d'un DataFrame pandas
