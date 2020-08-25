@@ -117,13 +117,6 @@ df = pd.DataFrame(
 ```
 
 
-## Propriétés d'un DataFrame pandas
-
-```python
-df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
-```
-
-
 ### Les attributs et méthodes utiles
 
 ```python
@@ -150,6 +143,11 @@ df['Déchets'].plot(kind = 'hist', logy = True)
 ```
 
 ## Principales manipulation de données
+
+
+```python
+df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
+```
 
 Equivalent des 5 verbes du tidyverse + groupBy
 
