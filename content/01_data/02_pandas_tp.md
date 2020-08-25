@@ -52,26 +52,37 @@ Un DataFrame est composé des éléments suivants:
 
 En fait, un DataFrame est une collection d'objets appelés `Pandas Series`. 
 Ces `Series` sont des objets d'une dimension qui sont des extensions des
-array-unidimensionnels `numpy`. 
+array-unidimensionnels `numpy`. En particulier, pour faciliter le traitement
+de données catégorielles ou temporelles, des types de variables
+supplémentaires sont disponibles dans `pandas` par rapport à
+`numpy` (`categorical`, `datetime64` et `timedelta64`). Ces
+types sont associés à des méthodes optimisées pour faciliter le traitement
+de ces données. 
+
+La différence essentielle avec un objet `numpy` est l'indexation. Dans `numpy`,
+l'indexation est implicite ; elle permet d'accéder à une donnée (celle à
+l'index *n*). Avec une `Series`, on peut utiliser des indices plus explicites.
+Par exemple,
+
+```python
+taille = pd.Series(
+    [1.,1.5,1],
+    index = ['chat', 'chien', 'koala']
+)
+# chat     1.0
+# chien    1.5
+# koala    1.0
+# dtype: float64
+```
+
+Cette indexation permet d'accéder à des valeurs de la `Series`
+via une valeur de l'indice. Par
+exemple, `taille['koala']`.
+
+Pour transformer un objet `pandas.Series` en array `numpy`, 
+on utilise la méthode `values`: `taille.values`
 
 
-Pandas, and in particular its Series and DataFrame objects,
-builds on the NumPy array structure and provides efficient access
-to these sorts of "data munging" tasks that occupy much of a data scientist's time.
-
-Concept de `Series`
-
-the pandas type system is essentially numpy with
-a few extensions :
-- categorical
-- datetime64
-- timedelta64
-
-
-L'objet que renvoie famille_panda_df["ventre"] est de type
-pandas.Series
-Pour les obtenir au format numpy on utilise
-famille_panda_df["ventre"].values
 
 
 ## Propriétés d'un DataFrame pandas
