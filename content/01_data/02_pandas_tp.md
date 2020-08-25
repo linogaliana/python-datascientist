@@ -35,7 +35,7 @@ Si vous préfèrez, pour des
 raisons d'accès au réseau ou de performance, importer depuis un poste local, télécharger les données et changer
 les commandes d'import avec le chemin adéquat plutôt que l'url. 
 
-### Logique de pandas
+# Logique de pandas
 
 L'objet central dans la logique `pandas` est le `DataFrame`.
 Il s'agit d'une structure particulière de données
@@ -64,11 +64,11 @@ alors que `dplyr` supporte très mal les données dont la volumétrie dépasse 1
 accomode bien. Les performances de `pandas` sont plus proches de celles de `data.table`, qui est 
 connu pour être une approche efficace avec des données de taille importante. 
 
-Concernant la syntaxe, une partie des commandes python est insipirée par la logique SQL. On retrouvera ainsi
+Concernant la syntaxe, une partie des commandes python est inspirée par la logique SQL. On retrouvera ainsi
 des instructions relativement transparentes. 
 
-### Les Series
 
+# Les Series
 
 En fait, un DataFrame est une collection d'objets appelés `Pandas Series`. 
 Ces `Series` sont des objets d'une dimension qui sont des extensions des
@@ -86,9 +86,13 @@ d'information stocké pour chaque élément ; être trop précis est parfois
 néfaste)
 
 
+## Indexation
+
 La différence essentielle avec un objet `numpy` est l'indexation. Dans `numpy`,
 l'indexation est implicite ; elle permet d'accéder à une donnée (celle à
-l'index *n*). Avec une `Series`, on peut utiliser des indices plus explicites.
+l'index situé à la position *i*).
+Avec une `Series`, on peut utiliser bien-sûr utiliser un indice de position mais on peut 
+surtout faire appel à des indices plus explicites.
 Par exemple,
 
 ```python
@@ -104,16 +108,27 @@ taille = pd.Series(
 
 Cette indexation permet d'accéder à des valeurs de la `Series`
 via une valeur de l'indice. Par
-exemple, `taille['koala']`.
+exemple, `taille['koala']`. L'existence d'indice rend le *subsetting* particulièrement aisé,
+**cf.exo**
 
 Pour transformer un objet `pandas.Series` en array `numpy`, 
 on utilise la méthode `values`: `taille.values`.
+
+A key difference between Series and ndarray is that operations between Series automatically align the data based on label. Thus, you can write computations without giving consideration to whether the Series involved have the same labels.
+
+```python
+s = pd.Series(np.random.randn(5), index=['a', 'b', 'c', 'd', 'e'])
+```
+
+## Valeurs manquantes
+
+Par défaut, les valeurs manquantes sont affichées `NaN` et sont de type `np.nan`. Comme avec `numpy`, les méthodes
 
 
 
 ### Le DataFrame pandas
 
-Collection de pandas.Series avec des types différents
+Collection de pandas.Series avec des types différents alignées par les lignes. 
 
 
 Exo 1
@@ -154,6 +169,7 @@ df.describe()
 ```
 
 
+Series.isnull, Series.notnull.
 
 :warning: `head` dans un notebook avec des données confidentielles et `git`
 
@@ -178,6 +194,19 @@ df[]
 Pas df.ix qui est *deprecated*
 
 ## Principales manipulation de données
+
+En SQL 
+
+    select(): sélectionner des variables par leur nom;
+    rename(): renommer des variables;
+    filter(): sélectionner des observations selon une ou plusieurs conditions;
+    arrange(): trier la table selon une ou plusieurs variables;
+    mutate(): ajouter des variables qui sont fonction d’autres variables;
+    summarise(): calculer une statistique à partir de données;
+    group_by(): faire des opérations par groupe.
+
+
+### Opérations sur les colonnes: select, mutate, drop
 
 
 ```python
@@ -209,3 +238,7 @@ Jointure avec données communales (pour avoir population)
 # Indexation et performance
 
 Ouverture sur dask?
+
+# Références
+
+https://pandas.pydata.org/pandas-docs/stable/user_guide/basics.html
