@@ -122,8 +122,46 @@ s = pd.Series(np.random.randn(5), index=['a', 'b', 'c', 'd', 'e'])
 
 ## Valeurs manquantes
 
-Par défaut, les valeurs manquantes sont affichées `NaN` et sont de type `np.nan`. Comme avec `numpy`, les méthodes
+Par défaut, les valeurs manquantes sont affichées `NaN` et sont de type `np.nan` (pour 
+les valeurs temporelles, i.e. de type `datatime64`, les valeurs manquantes sont
+`NaT`).
 
+:warning: Il faut **vraiment faire attention** aux valeurs manquantes, notamment lorsqu'on utilise les
+méthodes de statistiques descriptives présentées ultérieurement. Les règles sont les suivantes: 
+
+* Dans les opérations de somme ou de moyenne d'une valeur, les valeurs manquantes
+ sont traitées comme des `0`. C'est un comportement par défaut différent
+ de celui de `R` où les opérations `sum`, `mean`, etc. renvoient un `NA`. **C'est très dangereux pour la moyenne**: la valeur n'est pas ignorée, elle est traitée comme un
+ `0` (ce qui biaise la moyenne). Le paramètre crucial à changer pour
+ ignorer la valeur (et non la remplacer par 0!) est `skipna`. Pour plus de détails, `help(pandas.Series.sum)`. 
+* Les méthodes `cumsum` et `cumprod` ignorent les NA par défaut mais les préservent dans le vecteur de sortie.
+
+
+Comme avec `numpy`, les opérations standards gèrent bien les valeurs manquantes. 
+
+```python
+x = pd.DataFrame(
+    {'prix': np.random.uniform(size = 5),
+     'quantite': [i+1 for i in range(5)]
+    },
+    index = ['yaourt','pates','riz','tomates','gateaux']
+)
+
+y = pd.DataFrame(
+    {'prix': [np.nan, 0, 1, 2, 3],
+     'quantite': [i+1 for i in range(5)]
+    },
+    index = ['tomates','yaourt','gateaux','pates','riz']
+)
+
+x + y
+```
+
+On peut remarquer deux choses:
+
+* La gestion des valeurs manquantes est cohérente dans l'addition. 
+Bonne gestion des valeurs manquantes
+* Bonne gestion des index
 
 
 ### Le DataFrame pandas
