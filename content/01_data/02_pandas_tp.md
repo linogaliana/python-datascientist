@@ -51,7 +51,11 @@ Un DataFrame est composé des éléments suivants:
 ![Structuration d'un DataFrame pandas, emprunté à <https://medium.com/epfl-extension-school/selecting-data-from-a-pandas-dataframe-53917dc39953>](https://miro.medium.com/max/700/1*6p6nF4_5XpHgcrYRrLYVAw.png)
 
 
-:warning: Les DataFrames sont assez rapides en Python^[1]
+:warning: Les DataFrames sont assez rapides en Python^[1] et permettent de traiter de manière efficace des tables de
+données comportant plusieurs millions d'observations et dont la volumétrie peut être conséquente (plusieurs centaines
+de Mo). Néanmoins,  passé un certain seuil, qui dépend de la puissance de la machine mais aussi de la complexité
+de l'opération effectuée, le DataFrame `pandas` peut montrer certaines limites. Dans ce cas, il existe différentes
+solutions: `dask` (dataframe aux opérations parallélisés), SQL (notamment posgres), spark (solution big data)
 
 [1:] En `R`, les deux formes de dataframes qui se sont imposées récemment sont les `tibbles` (package `dplyr`)
 et les `data.tables` (package `data.table`). `dplyr` reprend la syntaxe SQL de manière relativement
@@ -59,6 +63,11 @@ transparente ce qui rend la syntaxe très proche de celle de `pandas`. Cependant
 alors que `dplyr` supporte très mal les données dont la volumétrie dépasse 1Go, `pandas` s'en
 accomode bien. Les performances de `pandas` sont plus proches de celles de `data.table`, qui est 
 connu pour être une approche efficace avec des données de taille importante. 
+
+Concernant la syntaxe, une partie des commandes python est insipirée par la logique SQL. On retrouvera ainsi
+des instructions relativement transparentes. 
+
+### Les Series
 
 
 En fait, un DataFrame est une collection d'objets appelés `Pandas Series`. 
@@ -104,7 +113,7 @@ on utilise la méthode `values`: `taille.values`.
 
 ### Le DataFrame pandas
 
-Collection de pandas.Series avecx des types différents
+Collection de pandas.Series avec des types différents
 
 
 Exo 1
