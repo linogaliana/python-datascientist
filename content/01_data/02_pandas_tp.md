@@ -136,8 +136,8 @@ méthodes de statistiques descriptives présentées ultérieurement. Les règles
  ignorer la valeur (et non la remplacer par 0!) est `skipna`. Pour plus de détails, `help(pandas.Series.sum)`. 
 * Les méthodes `cumsum` et `cumprod` ignorent les NA par défaut mais les préservent dans le vecteur de sortie.
 
-
-Comme avec `numpy`, les opérations standards gèrent bien les valeurs manquantes. 
+En revanche,on a un comportement cohérent d'agrégation lorsqu'on combine deux DataFrames (ou deux colonnes).
+Par exemple,
 
 ```python
 x = pd.DataFrame(
@@ -157,11 +157,8 @@ y = pd.DataFrame(
 x + y
 ```
 
-On peut remarquer deux choses:
-
-* La gestion des valeurs manquantes est cohérente dans l'addition. 
-Bonne gestion des valeurs manquantes
-* Bonne gestion des index
+donne bien une valeur manquante pour la ligne `tomates`. Au passage, on peut remarquer que l'agrégation
+a tenu compte des index. 
 
 
 ### Le DataFrame pandas
@@ -208,6 +205,7 @@ df.describe()
 
 
 Series.isnull, Series.notnull.
+Series.isna, Series.notna
 
 :warning: `head` dans un notebook avec des données confidentielles et `git`
 
