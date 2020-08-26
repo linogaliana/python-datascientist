@@ -258,15 +258,18 @@ data.loc[(data.age >= 12), ['section']]
 
 ## Principales manipulation de données
 
-En SQL 
+Les opérations les plus fréquentes en SQL sont résumées par le tableau suivant.
+Il est utile de les connaître (beaucoup de syntaxes de maniement de données
+reprennent ces termes) car, d'une manière ou d'une autre, elles couvrent la plupart
+des usages de manipulation des données
 
-    select(): sélectionner des variables par leur nom;
-    rename(): renommer des variables;
-    filter(): sélectionner des observations selon une ou plusieurs conditions;
-    arrange(): trier la table selon une ou plusieurs variables;
-    mutate(): ajouter des variables qui sont fonction d’autres variables;
-    summarise(): calculer une statistique à partir de données;
-    group_by(): faire des opérations par groupe.
+| Opération | SQL | pandas | dplyr (`R`) | data.table (`R`) |
+|-----|-----------|--------|-------------|------------------|
+| Sélectionner des variables par leur nom | SELECT | `df[['Autres transports','Energie']]` | `df %>% select(Autres transports, Energie)` | `df[, c('Autres transports','Energie')]` |
+| Sélectionner des observations selon une ou plusieurs conditions; | FILTER | `df[df['Agriculture']>2000]` | `df %>% filter(Agriculture>2000)` | `df[Agriculture>2000]` |
+| Trier la table selon une ou plusieurs variables | SORT BY | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(df.sort_values(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
+| Ajouter des variables qui sont fonction d’autres variables; | | `df['x'] = np.log(df['Agriculture'])`  |  `df %>% mutate(x = log(Agriculture))` | `df[,x := log(Agriculture)]` |
+| Effectuer une opération par groupe | GROUP BY | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
 
 
 ### Opérations sur les colonnes: select, mutate, drop
