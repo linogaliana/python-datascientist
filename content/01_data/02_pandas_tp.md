@@ -270,30 +270,28 @@ des usages de manipulation des données
 | Trier la table selon une ou plusieurs variables | SORT BY | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(df.sort_values(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
 | Ajouter des variables qui sont fonction d’autres variables; | | `df['x'] = np.log(df['Agriculture'])`  |  `df %>% mutate(x = log(Agriculture))` | `df[,x := log(Agriculture)]` |
 | Effectuer une opération par groupe | GROUP BY | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
-
++ join
 
 ### Opérations sur les colonnes: select, mutate, drop
 
+Exercice: 
+
+1. Créer variables x et y
+2. Droper x
+3. Modifier y en réassignant
+4. Vérifier
 
 ```python
 df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
 ```
 
-Equivalent des 5 verbes du tidyverse + groupBy
+## Méthodes de statistiques agrégées
 
-## Import d'un fichier plat
-
+## Opérations par groupe
 
 ## Calculs à partir de données / appliquer des fonctions
 
-## Filtrer et réassigner
-
-
-## Modifier un dataframe
-
-### Créer des colonnes à partir d'autres
-
-### Appliquer des fonctions
+## Filtrer et réassigner (update)
 
 # Joindre
 
