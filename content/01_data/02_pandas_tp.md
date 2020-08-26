@@ -223,6 +223,17 @@ df['Déchets'].plot(kind = 'hist', logy = True)
 
 ## Accéder à des éléments d'un DataFrame
 
+```python
+df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
+```
+
+Pour accéder à une colonne dans son ensemble on peut utiliser plusieurs approches:
+
+* dataframe.variable, par exemple `df.Energie`. Cette méthode requiert néanmoins d'avoir des 
+noms de colonnes sans espace. 
+* dataframe[['variable']] pour renvoyer la variable sous forme de `DataFrame` ou dataframe['variable'] pour
+la renvoyer sous forme de `Series`
+
 df.loc
 df.iloc
 df[]
