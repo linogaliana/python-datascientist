@@ -229,16 +229,32 @@ df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de
 
 Pour accéder à une colonne dans son ensemble on peut utiliser plusieurs approches:
 
-* dataframe.variable, par exemple `df.Energie`. Cette méthode requiert néanmoins d'avoir des 
+* `dataframe.variable`, par exemple `df.Energie`. Cette méthode requiert néanmoins d'avoir des 
 noms de colonnes sans espace. 
-* dataframe[['variable']] pour renvoyer la variable sous forme de `DataFrame` ou dataframe['variable'] pour
-la renvoyer sous forme de `Series`
+* `dataframe[['variable']]` pour renvoyer la variable sous forme de `DataFrame` ou dataframe['variable'] pour
+la renvoyer sous forme de `Series`. Par exemple, `df[['Autres transports']]` 
+ ou `df['Autres transports']`. C'est une manière préférable de procéder.
 
-df.loc
-df.iloc
-df[]
+Pour accéder à une ou plusieurs valeurs d'un `DataFrame`, il existe trois manières de procéder, selon la 
+forme des indices de lignes ou colonnes utilisés:
 
-Pas df.ix qui est *deprecated*
+* `df.loc`
+* `df.iloc`
+* `df[]`
+
+Les bouts de code utilisant la structure `df.ix` sont à bannir car la fonction est *deprecated* et peut
+ainsi disparaître à tout moment. 
+
+
+data.loc[1:3]
+data.loc[(data.age >= 20), ['section', 'city']]
+
+data.iloc[[0,2]]
+data.iloc[[0,2],[1,3]]
+data.iloc[1:3,2:4]
+
+data.loc[(data.age >= 12), ['section']]
+
 
 ## Principales manipulation de données
 
