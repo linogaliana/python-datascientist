@@ -108,7 +108,7 @@ d'information stocké pour chaque élément ; être trop précis est parfois
 néfaste).
 
 
-## Indexation
+### Indexation
 
 La différence essentielle entre une `Series` et un objet `numpy` est l'indexation. Dans `numpy`,
 l'indexation est implicite ; elle permet d'accéder à une donnée (celle à
@@ -171,7 +171,7 @@ de se poser la question de l'ordre des lignes.
 L'exemple dans la partie suivante permettra de s'en assurer.
 
 
-## Valeurs manquantes
+### Valeurs manquantes
 
 Par défaut, les valeurs manquantes sont affichées `NaN` et sont de type `np.nan` (pour 
 les valeurs temporelles, i.e. de type `datatime64`, les valeurs manquantes sont
@@ -214,18 +214,18 @@ x + y
 
 ```
 ##              prix  quantite
-## gateaux  1.770875         8
-## pates    2.051177         6
-## riz      3.565359         8
+## gateaux  1.397704         8
+## pates    2.520899         6
+## riz      3.860753         8
 ## tomates       NaN         5
-## yaourt   0.510256         3
+## yaourt   0.159384         3
 ```
 
 donne bien une valeur manquante pour la ligne `tomates`. Au passage, on peut remarquer que l'agrégation
 a tenu compte des index. 
 
 
-### Le DataFrame pandas
+# Le DataFrame pandas
 
 Le `DataFrame` est l'objet central du package `pandas`.
 Il s'agit d'une collection de `pandas.Series` (colonnes) alignés par les lignes.
@@ -233,8 +233,10 @@ Les types des variables peuvent différer.
 
 Un DataFrame non-indexé a la structure suivante:  
 
+<!-----
 Exo 1
 Aller dans la doc pandas et trouver comment créer le dataFrame pandas suivant
+------>
 
 
 ```
@@ -244,43 +246,144 @@ Aller dans la doc pandas et trouver comment créer le dataFrame pandas suivant
 ## koala     1.0    2.5
 ```
 
-
+<!-----
 Exo2: multiindex sur la base Ademe
+------>
 
+
+## Les attributs et méthodes utiles
+
+Pour présenter les méthodes les plus pratiques pour l'analyse de données,
+on peut partir de l'exemple des consommations de CO2 communales issues
+des données de l'Ademe. 
+
+
+```python
+df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
+df.head()
+```
 
 ```
-## MultiIndex([(1,  'red'),
-##             (1, 'blue'),
-##             (2,  'red'),
-##             (2, 'blue')],
-##            names=['number', 'color'])
+##   INSEE commune                  Commune  ...       Routier     Tertiaire
+## 0         01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 1         01002    L'ABERGEMENT-DE-VAREY  ...    348.997893    112.934207
+## 2         01004        AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
+## 3         01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
+## 4         01006                  AMBLEON  ...    398.786800     51.681756
+## 
+## [5 rows x 12 columns]
 ```
 
+:warning: `head` dans un notebook avec des données confidentielles et `git`
 
-### Les attributs et méthodes utiles
+
+### Dimensions et structure du DataFrame
+
 
 ```python
 df.axes
+```
+
+```
+## [RangeIndex(start=0, stop=35798, step=1), Index(['INSEE commune', 'Commune', 'Agriculture', 'Autres transports',
+##        'Autres transports international', 'CO2 biomasse hors-total', 'Déchets',
+##        'Energie', 'Industrie hors-énergie', 'Résidentiel', 'Routier',
+##        'Tertiaire'],
+##       dtype='object')]
+```
+
+```python
 df.ndim
+```
+
+```
+## 2
+```
+
+```python
 df.shape
+```
+
+```
+## (35798, 12)
+```
+
+```python
 df.head()
+```
+
+```
+##   INSEE commune                  Commune  ...       Routier     Tertiaire
+## 0         01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 1         01002    L'ABERGEMENT-DE-VAREY  ...    348.997893    112.934207
+## 2         01004        AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
+## 3         01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
+## 4         01006                  AMBLEON  ...    398.786800     51.681756
+## 
+## [5 rows x 12 columns]
+```
+
+```python
 df.columns
+```
+
+```
+## Index(['INSEE commune', 'Commune', 'Agriculture', 'Autres transports',
+##        'Autres transports international', 'CO2 biomasse hors-total', 'Déchets',
+##        'Energie', 'Industrie hors-énergie', 'Résidentiel', 'Routier',
+##        'Tertiaire'],
+##       dtype='object')
+```
+
+### Statistiques agrégées
+
+
+```python
 df.count()
+```
+
+```
+## INSEE commune                      35798
+## Commune                            35798
+## Agriculture                        35736
+## Autres transports                   9979
+## Autres transports international     2891
+## CO2 biomasse hors-total            35798
+## Déchets                            35792
+## Energie                            34490
+## Industrie hors-énergie             34490
+## Résidentiel                        35792
+## Routier                            35778
+## Tertiaire                          35798
+## dtype: int64
+```
+
+```python
 df.describe()
 ```
+
+```
+##         Agriculture  Autres transports  ...        Routier      Tertiaire
+## count  35736.000000        9979.000000  ...   35778.000000   35798.000000
+## mean    2459.975760         654.919940  ...    3535.501245    1105.165915
+## std     2926.957701        9232.816833  ...    9663.156628    5164.182507
+## min        0.003432           0.000204  ...       0.555092       0.000000
+## 25%      797.682631          52.560412  ...     419.700460      94.749885
+## 50%     1559.381286         106.795928  ...    1070.895593     216.297718
+## 75%     3007.883903         237.341501  ...    3098.612157     576.155869
+## max    98949.317760      513140.971700  ...  586054.672800  288175.400100
+## 
+## [8 rows x 10 columns]
+```
+
+### Méthodes relatives aux valeurs manquantes
 
 ```python
 Series.isnull, Series.notnull.
 Series.isna, Series.notna
 ```
 
-
-
-:warning: `head` dans un notebook avec des données confidentielles et `git`
-
-```python
-df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
-```
+# Graphiques rapides
 
 Les méthodes par défaut de graphique (approfondies dans le chapitre matplotlib/seaborn)
 
@@ -290,7 +393,7 @@ df['Déchets'].hist()
 df['Déchets'].plot(kind = 'hist', logy = True)
 ```
 
-## Accéder à des éléments d'un DataFrame
+# Accéder à des éléments d'un DataFrame
 
 ```python
 df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
@@ -354,7 +457,6 @@ Exercice:
 df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
 ```
 
-## Méthodes de statistiques agrégées
 
 ## Opérations par groupe
 
