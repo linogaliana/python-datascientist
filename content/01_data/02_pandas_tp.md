@@ -163,9 +163,12 @@ taille.values
 ## array([1. , 1.5, 1. ])
 ```
 
-Un avantage des `Series` par rapport à un *array* `numpy` est que les opérations sur les `Series` alignent
-automatiquement les données à partir des labels. Avec des `Series` labélisées, il n'est ainsi pas nécessaire
-de se poser la question de l'ordre des lignes. L'exemple dans la partie suivante permettra de s'en assurer.
+Un avantage des `Series` par rapport à un *array* `numpy` est que
+les opérations sur les `Series` alignent
+automatiquement les données à partir des labels.
+Avec des `Series` labélisées, il n'est ainsi pas nécessaire
+de se poser la question de l'ordre des lignes.
+L'exemple dans la partie suivante permettra de s'en assurer.
 
 
 ## Valeurs manquantes
@@ -190,6 +193,7 @@ méthodes de statistiques descriptives présentées ultérieurement. Les règles
 En revanche, on a un comportement cohérent d'agrégation lorsqu'on combine deux `DataFrames` (ou deux colonnes).
 Par exemple,
 
+
 ```python
 x = pd.DataFrame(
     {'prix': np.random.uniform(size = 5),
@@ -208,6 +212,15 @@ y = pd.DataFrame(
 x + y
 ```
 
+```
+##              prix  quantite
+## gateaux  1.909662         8
+## pates    2.488430         6
+## riz      3.778260         8
+## tomates       NaN         5
+## yaourt   0.597145         3
+```
+
 donne bien une valeur manquante pour la ligne `tomates`. Au passage, on peut remarquer que l'agrégation
 a tenu compte des index. 
 
@@ -222,27 +235,22 @@ Les types des variables peuvent différer.
 Exo 1
 Aller dans la doc pandas et trouver comment créer le dataFrame pandas suivant
 
-```python
-#	taille 	poids
-#chat 	1.0 	3.0
-#chien 	1.5 	5.0
-#koala 	1.0 	2.5
+
+```
+##        taille  poids
+## chat      1.0    3.0
+## chien     1.5    5.0
+## koala     1.0    2.5
 ```
 
-Réponse 1:
-
-```python
-df = pd.DataFrame(
-    {'taille': [1.,1.5,1],
-    'poids' : [3, 5, 2.5]
-    },
-    index = ['chat', 'chien', 'koala']
-)
-```
 
 Exo2: multiindex
 
-    df2 = df1.set_index("State", drop = False)
+
+```python
+df2 = df1.set_index("State", drop = False)
+```
+
 
 ### Les attributs et méthodes utiles
 
