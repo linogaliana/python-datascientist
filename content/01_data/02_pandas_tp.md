@@ -214,11 +214,11 @@ x + y
 
 ```
 ##              prix  quantite
-## gateaux  1.909662         8
-## pates    2.488430         6
-## riz      3.778260         8
+## gateaux  1.770875         8
+## pates    2.051177         6
+## riz      3.565359         8
 ## tomates       NaN         5
-## yaourt   0.597145         3
+## yaourt   0.510256         3
 ```
 
 donne bien une valeur manquante pour la ligne `tomates`. Au passage, on peut remarquer que l'agrégation
@@ -231,6 +231,7 @@ Le `DataFrame` est l'objet central du package `pandas`.
 Il s'agit d'une collection de `pandas.Series` (colonnes) alignés par les lignes.
 Les types des variables peuvent différer. 
 
+Un DataFrame non-indexé a la structure suivante:  
 
 Exo 1
 Aller dans la doc pandas et trouver comment créer le dataFrame pandas suivant
@@ -244,11 +245,15 @@ Aller dans la doc pandas et trouver comment créer le dataFrame pandas suivant
 ```
 
 
-Exo2: multiindex
+Exo2: multiindex sur la base Ademe
 
 
-```python
-df2 = df1.set_index("State", drop = False)
+```
+## MultiIndex([(1,  'red'),
+##             (1, 'blue'),
+##             (2,  'red'),
+##             (2, 'blue')],
+##            names=['number', 'color'])
 ```
 
 
@@ -264,9 +269,12 @@ df.count()
 df.describe()
 ```
 
-
+```python
 Series.isnull, Series.notnull.
 Series.isna, Series.notna
+```
+
+
 
 :warning: `head` dans un notebook avec des données confidentielles et `git`
 
