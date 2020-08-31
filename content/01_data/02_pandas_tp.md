@@ -12,7 +12,7 @@ jupyter:
     language: python
     name: python3
 title: "Introduction à pandas: TP"
-date: 2020-07-28T13:00:00Z
+date: 2020-07-31T13:00:00Z
 draft: false
 weight: 100
 output: 
