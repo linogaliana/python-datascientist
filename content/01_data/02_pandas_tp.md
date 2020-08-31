@@ -137,12 +137,31 @@ taille.head()
 
 Cette indexation permet d'accéder à des valeurs de la `Series`
 via une valeur de l'indice. Par
-exemple, `taille['koala']`.
+exemple, `taille['koala']`:
+
+
+```python
+taille['koala']
+```
+
+```
+## 1.0
+```
+
 L'existence d'indice rend le *subsetting* particulièrement aisé,
 **cf.exo**
 
 Pour transformer un objet `pandas.Series` en array `numpy`, 
-on utilise la méthode `values`. Par exemple, `taille.values`.
+on utilise la méthode `values`. Par exemple, `taille.values`:
+
+
+```python
+taille.values
+```
+
+```
+## array([1. , 1.5, 1. ])
+```
 
 Un avantage des `Series` par rapport à un *array* `numpy` est que les opérations sur les `Series` alignent
 automatiquement les données à partir des labels. Avec des `Series` labélisées, il n'est ainsi pas nécessaire
