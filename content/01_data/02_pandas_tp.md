@@ -52,7 +52,7 @@ Un DataFrame est composé des éléments suivants:
 ![Structuration d'un DataFrame pandas, emprunté à <https://medium.com/epfl-extension-school/selecting-data-from-a-pandas-dataframe-53917dc39953>](https://miro.medium.com/max/700/1*6p6nF4_5XpHgcrYRrLYVAw.png)
 
 
-:warning: Les DataFrames sont assez rapides en Python^[^1]  et permettent de traiter de manière efficace des tables de
+:warning: Les DataFrames sont assez rapides en Python[^1] et permettent de traiter de manière efficace des tables de
 données comportant plusieurs millions d'observations et dont la volumétrie peut être conséquente (plusieurs centaines
 de Mo). Néanmoins,  passé un certain seuil, qui dépend de la puissance de la machine mais aussi de la complexité
 de l'opération effectuée, le DataFrame `pandas` peut montrer certaines limites. Dans ce cas, il existe différentes
@@ -66,33 +66,40 @@ accomode bien. Les performances de `pandas` sont plus proches de celles de `data
 connu pour être une approche efficace avec des données de taille importante. 
 
 Concernant la syntaxe, une partie des commandes python est inspirée par la logique SQL. On retrouvera ainsi
-des instructions relativement transparentes. 
+des instructions relativement transparentes.
+
+Il est vivement recommandé, avant de se lancer dans l'écriture d'une
+fonction, de se poser la question de son implémentation native dans `numpy`, `pandas`, etc. 
+En particulier, la plupart du temps, les boucles sont à bannir. 
+
 
 
 # Les Series
 
-En fait, un DataFrame est une collection d'objets appelés `Pandas Series`. 
+En fait, un DataFrame est une collection d'objets appelés `pandas.Series`. 
 Ces `Series` sont des objets d'une dimension qui sont des extensions des
 array-unidimensionnels `numpy`. En particulier, pour faciliter le traitement
 de données catégorielles ou temporelles, des types de variables
 supplémentaires sont disponibles dans `pandas` par rapport à
 `numpy` (`categorical`, `datetime64` et `timedelta64`). Ces
 types sont associés à des méthodes optimisées pour faciliter le traitement
-de ces données. Il ne faut pas négliger l'attribut `dtype` d'un objet
+de ces données.
+
+Il ne faut pas négliger l'attribut `dtype` d'un objet
 `pandas.Series` car cela a une influence déterminante sur les méthodes
 et fonctions pouvant être utilisés (on ne fait pas les mêmes opérations
 sur une donnée temporelle et une donnée catégorielle) et le volume en
 mémoire d'une variable (le type de la variable détermine le volume
 d'information stocké pour chaque élément ; être trop précis est parfois
-néfaste)
+néfaste).
 
 
 ## Indexation
 
-La différence essentielle avec un objet `numpy` est l'indexation. Dans `numpy`,
+La différence essentielle entre une `Series` et un objet `numpy` est l'indexation. Dans `numpy`,
 l'indexation est implicite ; elle permet d'accéder à une donnée (celle à
 l'index situé à la position *i*).
-Avec une `Series`, on peut utiliser bien-sûr utiliser un indice de position mais on peut 
+Avec une `Series`, on peut bien-sûr utiliser un indice de position mais on peut 
 surtout faire appel à des indices plus explicites.
 Par exemple,
 
@@ -109,17 +116,17 @@ taille = pd.Series(
 
 Cette indexation permet d'accéder à des valeurs de la `Series`
 via une valeur de l'indice. Par
-exemple, `taille['koala']`. L'existence d'indice rend le *subsetting* particulièrement aisé,
+exemple, `taille['koala']`.
+L'existence d'indice rend le *subsetting* particulièrement aisé,
 **cf.exo**
 
 Pour transformer un objet `pandas.Series` en array `numpy`, 
-on utilise la méthode `values`: `taille.values`.
+on utilise la méthode `values`. Par exemple, `taille.values`.
 
-A key difference between Series and ndarray is that operations between Series automatically align the data based on label. Thus, you can write computations without giving consideration to whether the Series involved have the same labels.
+Un avantage des `Series` par rapport à un *array* `numpy` est que les opérations sur les `Series` alignent
+automatiquement les données à partir des labels. Avec des `Series` labélisées, il n'est ainsi pas nécessaire
+de se poser la question de l'ordre des lignes. L'exemple dans la partie suivante permettra de s'en assurer.
 
-```python
-s = pd.Series(np.random.randn(5), index=['a', 'b', 'c', 'd', 'e'])
-```
 
 ## Valeurs manquantes
 
