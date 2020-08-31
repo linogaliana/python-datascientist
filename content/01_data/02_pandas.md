@@ -214,11 +214,11 @@ x + y
 
 ```
 ##              prix  quantite
-## gateaux  1.175169         8
-## pates    2.614725         6
-## riz      3.668348         8
+## gateaux  1.796151         8
+## pates    2.782479         6
+## riz      3.898227         8
 ## tomates       NaN         5
-## yaourt   0.294152         3
+## yaourt   0.178444         3
 ```
 
 donne bien une valeur manquante pour la ligne `tomates`. Au passage, on peut remarquer que l'agrégation
@@ -231,7 +231,7 @@ Le `DataFrame` est l'objet central du package `pandas`.
 Il s'agit d'une collection de `pandas.Series` (colonnes) alignés par les lignes.
 Les types des variables peuvent différer. 
 
-Un DataFrame non-indexé a la structure suivante:  
+Un DataFrame non-indexé a la structure suivante:
 
 <!-----
 Exo 1
@@ -274,8 +274,7 @@ df.head()
 ## [5 rows x 12 columns]
 ```
 
-:warning: `head` dans un notebook avec des données confidentielles et `git`
-
+{{< panel status="danger" title="warning" icon="fa fa-exclamation-triangle" >}}`head` dans un notebook avec des données confidentielles et `git`{{< /panel >}}
 
 ### Dimensions et structure du DataFrame
 
