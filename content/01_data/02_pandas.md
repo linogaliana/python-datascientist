@@ -48,6 +48,12 @@ import numpy as np
 import pandas as pd
 ```
 
+
+
+```python
+np.random.seed(123)
+```
+
 # Logique de pandas
 
 L'objet central dans la logique `pandas` est le `DataFrame`.
@@ -214,11 +220,11 @@ x + y
 
 ```
 ##              prix  quantite
-## gateaux  1.796151         8
-## pates    2.782479         6
-## riz      3.898227         8
+## gateaux  1.719469         8
+## pates    2.286139         6
+## riz      3.226851         8
 ## tomates       NaN         5
-## yaourt   0.178444         3
+## yaourt   0.696469         3
 ```
 
 donne bien une valeur manquante pour la ligne `tomates`. Au passage, on peut remarquer que l'agrégation
@@ -258,25 +264,54 @@ on peut partir de l'exemple des consommations de CO2 communales issues
 des données de l'Ademe. 
 
 
+
 ```python
 df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
-df.head()
+df
 ```
 
 ```
-##   INSEE commune                  Commune  ...       Routier     Tertiaire
-## 0         01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
-## 1         01002    L'ABERGEMENT-DE-VAREY  ...    348.997893    112.934207
-## 2         01004        AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
-## 3         01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
-## 4         01006                  AMBLEON  ...    398.786800     51.681756
+##       INSEE commune                  Commune  ...       Routier     Tertiaire
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...    348.997893    112.934207
+## 2             01004        AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
+## 3             01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
+## 4             01006                  AMBLEON  ...    398.786800     51.681756
+## ...             ...                      ...  ...           ...           ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...    309.627908    235.439109
+## 35794         95678            VILLIERS-ADAM  ...  18759.370070    403.404815
+## 35795         95680          VILLIERS-LE-BEL  ...  12217.122400  13849.512000
+## 35796         95682          VILLIERS-LE-SEC  ...   4663.232127     85.657725
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...    504.400972    147.867245
 ## 
-## [5 rows x 12 columns]
+## [35798 rows x 12 columns]
 ```
 
-{{< panel status="danger" title="warning" icon="fa fa-exclamation-triangle" >}}`head` dans un notebook avec des données confidentielles et `git`{{< /panel >}}
+L'affichage des DataFrames est très ergonomique. On obtiendrait le même *output*
+avec `display(df)`[^2]. Les premières et dernières lignes s'affichent
+automatiquement. Autrement, on peut aussi faire:
+
+* `head` qui permet, comme son
+nom l'indique, de n'afficher que les premières lignes ;
+* `tail` qui permet, comme son
+nom l'indique, de n'afficher que les dernières lignes
+
+
+^[2]: Il est préférable d'utiliser la fonction `display` (ou tout simplement
+taper le nom du DataFrame qu'utiliser la fonction `print`). Le
+`display` des objets `pandas` est assez esthétique, contrairement à `print`
+qui renvoie du texte brut. 
+
+
+
+{{< panel status="danger" title="warning" icon="fa fa-exclamation-triangle" >}}
+Il faut faire attention à la commande `head` dans un notebook
+avec des données confidentielles lorsqu'on utilise `git`
+{{< /panel >}}
 
 ### Dimensions et structure du DataFrame
+
+
 
 
 ```python
@@ -305,21 +340,6 @@ df.shape
 
 ```
 ## (35798, 12)
-```
-
-```python
-df.head()
-```
-
-```
-##   INSEE commune                  Commune  ...       Routier     Tertiaire
-## 0         01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
-## 1         01002    L'ABERGEMENT-DE-VAREY  ...    348.997893    112.934207
-## 2         01004        AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
-## 3         01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
-## 4         01006                  AMBLEON  ...    398.786800     51.681756
-## 
-## [5 rows x 12 columns]
 ```
 
 ```python
