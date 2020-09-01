@@ -323,7 +323,8 @@ mais c'est une démarche très complexe
 
 ### Dimensions et structure du DataFrame
 
-
+Les premières méthodes utiles permettent d'afficher quelques
+attributs d'un DataFrame.
 
 
 ```python
@@ -337,6 +338,31 @@ df.axes
 ##        'Tertiaire'],
 ##       dtype='object')]
 ```
+
+```python
+df.columns
+```
+
+```
+## Index(['INSEE commune', 'Commune', 'Agriculture', 'Autres transports',
+##        'Autres transports international', 'CO2 biomasse hors-total', 'Déchets',
+##        'Energie', 'Industrie hors-énergie', 'Résidentiel', 'Routier',
+##        'Tertiaire'],
+##       dtype='object')
+```
+
+```python
+df.index
+```
+
+```
+## RangeIndex(start=0, stop=35798, step=1)
+```
+
+Pour connaître les dimensions d'un DataFrame, on peut utiliser quelques méthodes
+pratiques:
+
+
 
 ```python
 df.ndim
@@ -355,16 +381,34 @@ df.shape
 ```
 
 ```python
-df.columns
+df.size
 ```
 
 ```
-## Index(['INSEE commune', 'Commune', 'Agriculture', 'Autres transports',
-##        'Autres transports international', 'CO2 biomasse hors-total', 'Déchets',
-##        'Energie', 'Industrie hors-énergie', 'Résidentiel', 'Routier',
-##        'Tertiaire'],
-##       dtype='object')
+## 429576
 ```
+
+Pour déterminer le nombre de valeurs uniques d'une variable, la
+méthode `nunique` est pratique. Par exemple,
+
+
+```python
+df['Commune'].nunique()
+```
+
+```
+## 33338
+```
+
+| Opération                     | SQL            | pandas       | dplyr (`R`)    | data.table (`R`)           |
+|-------------------------------|----------------|--------------|----------------|----------------------------|
+| Récupérer le nom des colonnes |                | `df.columns` | `colnames(df)` | `colnames(df)`             |
+| Récupérer les indices[^3]         |                | `df.index`   |                |`unique(df[,get(key(df))])` |
+| Récupérer les dimensions | | `df.shape` | `c(nrow(df), ncol(df))` | `c(nrow(df), ncol(df))` |
+| Récupérer le nombre de valeurs uniques d'une variable | | `df['myvar'].nunique()` | `df %>%  summarise(distinct(myvar))` | `df[,uniqueN(myvar)]` |
+
+^[3]: Le principe d'indice n'existe pas dans `dplyr`. Les indices, au sens de
+`pandas`, sont appelés *clés* en `data.table`.
 
 ### Statistiques agrégées
 
@@ -498,6 +542,11 @@ df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de
 # Joindre
 
 Jointure avec données communales (pour avoir population)
+
+# Reshape
+
+long to wide
+wide to long
 
 # Reordonner
 
