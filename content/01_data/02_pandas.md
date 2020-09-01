@@ -696,6 +696,11 @@ Exercice:
 df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
 ```
 
+## Reordonner
+
+
+## Filtrer et réassigner (update)
+
 ## Opérations par groupe
 
 En SQL, il est très simple d'effectuer de découper des données pour
@@ -713,9 +718,55 @@ knitr::include_graphics(
 
 ![Split-Apply-Combine, d'après <https://unlhcc.github.io/r-novice-gapminder/16-plyr/>](https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png)
 
-## Filtrer et réassigner (update)
+https://realpython.com/pandas-groupby/
 
-## Calculs à partir de données / appliquer des fonctions
+
+pandas objects can be split on any of their axes. The abstract definition of grouping is to provide a mapping of labels to group names
+
+SELECT state, count(name)
+FROM df
+GROUP BY state
+ORDER BY state;
+
+
+In the Pandas version, the grouped-on columns are pushed into the MultiIndex of the resulting Series by default:
+
+
+he reason that a DataFrameGroupBy object can be difficult to wrap your head around is that it’s lazy in nature. It 
+doesn’t really do any operations to produce a useful result until you say so.
+
+print(by_state)
+<pandas.core.groupby.generic.DataFrameGroupBy object at 0x107293278>
+
+It can be difficult to inspect df.groupby("state") because it does virtually none of these things until you do something with the resulting object. Again, a Pandas GroupBy object is lazy. It delays virtually every part of the split-apply-combine process until you invoke a method on it.
+
+Utilisation avancée:
+If you’re working on a challenging aggregation problem, then iterating over the Pandas GroupBy object can be a great way to visualize the split part of split-apply-combine.
+
+by_state.get_group("PA")
+This is virtually equivalent to using .loc[]. You could get the same output with something like df.loc[df["state"] == "PA"].
+
+
+df.groupby([df.index.year, df.index.quarter])["co"].agg(
+...     ["max", "min"]
+... ).rename_axis(["year", "quarter"])
+
+Resampling en pandas sur données temporelles
+df.resample("Q")["co"].agg(["max", "min"])
+
+## Appliquer des fonctions
+
+Lien vers rappel lambda functions
+
+df.groupby("outlet", sort=False)["title"].apply(
+...     lambda ser: ser.str.contains("Fed").sum()
+... ).nlargest(10)
+
+Accélérer: https://realpython.com/fast-flexible-pandas/#pandas-apply
+
+Exo :
+* isin
+* digitize
 
 ## Joindre
 
@@ -727,7 +778,6 @@ long to wide
 wide to long
 
 
-# Reordonner
 
 # Indexation et performance
 
