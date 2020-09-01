@@ -21,6 +21,8 @@ output:
     self_contained: true
 ---
 
+
+
 Dans ce tutoriel `pandas`, nous allons utiliser:
 
 * Les émissions de gaz à effet de serre estimées au niveau communal par l'ADEME. Le jeu de données est 
@@ -46,8 +48,14 @@ Nous suivrons les conventions habituelles dans l'import des packages
 ```python
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 ```
 
+
+```python
+import os
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
+```
 
 
 ```python
@@ -410,7 +418,14 @@ df['Commune'].nunique()
 ^[3]: Le principe d'indice n'existe pas dans `dplyr`. Les indices, au sens de
 `pandas`, sont appelés *clés* en `data.table`.
 
+
 ### Statistiques agrégées
+
+`pandas` propose une série de méthodes pour faire des statistiques
+agrégées de manière efficace. 
+
+On peut, par exemple, appliquer des méthodes pour compter le nombre de lignes,
+faire une moyenne ou une somme de l'ensemble des lignes
 
 
 ```python
@@ -434,6 +449,119 @@ df.count()
 ```
 
 ```python
+df.mean()
+```
+
+```
+## Agriculture                        2459.975760
+## Autres transports                   654.919940
+## Autres transports international    7692.344960
+## CO2 biomasse hors-total            1774.381550
+## Déchets                             410.806329
+## Energie                             662.569846
+## Industrie hors-énergie             2423.127789
+## Résidentiel                        1783.677872
+## Routier                            3535.501245
+## Tertiaire                          1105.165915
+## dtype: float64
+```
+
+```python
+df.sum()
+```
+
+```
+## INSEE commune                      0100101002010040100501006010070100801009010100...
+## Commune                            L'ABERGEMENT-CLEMENCIATL'ABERGEMENT-DE-VAREYAM...
+## Agriculture                                                              8.79097e+07
+## Autres transports                                                        6.53545e+06
+## Autres transports international                                          2.22386e+07
+## CO2 biomasse hors-total                                                  6.35193e+07
+## Déchets                                                                  1.47036e+07
+## Energie                                                                   2.2852e+07
+## Industrie hors-énergie                                                   8.35737e+07
+## Résidentiel                                                              6.38414e+07
+## Routier                                                                  1.26493e+08
+## Tertiaire                                                                3.95627e+07
+## dtype: object
+```
+
+```python
+df.nunique()
+```
+
+```
+## INSEE commune                      35798
+## Commune                            33338
+## Agriculture                        35576
+## Autres transports                   9963
+## Autres transports international     2883
+## CO2 biomasse hors-total            35798
+## Déchets                            11016
+## Energie                             1453
+## Industrie hors-énergie              1889
+## Résidentiel                        35791
+## Routier                            35749
+## Tertiaire                           8663
+## dtype: int64
+```
+
+```python
+df.quantile(q = [0.1,0.25,0.5,0.75,0.9])
+```
+
+```
+##       Agriculture  Autres transports  ...      Routier    Tertiaire
+## 0.10   382.620882          25.034578  ...   199.765410    49.289082
+## 0.25   797.682631          52.560412  ...   419.700460    94.749885
+## 0.50  1559.381286         106.795928  ...  1070.895593   216.297718
+## 0.75  3007.883903         237.341501  ...  3098.612157   576.155869
+## 0.90  5442.727470         528.349529  ...  8151.047248  1897.732565
+## 
+## [5 rows x 10 columns]
+```
+
+<!---
+Comme indiqué précédemment, il faut faire attention aux valeurs manquantes qui,
+par défaut, sont traitées comme des 0.
+Il est ainsi recommandé de systématiquement
+ajouter l'argument skipna, par exemple, 
+----->
+
+
+```python
+df.mean(skipna=True)
+```
+
+```
+## Agriculture                        2459.975760
+## Autres transports                   654.919940
+## Autres transports international    7692.344960
+## CO2 biomasse hors-total            1774.381550
+## Déchets                             410.806329
+## Energie                             662.569846
+## Industrie hors-énergie             2423.127789
+## Résidentiel                        1783.677872
+## Routier                            3535.501245
+## Tertiaire                          1105.165915
+## dtype: float64
+```
+
+Le tableau suivant récapitule le code équivalent pour avoir des 
+statistiques sur toutes les colonnes d'un dataframe en `R`. 
+
+
+| Opération                     | SQL            | pandas       | dplyr (`R`)    | data.table (`R`)           |
+|-------------------------------|----------------|--------------|----------------|----------------------------|
+| Nombre de valeurs non manquantes |             | `df.count()`   | `df %>% summarise_each(funs(sum(!is.na(.))))` | `df[, lapply(.SD, function(x) sum(!is.na(x)))]`
+| Moyenne de toutes les variables |  | `df.mean` | `df %>% summarise_each(funs(mean((., na.rm = TRUE))))` | `df[,lapply(.SD, function(x) mean(x, na.rm = TRUE))]`
+| TO BE CONTINUED |
+
+La méthode `describe` permet de sortir un tableau de statistiques 
+agrégées:
+
+
+```python
 df.describe()
 ```
 
@@ -451,46 +579,82 @@ df.describe()
 ## [8 rows x 10 columns]
 ```
 
+
 ### Méthodes relatives aux valeurs manquantes
 
+Les méthodes relatives aux valeurs manquantes peuvent être mobilisées
+en conjonction des méthodes de statistiques agrégées
+
+Exercice:
+
 ```python
-Series.isnull, Series.notnull.
-Series.isna, Series.notna
+df.isnull().sum()
 ```
 
 # Graphiques rapides
 
-Les méthodes par défaut de graphique (approfondies dans le chapitre matplotlib/seaborn)
+Les méthodes par défaut de graphique
+(approfondies dans le chapitre matplotlib/seaborn) sont pratiques pour 
+produire rapidement un graphique, notament après des opérations
+complexes de maniement de données
+
+**cf. exo**
+
 
 ```python
-df['Déchets'].plot()
-df['Déchets'].hist()
-df['Déchets'].plot(kind = 'hist', logy = True)
+fig = df['Déchets'].plot()
+plt.show()
 ```
+
+<img src="02_pandas_files/figure-html/matplotlib-1.png" width="672" />
+
+```python
+fig = df['Déchets'].hist()
+plt.show()
+```
+
+<img src="02_pandas_files/figure-html/matplotlib-2.png" width="672" />
+
+```python
+fig = df['Déchets'].plot(kind = 'hist', logy = True)
+plt.show()
+```
+
+<img src="02_pandas_files/figure-html/matplotlib-3.png" width="672" />
+
 
 # Accéder à des éléments d'un DataFrame
 
-```python
-df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
-```
+## Sélectionner des colonnes
 
-Pour accéder à une colonne dans son ensemble on peut utiliser plusieurs approches:
+En SQL, effectuer des opérations sur les colonnes se fait avec la commande
+`SELECT`. Avec `pandas`,
+pour accéder à une colonne dans son ensemble on peut
+utiliser plusieurs approches:
 
-* `dataframe.variable`, par exemple `df.Energie`. Cette méthode requiert néanmoins d'avoir des 
+* `dataframe.variable`, par exemple `df.Energie`.
+Cette méthode requiert néanmoins d'avoir des 
 noms de colonnes sans espace. 
-* `dataframe[['variable']]` pour renvoyer la variable sous forme de `DataFrame` ou dataframe['variable'] pour
+* `dataframe[['variable']]` pour renvoyer la variable sous
+forme de `DataFrame` ou dataframe['variable'] pour
 la renvoyer sous forme de `Series`. Par exemple, `df[['Autres transports']]` 
- ou `df['Autres transports']`. C'est une manière préférable de procéder.
+ou `df['Autres transports']`. C'est une manière préférable de procéder.
 
-Pour accéder à une ou plusieurs valeurs d'un `DataFrame`, il existe trois manières de procéder, selon la 
+## Accéder à des lignes
+
+Pour accéder à une ou plusieurs valeurs d'un `DataFrame`,
+il existe trois manières de procéder, selon la 
 forme des indices de lignes ou colonnes utilisés:
 
 * `df.loc`
 * `df.iloc`
 * `df[]`
 
-Les bouts de code utilisant la structure `df.ix` sont à bannir car la fonction est *deprecated* et peut
+Les bouts de code utilisant la structure `df.ix`
+sont à bannir car la fonction est *deprecated* et peut
 ainsi disparaître à tout moment. 
+
+
 
 
 data.loc[1:3]
