@@ -646,9 +646,9 @@ Pour accéder à une ou plusieurs valeurs d'un `DataFrame`,
 il existe trois manières de procéder, selon la 
 forme des indices de lignes ou colonnes utilisés:
 
-* `df.loc`
-* `df.iloc`
-* `df[]`
+* `df.loc`: use labels
+* `df.iloc`: use indices
+* `df[]`: uses 
 
 Les bouts de code utilisant la structure `df.ix`
 sont à bannir car la fonction est *deprecated* et peut
@@ -667,7 +667,7 @@ data.iloc[1:3,2:4]
 data.loc[(data.age >= 12), ['section']]
 
 
-## Principales manipulation de données
+# Principales manipulation de données
 
 Les opérations les plus fréquentes en SQL sont résumées par le tableau suivant.
 Il est utile de les connaître (beaucoup de syntaxes de maniement de données
@@ -683,12 +683,12 @@ des usages de manipulation des données
 | Effectuer une opération par groupe | GROUP BY | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
 + join
 
-### Opérations sur les colonnes: select, mutate, drop
+## Opérations sur les colonnes: select, mutate, drop
 
 Exercice: 
 
 1. Créer variables x et y
-2. Droper x
+2. Drop x
 3. Modifier y en réassignant
 4. Vérifier
 
@@ -696,21 +696,36 @@ Exercice:
 df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
 ```
 
-
 ## Opérations par groupe
 
-## Calculs à partir de données / appliquer des fonctions
+En SQL, il est très simple d'effectuer de découper des données pour
+effectuer des opérations sur des blocs cohérents et recollecter des résultats.
+La logique sous-jacente est celle du split-apply-combine qui est repris
+par les langages de manipulation de données, auxquels `pandas`
+[ne fait pas exception](https://pandas.pydata.org/pandas-docs/stable/user_guide/groupby.html). 
+
+
+```r
+knitr::include_graphics(
+  "https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png"
+)
+```
+
+![Split-Apply-Combine, d'après <https://unlhcc.github.io/r-novice-gapminder/16-plyr/>](https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png)
 
 ## Filtrer et réassigner (update)
 
-# Joindre
+## Calculs à partir de données / appliquer des fonctions
+
+## Joindre
 
 Jointure avec données communales (pour avoir population)
 
-# Reshape
+## Reshape
 
 long to wide
 wide to long
+
 
 # Reordonner
 
