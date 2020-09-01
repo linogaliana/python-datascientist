@@ -62,6 +62,9 @@ os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-min
 np.random.seed(123)
 ```
 
+https://pandas.pydata.org/pandas-docs/stable/getting_started/comparison/comparison_with_r.html?highlight=cast#querying-filtering-sampling
+https://pandas.pydata.org/pandas-docs/stable/getting_started/comparison/comparison_with_sql.html
+
 # Logique de pandas
 
 L'objet central dans la logique `pandas` est le `DataFrame`.
@@ -774,12 +777,11 @@ Jointure avec données communales (pour avoir population)
 
 ## Reshape
 
-long to wide
-wide to long
+long to wide: pivot
+wide to long: melt
 
 
-
-# Indexation et performance
+# Quelques enjeux de performance
 
 Ouverture sur dask?
 
