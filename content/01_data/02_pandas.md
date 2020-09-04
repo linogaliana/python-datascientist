@@ -69,10 +69,7 @@ Notamment, la
 est très utile
 * La cheatsheet suivante, [issue de ce post](https://becominghuman.ai/cheat-sheets-for-ai-neural-networks-machine-learning-deep-learning-big-data-678c51b4b463)
 
-<div class="figure">
-<img src="https://cdn-images-1.medium.com/max/2000/1*YhTbz8b8Svi22wNVvqzneg.jpeg" alt="Cheasheet pandas, d'après &lt;https://becominghuman.ai/cheat-sheets-for-ai-neural-networks-machine-learning-deep-learning-big-data-678c51b4b463&gt;" width="90%" />
-<p class="caption">Cheasheet pandas, d'après <https://becominghuman.ai/cheat-sheets-for-ai-neural-networks-machine-learning-deep-learning-big-data-678c51b4b463></p>
-</div>
+![Cheasheet pandas](https://cdn-images-1.medium.com/max/2000/1*YhTbz8b8Svi22wNVvqzneg.jpeg)
 
 # Logique de pandas
 
@@ -87,10 +84,9 @@ Un DataFrame est composé des éléments suivants:
 * le nom de la colonne ;
 * la valeur de la donnée ;
 
-<div class="figure">
-<img src="https://miro.medium.com/max/700/1*6p6nF4_5XpHgcrYRrLYVAw.png" alt="Structuration d'un DataFrame pandas, emprunté à &lt;https://medium.com/epfl-extension-school/selecting-data-from-a-pandas-dataframe-53917dc39953&gt;" width="100%" />
-<p class="caption">Structuration d'un DataFrame pandas, emprunté à <https://medium.com/epfl-extension-school/selecting-data-from-a-pandas-dataframe-53917dc39953></p>
-</div>
+Structuration d'un DataFrame pandas, emprunté à <https://medium.com/epfl-extension-school/selecting-data-from-a-pandas-dataframe-53917dc39953>:
+
+![](https://miro.medium.com/max/700/1*6p6nF4_5XpHgcrYRrLYVAw.png)
 
 Le concept de *tidy* data, popularisé par Hadley Wickham via ses packages `R`,
 est parfaitement pertinent pour décrire la structure d'un DataFrame pandas. 
@@ -102,10 +98,7 @@ Les trois règles sont les suivantes:
 se trouve sur une unique cellule.
 
 
-<div class="figure">
-<img src="https://d33wubrfki0l68.cloudfront.net/6f1ddb544fc5c69a2478e444ab8112fb0eea23f8/91adc/images/tidy-1.png" alt="Concept de tidy data (emprunté à H. Wickham)" width="90%" />
-<p class="caption">Concept de tidy data (emprunté à H. Wickham)</p>
-</div>
+![Concept de tidy data (emprunté à H. Wickham)](https://d33wubrfki0l68.cloudfront.net/6f1ddb544fc5c69a2478e444ab8112fb0eea23f8/91adc/images/tidy-1.png)
 
 :warning: Les DataFrames sont assez rapides en Python[^1] et permettent de traiter de manière efficace des tables de
 données comportant plusieurs millions d'observations et dont la volumétrie peut être conséquente (plusieurs centaines
