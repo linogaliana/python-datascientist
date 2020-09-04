@@ -23,20 +23,20 @@ output:
 
 
 
+
+
 Dans ce tutoriel `pandas`, nous allons utiliser:
 
 * Les émissions de gaz à effet de serre estimées au niveau communal par l'ADEME. Le jeu de données est 
 disponible sur [data.gouv](https://www.data.gouv.fr/fr/datasets/inventaire-de-gaz-a-effet-de-serre-territorialise/#_)
 et requêtable directement dans python avec
 [cet url](https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert)
-* Quelques données de contexte au niveau communal
-[disponibles sur le site de l'Insee](https://www.insee.fr/fr/statistiques/3560121)
-requêtables avec Python en utilisant cet
-[url](https://www.insee.fr/fr/statistiques/fichier/3560121/filo-revenu-pauvrete-menage-2015.zip)
+* Quelques données de contexte au niveau communal. Idéalement, on utiliserait les données
+[disponibles sur le site de l'Insee](https://www.insee.fr/fr/statistiques/3560121). Pour faciliter l'import de celles-ci, les données ont été mises à disposition dans le dépôt github, [sur cet url](https://github.com/linogaliana/python-datascientist/blob/pandas_intro/data/filosofi_2016.csv)
 
 
-:warning: `pandas` offre la possibilité d'importer des données directement depuis un url. C'est l'option
-prise dans ce tutoriel.
+:warning: `pandas` offre la possibilité d'importer des données
+directement depuis un url. C'est l'option prise dans ce tutoriel.
 Si vous préfèrez, pour des
 raisons d'accès au réseau ou de performance, importer depuis un poste local,
 vous pouvez télécharger les données et changer
@@ -51,19 +51,28 @@ import pandas as pd
 import matplotlib.pyplot as plt
 ```
 
-
-```python
-import os
-os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
-```
+Pour obtenir des résultats reproductibles, on peut fixer la racine du générateur
+pseudo-aléatoire. 
 
 
 ```python
 np.random.seed(123)
 ```
 
-https://pandas.pydata.org/pandas-docs/stable/getting_started/comparison/comparison_with_r.html?highlight=cast#querying-filtering-sampling
-https://pandas.pydata.org/pandas-docs/stable/getting_started/comparison/comparison_with_sql.html
+Au cours de cette démonstration des principales fonctionalités de `pandas`, et
+lors du TP __LIEN VERS LE TP__,
+je recommande de régulièrement se référer aux ressources suivantes:
+
+* L'[aide officielle de pandas](https://pandas.pydata.org/docs/user_guide/index.html).
+Notamment, la
+[page de comparaison des langages](https://pandas.pydata.org/pandas-docs/stable/getting_started/comparison/index.html)
+est très utile
+* La cheatsheet suivante, [issue de ce post](https://becominghuman.ai/cheat-sheets-for-ai-neural-networks-machine-learning-deep-learning-big-data-678c51b4b463)
+
+<div class="figure">
+<img src="https://cdn-images-1.medium.com/max/2000/1*YhTbz8b8Svi22wNVvqzneg.jpeg" alt="Cheasheet pandas, d'après &lt;https://becominghuman.ai/cheat-sheets-for-ai-neural-networks-machine-learning-deep-learning-big-data-678c51b4b463&gt;" width="90%" />
+<p class="caption">Cheasheet pandas, d'après <https://becominghuman.ai/cheat-sheets-for-ai-neural-networks-machine-learning-deep-learning-big-data-678c51b4b463></p>
+</div>
 
 # Logique de pandas
 
@@ -81,6 +90,21 @@ Un DataFrame est composé des éléments suivants:
 <div class="figure">
 <img src="https://miro.medium.com/max/700/1*6p6nF4_5XpHgcrYRrLYVAw.png" alt="Structuration d'un DataFrame pandas, emprunté à &lt;https://medium.com/epfl-extension-school/selecting-data-from-a-pandas-dataframe-53917dc39953&gt;" width="100%" />
 <p class="caption">Structuration d'un DataFrame pandas, emprunté à <https://medium.com/epfl-extension-school/selecting-data-from-a-pandas-dataframe-53917dc39953></p>
+</div>
+
+Le concept de *tidy* data, popularisé par Hadley Wickham via ses packages `R`,
+est parfaitement pertinent pour décrire la structure d'un DataFrame pandas. 
+Les trois règles sont les suivantes:
+
+* Chaque variable possède sa propre colonne
+* Chaque observation possède sa propre ligne
+* Une valeur, matérialisant la valeur d'une observation d'une variable, 
+se trouve sur une unique cellule.
+
+
+<div class="figure">
+<img src="https://d33wubrfki0l68.cloudfront.net/6f1ddb544fc5c69a2478e444ab8112fb0eea23f8/91adc/images/tidy-1.png" alt="Concept de tidy data (emprunté à H. Wickham)" width="90%" />
+<p class="caption">Concept de tidy data (emprunté à H. Wickham)</p>
 </div>
 
 :warning: Les DataFrames sont assez rapides en Python[^1] et permettent de traiter de manière efficace des tables de
@@ -102,8 +126,6 @@ des instructions relativement transparentes.
 Il est vivement recommandé, avant de se lancer dans l'écriture d'une
 fonction, de se poser la question de son implémentation native dans `numpy`, `pandas`, etc. 
 En particulier, la plupart du temps, les boucles sont à bannir. 
-
-
 
 # Les Series
 
@@ -306,13 +328,12 @@ automatiquement. Autrement, on peut aussi faire:
 nom l'indique, de n'afficher que les premières lignes ;
 * `tail` qui permet, comme son
 nom l'indique, de n'afficher que les dernières lignes
-
+* `sample` qui permet d'afficher un échantillon aléatoire de *n* lignes
 
 ^[2]: Il est préférable d'utiliser la fonction `display` (ou tout simplement
 taper le nom du DataFrame qu'utiliser la fonction `print`). Le
 `display` des objets `pandas` est assez esthétique, contrairement à `print`
 qui renvoie du texte brut. 
-
 
 
 {{< panel status="danger" title="warning" icon="fa fa-exclamation-triangle" >}}
@@ -609,21 +630,21 @@ fig = df['Déchets'].plot()
 plt.show()
 ```
 
-<img src="02_pandas_files/figure-html/matplotlib-1.png" width="672" />
+![](02_pandas_files/figure-html/matplotlib-1.png)<!-- -->
 
 ```python
 fig = df['Déchets'].hist()
 plt.show()
 ```
 
-<img src="02_pandas_files/figure-html/matplotlib-2.png" width="672" />
+![](02_pandas_files/figure-html/matplotlib-2.png)<!-- -->
 
 ```python
 fig = df['Déchets'].plot(kind = 'hist', logy = True)
 plt.show()
 ```
 
-<img src="02_pandas_files/figure-html/matplotlib-3.png" width="672" />
+![](02_pandas_files/figure-html/matplotlib-3.png)<!-- -->
 
 
 # Accéder à des éléments d'un DataFrame
