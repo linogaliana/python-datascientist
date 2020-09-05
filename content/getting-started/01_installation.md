@@ -90,7 +90,7 @@ lancer en local en utilisant `Anaconda`) ont émergé. Parmi celles-ci :
 * **Google collaboratory**
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
 ;
-* __onyxia__ [![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement) plateforme développée par l'Insee qui fournit des environnements bac à sable basés sur des technologie de conteneurisation
+* __onyxia__ [![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement) plateforme développée par l'Insee qui fournit des environnements bac à sable basés sur des technologie de conteneurisation
 
 
 Il est aussi possible d'exécuter des codes sur les services d'intégration continue de 
