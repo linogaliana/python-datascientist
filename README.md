@@ -3,7 +3,9 @@
 [![Build Status](https://travis-ci.com/linogaliana/python-datascientist.svg?branch=master)](https://travis-ci.com/linogaliana/python-datascientist)
 [![pipeline status](https://gitlab.com/linogaliana/python-datascientist/badges/master/pipeline.svg)](https://gitlab.com/linogaliana/python-datascientist/-/commits/master)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/86ebd982-38e0-4e04-81f4-4819131eb800/deploy-status)](https://app.netlify.com/sites/linogaliana-teaching/deploys)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
 
 :warning: :construction: **Ce site est en construction** :construction:
 
