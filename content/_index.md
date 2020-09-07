@@ -36,9 +36,6 @@ sur `Stack Overflow`](https://towardsdatascience.com/python-vs-r-for-data-scienc
 ![](https://miro.medium.com/max/589/1*JxeXVkzq29tnE4vjPAleqQ.png)
 
 
-# Plan du cours
-
-
 **TO DO**
 
 # Evaluation
@@ -52,3 +49,21 @@ sur `Stack Overflow`](https://towardsdatascience.com/python-vs-r-for-data-scienc
 * Au mois de janvier 2021, auront lieu des __soutenances_
 * Des idées de sujets seront communiquées ultérieurement.
 Les étudiants sont invités à proposer des sujets qui leur plaisent, à faire valider par le chargé de TD. 
+
+
+
+# Structuration du cours
+
+Le cours est structuré sous la forme du présent site web et de notebooks
+jupyter proposant des exercices plus approfondis. L'ensemble
+des codes sources est stocké sous
+[github à cette adresse](https://github.com/linogaliana/python-datascientist).
+Sur l'ensemble du site web,
+il est possible de cliquer sur la petite icone
+<i class="fab fa-github"></i> pour être redirigé vers le dépôt
+
+Vous pouvez naviguer dans l'architecture du site via la table des matières
+ou par les liens vers le contenu antérieur ou postérieur à la fin de chaque
+page. 
+
+# Plan du cours
