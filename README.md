@@ -21,3 +21,12 @@ Bientôt: test automatique des notebooks avec travis
 
 Pour éditer des notebooks bien intégrés dans le site web, utiliser `jupytext`
 ![](./static/pictures/intro/jupytext.png)
+
+
+Pour convertir un notebook jupyter en `.md`:
+
+```shell
+find $directory -type f -name "*.ipynb" ! -name ".ipynb-checkpoints"
+jupytext --to md ./content/01_data/02_pandas_tp.ipynb
+```
+
