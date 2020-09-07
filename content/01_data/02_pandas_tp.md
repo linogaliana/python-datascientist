@@ -2,15 +2,25 @@
 jupyter:
   jupytext:
     text_representation:
-      extension: .md
-      format_name: markdown
+      extension: .Rmd
+      format_name: rmarkdown
       format_version: '1.2'
       jupytext_version: 1.6.0
   kernelspec:
     display_name: Python 3
     language: python
     name: python3
+title: "Pratique de pandas: un exemple complet"
+date: 2020-07-09T13:00:00Z
+draft: false
+weight: 100
+output: 
+  html_document:
+    keep_md: true
+    self_contained: true
 ---
+
+
 
 <!-- #region -->
 # Pratique de pandas: un exemple complet
@@ -36,6 +46,7 @@ Nous suivrons les conventions habituelles dans l'import des packages
 
 <!-- #endregion -->
 
+
 ```python
 import numpy as np
 import pandas as pd
@@ -46,14 +57,20 @@ import matplotlib.pyplot as plt
 
 Commencer par importer les données de l'Ademe à l'aide du package `pandas`. Vous pouvez les nommer `df`
 
+
 ```python
 df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
 ```
 
 Pour les données de cadrage au niveau communal (source Insee), une version arrangée et facile à requêter est fournie sur [github](https://github.com/linogaliana/python-datascientist/blob/pandas_intro/data/filosofi_2016.csv)
 
+
 ```python
 df_city = pd.read_csv("https://raw.githubusercontent.com/linogaliana/python-datascientist/pandas_intro/data/filosofi_2016.csv")
+```
+
+```
+## sys:1: DtypeWarning: Columns (0) have mixed types.Specify dtype option on import or set low_memory=False.
 ```
 
 -----------------
@@ -72,22 +89,262 @@ Faire la même chose sur `df_city`
 
 ------------------
 
+
 ```python
 df.head(10)
-df.tail(15)
-df.sample(10)
-df.sample(frac = 0.05)
-df[:10].sample(n = 100, replace = True)
-df[:6].sample(n = 100, replace = True, weights = [0.5] + [0.1]*5)
+```
+
+```
+##   INSEE commune                  Commune  ...       Routier     Tertiaire
+## 0         01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 1         01002    L'ABERGEMENT-DE-VAREY  ...    348.997893    112.934207
+## 2         01004        AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
+## 3         01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
+## 4         01006                  AMBLEON  ...    398.786800     51.681756
+## 5         01007                 AMBRONAY  ...  22481.123580   2789.133106
+## 6         01008                 AMBUTRIX  ...   3616.168396    356.029873
+## 7         01009         ANDERT-ET-CONDON  ...    696.956038    161.266219
+## 8         01010                ANGLEFORT  ...   3199.808360   1206.147643
+## 9         01011                 APREMONT  ...    686.153720    188.542701
+## 
+## [10 rows x 12 columns]
 ```
 
 ```python
+df.tail(15)
+```
+
+```
+##       INSEE commune              Commune  ...       Routier     Tertiaire
+## 35783         95628           VALMONDOIS  ...    589.164544    574.241730
+## 35784         95633          VAUDHERLAND  ...    439.279632    199.435133
+## 35785         95637              VAUREAL  ...   4982.982966   7515.388640
+## 35786         95641               VEMARS  ...  17783.179830   2654.384495
+## 35787         95651             VETHEUIL  ...   1472.779256    414.411115
+## 35788         95652              VIARMES  ...   5705.777606   2521.399729
+## 35789         95656    VIENNE-EN-ARTHIES  ...    305.819555    206.727023
+## 35790         95658                VIGNY  ...   8539.961119    516.817557
+## 35791         95660  VILLAINES-SOUS-BOIS  ...    912.992023    336.409947
+## 35792         95675             VILLERON  ...   7740.572805    725.467969
+## 35793         95676   VILLERS-EN-ARTHIES  ...    309.627908    235.439109
+## 35794         95678        VILLIERS-ADAM  ...  18759.370070    403.404815
+## 35795         95680      VILLIERS-LE-BEL  ...  12217.122400  13849.512000
+## 35796         95682      VILLIERS-LE-SEC  ...   4663.232127     85.657725
+## 35797         95690  WY-DIT-JOLI-VILLAGE  ...    504.400972    147.867245
+## 
+## [15 rows x 12 columns]
+```
+
+```python
+df.sample(10)
+```
+
+```
+##       INSEE commune               Commune  ...      Routier    Tertiaire
+## 3652          11031   BELFORT-SUR-REBENTY  ...   284.973692    18.184321
+## 17318         46111            FOURMAGNAC  ...   297.465775    74.651425
+## 19989         53152       MESLAY-DU-MAINE  ...  5521.185070  1338.461765
+## 25998         64405               MORLAAS  ...  7605.905739  2681.035171
+## 20851         55178    ERIZE-SAINT-DIZIER  ...   623.366612    93.314281
+## 19959         53121  JAVRON-LES-CHAPELLES  ...  7618.063733   676.169637
+## 12793         33128       CIVRAC-EN-MEDOC  ...   624.884001   300.519839
+## 20513         54415     PAGNY-SUR-MOSELLE  ...  2661.672564  2684.815538
+## 18430         50185                FLEURY  ...  9069.883387   494.804957
+## 22823         59339                 LEERS  ...  8533.883359  6734.274818
+## 
+## [10 rows x 12 columns]
+```
+
+```python
+df.sample(frac = 0.05)
+```
+
+```
+##       INSEE commune                 Commune  ...      Routier    Tertiaire
+## 23109         59637       WANDIGNIES-HAMAGE  ...  1153.330556   606.303560
+## 33755         85295         TREIZE-SEPTIERS  ...  5517.045276  2545.022501
+## 14010         36110                 MAILLET  ...  1495.049843   128.247320
+## 11005         2A288                   SOTTA  ...  2825.132851   537.394552
+## 9345          26101                   COMPS  ...   645.826650    78.001168
+## ...             ...                     ...  ...          ...          ...
+## 26914         67071                    BUST  ...   474.980527   209.598231
+## 23346         60207                EMEVILLE  ...    94.102112   141.167759
+## 11009         2A310  SANTA-MARIA-FIGANIELLA  ...   516.339852    38.282782
+## 18646         50461               SAINT-CYR  ...  2158.337622    97.621094
+## 34874         89130                 CRAVANT  ...  3818.507587   406.754559
+## 
+## [1790 rows x 12 columns]
+```
+
+```python
+df[:10].sample(n = 100, replace = True)
+```
+
+```
+##    INSEE commune                  Commune  ...       Routier     Tertiaire
+## 5          01007                 AMBRONAY  ...  22481.123580   2789.133106
+## 3          01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
+## 4          01006                  AMBLEON  ...    398.786800     51.681756
+## 2          01004        AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
+## 9          01011                 APREMONT  ...    686.153720    188.542701
+## ..           ...                      ...  ...           ...           ...
+## 9          01011                 APREMONT  ...    686.153720    188.542701
+## 3          01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
+## 5          01007                 AMBRONAY  ...  22481.123580   2789.133106
+## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 9          01011                 APREMONT  ...    686.153720    188.542701
+## 
+## [100 rows x 12 columns]
+```
+
+```python
+df[:6].sample(n = 100, replace = True, weights = [0.5] + [0.1]*5)
+```
+
+```
+##    INSEE commune                  Commune  ...       Routier     Tertiaire
+## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## ..           ...                      ...  ...           ...           ...
+## 3          01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
+## 1          01002    L'ABERGEMENT-DE-VAREY  ...    348.997893    112.934207
+## 2          01004        AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
+## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 5          01007                 AMBRONAY  ...  22481.123580   2789.133106
+## 
+## [100 rows x 12 columns]
+```
+
+
+```python
 df_city.head(10)
+```
+
+```
+##   CODGEO                   LIBGEO  ...          D916      RD16
+## 0  01001  L'Abergement-Clémenciat  ...           NaN       NaN
+## 1  01002    L'Abergement-de-Varey  ...           NaN       NaN
+## 2  01004        Ambérieu-en-Bugey  ...  33880.555556  3.239962
+## 3  01005      Ambérieux-en-Dombes  ...           NaN       NaN
+## 4  01006                  Ambléon  ...           NaN       NaN
+## 5  01007                 Ambronay  ...  34914.782609  2.503390
+## 6  01008                 Ambutrix  ...           NaN       NaN
+## 7  01009         Andert-et-Condon  ...           NaN       NaN
+## 8  01010                Anglefort  ...           NaN       NaN
+## 9  01011                 Apremont  ...           NaN       NaN
+## 
+## [10 rows x 29 columns]
+```
+
+```python
 df_city.tail(15)
+```
+
+```
+##       CODGEO             LIBGEO  ...          D916      RD16
+## 34917  97410       Saint-Benoît  ...  29294.761905  4.000499
+## 34918  97411        Saint-Denis  ...  40407.777778  4.934036
+## 34919  97412       Saint-Joseph  ...  28241.250000  4.036771
+## 34920  97413          Saint-Leu  ...  36507.142857  4.928787
+## 34921  97414        Saint-Louis  ...  27378.888889  3.754905
+## 34922  97415         Saint-Paul  ...  39826.000000  5.001743
+## 34923  97416       Saint-Pierre  ...  35092.222222  4.610119
+## 34924  97417     Saint-Philippe  ...  24234.500000  3.460550
+## 34925  97418       Sainte-Marie  ...  37836.250000  4.523703
+## 34926  97419        Sainte-Rose  ...  24337.826087  3.790939
+## 34927  97420     Sainte-Suzanne  ...  33288.000000  4.179809
+## 34928  97421            Salazie  ...  23529.333333  4.085819
+## 34929  97422          Le Tampon  ...  32987.600000  4.437280
+## 34930  97423  Les Trois-Bassins  ...  28596.567164  3.774958
+## 34931  97424             Cilaos  ...  24427.222222  3.676391
+## 
+## [15 rows x 29 columns]
+```
+
+```python
 df_city.sample(10)
+```
+
+```
+##       CODGEO              LIBGEO  ...          D916      RD16
+## 7738   23097   Issoudun-Létrieix  ...           NaN       NaN
+## 11045  30124             Le Garn  ...           NaN       NaN
+## 2192   07168       Orgnac-l'Aven  ...           NaN       NaN
+## 23652  62128  Biache-Saint-Vaast  ...  30251.500000  2.623956
+## 33871  89024             Auxerre  ...  33686.086957  3.397115
+## 11541  31270           Landorthe  ...           NaN       NaN
+## 12709  33401     Sainte-Florence  ...           NaN       NaN
+## 4876   14657        Saint-Samson  ...           NaN       NaN
+## 12104  32249            Mauvezin  ...  32814.761905  2.957528
+## 4380   13089        Saint-Andiol  ...  32468.666667  3.039031
+## 
+## [10 rows x 29 columns]
+```
+
+```python
 df_city.sample(frac = 0.05)
+```
+
+```
+##       CODGEO                       LIBGEO  NBMENFISC16  ...  D116  D916  RD16
+## 18040  50471  Saint-Georges-de-la-Rivière        125.0  ...   NaN   NaN   NaN
+## 22720  60264                     Frocourt        194.0  ...   NaN   NaN   NaN
+## 13941  37173         Nouans-les-Fontaines        354.0  ...   NaN   NaN   NaN
+## 31631  80640                     Pozières        102.0  ...   NaN   NaN   NaN
+## 13039  34182            Nézignan-l'Évêque        729.0  ...   NaN   NaN   NaN
+## ...      ...                          ...          ...  ...   ...   ...   ...
+## 21085  57320                     Hertzing         75.0  ...   NaN   NaN   NaN
+## 30280  77277               Marles-en-Brie        585.0  ...   NaN   NaN   NaN
+## 23222  61101      Le Château-d'Almenêches         79.0  ...   NaN   NaN   NaN
+## 25300  64432                 Ossas-Suhare          NaN  ...   NaN   NaN   NaN
+## 6787   21196                      Corpeau        398.0  ...   NaN   NaN   NaN
+## 
+## [1747 rows x 29 columns]
+```
+
+```python
 df_city[:10].sample(n = 100, replace = True)
+```
+
+```
+##    CODGEO                 LIBGEO  ...          D916      RD16
+## 8   01010              Anglefort  ...           NaN       NaN
+## 2   01004      Ambérieu-en-Bugey  ...  33880.555556  3.239962
+## 4   01006                Ambléon  ...           NaN       NaN
+## 2   01004      Ambérieu-en-Bugey  ...  33880.555556  3.239962
+## 4   01006                Ambléon  ...           NaN       NaN
+## ..    ...                    ...  ...           ...       ...
+## 9   01011               Apremont  ...           NaN       NaN
+## 1   01002  L'Abergement-de-Varey  ...           NaN       NaN
+## 3   01005    Ambérieux-en-Dombes  ...           NaN       NaN
+## 6   01008               Ambutrix  ...           NaN       NaN
+## 3   01005    Ambérieux-en-Dombes  ...           NaN       NaN
+## 
+## [100 rows x 29 columns]
+```
+
+```python
 df_city[:6].sample(n = 100, replace = True, weights = [0.5] + [0.1]*5)
+```
+
+```
+##    CODGEO                   LIBGEO  ...          D916      RD16
+## 1   01002    L'Abergement-de-Varey  ...           NaN       NaN
+## 0   01001  L'Abergement-Clémenciat  ...           NaN       NaN
+## 3   01005      Ambérieux-en-Dombes  ...           NaN       NaN
+## 2   01004        Ambérieu-en-Bugey  ...  33880.555556  3.239962
+## 1   01002    L'Abergement-de-Varey  ...           NaN       NaN
+## ..    ...                      ...  ...           ...       ...
+## 1   01002    L'Abergement-de-Varey  ...           NaN       NaN
+## 0   01001  L'Abergement-Clémenciat  ...           NaN       NaN
+## 2   01004        Ambérieu-en-Bugey  ...  33880.555556  3.239962
+## 1   01002    L'Abergement-de-Varey  ...           NaN       NaN
+## 0   01001  L'Abergement-Clémenciat  ...           NaN       NaN
+## 
+## [100 rows x 29 columns]
 ```
 
 Cette première approche exploratoire donne une idée assez précise de la manière dont les données sont organisées. On remarque ainsi une différence entre `df` et `df_city` quant aux valeurs manquantes: la première base est relativement complète, la seconde comporte beaucoup de valeurs manquantes. Autrement dit, si on désire exploiter `df_city`, il faut faire attention à la variable choisie.
@@ -116,16 +373,86 @@ On se focalise temporairement sur les observations où le libellé comporte plus
 
 -----------------------
 
+
 ```python
 df.dtypes
-df_city.dtypes
+```
+
+```
+## INSEE commune                       object
+## Commune                             object
+## Agriculture                        float64
+## Autres transports                  float64
+## Autres transports international    float64
+## CO2 biomasse hors-total            float64
+## Déchets                            float64
+## Energie                            float64
+## Industrie hors-énergie             float64
+## Résidentiel                        float64
+## Routier                            float64
+## Tertiaire                          float64
+## dtype: object
 ```
 
 ```python
+df_city.dtypes
+```
+
+```
+## CODGEO              object
+## LIBGEO              object
+## NBMENFISC16        float64
+## NBPERSMENFISC16    float64
+## MED16              float64
+## PIMP16             float64
+## TP6016             float64
+## TP60AGE116         float64
+## TP60AGE216         float64
+## TP60AGE316         float64
+## TP60AGE416         float64
+## TP60AGE516         float64
+## TP60AGE616         float64
+## TP60TOL116         float64
+## TP60TOL216         float64
+## PACT16             float64
+## PTSA16             float64
+## PCHO16             float64
+## PBEN16             float64
+## PPEN16             float64
+## PPAT16             float64
+## PPSOC16            float64
+## PPFAM16            float64
+## PPMINI16           float64
+## PPLOGT16           float64
+## PIMPOT16           float64
+## D116               float64
+## D916               float64
+## RD16               float64
+## dtype: object
+```
+
+
+```python
 df[['INSEE commune', 'Commune']].nunique()
+```
+
+```
+## INSEE commune    35798
+## Commune          33338
+## dtype: int64
+```
+
+```python
 df_city[['CODGEO', 'LIBGEO']].nunique()
 # Résultats dont l'ordre de grandeur est proche. Dans les deux cas, #(libelles) < #(code)
 ```
+
+```
+## CODGEO    34932
+## LIBGEO    32676
+## dtype: int64
+```
+
 
 ```python
 x = df_city.groupby('LIBGEO').count()['CODGEO']
@@ -134,29 +461,169 @@ x = x.reset_index()
 x
 ```
 
+```
+##          LIBGEO  CODGEO
+## 0     Abancourt       2
+## 1     Aboncourt       2
+## 2         Abzac       2
+## 3       Achères       2
+## 4        Aiglun       2
+## ...         ...     ...
+## 1446     Épieds       3
+## 1447    Étaules       2
+## 1448  Éterpigny       2
+## 1449    Étréchy       3
+## 1450  Étrépilly       2
+## 
+## [1451 rows x 2 columns]
+```
+
+
 ```python
 df_city[df_city['LIBGEO'].isin(x['LIBGEO'])]
-df_city[df_city['LIBGEO'].isin(x['LIBGEO'])].sort_values('LIBGEO')
+```
+
+```
+##       CODGEO          LIBGEO  NBMENFISC16  ...         D116          D916      RD16
+## 9      01011        Apremont        143.0  ...          NaN           NaN       NaN
+## 23     01027           Balan        647.0  ...          NaN           NaN       NaN
+## 26     01030      Beauregard        363.0  ...          NaN           NaN       NaN
+## 35     01039            Béon        199.0  ...          NaN           NaN       NaN
+## 38     01042             Bey        113.0  ...          NaN           NaN       NaN
+## ...      ...             ...          ...  ...          ...           ...       ...
+## 34921  97414     Saint-Louis      17890.0  ...  7291.500000  27378.888889  3.754905
+## 34922  97415      Saint-Paul      37064.0  ...  7962.424242  39826.000000  5.001743
+## 34923  97416    Saint-Pierre      31373.0  ...  7612.000000  35092.222222  4.610119
+## 34925  97418    Sainte-Marie      11640.0  ...  8364.000000  37836.250000  4.523703
+## 34927  97420  Sainte-Suzanne       7827.0  ...  7964.000000  33288.000000  4.179809
+## 
+## [3707 rows x 29 columns]
 ```
 
 ```python
+df_city[df_city['LIBGEO'].isin(x['LIBGEO'])].sort_values('LIBGEO')
+```
+
+```
+##       CODGEO     LIBGEO  NBMENFISC16  ...          D116          D916      RD16
+## 21815  59001  Abancourt        182.0  ...           NaN           NaN       NaN
+## 22463  60001  Abancourt        249.0  ...           NaN           NaN       NaN
+## 20781  57001  Aboncourt        125.0  ...           NaN           NaN       NaN
+## 19449  54003  Aboncourt         48.0  ...           NaN           NaN       NaN
+## 12323  33001      Abzac        801.0  ...           NaN           NaN       NaN
+## ...      ...        ...          ...  ...           ...           ...       ...
+## 6118   18090    Étréchy        191.0  ...           NaN           NaN       NaN
+## 34440  91226    Étréchy       2756.0  ...  14681.714286  39019.333333  2.657682
+## 18388  51239    Étréchy         46.0  ...           NaN           NaN       NaN
+## 30178  77173  Étrépilly        291.0  ...           NaN           NaN       NaN
+## 680    02297  Étrépilly         46.0  ...           NaN           NaN       NaN
+## 
+## [3707 rows x 29 columns]
+```
+
+
+```python
 df_city[df_city['LIBGEO'].isin(x['LIBGEO'])]['NBPERSMENFISC16'].describe()
+```
+
+```
+## count      3302.000000
+## mean       1610.143247
+## std        6229.752735
+## min          88.000000
+## 25%         226.000000
+## 50%         439.250000
+## 75%        1006.125000
+## max      145395.500000
+## Name: NBPERSMENFISC16, dtype: float64
+```
+
+```python
 df_city[~df_city['LIBGEO'].isin(x['LIBGEO'])]['NBPERSMENFISC16'].describe()
 ```
+
+```
+## count    2.810300e+04
+## mean     2.192490e+03
+## std      1.603009e+04
+## min      7.600000e+01
+## 25%      2.545000e+02
+## 50%      5.420000e+02
+## 75%      1.320250e+03
+## max      2.074630e+06
+## Name: NBPERSMENFISC16, dtype: float64
+```
+
 
 ```python
 df_big_city = df_city[df_city['NBPERSMENFISC16']>100000]
 df_big_city['probleme'] = df_big_city['LIBGEO'].isin(x['LIBGEO'])
+```
+
+```
+## C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/python.exe:1: SettingWithCopyWarning: 
+## A value is trying to be set on a copy of a slice from a DataFrame.
+## Try using .loc[row_indexer,col_indexer] = value instead
+## 
+## See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+```
+
+```python
 df_big_city['probleme'].mean()
 ```
+
+```
+## 0.08333333333333333
+```
+
 
 ```python
 df_big_city[df_big_city['probleme']]
 ```
 
+```
+##       CODGEO       LIBGEO  NBMENFISC16  ...          D916      RD16  probleme
+## 34622  93048    Montreuil      43996.0  ...  37583.000000  4.393959      True
+## 34634  93066  Saint-Denis      39469.0  ...  28602.666667  3.852411      True
+## 34918  97411  Saint-Denis      57567.0  ...  40407.777778  4.934036      True
+## 34922  97415   Saint-Paul      37064.0  ...  39826.000000  5.001743      True
+## 
+## [4 rows x 30 columns]
+```
+
+
 ```python
 df_city[df_city.LIBGEO == 'Montreuil']
+```
+
+```
+##       CODGEO     LIBGEO  NBMENFISC16  ...         D116     D916      RD16
+## 10153  28267  Montreuil        215.0  ...          NaN      NaN       NaN
+## 24099  62588  Montreuil        994.0  ...          NaN      NaN       NaN
+## 32750  85148  Montreuil        340.0  ...          NaN      NaN       NaN
+## 34622  93048  Montreuil      43996.0  ...  8553.333333  37583.0  4.393959
+## 
+## [4 rows x 29 columns]
+```
+
+```python
 df_city[df_city.LIBGEO.str.contains('Saint-Denis')].head(10)
+```
+
+```
+##      CODGEO                  LIBGEO  ...          D916      RD16
+## 290   01344   Saint-Denis-lès-Bourg  ...  40126.666667  2.959194
+## 291   01345    Saint-Denis-en-Bugey  ...  34075.333333  2.635467
+## 1177  02818    Villiers-Saint-Denis  ...           NaN       NaN
+## 3906  11339             Saint-Denis  ...           NaN       NaN
+## 4824  14571  Saint-Denis-de-Mailloc  ...           NaN       NaN
+## 4825  14572     Saint-Denis-de-Méré  ...           NaN       NaN
+## 5874  17323    Saint-Denis-d'Oléron  ...           NaN       NaN
+## 6231  18204    Saint-Denis-de-Palin  ...           NaN       NaN
+## 7031  21442       Morey-Saint-Denis  ...           NaN       NaN
+## 8518  25129   Chassagne-Saint-Denis  ...           NaN       NaN
+## 
+## [10 rows x 29 columns]
 ```
 
 Ce petit exercice permet de se rassurer car les libellés dupliqués sont en fait des noms de commune identiques mais qui ne sont pas dans le même département. Il ne s'agit donc pas d'observations dupliquées. On se fiera ainsi aux codes communes, qui eux sont uniques.
@@ -178,24 +645,49 @@ A partir de l'exercice précédent, on peut se fier aux codes communes.
 
 -------------------------
 
+
 ```python
 df = df.set_index('INSEE commune')
 df_city =  df_city.set_index('CODGEO') 
 ```
+
 
 ```python
 df['dep'] = df.index.str[:2]
 df_city['dep'] = df_city.index.str[:2]
 ```
 
+
 ```python
 df_log = df.groupby('dep').sum().apply(np.log)
 df_log.sample(5).plot(kind = "bar")
 ```
 
+![](02_pandas_tp_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+
+
 ```python
 df
 ```
+
+```
+##                                Commune  Agriculture  ...     Tertiaire  dep
+## INSEE commune                                        ...                   
+## 01001          L'ABERGEMENT-CLEMENCIAT  3711.425991  ...    367.036172   01
+## 01002            L'ABERGEMENT-DE-VAREY   475.330205  ...    112.934207   01
+## 01004                AMBERIEU-EN-BUGEY   499.043526  ...  10732.376930   01
+## 01005              AMBERIEUX-EN-DOMBES  1859.160954  ...    782.404357   01
+## 01006                          AMBLEON   448.966808  ...     51.681756   01
+## ...                                ...          ...  ...           ...  ...
+## 95676               VILLERS-EN-ARTHIES  1628.065094  ...    235.439109   95
+## 95678                    VILLIERS-ADAM   698.630772  ...    403.404815   95
+## 95680                  VILLIERS-LE-BEL   107.564967  ...  13849.512000   95
+## 95682                  VILLIERS-LE-SEC  1090.890170  ...     85.657725   95
+## 95690              WY-DIT-JOLI-VILLAGE  1495.103542  ...    147.867245   95
+## 
+## [35798 rows x 12 columns]
+```
+
 
 ```python
 df_emissions = df.reset_index().set_index(['INSEE commune','dep']).sum(axis = 1).groupby('dep').sum()
@@ -203,14 +695,46 @@ gros_emetteurs = df_emissions.sort_values(ascending = False).head(10)
 petits_emetteurs = df_emissions.sort_values().head(5)
 ```
 
+
 ```python
 df_city[df_city['dep'].isin(gros_emetteurs.index)][['NBPERSMENFISC16','MED16']].sum()
-df_city[df_city['dep'].isin(gros_emetteurs.index)][['NBPERSMENFISC16','MED16']].mean()
+```
+
+```
+## NBPERSMENFISC16    1.662427e+07
+## MED16              1.072267e+08
+## dtype: float64
 ```
 
 ```python
+df_city[df_city['dep'].isin(gros_emetteurs.index)][['NBPERSMENFISC16','MED16']].mean()
+```
+
+```
+## NBPERSMENFISC16     3343.578037
+## MED16              21566.107365
+## dtype: float64
+```
+
+
+```python
 df_city[df_city['dep'].isin(petits_emetteurs.index)][['NBPERSMENFISC16','MED16']].sum()
+```
+
+```
+## NBPERSMENFISC16    4.805560e+05
+## MED16              9.346100e+06
+## dtype: float64
+```
+
+```python
 df_city[df_city['dep'].isin(petits_emetteurs.index)][['NBPERSMENFISC16','MED16']].mean()
+```
+
+```
+## NBPERSMENFISC16      994.939959
+## MED16              19350.103423
+## dtype: float64
 ```
 
 -------------------------
@@ -224,6 +748,7 @@ Un des intérêts des indices est qu'il permettent des agrégations efficaces.
 
 ---------------------------
 
+
 ```python
 df_copy = df.copy()
 df_copy2 = df.copy()
@@ -231,12 +756,14 @@ df_copy = df_copy.set_index('dep')
 df_copy2 = df_copy2.reset_index()
 ```
 
-```python
-%timeit df_copy.drop('Commune', axis = 1).groupby('dep').sum()
-```
 
 ```python
-%timeit df_copy2.drop('Commune', axis = 1).groupby('dep').sum()
+# %timeit df_copy.drop('Commune', axis = 1).groupby('dep').sum()
+```
+
+
+```python
+# %timeit df_copy2.drop('Commune', axis = 1).groupby('dep').sum()
 ```
 
 <!-- #region -->
@@ -269,14 +796,33 @@ Le fait de passer d'un format *wide* au format *long* (ou vice-versa) peut être
 
 --------------------------------
 
-```python
 
-```
+
 
 ```python
 df_wide = df.copy()
 df_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
                           var_name = "secteur", value_name = "emissions")
+```
+
+```
+##        INSEE commune                  Commune dep      secteur     emissions
+## 0              01001  L'ABERGEMENT-CLEMENCIAT  01  Agriculture   3711.425991
+## 1              01002    L'ABERGEMENT-DE-VAREY  01  Agriculture    475.330205
+## 2              01004        AMBERIEU-EN-BUGEY  01  Agriculture    499.043526
+## 3              01005      AMBERIEUX-EN-DOMBES  01  Agriculture   1859.160954
+## 4              01006                  AMBLEON  01  Agriculture    448.966808
+## ...              ...                      ...  ..          ...           ...
+## 357975         95676       VILLERS-EN-ARTHIES  95    Tertiaire    235.439109
+## 357976         95678            VILLIERS-ADAM  95    Tertiaire    403.404815
+## 357977         95680          VILLIERS-LE-BEL  95    Tertiaire  13849.512000
+## 357978         95682          VILLIERS-LE-SEC  95    Tertiaire     85.657725
+## 357979         95690      WY-DIT-JOLI-VILLAGE  95    Tertiaire    147.867245
+## 
+## [357980 rows x 5 columns]
+```
+
+```python
 (df_wide.reset_index()
  .melt(id_vars = ['INSEE commune','Commune','dep'],
                           var_name = "secteur", value_name = "emissions")
@@ -286,6 +832,23 @@ df_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
                           var_name = "secteur", value_name = "emissions")
  .groupby(['secteur','dep']).sum().reset_index().sort_values(['dep','emissions'], ascending = False).groupby('dep').head(1)
 )
+```
+
+```
+##          secteur dep     emissions
+## 767      Routier  95  1.540301e+06
+## 862  Résidentiel  94  1.336894e+06
+## 765      Routier  93  1.396911e+06
+## 860  Résidentiel  92  1.466794e+06
+## 763      Routier  91  2.073377e+06
+## ..           ...  ..           ...
+## 676      Routier  05  3.458587e+05
+## 675      Routier  04  3.905682e+05
+## 2    Agriculture  03  1.949985e+06
+## 673      Routier  02  1.386403e+06
+## 672      Routier  01  1.635350e+06
+## 
+## [96 rows x 3 columns]
 ```
 
 -----------------------------------
@@ -301,6 +864,7 @@ Cette transformation est moins fréquente car appliquer des fonctions par groupe
 
 ---------------------------------
 
+
 ```python
 df_wide = df.copy()
 df_wide_agg = (df_wide.reset_index()
@@ -311,9 +875,22 @@ df_wide_agg = (df_wide.reset_index()
 df_wide_agg.rank(axis = 1).median().nlargest(10)
 ```
 
-```python
-
 ```
+## dep
+## 13    94.5
+## 59    94.5
+## 69    92.0
+## 77    89.5
+## 33    89.0
+## 62    88.0
+## 76    88.0
+## 44    87.0
+## 38    85.0
+## 31    83.5
+## dtype: float64
+```
+
+
 
 # Combiner les données
 
@@ -335,6 +912,7 @@ On utilise de manière indifférente les termes *merge* ou *join*. Le deuxième 
 
 --------------------------------------------
 
+
 ```python
 df['emissions'] = df.sum(axis = 1)
 df_merged = df.merge(df_city, how = "left", left_index = True, right_index = True)
@@ -342,27 +920,120 @@ df_merged = df.merge(df_city, how = "left", left_index = True, right_index = Tru
 df_merged[df_merged['LIBGEO'].isna()]['emissions'].mean()
 ```
 
+```
+## 18173.94906449251
+```
+
+
 ```python
 df_merged[~df_merged['LIBGEO'].isna()]['emissions'].mean()
 ```
+
+```
+## 14530.993903545383
+```
+
 
 ```python
 df_merged = df.merge(df_city, left_index = True, right_index = True)
 df_merged['empreinte'] = df_merged['emissions']/df_merged['NBPERSMENFISC16']
 ```
 
+
 ```python
 df_merged['empreinte'].plot(kind ="hist")
 np.log(df_merged['empreinte']).plot.hist()
+```
+
+```
+## <AxesSubplot:ylabel='Frequency'>
+```
+
+```python
 df_merged['empreinte'].describe()
 ```
+
+```
+## count    29397.000000
+## mean        13.968018
+## std         68.403150
+## min          0.989768
+## 25%          6.031835
+## 50%          9.491476
+## 75%         15.620874
+## max      10164.872743
+## Name: empreinte, dtype: float64
+```
+
 
 ```python
 df_merged.corr()['empreinte']
 ```
 
+```
+## Agriculture                        0.046821
+## Autres transports                  0.268390
+## Autres transports international    0.733542
+## CO2 biomasse hors-total           -0.005091
+## Déchets                            0.046192
+## Energie                            0.061412
+## Industrie hors-énergie             0.099497
+## Résidentiel                       -0.015723
+## Routier                            0.001927
+## Tertiaire                         -0.005275
+## emissions                          0.311855
+## NBMENFISC16                       -0.016482
+## NBPERSMENFISC16                   -0.017641
+## MED16                             -0.033656
+## PIMP16                            -0.043378
+## TP6016                             0.012082
+## TP60AGE116                         0.008622
+## TP60AGE216                        -0.045172
+## TP60AGE316                        -0.024147
+## TP60AGE416                        -0.051447
+## TP60AGE516                         0.002961
+## TP60AGE616                         0.040756
+## TP60TOL116                        -0.031122
+## TP60TOL216                         0.001886
+## PACT16                             0.008487
+## PTSA16                             0.020298
+## PCHO16                             0.029914
+## PBEN16                            -0.069436
+## PPEN16                            -0.023084
+## PPAT16                            -0.057115
+## PPSOC16                            0.043591
+## PPFAM16                            0.073953
+## PPMINI16                           0.023268
+## PPLOGT16                           0.030526
+## PIMPOT16                           0.079574
+## D116                              -0.019581
+## D916                              -0.066617
+## RD16                              -0.062849
+## empreinte                          1.000000
+## Name: empreinte, dtype: float64
+```
+
+
 ```python
 df
+```
+
+```
+##                                Commune  Agriculture  ...  dep     emissions
+## INSEE commune                                        ...                   
+## 01001          L'ABERGEMENT-CLEMENCIAT  3711.425991  ...   01   5724.424941
+## 01002            L'ABERGEMENT-DE-VAREY   475.330205  ...   01   1332.811619
+## 01004                AMBERIEU-EN-BUGEY   499.043526  ...   01  63259.689113
+## 01005              AMBERIEUX-EN-DOMBES  1859.160954  ...   01   6792.867439
+## 01006                          AMBLEON   448.966808  ...   01   1068.584766
+## ...                                ...          ...  ...  ...           ...
+## 95676               VILLERS-EN-ARTHIES  1628.065094  ...   95   2625.668140
+## 95678                    VILLIERS-ADAM   698.630772  ...   95  22708.808791
+## 95680                  VILLIERS-LE-BEL   107.564967  ...   95  59484.157090
+## 95682                  VILLIERS-LE-SEC  1090.890170  ...   95   6351.999447
+## 95690              WY-DIT-JOLI-VILLAGE  1495.103542  ...   95   2506.319181
+## 
+## [35798 rows x 13 columns]
 ```
 
 # Appliquer des fonctions
@@ -370,6 +1041,23 @@ df
 
 On peut utiliser `apply` pour passer des fonctions à appliquer sur plusieurs colonnes ou sur plusieurs valeurs
 
+
 ```python
 df['emissions'].apply(np.sqrt)
+```
+
+```
+## INSEE commune
+## 01001     75.659930
+## 01002     36.507693
+## 01004    251.514789
+## 01005     82.418854
+## 01006     32.689215
+##             ...    
+## 95676     51.241274
+## 95678    150.694422
+## 95680    243.893741
+## 95682     79.699432
+## 95690     50.063152
+## Name: emissions, Length: 35798, dtype: float64
 ```
