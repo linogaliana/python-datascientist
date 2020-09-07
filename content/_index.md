@@ -38,7 +38,8 @@ des codes sources est stocké sous
 [github à cette adresse](https://github.com/linogaliana/python-datascientist).
 Sur l'ensemble du site web,
 il est possible de cliquer sur la petite icone
-<i class="fab fa-github"></i> pour être redirigé vers le dépôt
+<i class="fab fa-github"></i>
+pour être redirigé vers le dépôt
 
 Vous pouvez naviguer dans l'architecture du site via la table des matières
 ou par les liens vers le contenu antérieur ou postérieur à la fin de chaque
