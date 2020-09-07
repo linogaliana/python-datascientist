@@ -9,28 +9,56 @@ weight: 30
 
 ## `numpy`
 
-`numpy` gère tout ce qui est calcul matriciel. Le langage Python est un des langages les plus lents qui soient. Tous les calculs rapides ne sont pas écrits en Python mais en C++, voire fortran. C’est le cas du module numpy, il est incontournable dès qu’on veut être rapide. Le module scipy est une extension où l’on peut trouver des fonctions statistiques, d’optimisation.
+`numpy` gère tout ce qui est calcul matriciel. Le langage Python est un des langages les plus lents qui soient[^1]. Tous les calculs rapides ne sont pas écrits en Python mais en C++, voire fortran. C’est le cas du module numpy, il est incontournable dès qu’on veut être rapide. Le module scipy est une extension où l’on peut trouver des fonctions statistiques, d’optimisation.
 
-La Cheat Sheet de `numpy` : https://s3.amazonaws.com/assets.datacamp.com/blog_assets/Numpy_Python_Cheat_Sheet.pdf
+[^1]: `python` est un langage interprété, comme `R`. Cela le rend très
+intelligible, y compris par un non-expert. C'est une des raisons de son
+succès. La contrepartie est qu'il s'agit d'une superstructure à des langages
+plus bas-niveau, notamment `C`. Ces derniers proposent beaucoup moins de
+surcouches. En réalité, les fonctions python font appel, plus ou moins
+directement, à du `C`. Une manière d'optimiser le code est ainsi d'arriver,
+avec le moins de surcouche possible, à la fonction `C` sous-jacente,
+beaucoup plus rapide. 
 
-## pandas
+La Cheat Sheet de `numpy` :
+<https://s3.amazonaws.com/assets.datacamp.com/blog_assets/Numpy_Python_Cheat_Sheet.pdf>
 
-pandas est incontournable dès qu’on veut manipuler des données. Il gère la plupart des formats de données. Il est lui aussi implémenté en C++. Il est rapide mais pas tant que ça, il utilise en règle générale trois fois plus d’espace en mémoire que les données n’en prennent sur le disque.
+## `pandas`
 
-La Cheat Sheet de pandas : https://s3.amazonaws.com/assets.datacamp.com/blog_assets/Python_Pandas_Cheat_Sheet_2.pdf
+Avant tout, un bon data-scientist doit être capable de
+s'approprier et manipuler des données rapidement. Dans ces domaines, 
+`pandas` est incontournable.
+Il gère la plupart des formats de données. Il est lui aussi implémenté en C++.
+Le package est rapide si on utilise les méthodes pré-implémentées sur
+des données d'une taille raisonnable (par rapport à la RAM disponible). Il faut
+néanmoins s'en méfier avec des données volumineuses.
+En règle générale, un jeu de données nécessite
+trois fois plus d’espace en mémoire que les
+données n’en prennent sur le disque.
+
+La Cheat Sheet de pandas :
+<https://s3.amazonaws.com/assets.datacamp.com/blog_assets/Python_Pandas_Cheat_Sheet_2.pdf>
 
 
-## matplotlib
+## `matplotlib` et `seaborn`
 
-matplotlib s’occupe de tout ce qui est graphique. Il faut également connaître seaborn qui propose des graphiques étudiés pour un usage statistique.
+`matplotlib` s’occupe de tout ce qui est graphique.
+Il faut également connaître `seaborn`
+qui propose des graphiques étudiés pour un usage statistique.
 
-## scikit-learn
+## `scikit-learn`
 
-scikit-learn est le module le plus populaire pour deux raisons. Son design a été pensé pour être simple avec deux méthodes fit et predict pour apprendre et prédire. Sa documentation est un modèle à suivre.
+`scikit-learn` est le module de modélisation le plus populaire pour deux raisons:
 
-## statsmodels
+* son design a été pensé pour être simple avec deux méthodes fit et predict pour apprendre et prédire.
+* Sa documentation est un modèle à suivre.
 
-statsmodels plaira plus aux statisticiens, il implémente des modèles similaires à scikit-learn, il est meilleur pour tout ce qui est linéaire avec une présentation des résultats très proche de ce qu’on trouve en R.
+## `statsmodels`
+
+`statsmodels` plaira plus aux statisticiens, il implémente des modèles
+similaires à scikit-learn,
+il est meilleur pour tout ce qui est linéaire avec une présentation des
+résultats très proche de ce qu’on trouve en `R`.
 
 <!---
 (source http://www.xavierdupre.fr/app/papierstat/helpsphinx/rappel.html)
@@ -38,16 +66,24 @@ statsmodels plaira plus aux statisticiens, il implémente des modèles similaire
 
 # Environnement autour de Python
 
+**TO DO**
+
 # Démarche à adopter face à un jeu de données
 
-Pour bien débuter des travaux sur une base de données, il est nécessaire de se poser quelques questions de bon sens et de suivre une démarche assez simple. 
+Pour bien débuter des travaux sur une base de données,
+il est nécessaire de se poser quelques questions de bon sens
+et de suivre une démarche assez simple. 
 
-<!-- #region -->
-### Une démarche scientifique 
+## Une démarche scientifique 
 
-Dans un projet sur des jeux de données, on peut schématiquement séparer les étapes en 3 grandes parties : la récupération des données, leur analyse (notamment descriptive) et la modélisation. 
+Dans un projet sur des jeux de données, on peut schématiquement séparer les étapes en 3 grandes parties :
 
-#### Lors de la récupération des données
+* la récupération des données;
+* leur analyse (notamment descriptive);
+* la modélisation.
+
+
+### Lors de la récupération des données
 
 La phase de constitution de son jeu de données sous-tend tout le projet qui suit : 
 - de quelles données ai-je besoin ? 
@@ -67,7 +103,7 @@ Quelques exemples pour vous permettre de saisir le sens de données propres :
 - renommez les colonnes avec des noms compréhensibles 
 
 
-#### Lors de l'analyse descriptive
+### Lors de l'analyse descriptive
 
 Une fois les jeux de données nettoyés, vous pouvez plus sereinement regarder ce que vos données vous disent. Cette phase et celle du nettoyage ne sont pas séquentielles, en réalité vous devrez régulièrement passer de votre nettoyage à quelques statistiques descriptives qui vous montreront un problème, retourner au nettoyage etc. 
 
@@ -78,7 +114,7 @@ Les questions à se poser pour "challenger" le jeu de données :
 - est-ce que je __comprends toutes les variables__ de mon jeu de données ? est-ce qu'elles se "comportent" de la bonne façon ? à ce stade, il est parfois utile de se faire un dictionnaire de variable (qui explique comment elles sont construites ou calculées). On peut également mener des études de __corrélation__ entre nos variables.
 - est-ce que j'ai des __premiers grands messages__ sortis de mon jeu de données ? est-ce que j'ai des résultats surprenants ? Si oui, les ai-je creusé suffisamment pour voir si les résultats tiennent toujours ou si c'est à cause d'un souci dans la construction du jeu de données (mal nettoyées, mauvaise variable...)
 
-#### Lors de la modélisation
+### Lors de la modélisation
 
 A cette étape, l'analyse descriptive doit voir avoir donné quelques premières pistes pour savoir dans quelle direction vous voulez mener votre modèle. 
 
@@ -95,10 +131,12 @@ http://www.xavierdupre.fr/app/ensae_teaching_cs/helpsphinx3/debutermlprojet.html
 
 Pour aller plus loin (mais de manière simplifiée) sur les algorithmes de Machine Learning :  
 https://datakeen.co/8-machine-learning-algorithms-explained-in-human-language/
-<!-- #endregion -->
+
 
 ### Une démarche éthique 
 
 On entend souvent qu'on peut "faire dire ce qu'on veut aux données". 
 
-En suivant quelques préceptes simples, mélange d'honneteté intellectuelle et de recherche scientifique, cette remarque est facilement écartée. Ces principes ont été repris dans "le sermet d'Hippocrate du Data Scientist" : https://hippocrate.tech/.
+En suivant quelques préceptes simples, mélange d'honneteté intellectuelle et
+de recherche scientifique, cette remarque est facilement écartée.
+Ces principes ont été repris dans "le serment d'Hippocrate du Data Scientist" : https://hippocrate.tech/.
