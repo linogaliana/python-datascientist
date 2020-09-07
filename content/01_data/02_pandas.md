@@ -764,8 +764,6 @@ data.loc[(data.age >= 12), ['section']]
 
 # Principales manipulation de données
 
-## Opérations sur les colonnes: select, mutate, drop
-
 Les opérations les plus fréquentes en SQL sont résumées par le tableau suivant.
 Il est utile de les connaître (beaucoup de syntaxes de maniement de données
 reprennent ces termes) car, d'une
@@ -779,12 +777,14 @@ des usages de manipulation des données
 | Trier la table selon une ou plusieurs variables | SORT BY | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
 | Ajouter des variables qui sont fonction d’autres variables; | | `df['x'] = np.log(df['Agriculture'])`  |  `df %>% mutate(x = log(Agriculture))` | `df[,x := log(Agriculture)]` |
 | Effectuer une opération par groupe | GROUP BY | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
-+ join
+| Joindre deux bases de données (*inner join*) | `SELECT * FROM table1 INNER JOIN table2 ON table1.id = table2.x` | `table1.merge(table2, left_on = 'id', right_on = 'x')` | `table1 %>% inner_join(table2, by = c('id'='x'))` | `merge(table1, table2, by.x = 'id', by.y = 'x')` |
 
+## Opérations sur les colonnes: select, mutate, drop
 
-La manière la plus simple d'opérer pour ajouter des colonnes est de
-réassigner le `DataFrame`.
-
+Les DataFrames pandas sont des objets *mutables* en langage `python`,
+c'est-à-dire qu'il est possible de faire évoluer le DataFrame au grès 
+des opérations. L'opération la plus classique consiste à ajouter ou retirer
+des variables à la table de données. 
 
 
 {{< panel status="danger" title="warning" icon="fa fa-exclamation-triangle" >}}
@@ -801,12 +801,79 @@ n'est pas anticipé. Si vous voulez, par sécurité, conserver intact le
 premier DataFrame, faites appel à une copie profonde (*deep copy*) en
 utilisant la méthode `copy`:
 
+
 ```python
 df_new = df.copy()
 ```
 
 {{< /panel >}}
 
+La manière la plus simple d'opérer pour ajouter des colonnes est
+d'utiliser la réassignation. Par exemple, pour créer une variable
+`x` qui est le `log` de la
+variable `Agriculture`:
+
+
+```python
+df_new['x'] = np.log(df_new['Agriculture'])
+```
+
+Il est possible d'appliquer cette approche sur plusieurs colonnes. Un des
+intérêts de cette approche est qu'elle permet de recycler le nom de colonnes.
+
+
+```python
+vars = ['Agriculture', 'Déchets', 'Energie']
+
+df_new[[v + "_log" for v in vars]] = np.log(df_new[vars])
+df_new
+```
+
+```
+##       INSEE commune                  Commune  ...  Déchets_log  Energie_log
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...     4.619374     0.856353
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...     4.946455     0.856353
+## 2             01004        AMBERIEU-EN-BUGEY  ...     8.578159     6.906086
+## 3             01005      AMBERIEUX-EN-DOMBES  ...     5.376285     4.545232
+## 4             01006                  AMBLEON  ...     3.879532          NaN
+## ...             ...                      ...  ...          ...          ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...     4.175366     2.465791
+## 35794         95678            VILLIERS-ADAM  ...     4.713854     0.856353
+## 35795         95680          VILLIERS-LE-BEL  ...     5.418865     6.281303
+## 35796         95682          VILLIERS-LE-SEC  ...     4.691070     0.856353
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...     4.582194     1.549500
+## 
+## [35798 rows x 16 columns]
+```
+
+Il est également possible d'utiliser la méthode `assign`. Pour des opérations
+vectorisées, comme le sont les opérateurs de `numpy`, cela n'a pas d'intérêt.
+Mais dans certains cas, où on serait tenté (à tord !), d'utiliser une boucle,
+alors cette approche peut se justifier. Cette approche utilise généralement
+des *lambda functions*. Par exemple le code précédent prendrait la forme:
+
+
+
+```python
+df_new.assign(Energie_log = lambda x: np.log(x['Energie']))
+```
+
+```
+##       INSEE commune                  Commune  ...  Déchets_log  Energie_log
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...     4.619374     0.856353
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...     4.946455     0.856353
+## 2             01004        AMBERIEU-EN-BUGEY  ...     8.578159     6.906086
+## 3             01005      AMBERIEUX-EN-DOMBES  ...     5.376285     4.545232
+## 4             01006                  AMBLEON  ...     3.879532          NaN
+## ...             ...                      ...  ...          ...          ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...     4.175366     2.465791
+## 35794         95678            VILLIERS-ADAM  ...     4.713854     0.856353
+## 35795         95680          VILLIERS-LE-BEL  ...     5.418865     6.281303
+## 35796         95682          VILLIERS-LE-SEC  ...     4.691070     0.856353
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...     4.582194     1.549500
+## 
+## [35798 rows x 16 columns]
+```
 ## Reordonner
 
 La méthode `sort_values` permet de réordonner un DataFrame. Par exemple,
@@ -839,9 +906,155 @@ Ainsi, en une ligne de code, on identifie les villes où le secteur
 résidentiel consomme le plus. 
 
 
-## Filtrer et réassigner (update)
+## Filtrer
 
-**TO DO**
+L'opération de sélection de lignes s'appelle `FILTER` en SQL et s'utilise 
+en fonction d'une condition logique (clause `WHERE`). On sélectionne les
+données sur une condition logique. Il existe plusieurs méthodes en `pandas`.
+
+La plus simple est d'utiliser les *boolean mask*, déjà vus dans le chapitre
+`numpy` [**LIEN**]. 
+
+Par exemple, pour sélectionner les communes dans les Hauts-de-Seine, on 
+peut utiliser le résultat de la méthode `str.startswith` (qui renvoie
+`True` ou `False`) directement dans les crochets:
+
+
+```python
+df[df['INSEE commune'].str.startswith("92")]
+```
+
+```
+##       INSEE commune                Commune  ...        Routier     Tertiaire
+## 35490         92002                 ANTONY  ...   58900.979690  31462.038000
+## 35491         92004     ASNIERES-SUR-SEINE  ...   38163.016020  42482.635100
+## 35492         92007                BAGNEUX  ...   11877.277750  18963.241530
+## 35493         92009          BOIS-COLOMBES  ...    5079.982555  14165.775610
+## 35494         92012   BOULOGNE-BILLANCOURT  ...   64985.280900  60349.109480
+## 35495         92014         BOURG-LA-REINE  ...   11497.353790   9432.877482
+## 35496         92019       CHATENAY-MALABRY  ...   40697.840130  15775.385930
+## 35497         92020              CHATILLON  ...   14337.808150  17210.024640
+## 35498         92022               CHAVILLE  ...    7123.921515   9435.270156
+## 35499         92023                CLAMART  ...   32821.444270  25677.654780
+## 35500         92024                 CLICHY  ...   23730.340830  29125.597830
+## 35501         92025               COLOMBES  ...   52070.927940  41526.600870
+## 35502         92026             COURBEVOIE  ...   65549.086660  65043.364500
+## 35503         92032     FONTENAY-AUX-ROSES  ...    8450.888508  11080.728970
+## 35504         92033                GARCHES  ...    8255.218953   8503.084415
+## 35505         92035    LA GARENNE-COLOMBES  ...    9960.623505  14284.092450
+## 35506         92036          GENNEVILLIERS  ...  109143.291100  29815.609640
+## 35507         92040    ISSY-LES-MOULINEAUX  ...   24807.118490  33116.775030
+## 35508         92044       LEVALLOIS-PERRET  ...   13733.205810  37180.138640
+## 35509         92046               MALAKOFF  ...    8651.285758  14501.517820
+## 35510         92047     MARNES-LA-COQUETTE  ...   29378.365810    800.588678
+## 35511         92048                 MEUDON  ...   41966.277200  22431.329660
+## 35512         92049              MONTROUGE  ...   21404.947350  23762.122780
+## 35513         92050               NANTERRE  ...  113716.853000  54104.370640
+## 35514         92051      NEUILLY-SUR-SEINE  ...  101306.393300  29834.729070
+## 35515         92060    LE PLESSIS-ROBINSON  ...   11116.105170  14751.826900
+## 35516         92062                PUTEAUX  ...   46027.972460  24218.673780
+## 35517         92063        RUEIL-MALMAISON  ...   51266.653890  40475.691470
+## 35518         92064            SAINT-CLOUD  ...   64868.314960  13929.668760
+## 35519         92071                 SCEAUX  ...    9691.146620   9435.748691
+## 35520         92072                 SEVRES  ...   34315.435900  11199.627870
+## 35521         92073               SURESNES  ...   23302.575640  24239.062880
+## 35522         92075                 VANVES  ...    7403.982800  13640.804790
+## 35523         92076             VAUCRESSON  ...    8169.784889   4218.762575
+## 35524         92077          VILLE-D'AVRAY  ...    4968.382962   5391.172774
+## 35525         92078  VILLENEUVE-LA-GARENNE  ...   19680.354360  14447.449200
+## 
+## [36 rows x 12 columns]
+```
+
+Pour remplacer des valeurs spécifiques, on utilise la méthode `where` ou une
+réassignation couplée à la méthode précédente. 
+
+Par exemple, pour assigner des valeurs manquantes aux départements du 92,
+on peut faire cela
+
+
+```python
+df_copy = df.copy()
+df_copy = df_copy.where(~df['INSEE commune'].str.startswith("92"))
+```
+
+et vérifier les résultats:
+
+
+```python
+df_copy[df['INSEE commune'].str.startswith("92")]
+```
+
+```
+##       INSEE commune Commune  Agriculture  ...  Résidentiel  Routier  Tertiaire
+## 35490           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35491           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35492           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35493           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35494           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35495           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35496           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35497           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35498           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35499           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35500           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35501           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35502           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35503           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35504           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35505           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35506           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35507           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35508           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35509           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35510           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35511           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35512           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35513           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35514           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35515           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35516           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35517           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35518           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35519           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35520           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35521           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35522           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35523           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35524           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35525           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 
+## [36 rows x 12 columns]
+```
+
+```python
+df_copy[~df['INSEE commune'].str.startswith("92")]
+```
+
+```
+##       INSEE commune                  Commune  ...       Routier     Tertiaire
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...    348.997893    112.934207
+## 2             01004        AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
+## 3             01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
+## 4             01006                  AMBLEON  ...    398.786800     51.681756
+## ...             ...                      ...  ...           ...           ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...    309.627908    235.439109
+## 35794         95678            VILLIERS-ADAM  ...  18759.370070    403.404815
+## 35795         95680          VILLIERS-LE-BEL  ...  12217.122400  13849.512000
+## 35796         95682          VILLIERS-LE-SEC  ...   4663.232127     85.657725
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...    504.400972    147.867245
+## 
+## [35762 rows x 12 columns]
+```
+
+ou alors utiliser une réassignation plus classique:
+
+
+```python
+df_copy = df.copy()
+df[df['INSEE commune'].str.startswith("92")] = np.nan
+```
 
 ## Opérations par groupe
 
@@ -852,14 +1065,10 @@ La logique sous-jacente est celle du split-apply-combine qui est repris
 par les langages de manipulation de données, auxquels `pandas`
 [ne fait pas exception](https://pandas.pydata.org/pandas-docs/stable/user_guide/groupby.html). 
 
+https://unlhcc.github.io/r-novice-gapminder/16-plyr/
 
-```r
-knitr::include_graphics(
-  "https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png"
-)
-```
+![Split-apply-combine](https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png)
 
-![Split-Apply-Combine, d'après <https://unlhcc.github.io/r-novice-gapminder/16-plyr/>](https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png)
 
 Ce [tutoriel](https://realpython.com/pandas-groupby/) sur le sujet
 est particulièrement utile. 

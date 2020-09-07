@@ -534,8 +534,6 @@ data.loc[(data.age >= 12), ['section']]
 
 # Principales manipulation de données
 
-## Opérations sur les colonnes: select, mutate, drop
-
 Les opérations les plus fréquentes en SQL sont résumées par le tableau suivant.
 Il est utile de les connaître (beaucoup de syntaxes de maniement de données
 reprennent ces termes) car, d'une
@@ -549,12 +547,14 @@ des usages de manipulation des données
 | Trier la table selon une ou plusieurs variables | SORT BY | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
 | Ajouter des variables qui sont fonction d’autres variables; | | `df['x'] = np.log(df['Agriculture'])`  |  `df %>% mutate(x = log(Agriculture))` | `df[,x := log(Agriculture)]` |
 | Effectuer une opération par groupe | GROUP BY | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
-+ join
+| Joindre deux bases de données (*inner join*) | `SELECT * FROM table1 INNER JOIN table2 ON table1.id = table2.x` | `table1.merge(table2, left_on = 'id', right_on = 'x')` | `table1 %>% inner_join(table2, by = c('id'='x'))` | `merge(table1, table2, by.x = 'id', by.y = 'x')` |
 
+## Opérations sur les colonnes: select, mutate, drop
 
-La manière la plus simple d'opérer pour ajouter des colonnes est de
-réassigner le `DataFrame`.
-
+Les DataFrames pandas sont des objets *mutables* en langage `python`,
+c'est-à-dire qu'il est possible de faire évoluer le DataFrame au grès 
+des opérations. L'opération la plus classique consiste à ajouter ou retirer
+des variables à la table de données. 
 
 
 {{< panel status="danger" title="warning" icon="fa fa-exclamation-triangle" >}}
@@ -571,12 +571,41 @@ n'est pas anticipé. Si vous voulez, par sécurité, conserver intact le
 premier DataFrame, faites appel à une copie profonde (*deep copy*) en
 utilisant la méthode `copy`:
 
-```python
+```{python}
 df_new = df.copy()
 ```
 
 {{< /panel >}}
 
+La manière la plus simple d'opérer pour ajouter des colonnes est
+d'utiliser la réassignation. Par exemple, pour créer une variable
+`x` qui est le `log` de la
+variable `Agriculture`:
+
+```{python}
+df_new['x'] = np.log(df_new['Agriculture'])
+```
+
+Il est possible d'appliquer cette approche sur plusieurs colonnes. Un des
+intérêts de cette approche est qu'elle permet de recycler le nom de colonnes.
+
+```{python}
+vars = ['Agriculture', 'Déchets', 'Energie']
+
+df_new[[v + "_log" for v in vars]] = np.log(df_new[vars])
+df_new
+```
+
+Il est également possible d'utiliser la méthode `assign`. Pour des opérations
+vectorisées, comme le sont les opérateurs de `numpy`, cela n'a pas d'intérêt.
+Mais dans certains cas, où on serait tenté (à tord !), d'utiliser une boucle,
+alors cette approche peut se justifier. Cette approche utilise généralement
+des *lambda functions*. Par exemple le code précédent prendrait la forme:
+
+
+```{python}
+df_new.assign(Energie_log = lambda x: np.log(x['Energie']))
+```
 ## Reordonner
 
 La méthode `sort_values` permet de réordonner un DataFrame. Par exemple,
@@ -591,9 +620,47 @@ Ainsi, en une ligne de code, on identifie les villes où le secteur
 résidentiel consomme le plus. 
 
 
-## Filtrer et réassigner (update)
+## Filtrer
 
-**TO DO**
+L'opération de sélection de lignes s'appelle `FILTER` en SQL et s'utilise 
+en fonction d'une condition logique (clause `WHERE`). On sélectionne les
+données sur une condition logique. Il existe plusieurs méthodes en `pandas`.
+
+La plus simple est d'utiliser les *boolean mask*, déjà vus dans le chapitre
+`numpy` [**LIEN**]. 
+
+Par exemple, pour sélectionner les communes dans les Hauts-de-Seine, on 
+peut utiliser le résultat de la méthode `str.startswith` (qui renvoie
+`True` ou `False`) directement dans les crochets:
+
+```{python}
+df[df['INSEE commune'].str.startswith("92")]
+```
+
+Pour remplacer des valeurs spécifiques, on utilise la méthode `where` ou une
+réassignation couplée à la méthode précédente. 
+
+Par exemple, pour assigner des valeurs manquantes aux départements du 92,
+on peut faire cela
+
+```{python}
+df_copy = df.copy()
+df_copy = df_copy.where(~df['INSEE commune'].str.startswith("92"))
+```
+
+et vérifier les résultats:
+
+```{python}
+df_copy[df['INSEE commune'].str.startswith("92")].head(2)
+df_copy[~df['INSEE commune'].str.startswith("92")].head(2)
+```
+
+ou alors utiliser une réassignation plus classique:
+
+```{python}
+df_copy = df.copy()
+df[df['INSEE commune'].str.startswith("92")] = np.nan
+```
 
 ## Opérations par groupe
 
@@ -604,11 +671,10 @@ La logique sous-jacente est celle du split-apply-combine qui est repris
 par les langages de manipulation de données, auxquels `pandas`
 [ne fait pas exception](https://pandas.pydata.org/pandas-docs/stable/user_guide/groupby.html). 
 
-```{r splitapply, fig.cap="Split-Apply-Combine, d'après <https://unlhcc.github.io/r-novice-gapminder/16-plyr/>"}
-knitr::include_graphics(
-  "https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png"
-)
-```
+https://unlhcc.github.io/r-novice-gapminder/16-plyr/
+
+![Split-apply-combine](https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png)
+
 
 Ce [tutoriel](https://realpython.com/pandas-groupby/) sur le sujet
 est particulièrement utile. 
