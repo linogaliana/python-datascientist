@@ -16,28 +16,6 @@ dans un contexte de travail d'un ENSAE.
 Nous partirons de l'hypothèse que les notions de statistiques et d'économétrie pour lesquels nous verrons des applications informatiques, vous sont connues. 
 
 
-
-
-[Python](https://www.python.org/), par sa grande flexibilité, est devenu un langage incontournable
-dans le domaine de la *data science*. Comme pour `R`, l'intérêt de Python est son rôle central dans un
-écosystème plus large autour d'outils puissants, flexibles et *open-source*. 
- 
-L'intérêt de Python pour un *data scientist* ou *data economist* va au-delà du champ du *Machine Learning*. 
-Python concurrence très bien `R` dans son domaine de prédilection (l'analyse statistique sur des
-objets type *dataframes*) et est bien plus complet dans certains domaines (outre le *Machine Learning*,
-`Python` est mieux adapté aux données volumineuses que `R`). Néanmoins, l'objectif du cours n'est pas d'enterrer `R` ; au contraire, outre leur logique très proche,
-les deux langages sont dans une phase de convergence avec des initiatives comme
-[`reticulate`](https://rstudio.github.io/reticulate/). 
-
-Un des avantages comparatifs de `Python` par rapport à d'autres langages (notamment `R` et `Julia`) est sa dynamique,
-ce que montre [l'explosion du nombre de questions
-sur `Stack Overflow`](https://towardsdatascience.com/python-vs-r-for-data-science-6a83e4541000):
-
-![](https://miro.medium.com/max/589/1*JxeXVkzq29tnE4vjPAleqQ.png)
-
-
-**TO DO**
-
 # Evaluation
 
 * A la fin du semestre, les étudiants rendront un projet informatique par __groupe de 2-3 personnes.__
@@ -66,4 +44,29 @@ Vous pouvez naviguer dans l'architecture du site via la table des matières
 ou par les liens vers le contenu antérieur ou postérieur à la fin de chaque
 page. 
 
+# Pourquoi faire du python ?
+
+[Python](https://www.python.org/), par sa grande flexibilité, est devenu un langage incontournable
+dans le domaine de la *data science*. Comme pour `R`, l'intérêt de Python est son rôle central dans un
+écosystème plus large autour d'outils puissants, flexibles et *open-source*. 
+ 
+L'intérêt de Python pour un *data scientist* ou *data economist* va au-delà du champ du *Machine Learning*. 
+Python concurrence très bien `R` dans son domaine de prédilection (l'analyse statistique sur des
+objets type *dataframes*) et est bien plus complet dans certains domaines (outre le *Machine Learning*,
+`Python` est mieux adapté aux données volumineuses que `R`). Néanmoins, l'objectif du cours n'est pas d'enterrer `R` ; au contraire, outre leur logique très proche,
+les deux langages sont dans une phase de convergence avec des initiatives comme
+[`reticulate`](https://rstudio.github.io/reticulate/). 
+
+Un des avantages comparatifs de `Python` par rapport à d'autres langages (notamment `R` et `Julia`) est sa dynamique,
+ce que montre [l'explosion du nombre de questions
+sur `Stack Overflow`](https://towardsdatascience.com/python-vs-r-for-data-science-6a83e4541000):
+
+![](https://miro.medium.com/max/589/1*JxeXVkzq29tnE4vjPAleqQ.png)
+
+
+**TO DO**
+
+
 # Plan du cours
+
+
