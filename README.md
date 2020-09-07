@@ -23,10 +23,17 @@ Pour éditer des notebooks bien intégrés dans le site web, utiliser `jupytext`
 ![](./static/pictures/intro/jupytext.png)
 
 
-Pour convertir un notebook jupyter en `.md`:
+Pour convertir un notebook jupyter en `.Rmd` (on n'utilise le `.md` que
+pour la transition avec hugo) :
 
 ```shell
-find $directory -type f -name "*.ipynb" ! -name ".ipynb-checkpoints"
-jupytext --to md ./content/01_data/02_pandas_tp.ipynb
+for i in $(find . -type f -name "*.ipynb"); do
+  jupytext --to md "$i"
+done
+```
+
+```shell
+jupytext --to Rmd ./content/01_data/02_pandas_tp.ipynb
+jupytext --to ipynb ./content/01_data/02_pandas_tp.Rmd
 ```
 
