@@ -1,5 +1,5 @@
 ---
-title: "L'environnement du data-sciencist en python"
+title: "L'environnement du data-scientist en python"
 date: 2020-07-22T12:00:00Z
 draft: false
 weight: 30
