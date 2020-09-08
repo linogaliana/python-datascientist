@@ -20,46 +20,63 @@ output:
     self_contained: true
 ---
 
-# 2A - Rappel de ce que vous savez déjà mais avez peut-être oublié
-
-[pandas](http://pandas.pydata.org/) et [numpy](http://www.numpy.org/) sont essentiels pour manipuler les données. 
+[pandas](http://pandas.pydata.org/) et [numpy](http://www.numpy.org/) sont
+essentiels pour manipuler les données. 
 Néanmoins, il est nécessaire de ne pas faire l'impasse sur les fondements 
 du langage python. Une bonne compréhension des éléments structurants le
-langage entraîne une plus grande productivité et liberté. *
+langage entraîne une plus grande productivité et liberté.
 
 Voir aussi [Essential Cheat Sheets for Machine Learning and Deep Learning Engineers](https://startupsventurecapital.com/essential-cheat-sheets-for-machine-learning-and-deep-learning-researchers-efb6a8ebd2e5).
 
 
 ## Les quelques règles de Python
 
-Python est un peu susceptible et protocolaire, il y a quelques règles à respecter : 
+Python est un peu susceptible et protocolaire, plus formaliste que ne l'est `R`.
+Il y a ainsi quelques règles à respecter : 
 
-1) L'indentation est primordiale : un code mal indenté ne fonctionne pas. 
-L'indentation indique à l'interpréteur où se trouvent les séparations entre des blocs d'instructions. Un peu comme des points dans un texte. 
-Si les lignes ne sont pas bien alignées, l'interpréteur ne sait plus à quel bloc associer la ligne.
+*Règle 1:* **L'indentation est primordiale** : un code mal indenté provoque une erreur
+L'indentation indique à l'interpréteur où se trouvent les
+séparations entre des blocs d'instructions. Un peu comme des points dans un 
+texte. 
 
-2) On commence à compter à 0. Ca peut paraitre bizarre mais c'est comme ça. Le premier élément d'une liste est le 0-ème. 
+Si les lignes ne sont pas bien alignées, l'interpréteur ne sait plus à quel
+bloc associer la ligne. Par exemple, le corps d'une fonction doit être indenté
+d'un niveau ; les éléments dans une clause logique (`if`, `else`, etc.) également
 
-3) Les marques de ponctuation sont importantes : 
-- Pour une liste : []
-- Pour un dictionnaire : {}
-- Pour un tuple : ()
-- Pour séparer des éléments : ,
-- Pour commenter un bout de code : #
-- Pour aller à la ligne dans un bloc d'instructions : \
-- Les majuscules et minuscules sont importantes
-- Par contre l'usage des ' ou des " est indifférente. Il faut juste avoir les mêmes début et fin.
-- Pour documenter une fonction ou une classe """ documentation """ 
 
-## Les outputs de Python : l'opération, le print et le return
+*Règle 2:* On commence à compter à 0, comme dans beaucoup de langages
+(`C++`, `java`...). `python` diffère dans ce domaine de `R` où on commence
+à compter à 0. 
+Le premier élément d'une liste est ainsi, en python, le 0-ème. 
+
+*Règle 3:* Comme dans une langue naturelle, les marques de
+ponctuation sont importantes : 
+
+* Pour une liste : `[]`
+* Pour un dictionnaire : `{}`
+* Pour un tuple : `()`
+* Pour séparer des éléments `:` ,
+* Pour commenter un bout de code : `#`
+* Pour aller à la ligne dans un bloc d'instructions : `\`
+* Les majuscules et minuscules sont importantes
+* Par contre l'usage des `'` ou des `"` est indifférent.
+Il faut juste avoir les mêmes début et fin.
+* Pour documenter une fonction ou une classe _""" mon texte de documentation """_
+
+## Les outputs de Python : l'opération, le `print` et le `return`
 
 Quand Python réalise des opérations, il faut lui préciser ce qu'il doit en faire : 
-- est-ce qu'il doit juste faire l'opération,
-- afficher le résultat de l'opération, 
-- créer un objet avec le résultat de l'opération ?
+* est-ce qu'il doit juste faire l'opération,
+* afficher le résultat de l'opération, 
+* créer un objet avec le résultat de l'opération ?
+
+Contrairement à `R`, par défaut, python ne renvoie pas le résultat de la
+dernière opération effectuée. 
 
 
-Remarque : dans l'environnement Notebook, le dernier élement d'une cellule est automatiquement affiché (print), qu'on lui demande ou non de le faire. Ce n'est pas le cas dans un éditeur classique comme Spyder.
+Remarque : dans l'environnement Notebook, le dernier élement d'une cellule
+est automatiquement affiché (print), qu'on lui demande ou non de le faire. Ce
+n'est pas le cas dans un éditeur classique comme Spyder ou PyCharm.
 
 
 ```python
@@ -90,7 +107,8 @@ Le résultat de l'addition est affiché
 
 La fonction addition_v1 effectue un print
 
-Par contre, l'objet crée n'a pas de type, il n'est pas un chiffre, ce n'est qu'un affichage.
+Par contre, l'objet crée n'a pas de type, il n'est pas un chiffre,
+ce n'est qu'un affichage.
 
 Pour créer un objet avec le résultat de la fonction, il faut utiliser __return__
 
@@ -107,25 +125,28 @@ print(type(resultat_return))
 
 Le résultat de addition_v2 n'est pas affiché comme dans addition_v1
 
-Par contre, la fonction addition_v2 permet d'avoir un objet de type int, un entier donc.
+Par contre, la fonction addition_v2 permet d'avoir un objet de type `int`,
+un entier donc.
 
 
 ## Type de base : variables, listes, dictionnaires ...
 
 Pyhon permet de manipuler différents types de base
 
-On distingue deux types de variables : les immuables qui ne peuvent être modifiés et les modifiables
+On distingue deux types de variables : les immuables (*immutables*)
+qui ne peuvent être
+modifiés et les modifiables (*mutables*)
 
 ### Les variables - types immuables
 
 Les variables immuables ne peuvent être modifiées
 
-- None : ce type est une convention de programmation pour dire que la valeur n'est pas calculée
-- bool : un booléen
-- int : un entier
-- float : un réel
-- str : une chaine de caractères
-- tuple : un vecteur
+- `None` : ce type est une convention de programmation pour dire que la valeur n'est pas calculée
+- `bool` : un booléen
+- `int` : un entier
+- `float` : un réel
+- `str` : une chaine de caractères
+- `tuple` : un vecteur
 
 
 
@@ -248,16 +269,14 @@ mon_dictionnaire_patchwork_good = \
   'Pimprenelle' : 18 }
 ```
 
-<!-- #region -->
 ### A retenir 
 
     
-   - L'indentation du code est importante (4 espaces et pas une tabulation)
-   - Une __liste__ est entre [] et on peut appeler les positions par leur place 
-   - Un __dictionnaire__, clé x valeur, s'écrit entre {} et on appelle un élément en fonction de la clé
-<!-- #endregion -->
+- L'indentation du code est importante (4 espaces et pas une tabulation)
+- Une __liste__ est entre [] et on peut appeler les positions par leur place 
+- Un __dictionnaire__, clé x valeur, s'écrit entre {} et on appelle un élément en fonction de la clé
 
-### Questions pratiques : 
+## Questions pratiques : 
 
    - Quelle est la position de 7 dans la liste suivante
 
@@ -277,7 +296,8 @@ liste_nombres = [1,2,7,5,3]
 
 ## Objets : méthodes et attributs
 
-Mainentant qu'on a vu quels objets existaient en Python, nous allons voir comment nous en servir.
+Mainentant qu'on a vu quels objets existaient en Python, nous allons
+voir comment nous en servir.
 
 
 ### Un petit détour pour bien comprendre : Un objet, c'est quoi ? 
