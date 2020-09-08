@@ -64,7 +64,8 @@ jamais ca peut servir ...).
 Pour commencer, on va définir un chat avec des attributs de base : une couleur et un nom.
 <!-- #endregion -->
 
-```{python}
+
+```python
 class chat: # Définition de notre classe chat
     """Classe définissant un chat caractérisé par :
     - son nom
@@ -77,7 +78,8 @@ class chat: # Définition de notre classe chat
         self.nom = "Aucun nom"
 ```
 
-```{python}
+
+```python
 mon_chat = chat()
 
 print(type(mon_chat), mon_chat.couleur ,",", mon_chat.nom) 
@@ -86,12 +88,17 @@ print(type(mon_chat), mon_chat.couleur ,",", mon_chat.nom)
 # pour l'instant il n'a pas de nom
 ```
 
+```
+## <class '__main__.chat'> Noir , Aucun nom
+```
+
 ### Classe chat version 2 - autres attributs
 
 Avec un nom et une couleur, on ne va pas loin. On peut continuer à définir des attributs pour la classe chat
 de la même façon que précédemment.
 
-```{python}
+
+```python
 class chat: # Définition de notre classe chat
     """Classe définissant un chat caractérisé par :
     - sa couleur
@@ -112,16 +119,49 @@ class chat: # Définition de notre classe chat
         self.nom = "Aucun nom"
 ```
 
-```{python}
+
+```python
 help(chat) 
 # si on veut savoir ce que fait la classe "chat" on appelle l'aide
 ```
 
-```{python}
+```
+## Help on class chat in module __main__:
+## 
+## class chat(builtins.object)
+##  |  Classe définissant un chat caractérisé par :
+##  |  - sa couleur
+##  |  - son âge
+##  |  - son caractère
+##  |  - son poids
+##  |  - son maitre
+##  |  - son nom
+##  |  
+##  |  Methods defined here:
+##  |  
+##  |  __init__(self)
+##  |      Initialize self.  See help(type(self)) for accurate signature.
+##  |  
+##  |  ----------------------------------------------------------------------
+##  |  Data descriptors defined here:
+##  |  
+##  |  __dict__
+##  |      dictionary for instance variables (if defined)
+##  |  
+##  |  __weakref__
+##  |      list of weak references to the object (if defined)
+```
+
+
+```python
 mon_chat = chat()
 print("L'âge du chat est", mon_chat.age,"ans") 
 # on avait défini l'attribut age de la classe chat comme étant égal à 10
 #, si on demande l'attribut age de notre Martin on obtient 10
+```
+
+```
+## L'âge du chat est 10 ans
 ```
 
 Par défaut, les attributs de la classe Chat seront toujours les m^emes à chaque création de chat à partir
@@ -132,25 +172,36 @@ de changer la valeur de ses attributs.
 
 #### Un nouveau poids
 
-```{python}
+
+```python
 # si on veut changer le poids de mon chat, parce qu'il a un peu grossi après les fêtes
 mon_chat.poids = 3.5
 mon_chat.poids # maintenant le poids est 3.5
 ```
 
+```
+## 3.5
+```
+
 #### Un nouveau nom
 
-```{python}
+
+```python
 # on veut aussi lui donner un nom 
 mon_chat.nom = "Martin"
 mon_chat.nom
+```
+
+```
+## 'Martin'
 ```
 
 #### Une autre instance de la classe Chat
 
 On peut aussi créer d'autres objets chat à partir de la classe chat : 
 
-```{python}
+
+```python
 # on appelle la classe
 l_autre_chat = chat()
 # on change les attributs qui nous intéressent
@@ -159,6 +210,10 @@ l_autre_chat.maitre = "Roger"
 # les attributs inchangés donnent la même chose 
 # que ceux définis par défaut pour la classe
 print(l_autre_chat.couleur)
+```
+
+```
+## Noir
 ```
 
 ## Les méthodes de la classe chat
@@ -173,7 +228,8 @@ Par exemple, la méthode append de la classe list permet d'ajouter un élément 
 
 On peut définir une première méthode : nourrir
 
-```{python}
+
+```python
 class chat: # Définition de notre classe chat
     """Classe définissant un chat caractérisé par :
     - sa couleur
@@ -207,22 +263,37 @@ class chat: # Définition de notre classe chat
         self.ventre += nourriture
 ```
 
-```{python}
+
+```python
 mon_chat = chat()
 mon_chat.nom = "Martin"
 mon_chat.ventre # On n'a rien donné à Martin, son ventre est vide
 ```
 
-```{python}
+```
+## ''
+```
+
+
+```python
 # on appelle la méthode "nourrir" de la classe chat, 
 # on lui donne un élément, ici des croquettes
 mon_chat.nourrir('Croquettes')
 print("Le contenu du ventre de martin : ",mon_chat.ventre)
 ```
 
-```{python}
+```
+## Le contenu du ventre de martin :  Croquettes
+```
+
+
+```python
 mon_chat.nourrir('Saumon')
 print("Le contenu du ventre de martin : ",mon_chat.ventre)
+```
+
+```
+## Le contenu du ventre de martin :  Croquettes,Saumon
 ```
 
 ### Classe chat version 4 - autre méthode
@@ -230,7 +301,8 @@ print("Le contenu du ventre de martin : ",mon_chat.ventre)
 Avec un chat, on peut imaginer plein de méthodes. Ici on va définir une action "nourrir" et une autre action
 "litiere", qui consiste à vider l'estomac du chat.
 
-```{python}
+
+```python
 
 class chat: # Définition de notre classe Personne
     """Classe définissant un chat caractérisé par :
@@ -270,7 +342,8 @@ class chat: # Définition de notre classe Personne
         print(self.nom,"a le ventre vide")
 ```
 
-```{python}
+
+```python
 # on définit Martin le chat
 mon_chat = chat()
 mon_chat.nom = "Martin"
@@ -280,12 +353,44 @@ print("Le contenu du ventre de martin", mon_chat.ventre)
 
 
 # Il va dans sa litiere
+```
+
+```
+## Le contenu du ventre de martin croquettes
+```
+
+```python
 mon_chat.litiere()
 ```
 
-```{python}
+```
+## Martin a le ventre vide
+```
+
+
+```python
 help(mon_chat.nourrir)
+```
+
+```
+## Help on method nourrir in module __main__:
+## 
+## nourrir(nourriture) method of __main__.chat instance
+##     Méthode permettant de donner à manger au chat.
+##     Si le ventre n'est pas vide, on met une virgule avant de rajouter
+##     la nourriture
+```
+
+```python
 help(mon_chat.litiere)
+```
+
+```
+## Help on method litiere in module __main__:
+## 
+## litiere() method of __main__.chat instance
+##     Méthode permettant au chat d'aller à sa litière : 
+##     en conséquence son ventre est vide
 ```
 
 <!-- #region -->
@@ -307,25 +412,47 @@ Elles servent à plusieurs choses :
 
 <!-- #endregion -->
 
-```{python, error = TRUE}
+
+```python
 # pour avoir la valeur de l'attribut "nom"
 
 print(mon_chat.__getattribute__("nom"))
 # on aurait aussi pu faire plus simple :
+```
+
+```
+## Martin
+```
+
+```python
 print(mon_chat.nom)
 
 # si l'attribut n'existe pas : on a une erreur
 # Python recherche l'attribut et, s'il ne le trouve pas dans l'objet et si une méthode __getattr__ est spécifiée, 
 # il va l'appeler en lui passant en paramètre le nom de l'attribut recherché, sous la forme d'une chaîne de caractères.
+```
 
+```
+## Martin
+```
+
+```python
 print(mon_chat.origine)
+```
+
+```
+## Error in py_call_impl(callable, dots$args, dots$keywords): AttributeError: 'chat' object has no attribute 'origine'
+## 
+## Detailed traceback: 
+##   File "<string>", line 1, in <module>
 ```
 
 Mais on peut modifier les méthodes spéciales de notre classe chat pour éviter d'avoir des erreurs d'attributs. On va aussi en profiter pour modifier la représentation de l'instance chat qui pour l'instant donne  <\__main\__.chat object at 0x0000000005AB4C50>
 
 ### Classe chat version 5 - méthode spéciale
 
-```{python}
+
+```python
 
 class chat: # Définition de notre classe Personne
     """Classe définissant un chat caractérisé par :
@@ -371,7 +498,8 @@ class chat: # Définition de notre classe Personne
             return "Je suis une instance de la classe chat"
 ```
 
-```{python}
+
+```python
 # j'ai gardé l'exemple chat défini selon la classe version 4
 # Martin, le chat
 # on a vu précédemment qu'il n'avait pas d'attribut origine
@@ -382,13 +510,37 @@ print(mon_chat.nom)
 # on va définir un nouveau chat avec la version 5
 # on appelle à nouveau un attribut qui n'existe pas "origine"
 # on a bien le message défini par la méthode spéciale _gettattribute
+```
 
+```
+## Martin
+```
+
+```python
 mon_chat_nouvelle_version = chat()
 mon_chat_nouvelle_version.origine
 
 # Maintenant on a aussi une définition de l'objet plus clair
+```
+
+```
+## origine n'est pas un attribut de la classe chat
+```
+
+```python
 print(mon_chat)
+```
+
+```
+## <__main__.chat object at 0x0000000027F96518>
+```
+
+```python
 print(mon_chat_nouvelle_version)
+```
+
+```
+## Je suis une instance de la classe chat
 ```
 
 ------ 
