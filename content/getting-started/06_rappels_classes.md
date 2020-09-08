@@ -13,7 +13,7 @@ jupyter:
 title: "Les classes en Python"
 date: 2020-07-09T15:00:00Z
 draft: false
-weight: 60
+weight: 70
 output: 
   html_document:
     keep_md: true
@@ -532,7 +532,7 @@ print(mon_chat)
 ```
 
 ```
-## <__main__.chat object at 0x0000000027F96518>
+## <__main__.chat object at 0x0000000027F66550>
 ```
 
 ```python
