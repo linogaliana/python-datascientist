@@ -19,7 +19,18 @@ output:
   html_document:
     keep_md: true
     self_contained: true
+slug: pandascours
 ---
+
+Pour visualiser le TP associé à ce tutoriel : 
+<!---- reminder_badges("content/manipulation/02_pandas_tp.ipynb") --->
+<a href="https://github.com/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb" class="github"><i class="fab fa-github"></i></a>
+[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master?filepath=content/manipulation/02_pandas_tp.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb)
+
+
 
 
 
@@ -60,7 +71,12 @@ np.random.seed(123)
 ```
 
 Au cours de cette démonstration des principales fonctionalités de `pandas`, et
-lors du TP __LIEN VERS LE TP__,
+lors du TP
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
+
+,
 je recommande de régulièrement se référer aux ressources suivantes:
 
 * L'[aide officielle de pandas](https://pandas.pydata.org/docs/user_guide/index.html).
@@ -142,7 +158,8 @@ néfaste).
 
 ### Indexation
 
-La différence essentielle entre une `Series` et un objet `numpy` est l'indexation. Dans `numpy`,
+La différence essentielle entre une `Series` et un objet `numpy` est l'indexation.
+Dans `numpy`,
 l'indexation est implicite ; elle permet d'accéder à une donnée (celle à
 l'index situé à la position *i*).
 Avec une `Series`, on peut bien-sûr utiliser un indice de position mais on peut 
@@ -180,8 +197,14 @@ taille['koala']
 ## 1.0
 ```
 
-L'existence d'indice rend le *subsetting* particulièrement aisé,
-**cf.exo**
+L'existence d'indice rend le *subsetting* particulièrement aisé, ce que vous
+pouvez expérimenter dans les TP 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
+ ([ou depuis github](https://github.com/linogaliana/python-datascientist/blob/master/content/01_data/02_pandas_tp.ipynb))
+
+
 
 Pour transformer un objet `pandas.Series` en array `numpy`, 
 on utilise la méthode `values`. Par exemple, `taille.values`:
@@ -209,6 +232,9 @@ Par défaut, les valeurs manquantes sont affichées `NaN` et sont de type `np.na
 les valeurs temporelles, i.e. de type `datatime64`, les valeurs manquantes sont
 `NaT`).
 
+
+<!-----
+{{< panel status="danger" title="warning" icon="fa fa-exclamation-triangle" >}}
 :warning: Il faut **vraiment faire attention** aux valeurs manquantes, notamment lorsqu'on utilise les
 méthodes de statistiques descriptives présentées ultérieurement. Les règles sont les suivantes: 
 
@@ -222,7 +248,34 @@ méthodes de statistiques descriptives présentées ultérieurement. Les règles
  Pour plus de détails, `help(pandas.Series.sum)`. 
 * Les méthodes `cumsum` et `cumprod` ignorent les `NA` par défaut mais les préservent dans le vecteur de sortie.
 
-En revanche, on a un comportement cohérent d'agrégation lorsqu'on combine deux `DataFrames` (ou deux colonnes).
+
+```python
+x = [np.nan, np.arange(3)]
+np.mean(x)
+```
+
+```
+## array([nan, nan, nan])
+## 
+## C:\Users\W3CRK9\AppData\Local\r-miniconda\envs\r-reticulate\lib\site-packages\numpy\core\_asarray.py:136: VisibleDeprecationWarning: Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated. If you meant to do this, you must specify 'dtype=object' when creating the ndarray
+##   return array(a, dtype, copy=False, order=order, subok=True)
+```
+
+
+
+```r
+x <- c(NA, 1:3)
+mean(x, na.rm = TRUE)
+```
+
+```
+## [1] 2
+```
+
+{{< /panel >}}
+
+En revanche, ----->
+On a un comportement cohérent d'agrégation lorsqu'on combine deux `DataFrames` (ou deux colonnes).
 Par exemple,
 
 
@@ -260,7 +313,7 @@ a tenu compte des index.
 # Le DataFrame pandas
 
 Le `DataFrame` est l'objet central du package `pandas`.
-Il s'agit d'une collection de `pandas.Series` (colonnes) alignés par les lignes.
+Il s'agit d'une collection de `pandas.Series` (colonnes) alignées par les lignes.
 Les types des variables peuvent différer. 
 
 Un DataFrame non-indexé a la structure suivante:
@@ -272,23 +325,33 @@ Aller dans la doc pandas et trouver comment créer le dataFrame pandas suivant
 
 
 ```
+##    index  taille  poids
+## 0   chat     1.0    3.0
+## 1  chien     1.5    5.0
+## 2  koala     1.0    2.5
+```
+
+Alors que le même dataframe indexé aura la structure suivante:
+
+
+```
 ##        taille  poids
 ## chat      1.0    3.0
 ## chien     1.5    5.0
 ## koala     1.0    2.5
 ```
 
-<!-----
-Exo2: multiindex sur la base Ademe
------->
-
 
 ## Les attributs et méthodes utiles
 
 Pour présenter les méthodes les plus pratiques pour l'analyse de données,
 on peut partir de l'exemple des consommations de CO2 communales issues
-des données de l'Ademe. 
-
+des données de l'Ademe. Cette base de données est exploitée plus intensément
+dans le TP
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
+ ([ou depuis github](https://github.com/linogaliana/python-datascientist/blob/master/content/01_data/02_pandas_tp.ipynb))
 
 
 ```python
@@ -321,8 +384,14 @@ automatiquement. Autrement, on peut aussi faire:
 nom l'indique, de n'afficher que les premières lignes ;
 * `tail` qui permet, comme son
 nom l'indique, de n'afficher que les dernières lignes
-* `sample` qui permet d'afficher un échantillon aléatoire de *n* lignes
-
+* `sample` qui permet d'afficher un échantillon aléatoire de *n* lignes. 
+Cette méthode propose de nombreuses options 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
+ ([ou depuis github](https://github.com/linogaliana/python-datascientist/blob/master/content/01_data/02_pandas_tp.ipynb))
+ 
+ 
 ^[2]: Il est préférable d'utiliser la fonction `display` (ou tout simplement
 taper le nom du DataFrame qu'utiliser la fonction `print`). Le
 `display` des objets `pandas` est assez esthétique, contrairement à `print`
@@ -413,8 +482,9 @@ df.size
 ## 429576
 ```
 
-Pour déterminer le nombre de valeurs uniques d'une variable, la
-méthode `nunique` est pratique. Par exemple,
+Pour déterminer le nombre de valeurs uniques d'une variable, plutôt que chercher à écrire soi-même une fonction, 
+on utilise la
+méthode `nunique`. Par exemple,
 
 
 ```python
@@ -425,12 +495,14 @@ df['Commune'].nunique()
 ## 33338
 ```
 
-| Opération                     | SQL            | pandas       | dplyr (`R`)    | data.table (`R`)           |
-|-------------------------------|----------------|--------------|----------------|----------------------------|
-| Récupérer le nom des colonnes |                | `df.columns` | `colnames(df)` | `colnames(df)`             |
-| Récupérer les indices[^3]         |                | `df.index`   |                |`unique(df[,get(key(df))])` |
-| Récupérer les dimensions | | `df.shape` | `c(nrow(df), ncol(df))` | `c(nrow(df), ncol(df))` |
-| Récupérer le nombre de valeurs uniques d'une variable | | `df['myvar'].nunique()` | `df %>%  summarise(distinct(myvar))` | `df[,uniqueN(myvar)]` |
+Voici un premier résumé des méthodes `pandas` utiles, et un comparatif avec `R`
+
+| Opération                     | pandas       | dplyr (`R`)    | data.table (`R`)           |
+|-------------------------------|--------------|----------------|----------------------------|
+| Récupérer le nom des colonnes | `df.columns` | `colnames(df)` | `colnames(df)`             |
+| Récupérer les indices[^3]     | `df.index`   |                |`unique(df[,get(key(df))])` |
+| Récupérer les dimensions      | `df.shape` | `c(nrow(df), ncol(df))` | `c(nrow(df), ncol(df))` |
+| Récupérer le nombre de valeurs uniques d'une variable | `df['myvar'].nunique()` | `df %>%  summarise(distinct(myvar))` | `df[,uniqueN(myvar)]` |
 
 ^[3]: Le principe d'indice n'existe pas dans `dplyr`. Les indices, au sens de
 `pandas`, sont appelés *clés* en `data.table`.
@@ -538,12 +610,16 @@ df.quantile(q = [0.1,0.25,0.5,0.75,0.9])
 ## [5 rows x 10 columns]
 ```
 
+Les exercices de TD ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb) [ou depuis github](https://github.com/linogaliana/python-datascientist/blob/master/content/01_data/02_pandas_tp.ipynb))
+visent à démontrer l'intérêt de ces méthodes dans quelques cas précis. 
+
 <!---
 Comme indiqué précédemment, il faut faire attention aux valeurs manquantes qui,
 par défaut, sont traitées comme des 0.
 Il est ainsi recommandé de systématiquement
 ajouter l'argument skipna, par exemple, 
------>
 
 
 ```python
@@ -564,14 +640,17 @@ df.mean(skipna=True)
 ## dtype: float64
 ```
 
+----->
+
+
 Le tableau suivant récapitule le code équivalent pour avoir des 
 statistiques sur toutes les colonnes d'un dataframe en `R`. 
 
 
-| Opération                     | SQL            | pandas       | dplyr (`R`)    | data.table (`R`)           |
+| Opération                     | pandas       | dplyr (`R`)    | data.table (`R`)           |
 |-------------------------------|----------------|--------------|----------------|----------------------------|
-| Nombre de valeurs non manquantes |             | `df.count()`   | `df %>% summarise_each(funs(sum(!is.na(.))))` | `df[, lapply(.SD, function(x) sum(!is.na(x)))]`
-| Moyenne de toutes les variables |  | `df.mean` | `df %>% summarise_each(funs(mean((., na.rm = TRUE))))` | `df[,lapply(.SD, function(x) mean(x, na.rm = TRUE))]`
+| Nombre de valeurs non manquantes | `df.count()`   | `df %>% summarise_each(funs(sum(!is.na(.))))` | `df[, lapply(.SD, function(x) sum(!is.na(x)))]`
+| Moyenne de toutes les variables | `df.mean()` | `df %>% summarise_each(funs(mean((., na.rm = TRUE))))` | `df[,lapply(.SD, function(x) mean(x, na.rm = TRUE))]`
 | TO BE CONTINUED |
 
 La méthode `describe` permet de sortir un tableau de statistiques 
@@ -600,9 +679,13 @@ df.describe()
 ### Méthodes relatives aux valeurs manquantes
 
 Les méthodes relatives aux valeurs manquantes peuvent être mobilisées
-en conjonction des méthodes de statistiques agrégées
-
-Exercice:
+en conjonction des méthodes de statistiques agrégées. C'est utiles lorsqu'on
+désire obtenir une idée de la part de valeurs manquantes dans un jeu de
+données
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
+ ([ou depuis github](https://github.com/linogaliana/python-datascientist/blob/master/content/01_data/02_pandas_tp.ipynb))
 
 ```python
 df.isnull().sum()
@@ -611,11 +694,11 @@ df.isnull().sum()
 # Graphiques rapides
 
 Les méthodes par défaut de graphique
-(approfondies dans le chapitre matplotlib/seaborn) sont pratiques pour 
+(approfondies dans la partie visualisation **LIEN A AJOUTER**)
+sont pratiques pour 
 produire rapidement un graphique, notament après des opérations
-complexes de maniement de données
+complexes de maniement de données.
 
-**cf. exo**
 
 
 ```python
@@ -638,6 +721,11 @@ plt.show()
 ```
 
 ![](02_pandas_files/figure-html/matplotlib-3.png)<!-- -->
+
+La sortie est un objet `matplotlib`. La *customisation* de ces
+figures est ainsi
+possible (et même désirable car les graphiques `matplotlib`
+sont, par défaut, assez rudimentaires), nous en verrons quelques exemples. 
 
 
 # Accéder à des éléments d'un DataFrame
@@ -672,8 +760,9 @@ sont à bannir car la fonction est *deprecated* et peut
 ainsi disparaître à tout moment. 
 
 
+**EXEMPLES A DONNER**
 
-
+<!----
 data.loc[1:3]
 data.loc[(data.age >= 20), ['section', 'city']]
 
@@ -682,60 +771,241 @@ data.iloc[[0,2],[1,3]]
 data.iloc[1:3,2:4]
 
 data.loc[(data.age >= 12), ['section']]
-
+------>
 
 # Principales manipulation de données
 
 Les opérations les plus fréquentes en SQL sont résumées par le tableau suivant.
 Il est utile de les connaître (beaucoup de syntaxes de maniement de données
-reprennent ces termes) car, d'une manière ou d'une autre, elles couvrent la plupart
+reprennent ces termes) car, d'une
+manière ou d'une autre, elles couvrent la plupart
 des usages de manipulation des données
 
 | Opération | SQL | pandas | dplyr (`R`) | data.table (`R`) |
 |-----|-----------|--------|-------------|------------------|
 | Sélectionner des variables par leur nom | SELECT | `df[['Autres transports','Energie']]` | `df %>% select(Autres transports, Energie)` | `df[, c('Autres transports','Energie')]` |
 | Sélectionner des observations selon une ou plusieurs conditions; | FILTER | `df[df['Agriculture']>2000]` | `df %>% filter(Agriculture>2000)` | `df[Agriculture>2000]` |
-| Trier la table selon une ou plusieurs variables | SORT BY | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(df.sort_values(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
+| Trier la table selon une ou plusieurs variables | SORT BY | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
 | Ajouter des variables qui sont fonction d’autres variables; | | `df['x'] = np.log(df['Agriculture'])`  |  `df %>% mutate(x = log(Agriculture))` | `df[,x := log(Agriculture)]` |
 | Effectuer une opération par groupe | GROUP BY | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
-+ join
+| Joindre deux bases de données (*inner join*) | `SELECT * FROM table1 INNER JOIN table2 ON table1.id = table2.x` | `table1.merge(table2, left_on = 'id', right_on = 'x')` | `table1 %>% inner_join(table2, by = c('id'='x'))` | `merge(table1, table2, by.x = 'id', by.y = 'x')` |
 
 ## Opérations sur les colonnes: select, mutate, drop
 
-Exercice: 
+Les DataFrames pandas sont des objets *mutables* en langage `python`,
+c'est-à-dire qu'il est possible de faire évoluer le DataFrame au grès 
+des opérations. L'opération la plus classique consiste à ajouter ou retirer
+des variables à la table de données. 
 
-1. Créer variables x et y
-2. Drop x
-3. Modifier y en réassignant
-4. Vérifier
+
+{{< panel status="danger" title="warning" icon="fa fa-exclamation-triangle" >}}
+Attention au comportement de `pandas` lorsqu'on crée une duplication
+d'un DataFrame. Par défaut, `pandas` effectue une copie par référence. Dans ce
+cas, les deux objets (la copie et l'objet copié) restent reliés. Les colonnes
+crées sur l'un vont être répercutées sur l'autre. Ce comportement permet de
+limiter l'inflation en mémoire de `python`. En faisant ça, le deuxième
+objet prend le même espace mémoire que le premier. Le package `data.table`
+en  `R` adopte le même comportement, contrairement à `dplyr`.
+
+Cela peut amener à quelques surprises si ce comportement d'optimisation
+n'est pas anticipé. Si vous voulez, par sécurité, conserver intact le
+premier DataFrame, faites appel à une copie profonde (*deep copy*) en
+utilisant la méthode `copy`:
+
 
 ```python
-df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
+df_new = df.copy()
 ```
 
+{{< /panel >}}
+
+La manière la plus simple d'opérer pour ajouter des colonnes est
+d'utiliser la réassignation. Par exemple, pour créer une variable
+`x` qui est le `log` de la
+variable `Agriculture`:
+
+
+```python
+df_new['x'] = np.log(df_new['Agriculture'])
+```
+
+Il est possible d'appliquer cette approche sur plusieurs colonnes. Un des
+intérêts de cette approche est qu'elle permet de recycler le nom de colonnes.
+
+
+```python
+vars = ['Agriculture', 'Déchets', 'Energie']
+
+df_new[[v + "_log" for v in vars]] = np.log(df_new[vars])
+df_new
+```
+
+```
+##       INSEE commune                  Commune  ...  Déchets_log  Energie_log
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...     4.619374     0.856353
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...     4.946455     0.856353
+## 2             01004        AMBERIEU-EN-BUGEY  ...     8.578159     6.906086
+## 3             01005      AMBERIEUX-EN-DOMBES  ...     5.376285     4.545232
+## 4             01006                  AMBLEON  ...     3.879532          NaN
+## ...             ...                      ...  ...          ...          ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...     4.175366     2.465791
+## 35794         95678            VILLIERS-ADAM  ...     4.713854     0.856353
+## 35795         95680          VILLIERS-LE-BEL  ...     5.418865     6.281303
+## 35796         95682          VILLIERS-LE-SEC  ...     4.691070     0.856353
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...     4.582194     1.549500
+## 
+## [35798 rows x 16 columns]
+```
+
+Il est également possible d'utiliser la méthode `assign`. Pour des opérations
+vectorisées, comme le sont les opérateurs de `numpy`, cela n'a pas d'intérêt.
+Mais dans certains cas, où on serait tenté (à tord !), d'utiliser une boucle,
+alors cette approche peut se justifier. Cette approche utilise généralement
+des *lambda functions*. Par exemple le code précédent prendrait la forme:
+
+
+
+```python
+df_new.assign(Energie_log = lambda x: np.log(x['Energie']))
+```
+
+```
+##       INSEE commune                  Commune  ...  Déchets_log  Energie_log
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...     4.619374     0.856353
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...     4.946455     0.856353
+## 2             01004        AMBERIEU-EN-BUGEY  ...     8.578159     6.906086
+## 3             01005      AMBERIEUX-EN-DOMBES  ...     5.376285     4.545232
+## 4             01006                  AMBLEON  ...     3.879532          NaN
+## ...             ...                      ...  ...          ...          ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...     4.175366     2.465791
+## 35794         95678            VILLIERS-ADAM  ...     4.713854     0.856353
+## 35795         95680          VILLIERS-LE-BEL  ...     5.418865     6.281303
+## 35796         95682          VILLIERS-LE-SEC  ...     4.691070     0.856353
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...     4.582194     1.549500
+## 
+## [35798 rows x 16 columns]
+```
 ## Reordonner
 
+La méthode `sort_values` permet de réordonner un DataFrame. Par exemple,
+si on désire classer par ordre décroissant de consommation de CO2 du secteur
+résidentiel, on fera
 
-## Filtrer et réassigner (update)
+
+```python
+df.sort_values("Résidentiel", ascending = False)
+```
+
+```
+##       INSEE commune                   Commune  ...        Routier    Tertiaire
+## 12167         31555                  TOULOUSE  ...  586054.672800  288175.4001
+## 16774         44109                    NANTES  ...  221068.632700  173447.5828
+## 27294         67482                STRASBOURG  ...  279544.852300  179562.7614
+## 12729         33063                  BORDEAUX  ...  193411.085700  142475.5641
+## 22834         59350                     LILLE  ...  265561.183600  175581.6190
+## ...             ...                       ...  ...            ...          ...
+## 20742         55050                 BEZONVAUX  ...     113.221722       0.0000
+## 20817         55139    CUMIERES-LE-MORT-HOMME  ...     128.733542       0.0000
+## 20861         55189   FLEURY-DEVANT-DOUAUMONT  ...    1435.571489       0.0000
+## 20898         55239    HAUMONT-PRES-SAMOGNEUX  ...      91.920170       0.0000
+## 20957         55307  LOUVEMONT-COTE-DU-POIVRE  ...     236.928053       0.0000
+## 
+## [35798 rows x 12 columns]
+```
+
+Ainsi, en une ligne de code, on identifie les villes où le secteur
+résidentiel consomme le plus. 
+
+
+## Filtrer
+
+L'opération de sélection de lignes s'appelle `FILTER` en SQL et s'utilise 
+en fonction d'une condition logique (clause `WHERE`). On sélectionne les
+données sur une condition logique. Il existe plusieurs méthodes en `pandas`.
+
+La plus simple est d'utiliser les *boolean mask*, déjà vus dans le chapitre
+`numpy` [**LIEN**]. 
+
+Par exemple, pour sélectionner les communes dans les Hauts-de-Seine, on 
+peut utiliser le résultat de la méthode `str.startswith` (qui renvoie
+`True` ou `False`) directement dans les crochets:
+
+
+```python
+df[df['INSEE commune'].str.startswith("92")].head(2)
+```
+
+```
+##       INSEE commune             Commune  ...      Routier   Tertiaire
+## 35490         92002              ANTONY  ...  58900.97969  31462.0380
+## 35491         92004  ASNIERES-SUR-SEINE  ...  38163.01602  42482.6351
+## 
+## [2 rows x 12 columns]
+```
+
+Pour remplacer des valeurs spécifiques, on utilise la méthode `where` ou une
+réassignation couplée à la méthode précédente. 
+
+Par exemple, pour assigner des valeurs manquantes aux départements du 92,
+on peut faire cela
+
+
+```python
+df_copy = df.copy()
+df_copy = df_copy.where(~df['INSEE commune'].str.startswith("92"))
+```
+
+et vérifier les résultats:
+
+
+```python
+df_copy[df['INSEE commune'].str.startswith("92")].head(2)
+```
+
+```
+##       INSEE commune Commune  Agriculture  ...  Résidentiel  Routier  Tertiaire
+## 35490           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35491           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 
+## [2 rows x 12 columns]
+```
+
+```python
+df_copy[~df['INSEE commune'].str.startswith("92")].head(2)
+```
+
+```
+##   INSEE commune                  Commune  ...     Routier   Tertiaire
+## 0         01001  L'ABERGEMENT-CLEMENCIAT  ...  793.156501  367.036172
+## 1         01002    L'ABERGEMENT-DE-VAREY  ...  348.997893  112.934207
+## 
+## [2 rows x 12 columns]
+```
+
+ou alors utiliser une réassignation plus classique:
+
+
+```python
+df_copy = df.copy()
+df[df['INSEE commune'].str.startswith("92")] = np.nan
+```
 
 ## Opérations par groupe
 
-En SQL, il est très simple d'effectuer de découper des données pour
-effectuer des opérations sur des blocs cohérents et recollecter des résultats.
+En SQL, il est très simple de découper des données pour
+effectuer des opérations sur des blocs cohérents et recollecter des résultats
+dans la dimension appropriée.
 La logique sous-jacente est celle du split-apply-combine qui est repris
 par les langages de manipulation de données, auxquels `pandas`
 [ne fait pas exception](https://pandas.pydata.org/pandas-docs/stable/user_guide/groupby.html). 
 
+https://unlhcc.github.io/r-novice-gapminder/16-plyr/
 
-```r
-knitr::include_graphics(
-  "https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png"
-)
-```
+![Split-apply-combine](https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png)
 
-![Split-Apply-Combine, d'après <https://unlhcc.github.io/r-novice-gapminder/16-plyr/>](https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png)
 
-https://realpython.com/pandas-groupby/
+Ce [tutoriel](https://realpython.com/pandas-groupby/) sur le sujet
+est particulièrement utile. 
 
 
 pandas objects can be split on any of their axes. The abstract definition of grouping is to provide a mapping of labels to group names
