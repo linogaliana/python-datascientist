@@ -5,4 +5,7 @@ draft: false
 weight: 10
 ---
 
-**TO DO**
+Cette partie 
+
+* [Les éléments de configuration](#configuration) pour avoir un environnement
+propice à l'utilisation de l'écosystème python
