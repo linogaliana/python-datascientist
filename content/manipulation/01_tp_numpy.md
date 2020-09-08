@@ -15,6 +15,7 @@ title: "Retour sur numpy"
 date: 2020-07-16T13:00:00Z
 draft: false
 weight: 10
+slug: "numpy"
 ---
 
 ![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/NumPy_logo.svg/1200px-NumPy_logo.svg.png)
