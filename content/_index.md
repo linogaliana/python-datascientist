@@ -8,6 +8,35 @@ weight: 10
 :warning: :construction: **Ce site est en construction** :construction:
 
 
+# Principes du cours
+
+Le but de ce cours est de vous rendre autonome sur l'utilisation de Python
+dans un contexte de travail d'un ENSAE. 
+
+Nous partirons de l'hypothèse que les notions de statistiques et d'économétrie pour lesquels nous verrons des applications informatiques, vous sont connues. 
+
+Les éléments relatifs à l'évaluation du cours sont disponibles dans la
+Section [Evaluation](evaluation)
+
+
+
+# Structuration du cours
+
+Le cours est structuré sous la forme du présent site web et de notebooks
+jupyter proposant des exercices plus approfondis. L'ensemble
+des codes sources est stocké sous
+[github à cette adresse](https://github.com/linogaliana/python-datascientist).
+Sur l'ensemble du site web,
+il est possible de cliquer sur la petite icone
+<i class="fab fa-github"></i>
+pour être redirigé vers le dépôt
+
+Vous pouvez naviguer dans l'architecture du site via la table des matières
+ou par les liens vers le contenu antérieur ou postérieur à la fin de chaque
+page. 
+
+# Pourquoi faire du python ?
+
 [Python](https://www.python.org/), par sa grande flexibilité, est devenu un langage incontournable
 dans le domaine de la *data science*. Comme pour `R`, l'intérêt de Python est son rôle central dans un
 écosystème plus large autour d'outils puissants, flexibles et *open-source*. 
@@ -26,31 +55,9 @@ sur `Stack Overflow`](https://towardsdatascience.com/python-vs-r-for-data-scienc
 ![](https://miro.medium.com/max/589/1*JxeXVkzq29tnE4vjPAleqQ.png)
 
 
+**TO DO**
 
----------
 
-Plan provisoire:
+# Plan du cours
 
-* Introduction : Mener un projet en python
-    + Environnement python
-    + git
-    + Programmer proprement en python
-    + Aller plus loin dans la reproductibilité : intégration continue, docker, codecov
-* Partie 1: Manipuler des données
-    + Données structurées: pandas
-    + Données géographiques: geopandas
-    + Faire des stats desc
-    + Données non structurées + données textuelles
-    + Les API et le webscraping
-    + Introduction aux données volumineuses
-* Partie 2: Visualiser
-    + matplotlib + seaborn
-    + cartographie
-    + visualisation dynamique
-* Partie 3: ML (tronc commun)
-* Partie 4:
-    + Econométrie (un peu data scientist ; surtout data economist)
-    + ML avancé (surtout data scientist)
-    
 
-Validation: projet (sous gitlab/github obligatoirement)

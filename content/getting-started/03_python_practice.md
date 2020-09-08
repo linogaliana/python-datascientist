@@ -2,7 +2,8 @@
 title: "Bonne pratique de Python"
 date: 2020-07-22T12:00:00Z
 draft: false
-weight: 30
+weight: 40
+slug: bonnespratiques
 ---
 
 Une référence utile à lire est le
