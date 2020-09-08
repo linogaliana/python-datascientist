@@ -22,6 +22,8 @@ output:
 slug: pandascours
 ---
 
+Pour visualiser le TP associé à ce tutoriel : 
+<!---- reminder_badges("content/manipulation/02_pandas_tp.ipynb") --->
 <a href="https://github.com/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb" class="github"><i class="fab fa-github"></i></a>
 [![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb)
 [![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
