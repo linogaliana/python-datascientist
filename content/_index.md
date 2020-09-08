@@ -28,8 +28,15 @@ des codes sources est stocké sous
 [github à cette adresse](https://github.com/linogaliana/python-datascientist).
 Sur l'ensemble du site web,
 il est possible de cliquer sur la petite icone
-<i class="fab fa-github"></i>
-pour être redirigé vers le dépôt
+<a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-github"></i></a>
+pour être redirigé vers le dépôt. Pour visualiser sous une forme plus
+ergonomique les notebooks (fichiers `.ipynb`)
+que ne le permet ce site *web*, vous trouverez
+parfois des liens
+[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/tree/master)
+qui utilisent
+[nbviewer](https://github.com/jupyter/nbviewer) une application de visualisation
+dédiée aux jupyter notebooks.
 
 Vous pouvez naviguer dans l'architecture du site via la table des matières
 ou par les liens vers le contenu antérieur ou postérieur à la fin de chaque
