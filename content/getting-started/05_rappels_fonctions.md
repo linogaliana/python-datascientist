@@ -18,6 +18,7 @@ output:
   html_document:
     keep_md: true
     self_contained: true
+slug: rappelsfonctions
 ---
 
 Les modules sont les éléments qui font la richesse du langage Python. 

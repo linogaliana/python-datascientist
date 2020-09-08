@@ -3,6 +3,7 @@ title: "L'environnement du data-scientist en python"
 date: 2020-07-22T12:00:00Z
 draft: false
 weight: 30
+slug: "ecosystemeDS"
 ---
 
 # Les packages python essentiels pour le cours et la vie d'un ENSAE
