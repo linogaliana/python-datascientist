@@ -25,3 +25,7 @@ nécessaires pour être autonome en `python`
 * [Des rappels généraux sur les objets en python](rappels2A)
 * [Des rappels sur les fonctions en python](rappelsfonctions)
 * [Un TD (optionnel) sur les classes en python](rappelsclasses)
+
+
+Les notebooks d'exercices sont accessible dans 
+<a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-github"></i></a>
