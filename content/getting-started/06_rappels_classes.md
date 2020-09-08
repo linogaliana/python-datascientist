@@ -18,6 +18,7 @@ output:
   html_document:
     keep_md: true
     self_contained: true    
+slug: "rappelsclasses"
 ---
 
 **Ce TP est optionnel**
@@ -532,7 +533,7 @@ print(mon_chat)
 ```
 
 ```
-## <__main__.chat object at 0x0000000027F66550>
+## <__main__.chat object at 0x0000000027F86550>
 ```
 
 ```python

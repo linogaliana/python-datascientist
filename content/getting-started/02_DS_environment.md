@@ -3,11 +3,20 @@ title: "L'environnement du data-scientist en python"
 date: 2020-07-22T12:00:00Z
 draft: false
 weight: 30
+slug: "ecosystemeDS"
 ---
 
-# Les packages python essentiels pour le cours et la vie d'un ENSAE
+## Les packages python essentiels pour le cours et la vie d'un ENSAE
 
-## `numpy`
+![](https://pydsc.files.wordpress.com/2017/11/pythonenvironment.png?w=663)
+
+Ce
+[post](https://medium.com/data-science-library/ultimate-python-library-guide-for-data-science-2562148158bf),
+dont l'image ci-dessus est tirée, résume la plupart des packages utiles
+pour un data-scientist ou un économiste/sociologue. Nous nous bornerons
+ici à évoquer ceux utilisés quotidiennement
+
+### `numpy`
 
 `numpy` gère tout ce qui est calcul matriciel. Le langage Python est un des langages les plus lents qui soient[^1]. Tous les calculs rapides ne sont pas écrits en Python mais en C++, voire fortran. C’est le cas du module numpy, il est incontournable dès qu’on veut être rapide. Le module scipy est une extension où l’on peut trouver des fonctions statistiques, d’optimisation.
 
@@ -23,7 +32,7 @@ beaucoup plus rapide.
 La Cheat Sheet de `numpy` :
 <https://s3.amazonaws.com/assets.datacamp.com/blog_assets/Numpy_Python_Cheat_Sheet.pdf>
 
-## `pandas`
+### `pandas`
 
 Avant tout, un bon data-scientist doit être capable de
 s'approprier et manipuler des données rapidement. Dans ces domaines, 
@@ -40,20 +49,20 @@ La Cheat Sheet de pandas :
 <https://s3.amazonaws.com/assets.datacamp.com/blog_assets/Python_Pandas_Cheat_Sheet_2.pdf>
 
 
-## `matplotlib` et `seaborn`
+### `matplotlib` et `seaborn`
 
 `matplotlib` s’occupe de tout ce qui est graphique.
 Il faut également connaître `seaborn`
 qui propose des graphiques étudiés pour un usage statistique.
 
-## `scikit-learn`
+### `scikit-learn`
 
 `scikit-learn` est le module de modélisation le plus populaire pour deux raisons:
 
 * son design a été pensé pour être simple avec deux méthodes fit et predict pour apprendre et prédire.
 * Sa documentation est un modèle à suivre.
 
-## `statsmodels`
+### `statsmodels`
 
 `statsmodels` plaira plus aux statisticiens, il implémente des modèles
 similaires à scikit-learn,
@@ -64,17 +73,17 @@ résultats très proche de ce qu’on trouve en `R`.
 (source http://www.xavierdupre.fr/app/papierstat/helpsphinx/rappel.html)
 ----->
 
-# Environnement autour de Python
+## Environnement autour de Python
 
 **TO DO**
 
-# Démarche à adopter face à un jeu de données
+## Démarche à adopter face à un jeu de données
 
 Pour bien débuter des travaux sur une base de données,
 il est nécessaire de se poser quelques questions de bon sens
 et de suivre une démarche assez simple. 
 
-## Une démarche scientifique 
+### Une démarche scientifique 
 
 Dans un projet sur des jeux de données, on peut schématiquement séparer les étapes en 3 grandes parties :
 
@@ -139,4 +148,5 @@ On entend souvent qu'on peut "faire dire ce qu'on veut aux données".
 
 En suivant quelques préceptes simples, mélange d'honneteté intellectuelle et
 de recherche scientifique, cette remarque est facilement écartée.
-Ces principes ont été repris dans "le serment d'Hippocrate du Data Scientist" : https://hippocrate.tech/.
+Ces principes ont été repris dans
+*"le serment d'Hippocrate du Data Scientist"* : https://hippocrate.tech/.

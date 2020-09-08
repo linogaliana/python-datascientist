@@ -15,18 +15,8 @@ dans un contexte de travail d'un ENSAE.
 
 Nous partirons de l'hypothèse que les notions de statistiques et d'économétrie pour lesquels nous verrons des applications informatiques, vous sont connues. 
 
-
-# Evaluation
-
-* A la fin du semestre, les étudiants rendront un projet informatique par __groupe de 2-3 personnes.__
-* Ce projet dont le __sujet est libre__ devra comporter
-    - Un jeu de données (de préférence collecté par le groupe ou a minima enrichi)
-    - De la visualisation
-    - De la modélisation
-* La __date du rendu__ est fixée au : XXX
-* Au mois de janvier 2021, auront lieu des __soutenances_
-* Des idées de sujets seront communiquées ultérieurement.
-Les étudiants sont invités à proposer des sujets qui leur plaisent, à faire valider par le chargé de TD. 
+Les éléments relatifs à l'évaluation du cours sont disponibles dans la
+Section [Evaluation](evaluation)
 
 
 
