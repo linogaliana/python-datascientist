@@ -7,5 +7,5 @@ weight: 10
 
 Cette partie 
 
-* [Les éléments de configuration](#configuration) pour avoir un environnement
+* [Les éléments de configuration](configuration) pour avoir un environnement
 propice à l'utilisation de l'écosystème python
