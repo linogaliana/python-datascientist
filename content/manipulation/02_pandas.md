@@ -19,7 +19,16 @@ output:
   html_document:
     keep_md: true
     self_contained: true
+slug: pandascours
 ---
+
+<a href="https://github.com/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb" class="github"><i class="fab fa-github"></i></a>
+[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master?filepath=content/manipulation/02_pandas_tp.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb)
+
+
 
 
 

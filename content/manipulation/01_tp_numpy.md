@@ -18,6 +18,7 @@ weight: 10
 slug: "numpy"
 ---
 
+<!---- reminder_badges("content/manipulation/01_tp_numpy.ipynb") --->
 <a href="https://github.com/linogaliana/python-datascientist/blob/master/content/manipulation/01_tp_numpy.ipynb" class="github"><i class="fab fa-github"></i></a>
 [![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/content/manipulation/01_tp_numpy.ipynb)
 [![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
