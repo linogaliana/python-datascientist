@@ -20,7 +20,7 @@ reminder_badges <- function(notebook = ""){
     )
   } else{
     binder_path <- ""  
-    nbviewer_link <- 'https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/master'
+    nbviewer_link <- 'https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/tree/master'
   }
   
   github_link <- sprintf('<a href="https://github.com/linogaliana/python-datascientist%s" class="github"><i class="fab fa-github"></i></a>',
