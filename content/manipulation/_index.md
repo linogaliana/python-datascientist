@@ -66,3 +66,4 @@ https://chrisalbon.com/machine_learning/vectors_matrices_and_arrays/create_a_spa
 # Le DataFrame pandas
 
 Une Series est un objet uni-dimensionnel similaire à un tableau, une liste ou une colonne d'une table. Chaque valeur est associée à un index qui est par défaut les entiers de 0 à N−1 (avec N la longueur de la Series).
+

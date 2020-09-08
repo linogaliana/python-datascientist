@@ -1,6 +1,6 @@
 reminder_jupyter <- function(file = "./content/getting-started/06_rappels_classes.Rmd",
                              out = "ipynb"){
-  
+
   sprintf(
     "jupytext --to %s %s",
     out,
@@ -8,6 +8,7 @@ reminder_jupyter <- function(file = "./content/getting-started/06_rappels_classe
   )
   
 }
+
 
 reminder_badges <- function(notebook = ""){
   
