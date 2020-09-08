@@ -26,8 +26,8 @@ reminder_badges <- function(notebook = ""){
   github_link <- sprintf('<a href="https://github.com/linogaliana/python-datascientist%s" class="github"><i class="fab fa-github"></i></a>',
                          notebook)
   nbviewer_link <- paste0(
-    "[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-brightgreen)](",
-    nbviewer_link,")]"
+    "[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](",
+    nbviewer_link,")"
   )
   onyxia_link <- "[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)"
   binder_link <- sprintf(

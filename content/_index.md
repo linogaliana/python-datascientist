@@ -33,7 +33,8 @@ pour être redirigé vers le dépôt. Pour visualiser sous une forme plus
 ergonomique les notebooks (fichiers `.ipynb`)
 que ne le permet ce site *web*, vous trouverez
 parfois des liens
-[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-brightgreen)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/master)] qui utilisent
+[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/master)
+qui utilisent
 [nbviewer](https://github.com/jupyter/nbviewer) une application de visualisation
 dédiée aux jupyter notebooks.
 
