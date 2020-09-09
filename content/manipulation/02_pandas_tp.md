@@ -13,7 +13,7 @@ jupyter:
 title: "Pratique de pandas: un exemple complet"
 date: 2020-07-09T13:00:00Z
 draft: false
-weight: 100
+weight: 30
 output: 
   html_document:
     keep_md: true
@@ -25,8 +25,6 @@ slug: pandasTP
 
 
 
-<!-- #region -->
-# Pratique de pandas: un exemple complet
 
 Dans ce tutoriel `pandas`, nous allons utiliser:
 
@@ -38,7 +36,7 @@ et requêtable directement dans python avec
 [disponibles sur le site de l'Insee](https://www.insee.fr/fr/statistiques/3560121). Pour faciliter l'import de celles-ci, les données ont été mises à disposition dans le dépôt github, [sur cet url](https://github.com/linogaliana/python-datascientist/blob/pandas_intro/data/filosofi_2016.csv)
 
 
-> `pandas` offre la possibilité d'importer des données directement depuis un url. C'est l'option
+`pandas` offre la possibilité d'importer des données directement depuis un url. C'est l'option
 prise dans ce tutoriel.
 Si vous préfèrez, pour des
 raisons d'accès au réseau ou de performance, importer depuis un poste local,
@@ -47,7 +45,6 @@ les commandes d'import avec le chemin adéquat plutôt que l'url.
 
 Nous suivrons les conventions habituelles dans l'import des packages
 
-<!-- #endregion -->
 
 
 ```python
@@ -69,7 +66,7 @@ Pour les données de cadrage au niveau communal (source Insee), une version arra
 
 
 ```python
-df_city = pd.read_csv("https://raw.githubusercontent.com/linogaliana/python-datascientist/pandas_intro/data/filosofi_2016.csv")
+df_city = pd.read_csv("https://raw.githubusercontent.com/linogaliana/python-datascientist/master/data/filosofi_2016.csv")
 ```
 
 ```
@@ -143,17 +140,17 @@ df.sample(10)
 ```
 
 ```
-##       INSEE commune             Commune  ...      Routier    Tertiaire
-## 16151         42064              CHUYER  ...   637.672224   375.649798
-## 23294         60154            CINQUEUX  ...  1250.542618   732.158206
-## 33922         86159              MILLAC  ...  1544.993365   234.003505
-## 2773          08411               SEMUY  ...   136.225981    40.196921
-## 4232          12187     PRADES-D'AUBRAC  ...  1256.340958   203.855814
-## 30022         74241        SAINT-JEOIRE  ...  5968.697574  1538.010766
-## 7429          21647              TRUGNY  ...   726.780743    63.645125
-## 28521         70531         VELLECLAIRE  ...   700.295042    53.117360
-## 17461         46257  SAINT-CIRQ-MADELON  ...   503.273950    67.951938
-## 5834          17092           CHARTUZAC  ...   271.267387    76.087029
+##       INSEE commune                    Commune  ...       Routier     Tertiaire
+## 956           02565                    OEUILLY  ...    203.493417    137.818015
+## 22627         59138                CATTENIERES  ...    967.027502    322.532438
+## 12806         33141                   CROIGNON  ...    924.027586    258.887313
+## 33099         82100                       LOZE  ...    231.978058     62.688056
+## 24581         62344       FONTAINE-LES-HERMANS  ...    235.280496     57.424173
+## 16851         44190  SAINT-SEBASTIEN-SUR-LOIRE  ...  23789.667860  13441.362600
+## 11601         30341                    VAUVERT  ...  14963.045230   8151.955062
+## 35099         89384                      SENAN  ...  10191.756930    375.171263
+## 2875          09018                     ARROUT  ...     43.338533     37.325712
+## 9877          27302           LE BOSC DU THEIL  ...   1766.107122    616.831325
 ## 
 ## [10 rows x 12 columns]
 ```
@@ -163,18 +160,18 @@ df.sample(frac = 0.05)
 ```
 
 ```
-##       INSEE commune                Commune  ...       Routier    Tertiaire
-## 23580         60447                   NERY  ...    672.067469   324.446577
-## 15130         39197                  DIGNA  ...   2044.990456   173.229589
-## 31387         78133             CHAMBOURCY  ...  18374.597850  3670.818299
-## 12071         31459           ROQUESERIERE  ...   1514.820903   344.545038
-## 19026         51243           FAUX-FRESNAY  ...    834.704163   167.008636
-## ...             ...                    ...  ...           ...          ...
-## 22747         59262         GODEWAERSVELDE  ...   7306.478272   968.075850
-## 34613         88381               RELANGES  ...    695.862755   102.884977
-## 14219         37076                 CINAIS  ...   1452.285794   209.598231
-## 25061         62832              TUBERSENT  ...   2300.361521   236.396179
-## 8525          24442  SAINT-LEON-SUR-L'ISLE  ...   5706.133208   990.566984
+##       INSEE commune               Commune  ...       Routier    Tertiaire
+## 29378         72249             LA QUINTE  ...   4658.285793   383.306355
+## 26008         64415       NAVAILLES-ANGOS  ...   3763.830784   668.034546
+## 8382          24285  MONTAGNAC-LA-CREMPSE  ...   1476.128552   181.843214
+## 27553         68195            LUTTERBACH  ...  32558.455360  4053.126032
+## 19281         51518         SAINT-THIERRY  ...   6353.604388   532.472922
+## ...             ...                   ...  ...           ...          ...
+## 29487         72364                  VAAS  ...   3004.059294  2777.282260
+## 14486         38069              CHAMPIER  ...   5914.014514   636.929785
+## 18526         50304      LE MESNIL-AUBERT  ...   1535.417938    78.001168
+## 16032         41237                SASSAY  ...   2173.652201   470.573282
+## 27130         67304          MORSCHWILLER  ...    568.890529   286.163795
 ## 
 ## [1790 rows x 12 columns]
 ```
@@ -184,18 +181,18 @@ df[:10].sample(n = 100, replace = True)
 ```
 
 ```
-##    INSEE commune              Commune  ...       Routier     Tertiaire
-## 2          01004    AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
-## 7          01009     ANDERT-ET-CONDON  ...    696.956038    161.266219
-## 3          01005  AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
-## 8          01010            ANGLEFORT  ...   3199.808360   1206.147643
-## 9          01011             APREMONT  ...    686.153720    188.542701
-## ..           ...                  ...  ...           ...           ...
-## 6          01008             AMBUTRIX  ...   3616.168396    356.029873
-## 7          01009     ANDERT-ET-CONDON  ...    696.956038    161.266219
-## 8          01010            ANGLEFORT  ...   3199.808360   1206.147643
-## 2          01004    AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
-## 9          01011             APREMONT  ...    686.153720    188.542701
+##    INSEE commune                  Commune  ...       Routier     Tertiaire
+## 4          01006                  AMBLEON  ...    398.786800     51.681756
+## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 2          01004        AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
+## 3          01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
+## ..           ...                      ...  ...           ...           ...
+## 4          01006                  AMBLEON  ...    398.786800     51.681756
+## 9          01011                 APREMONT  ...    686.153720    188.542701
+## 4          01006                  AMBLEON  ...    398.786800     51.681756
+## 9          01011                 APREMONT  ...    686.153720    188.542701
+## 4          01006                  AMBLEON  ...    398.786800     51.681756
 ## 
 ## [100 rows x 12 columns]
 ```
@@ -207,16 +204,16 @@ df[:6].sample(n = 100, replace = True, weights = [0.5] + [0.1]*5)
 ```
 ##    INSEE commune                  Commune  ...       Routier    Tertiaire
 ## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501   367.036172
+## 3          01005      AMBERIEUX-EN-DOMBES  ...   1756.341319   782.404357
 ## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501   367.036172
-## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501   367.036172
-## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501   367.036172
+## 5          01007                 AMBRONAY  ...  22481.123580  2789.133106
 ## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501   367.036172
 ## ..           ...                      ...  ...           ...          ...
 ## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501   367.036172
+## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501   367.036172
+## 1          01002    L'ABERGEMENT-DE-VAREY  ...    348.997893   112.934207
+## 0          01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501   367.036172
 ## 3          01005      AMBERIEUX-EN-DOMBES  ...   1756.341319   782.404357
-## 5          01007                 AMBRONAY  ...  22481.123580  2789.133106
-## 1          01002    L'ABERGEMENT-DE-VAREY  ...    348.997893   112.934207
-## 1          01002    L'ABERGEMENT-DE-VAREY  ...    348.997893   112.934207
 ## 
 ## [100 rows x 12 columns]
 ```
@@ -273,16 +270,16 @@ df_city.sample(10)
 
 ```
 ##       CODGEO                   LIBGEO  ...          D916      RD16
-## 10345  29058                Fouesnant  ...  42734.800000  3.085397
-## 14434  38431  Saint-Nazaire-les-Eymes  ...  52293.200000  2.898468
-## 22574  60116                     Bury  ...  31571.333333  2.454048
-## 27855  71039                   Blanot  ...           NaN       NaN
-## 24295  62786                   Selles  ...           NaN       NaN
-## 28767  73036     Bellecombe-en-Bauges  ...           NaN       NaN
-## 15591  41236                Sasnières  ...           NaN       NaN
-## 32668  85054      La Chapelle-Hermier  ...           NaN       NaN
-## 21938  59128                Capinghem  ...  45482.857143  3.288858
-## 6300   18275                  Vereaux  ...           NaN       NaN
+## 5999   17455                La Vallée  ...           NaN       NaN
+## 6579   19272                    Tulle  ...  34279.333333  3.203077
+## 32817  85232  Saint-Hilaire-le-Vouhis  ...           NaN       NaN
+## 4159   12165         Muret-le-Château  ...           NaN       NaN
+## 14496  38501                   Tencin  ...  34333.888889  2.335229
+## 13380  35196                Mordelles  ...  35456.666667  2.684484
+## 20980  57211                    Fèves  ...           NaN       NaN
+## 4601   14245                    Ernes  ...           NaN       NaN
+## 9052   26078                  Charols  ...           NaN       NaN
+## 19446  53276                   Voutré  ...           NaN       NaN
 ## 
 ## [10 rows x 29 columns]
 ```
@@ -292,18 +289,18 @@ df_city.sample(frac = 0.05)
 ```
 
 ```
-##       CODGEO                                  LIBGEO  ...  D916  RD16
-## 33540  88206                   Gironcourt-sur-Vraine  ...   NaN   NaN
-## 18078  50518               Saint-Martin-le-Bouillant  ...   NaN   NaN
-## 7375   22091                              Kermoroc'h  ...   NaN   NaN
-## 2474   08124                             Clavy-Warby  ...   NaN   NaN
-## 28374  71583                               Vinzelles  ...   NaN   NaN
-## ...      ...                                     ...  ...   ...   ...
-## 30736  78558                  Saint-Illiers-la-Ville  ...   NaN   NaN
-## 2489   08141                                 Dommery  ...   NaN   NaN
-## 3699   11128  Escueillens-et-Saint-Just-de-Bélengard  ...   NaN   NaN
-## 23095  60654                            Vandélicourt  ...   NaN   NaN
-## 13590  36059                                   Condé  ...   NaN   NaN
+##       CODGEO                   LIBGEO  ...          D916      RD16
+## 11489  31217                    Génos  ...           NaN       NaN
+## 9313   26353           Les Tourrettes  ...           NaN       NaN
+## 30620  78267              Gargenville  ...  36172.666667  2.569446
+## 11847  31579                Villariès  ...           NaN       NaN
+## 2111   07084                 Eclassan  ...           NaN       NaN
+## ...      ...                      ...  ...           ...       ...
+## 16890  46142        Lacapelle-Cabanac  ...           NaN       NaN
+## 11945  32087        Castex-d'Armagnac  ...           NaN       NaN
+## 32480  84009  La Bastide-des-Jourdans  ...           NaN       NaN
+## 2993   09183         Mauvezin-de-Prat  ...           NaN       NaN
+## 32158  82035                  Caumont  ...           NaN       NaN
 ## 
 ## [1747 rows x 29 columns]
 ```
@@ -313,18 +310,18 @@ df_city[:10].sample(n = 100, replace = True)
 ```
 
 ```
-##    CODGEO                   LIBGEO  NBMENFISC16  ...  D116  D916  RD16
-## 4   01006                  Ambléon          NaN  ...   NaN   NaN   NaN
-## 0   01001  L'Abergement-Clémenciat        313.0  ...   NaN   NaN   NaN
-## 3   01005      Ambérieux-en-Dombes        633.0  ...   NaN   NaN   NaN
-## 9   01011                 Apremont        143.0  ...   NaN   NaN   NaN
-## 1   01002    L'Abergement-de-Varey        101.0  ...   NaN   NaN   NaN
-## ..    ...                      ...          ...  ...   ...   ...   ...
-## 8   01010                Anglefort        441.0  ...   NaN   NaN   NaN
-## 9   01011                 Apremont        143.0  ...   NaN   NaN   NaN
-## 6   01008                 Ambutrix        297.0  ...   NaN   NaN   NaN
-## 0   01001  L'Abergement-Clémenciat        313.0  ...   NaN   NaN   NaN
-## 9   01011                 Apremont        143.0  ...   NaN   NaN   NaN
+##    CODGEO                   LIBGEO  ...          D916      RD16
+## 0   01001  L'Abergement-Clémenciat  ...           NaN       NaN
+## 2   01004        Ambérieu-en-Bugey  ...  33880.555556  3.239962
+## 4   01006                  Ambléon  ...           NaN       NaN
+## 5   01007                 Ambronay  ...  34914.782609  2.503390
+## 2   01004        Ambérieu-en-Bugey  ...  33880.555556  3.239962
+## ..    ...                      ...  ...           ...       ...
+## 6   01008                 Ambutrix  ...           NaN       NaN
+## 6   01008                 Ambutrix  ...           NaN       NaN
+## 2   01004        Ambérieu-en-Bugey  ...  33880.555556  3.239962
+## 2   01004        Ambérieu-en-Bugey  ...  33880.555556  3.239962
+## 9   01011                 Apremont  ...           NaN       NaN
 ## 
 ## [100 rows x 29 columns]
 ```
@@ -335,17 +332,17 @@ df_city[:6].sample(n = 100, replace = True, weights = [0.5] + [0.1]*5)
 
 ```
 ##    CODGEO                   LIBGEO  ...          D916      RD16
+## 0   01001  L'Abergement-Clémenciat  ...           NaN       NaN
 ## 3   01005      Ambérieux-en-Dombes  ...           NaN       NaN
 ## 0   01001  L'Abergement-Clémenciat  ...           NaN       NaN
 ## 0   01001  L'Abergement-Clémenciat  ...           NaN       NaN
-## 2   01004        Ambérieu-en-Bugey  ...  33880.555556  3.239962
-## 0   01001  L'Abergement-Clémenciat  ...           NaN       NaN
+## 4   01006                  Ambléon  ...           NaN       NaN
 ## ..    ...                      ...  ...           ...       ...
-## 0   01001  L'Abergement-Clémenciat  ...           NaN       NaN
-## 0   01001  L'Abergement-Clémenciat  ...           NaN       NaN
+## 1   01002    L'Abergement-de-Varey  ...           NaN       NaN
 ## 2   01004        Ambérieu-en-Bugey  ...  33880.555556  3.239962
 ## 0   01001  L'Abergement-Clémenciat  ...           NaN       NaN
-## 3   01005      Ambérieux-en-Dombes  ...           NaN       NaN
+## 1   01002    L'Abergement-de-Varey  ...           NaN       NaN
+## 2   01004        Ambérieu-en-Bugey  ...  33880.555556  3.239962
 ## 
 ## [100 rows x 29 columns]
 ```

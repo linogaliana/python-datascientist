@@ -14,7 +14,7 @@ jupyter:
 title: "Introduction à pandas"
 date: 2020-07-28T13:00:00Z
 draft: false
-weight: 100
+weight: 20
 output: 
   html_document:
     keep_md: true
