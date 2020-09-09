@@ -22,7 +22,7 @@ output:
 slug: pandascours
 ---
 
-Pour visualiser le TP associé à ce tutoriel : 
+Pour visualiser le [TP associé à ce tutoriel](pandasTP) : 
 <!---- reminder_badges("content/manipulation/02_pandas_tp.ipynb") --->
 <a href="https://github.com/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/02_pandas_tp.ipynb" class="github"><i class="fab fa-github"></i></a>
 [![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/02_pandas_tp.ipynb)
@@ -786,11 +786,11 @@ des usages de manipulation des données
 
 | Opération | SQL | pandas | dplyr (`R`) | data.table (`R`) |
 |-----|-----------|--------|-------------|------------------|
-| Sélectionner des variables par leur nom | SELECT | `df[['Autres transports','Energie']]` | `df %>% select(Autres transports, Energie)` | `df[, c('Autres transports','Energie')]` |
-| Sélectionner des observations selon une ou plusieurs conditions; | FILTER | `df[df['Agriculture']>2000]` | `df %>% filter(Agriculture>2000)` | `df[Agriculture>2000]` |
-| Trier la table selon une ou plusieurs variables | SORT BY | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
+| Sélectionner des variables par leur nom | `SELECT` | `df[['Autres transports','Energie']]` | `df %>% select(Autres transports, Energie)` | `df[, c('Autres transports','Energie')]` |
+| Sélectionner des observations selon une ou plusieurs conditions; | `FILTER` | `df[df['Agriculture']>2000]` | `df %>% filter(Agriculture>2000)` | `df[Agriculture>2000]` |
+| Trier la table selon une ou plusieurs variables | `SORT BY` | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
 | Ajouter des variables qui sont fonction d’autres variables; | `SELECT *, LOG(Agriculture) AS x FROM df` | `df['x'] = np.log(df['Agriculture'])`  |  `df %>% mutate(x = log(Agriculture))` | `df[,x := log(Agriculture)]` |
-| Effectuer une opération par groupe | GROUP BY | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
+| Effectuer une opération par groupe | `GROUP BY` | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
 | Joindre deux bases de données (*inner join*) | `SELECT * FROM table1 INNER JOIN table2 ON table1.id = table2.x` | `table1.merge(table2, left_on = 'id', right_on = 'x')` | `table1 %>% inner_join(table2, by = c('id'='x'))` | `merge(table1, table2, by.x = 'id', by.y = 'x')` |
 
 ## Opérations sur les colonnes: select, mutate, drop
@@ -1122,7 +1122,7 @@ df.groupby('dep').mean
 ```
 
 ```
-## <bound method GroupBy.mean of <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000028F03C18>>
+## <bound method GroupBy.mean of <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000027EBC4A8>>
 ```
 
 A noter que la variable de groupe, ici `dep`, devient, par défaut, l'index
@@ -1140,7 +1140,7 @@ df.groupby('dep')
 ```
 
 ```
-## <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000028F03780>
+## <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000027EBC470>
 ```
 
 Il est possible d'appliquer plus d'une opération à la fois grâce à la méthode
