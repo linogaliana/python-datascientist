@@ -10,10 +10,10 @@ jupyter:
     display_name: Python 3
     language: python
     name: python3
-title: "Maîtriser les expressions régulières"
+title: "Requêter via des API avec Python"
 date: 2020-09-08T13:00:00Z
 draft: false
-weight: 100
+weight: 80
 output: 
   html_document:
     keep_md: true
@@ -34,7 +34,7 @@ API signifie Application Programming Interface. Le mot le plus important est “
 
 Bon, et une interface ?
 
-Définition Larrouse : "Une interface est un dispositif qui permet des échanges et interactions entre différents acteurs"
+> Définition Larousse : "Une interface est un dispositif qui permet des échanges et interactions entre différents acteurs"
 
 Pour faire simple, une API est un moyen efficace de faire communiquer entre elles deux applications : concrètement, un fournisseur de service met à disposition des développeurs une interface codifiée, qui leur permet d'obtenir des informations à partir de requêtes.
 
