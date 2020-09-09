@@ -990,7 +990,7 @@ ou alors utiliser une réassignation plus classique:
 
 ```python
 df_copy = df.copy()
-df[df['INSEE commune'].str.startswith("92")] = np.nan
+df_copy[df_copy['INSEE commune'].str.startswith("92")] = np.nan
 ```
 
 ## Opérations par groupe
@@ -1050,12 +1050,12 @@ df.groupby('dep')["INSEE commune"].count()
 ## 04    199
 ## 05    168
 ##      ... 
-## 90    102
 ## 91    196
+## 92     36
 ## 93     40
 ## 94     47
 ## 95    185
-## Name: INSEE commune, Length: 95, dtype: int64
+## Name: INSEE commune, Length: 96, dtype: int64
 ```
 
 La syntaxe est quasiment transparente. On peut bien-sûr effecter des opérations
@@ -1067,7 +1067,7 @@ df.groupby('dep').mean
 ```
 
 ```
-## <bound method GroupBy.mean of <pandas.core.groupby.generic.DataFrameGroupBy object at 0x00000000328A15F8>>
+## <bound method GroupBy.mean of <pandas.core.groupby.generic.DataFrameGroupBy object at 0x00000000330E17F0>>
 ```
 
 A noter que la variable de groupe, ici `dep`, devient, par défaut, l'index
@@ -1085,7 +1085,7 @@ df.groupby('dep')
 ```
 
 ```
-## <pandas.core.groupby.generic.DataFrameGroupBy object at 0x00000000335441D0>
+## <pandas.core.groupby.generic.DataFrameGroupBy object at 0x00000000330E1B00>
 ```
 
 Il est possible d'appliquer plus d'une opération à la fois grâce à la méthode
@@ -1107,13 +1107,13 @@ df.groupby('dep').agg(['min',"median","max"])
 ## 04    30.985972  1404.752852  ...    122.504902  16478.02481
 ## 05    38.651727  1520.896526  ...    151.695524  23666.23590
 ## ..          ...          ...  ...           ...          ...
-## 90     0.128306   520.870494  ...    227.976189  31768.10711
 ## 91     0.400740   516.908303  ...   1428.426303  38296.20473
+## 92     0.073468     6.505185  ...  18086.633085  65043.36450
 ## 93     3.308495     3.308495  ...  20864.923340  71918.16398
 ## 94     1.781885     1.781885  ...  14054.223450  58528.62348
 ## 95     8.779506   445.279844  ...    725.467969  61497.82148
 ## 
-## [95 rows x 30 columns]
+## [96 rows x 30 columns]
 ```
 
 ## Appliquer des fonctions
@@ -1122,7 +1122,31 @@ df.groupby('dep').agg(['min',"median","max"])
 propose une grande variété de méthodes optimisées. Cependant, il est fréquent 
 d'avoir besoin de méthodes non implémentées. 
 
-Dans ce cas, on recourt souvent aux `lambda` functions.
+Dans ce cas, on recourt souvent aux `lambda` functions. Par exemple, si 
+on désire connaître les communes dont le nom fait plus de 10 caractères, 
+on peut appliquer la fonction `len` de manière itérative:
+
+
+```python
+df[df['Commune'].apply(lambda s: len(s)>10)]
+```
+
+```
+##       INSEE commune                  Commune  ...     Tertiaire  dep
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...    367.036172   01
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...    112.934207   01
+## 2             01004        AMBERIEU-EN-BUGEY  ...  10732.376930   01
+## 3             01005      AMBERIEUX-EN-DOMBES  ...    782.404357   01
+## 7             01009         ANDERT-ET-CONDON  ...    161.266219   01
+## ...             ...                      ...  ...           ...  ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...    235.439109   95
+## 35794         95678            VILLIERS-ADAM  ...    403.404815   95
+## 35795         95680          VILLIERS-LE-BEL  ...  13849.512000   95
+## 35796         95682          VILLIERS-LE-SEC  ...     85.657725   95
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...    147.867245   95
+## 
+## [16289 rows x 13 columns]
+```
 
 
 Cependant, toutes les `lambda` functions ne se justifient pas.
@@ -1146,13 +1170,13 @@ df.groupby('dep').agg(['min',"median","max"])
 ## 04    30.985972  1404.752852  ...    122.504902  16478.02481
 ## 05    38.651727  1520.896526  ...    151.695524  23666.23590
 ## ..          ...          ...  ...           ...          ...
-## 90     0.128306   520.870494  ...    227.976189  31768.10711
 ## 91     0.400740   516.908303  ...   1428.426303  38296.20473
+## 92     0.073468     6.505185  ...  18086.633085  65043.36450
 ## 93     3.308495     3.308495  ...  20864.923340  71918.16398
 ## 94     1.781885     1.781885  ...  14054.223450  58528.62348
 ## 95     8.779506   445.279844  ...    725.467969  61497.82148
 ## 
-## [95 rows x 30 columns]
+## [96 rows x 30 columns]
 ```
 
 En effet, cela effectue le résultat désiré. Cependant, il y a mieux: utiliser
