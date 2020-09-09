@@ -24,11 +24,11 @@ slug: pandascours
 
 Pour visualiser le TP associé à ce tutoriel : 
 <!---- reminder_badges("content/manipulation/02_pandas_tp.ipynb") --->
-<a href="https://github.com/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb" class="github"><i class="fab fa-github"></i></a>
-[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb)
+<a href="https://github.com/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/02_pandas_tp.ipynb" class="github"><i class="fab fa-github"></i></a>
+[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/02_pandas_tp.ipynb)
 [![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master?filepath=content/manipulation/02_pandas_tp.ipynb)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master?filepath=content/manipulation/notebooks/02_pandas_tp.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/02_pandas_tp.ipynb)
 
 
 
@@ -72,9 +72,9 @@ np.random.seed(123)
 
 Au cours de cette démonstration des principales fonctionalités de `pandas`, et
 lors du TP
-[![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master?filepath=content/manipulation/notebooks/02_pandas_tp.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/02_pandas_tp.ipynb)
 
 ,
 je recommande de régulièrement se référer aux ressources suivantes:
@@ -1067,7 +1067,7 @@ df.groupby('dep').mean
 ```
 
 ```
-## <bound method GroupBy.mean of <pandas.core.groupby.generic.DataFrameGroupBy object at 0x00000000330E17F0>>
+## <bound method GroupBy.mean of <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000033F66710>>
 ```
 
 A noter que la variable de groupe, ici `dep`, devient, par défaut, l'index
@@ -1085,7 +1085,7 @@ df.groupby('dep')
 ```
 
 ```
-## <pandas.core.groupby.generic.DataFrameGroupBy object at 0x00000000330E1B00>
+## <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000033F66A20>
 ```
 
 Il est possible d'appliquer plus d'une opération à la fois grâce à la méthode
