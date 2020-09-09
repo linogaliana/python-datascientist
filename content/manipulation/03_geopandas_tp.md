@@ -21,17 +21,9 @@ output:
 slug: geopandasTP
 ---
 
-```{r setup, include=FALSE}  
-library(knitr)  
-library(reticulate)  
-knitr::knit_engines$set(python = reticulate::eng_python)
-knitr::opts_chunk$set(eval = FALSE)
-```
 
-```{python, include = FALSE}
-import os
-os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
-```
+
+
 
 
 
@@ -54,7 +46,8 @@ transformation de l'espace tridimensionnel terrestre en une surface plane.
 `plot`
 6. Réprésenter la carte de Paris : quel est le problème ?
 
-```{python}
+
+```python
 download_unzip(url)
 communes_borders = gpd.read_file(temporary_location + "/borders/communes-20190101.json")
 communes_borders.head()
@@ -62,11 +55,13 @@ communes_borders.crs
 ```
 
 
-```{python}
+
+```python
 communes_borders[communes_borders.insee.str.startswith("12")].plot()
 ```
 
-```{python}
+
+```python
 communes_borders[communes_borders.insee.str.startswith("75")].plot()
 ```
 
@@ -90,7 +85,8 @@ la méthode `rename` et faire attention aux types des variables
 4. Représenter les communes de la petite couronne parisienne (75, 92, 93, 94)
 
 
-```{python}
+
+```python
 arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
 arrondissements.plot()
 communes_borders.crs == arrondissements.crs
@@ -98,7 +94,8 @@ arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
 data_paris = communes_borders[~communes_borders.insee.str.startswith("75")].append(arrondissements)
 ```
 
-```{python}
+
+```python
 data_paris['dep'] = data_paris.insee.str[:2]
 data_paris[data_paris['dep'].isin(['75','92','93','94'])].plot()
 ```
