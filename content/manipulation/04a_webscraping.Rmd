@@ -13,7 +13,7 @@ jupyter:
 title: "Webscraping avec python"
 date: 2020-09-08T13:00:00Z
 draft: false
-weight: 100
+weight: 60
 output: 
   html_document:
     keep_md: true
