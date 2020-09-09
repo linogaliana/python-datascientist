@@ -21,4 +21,99 @@ output:
 slug: geopandas
 ---
 
-Elements sur geopandas
+```{r setup, include=FALSE}  
+library(knitr)  
+library(reticulate)  
+knitr::knit_engines$set(python = reticulate::eng_python)
+```
+
+```{python, include = FALSE}
+import os
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
+```
+
+Dans ce tutoriel, nous allons utiliser:
+
+* [Réseau de pistes cyclables de la ville de Paris](https://opendata.paris.fr/explore/dataset/reseau-cyclable/table/?disjunctive.typologie_simple&disjunctive.bidirectionnel&disjunctive.statut&disjunctive.sens_velo&disjunctive.voie&disjunctive.arrdt&disjunctive.bois&disjunctive.position&disjunctive.circulation&disjunctive.piste&disjunctive.couloir_bus&disjunctive.type_continuite&disjunctive.reseau&basemap=jawg.streets&location=12,48.85943,2.3493)
+* [Carte des limites administratives françaises]()
+
+La représentation des données, notamment la cartographie, est présentée plus
+amplement dans la partie [visualiser](visualiser). 
+
+```{python}
+import geopandas as gpd
+```
+
+
+## Données spatiales: quelle différence avec des données traditionnelles ?
+
+
+## Importer des données spatiales
+
+### Préliminaire: récupérer les découpages territoriaux
+
+Les données des limites administratives demandent un peu de travail pour être
+importées car elles sont zippées. Le code suivant, dont les 
+détails apparaîtront plus clairs après la lecture de la partie
+*[webscraping](webscraping)* permet
+
+1. Télécharger les données avec `requests` dans un dossier temporaire
+2. Les dézipper avec le module `zipfile`
+
+La fonction suivante automatise un peu le processus:
+
+```{python}
+import requests
+import tempfile
+import zipfile
+
+url = 'https://www.data.gouv.fr/fr/datasets/r/07b7c9a2-d1e2-4da6-9f20-01a7b72d4b12'
+temporary_location = tempfile.gettempdir()
+
+def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
+  myfile = requests.get(url)
+  open(dirname + '/' + destname + '.zip', 'wb').write(myfile.content)
+  with zipfile.ZipFile(dirname + '/' + destname + '.zip', 'r') as zip_ref:
+      zip_ref.extractall(dirname + '/' + destname)
+```
+
+Les découpages communaux exploités ici sont issus d'*open street map*. 
+
+**Exercice 1: lire et explorer la structure de fichiers géographiques**
+
+1. Utiliser la fonction `download_unzip` avec cet <'https://www.data.gouv.fr/fr/datasets/r/07b7c9a2-d1e2-4da6-9f20-01a7b72d4b12'>
+pour télécharger les données communales.
+2. Importer le fichier avec la package `geopandas`
+(si vous avez laissé les paramètres par défaut,
+le fichier devrait
+être à l'emplacement `temporary_location + "/borders/communes-20190101.json"`).
+Vous pouvez le nommer `communes_borders`
+3. Regarder les premières lignes des données. Identifier la différence avec
+un DataFrame standard. 
+4. Afficher l'attribut `crs` de `communes_borders`. Ce dernier contrôle la
+transformation de l'espace tridimensionnel terrestre en une surface plane. 
+5. Afficher les communes de l'Aveyron (département 12) et utiliser la méthode
+`plot`
+6. Réprésenter la carte de Paris : quel est le problème ?
+
+```{python}
+download_unzip(url)
+communes_borders = gpd.read_file(temporary_location + "/borders/communes-20190101.json")
+communes_borders.head()
+communes_borders.crs
+```
+
+
+```{python}
+communes_borders[communes_borders.insee.str.startswith("12")].plot()
+```
+
+```{python}
+communes_borders[communes_borders.insee.str.startswith("75")].plot()
+```
+
+
+```{python}
+arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
+arrondissements.plot()
+```
