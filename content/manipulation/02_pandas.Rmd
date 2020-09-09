@@ -545,6 +545,9 @@ data.loc[(data.age >= 12), ['section']]
 
 # Principales manipulation de données
 
+L'objectif du [TP pandas](pandasTP) est de se familiariser plus avec ces
+commandes à travers l'exemple des données des émissions de C02. 
+
 Les opérations les plus fréquentes en SQL sont résumées par le tableau suivant.
 Il est utile de les connaître (beaucoup de syntaxes de maniement de données
 reprennent ces termes) car, d'une
@@ -682,70 +685,156 @@ La logique sous-jacente est celle du split-apply-combine qui est repris
 par les langages de manipulation de données, auxquels `pandas`
 [ne fait pas exception](https://pandas.pydata.org/pandas-docs/stable/user_guide/groupby.html). 
 
-https://unlhcc.github.io/r-novice-gapminder/16-plyr/
+L'image suivante, issue de
+[ce site](https://unlhcc.github.io/r-novice-gapminder/16-plyr/)
+représente bien la manière dont fonctionne l'approche
+`split`-`apply`-`combine`
 
 ![Split-apply-combine](https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png)
 
 
 Ce [tutoriel](https://realpython.com/pandas-groupby/) sur le sujet
-est particulièrement utile. 
+est particulièrement utile.
 
+Pour donner quelques exemples, on peut créer une variable départementale qui
+servira de critère de groupe. 
 
-pandas objects can be split on any of their axes. The abstract definition of grouping is to provide a mapping of labels to group names
+```{python}
+df['dep'] = df['INSEE commune'].str[:2]
+```
 
-SELECT state, count(name)
+En `pandas`, on utilise `groupby` pour découper les données selon un ou
+plusieurs axes. Techniquement, cette opération consiste à créer une association
+entre des labels (valeurs des variables de groupe) et des 
+observations. 
+
+Par exemple, pour compter le nombre de communes par département en SQL, on
+utiliserait la requête suivante:
+
+```sql
+SELECT dep, count(INSEE commune)
 FROM df
-GROUP BY state
-ORDER BY state;
+GROUP BY dep;
+```
 
+Ce qui, en `pandas`, donne:
 
-In the Pandas version, the grouped-on columns are pushed into the MultiIndex of the resulting Series by default:
+```{python}
+df.groupby('dep')["INSEE commune"].count()
+```
 
+La syntaxe est quasiment transparente. On peut bien-sûr effecter des opérations
+par groupe sur plusieurs colonnes. Par exemple,
 
-he reason that a DataFrameGroupBy object can be difficult to wrap your head around is that it’s lazy in nature. It 
-doesn’t really do any operations to produce a useful result until you say so.
+```{python}
+df.groupby('dep').mean
+```
 
-print(by_state)
-<pandas.core.groupby.generic.DataFrameGroupBy object at 0x107293278>
+A noter que la variable de groupe, ici `dep`, devient, par défaut, l'index
+du DataFrame de sortie. Si on avait utilisé plusieurs variables de groupe, 
+on obtiendrait un objet multi-indexé. 
 
-It can be difficult to inspect df.groupby("state") because it does virtually none of these things until you do something with the resulting object. Again, a Pandas GroupBy object is lazy. It delays virtually every part of the split-apply-combine process until you invoke a method on it.
+Tant qu'on appelle pas une action sur un DataFrame par groupe, du type
+`head` ou `display`, `pandas` n'effectue aucune opération. On parle de
+*lazy evaluation*. Par exemple, le résultat de `df.groupby('dep')` est
+une transformation qui n'est pas encore évaluée:
 
-Utilisation avancée:
-If you’re working on a challenging aggregation problem, then iterating over the Pandas GroupBy object can be a great way to visualize the split part of split-apply-combine.
+```{python}
+df.groupby('dep')
+```
 
-by_state.get_group("PA")
-This is virtually equivalent to using .loc[]. You could get the same output with something like df.loc[df["state"] == "PA"].
+Il est possible d'appliquer plus d'une opération à la fois grâce à la méthode
+`agg`. Par exemple, pour obtenir à la fois le minimum, la médiane et le maximum
+de chaque département, on peut faire:
 
-
-df.groupby([df.index.year, df.index.quarter])["co"].agg(
-...     ["max", "min"]
-... ).rename_axis(["year", "quarter"])
-
-Resampling en pandas sur données temporelles
-df.resample("Q")["co"].agg(["max", "min"])
+```{python}
+df.groupby('dep').agg(['min',"median","max"])
+```
 
 ## Appliquer des fonctions
 
-Lien vers rappel lambda functions
+`pandas` est, comme on a pu le voir, un package très flexible, qui 
+propose une grande variété de méthodes optimisées. Cependant, il est fréquent 
+d'avoir besoin de méthodes non implémentées. 
 
-df.groupby("outlet", sort=False)["title"].apply(
-...     lambda ser: ser.str.contains("Fed").sum()
-... ).nlargest(10)
+Dans ce cas, on recourt souvent aux `lambda` functions.
 
-Accélérer: https://realpython.com/fast-flexible-pandas/#pandas-apply
 
-Exo :
-* isin
-* digitize
+Cependant, toutes les `lambda` functions ne se justifient pas.
+Par exemple, prenons
+le résultat d'agrégation précédent. Imaginons qu'on désire avoir les résultats
+en milliers de tonnes. Dans ce cas, le premier réflexe est d'utiliser
+la `lambda` function suivante:
+
+```{python}
+df.groupby('dep').agg(['min',"median","max"])
+```
+
+En effet, cela effectue le résultat désiré. Cependant, il y a mieux: utiliser
+la méthode `div`:
+
+```{python, eval = FALSE}
+import timeit
+%timeit df.groupby('dep').agg(['min',"median","max"]).div(1000)
+%timeit df.groupby('dep').agg(['min',"median","max"]).apply(lambda s: s/1000)
+```
+
+La méthode `div` est en moyenne plus rapide et a un temps d'exécution
+moins variable. Dans ce cas, on pourrait même utiliser le principe
+du *broadcasting* de numpy (cf. [chapitre numpy](numpy)) qui offre
+des performances équivalentes:
+
+
+```{python, eval = FALSE}
+%timeit df.groupby('dep').agg(['min',"median","max"])/1000
+```
+
+`apply` est plus rapide qu'une boucle (en interne, `apply` utilise `Cython`
+pour itérer) mais reste moins rapide qu'une solution vectorisée quand
+elle existe. Ce [site](https://realpython.com/fast-flexible-pandas/#pandas-apply)
+propose des solutions, par exemple les méthodes `isin` ou `digitize`, pour
+éviter de manuellement créer des boucles lentes. 
+
 
 ## Joindre
 
-Jointure avec données communales (pour avoir population)
+L'information de valeur s'obtient de moins en moins à partir d'une unique base de données. Il devient commun de devoir combiner des données issues de sources différentes. Nous allons ici nous focaliser sur le cas le plus favorable qui est la situation où une information permet d'apparier de manière exacte deux bases de données (autrement nous serions dans une situation, beaucoup plus complexe, d'appariement flou). La situation typique est l'appariement entre deux sources de données selon un identifiant individuel ou un identifiant de code commune, ce qui est notre cas.
+
+Il est recommandé de lire [ce guide assez complet sur la question des jointures avec R](https://linogaliana.gitlab.io/documentationR/joindre-des-tables-de-donn%C3%A9es.html) qui donne des recommandations également utiles en `python`.
+
+On utilise de manière indifférente les termes *merge* ou *join*. Le deuxième terme provient de la syntaxe SQL. En `pandas`, dans la plupart des cas, on peut utiliser indifféremment `df.join` et `df.merge`
+
+![](../../static/pictures/pandas/pandas_join.png)
+
 
 ## Reshape
 
-long to wide: pivot
-wide to long: melt
+On présente généralement deux types de données: 
+    
+    * format __wide__: les données comportent des observations répétées, pour un même individu (ou groupe), dans des colonnes différentes 
+    * format __long__: les données comportent des observations répétées, pour un même individu, dans des lignes différentes avec une colonne permettant de distinguer les niveaux d'observations
+
+Un exemple de la distinction entre les deux peut être pris à l'ouvrage de référence d'Hadley Wickham, *R for Data Science*:
+
+![](https://d33wubrfki0l68.cloudfront.net/3aea19108d39606bbe49981acda07696c0c7fcd8/2de65/images/tidy-9.png)
+
+
+L'aide mémoire suivante aidera à se rappeler les fonctions à appliquer si besoin:
+
+![](../../static/pictures/pandas/reshape.png)
+<!-- #endregion -->
+
+Le fait de passer d'un format *wide* au format *long* (ou vice-versa) peut être extrêmement pratique car certaines fonctions sont plus adéquates sur une forme de données ou sur l'autre. En règle générale, avec `python` comme avec `R`, les formats *long* sont souvent préférables.
+
+Le TP pandas
+<!---- reminder_badges("content/manipulation/02_pandas_tp.ipynb") --->
+<a href="https://github.com/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb" class="github"><i class="fab fa-github"></i></a>
+[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master?filepath=content/manipulation/02_pandas_tp.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/02_pandas_tp.ipynb)
+propose une série d'exemples sur la manière de restructurer les données en
+`pandas`. 
 
 
 # Quelques enjeux de performance
@@ -754,4 +843,8 @@ Ouverture sur dask?
 
 # Références
 
-https://pandas.pydata.org/pandas-docs/stable/user_guide/basics.html
+* Le site
+[pandas.pydata](https://pandas.pydata.org/pandas-docs/stable/user_guide/basics.html)
+fait office de référence
+
+...
