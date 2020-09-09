@@ -789,7 +789,7 @@ des usages de manipulation des données
 | Sélectionner des variables par leur nom | SELECT | `df[['Autres transports','Energie']]` | `df %>% select(Autres transports, Energie)` | `df[, c('Autres transports','Energie')]` |
 | Sélectionner des observations selon une ou plusieurs conditions; | FILTER | `df[df['Agriculture']>2000]` | `df %>% filter(Agriculture>2000)` | `df[Agriculture>2000]` |
 | Trier la table selon une ou plusieurs variables | SORT BY | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
-| Ajouter des variables qui sont fonction d’autres variables; | | `df['x'] = np.log(df['Agriculture'])`  |  `df %>% mutate(x = log(Agriculture))` | `df[,x := log(Agriculture)]` |
+| Ajouter des variables qui sont fonction d’autres variables; | `SELECT *, LOG(Agriculture) AS x FROM df` | `df['x'] = np.log(df['Agriculture'])`  |  `df %>% mutate(x = log(Agriculture))` | `df[,x := log(Agriculture)]` |
 | Effectuer une opération par groupe | GROUP BY | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
 | Joindre deux bases de données (*inner join*) | `SELECT * FROM table1 INNER JOIN table2 ON table1.id = table2.x` | `table1.merge(table2, left_on = 'id', right_on = 'x')` | `table1 %>% inner_join(table2, by = c('id'='x'))` | `merge(table1, table2, by.x = 'id', by.y = 'x')` |
 
@@ -888,6 +888,61 @@ df_new.assign(Energie_log = lambda x: np.log(x['Energie']))
 ## 
 ## [35798 rows x 16 columns]
 ```
+
+On peut facilement renommer des variables avec la méthode `rename` qui 
+fonctionne bien avec des dictionnaires :
+
+
+```python
+df_new.rename({"Energie": "eneg", "Agriculture": "agr"})
+```
+
+```
+##       INSEE commune                  Commune  ...  Déchets_log  Energie_log
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...     4.619374     0.856353
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...     4.946455     0.856353
+## 2             01004        AMBERIEU-EN-BUGEY  ...     8.578159     6.906086
+## 3             01005      AMBERIEUX-EN-DOMBES  ...     5.376285     4.545232
+## 4             01006                  AMBLEON  ...     3.879532          NaN
+## ...             ...                      ...  ...          ...          ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...     4.175366     2.465791
+## 35794         95678            VILLIERS-ADAM  ...     4.713854     0.856353
+## 35795         95680          VILLIERS-LE-BEL  ...     5.418865     6.281303
+## 35796         95682          VILLIERS-LE-SEC  ...     4.691070     0.856353
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...     4.582194     1.549500
+## 
+## [35798 rows x 16 columns]
+```
+
+Enfin, pour effacer des colonnes, on utilise la méthode `drop` avec l'argument
+`columns`:
+
+
+```python
+df_new.drop(columns = ["Energie", "Agriculture"])
+```
+
+```
+##       INSEE commune                  Commune  ...  Déchets_log  Energie_log
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...     4.619374     0.856353
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...     4.946455     0.856353
+## 2             01004        AMBERIEU-EN-BUGEY  ...     8.578159     6.906086
+## 3             01005      AMBERIEUX-EN-DOMBES  ...     5.376285     4.545232
+## 4             01006                  AMBLEON  ...     3.879532          NaN
+## ...             ...                      ...  ...          ...          ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...     4.175366     2.465791
+## 35794         95678            VILLIERS-ADAM  ...     4.713854     0.856353
+## 35795         95680          VILLIERS-LE-BEL  ...     5.418865     6.281303
+## 35796         95682          VILLIERS-LE-SEC  ...     4.691070     0.856353
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...     4.582194     1.549500
+## 
+## [35798 rows x 14 columns]
+```
+
+
+
+
+
 ## Reordonner
 
 La méthode `sort_values` permet de réordonner un DataFrame. Par exemple,
@@ -1067,7 +1122,7 @@ df.groupby('dep').mean
 ```
 
 ```
-## <bound method GroupBy.mean of <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000033F66710>>
+## <bound method GroupBy.mean of <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000028F03C18>>
 ```
 
 A noter que la variable de groupe, ici `dep`, devient, par défaut, l'index
@@ -1085,7 +1140,7 @@ df.groupby('dep')
 ```
 
 ```
-## <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000033F66A20>
+## <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000028F03780>
 ```
 
 Il est possible d'appliquer plus d'une opération à la fois grâce à la méthode
