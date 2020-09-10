@@ -10,10 +10,10 @@ jupyter:
     display_name: Python 3
     language: python
     name: python3
-title: "Pratique de pandas: un exemple complet"
+title: "Données spatiales: découverte de geopandas"
 date: 2020-07-09T13:00:00Z
 draft: false
-weight: 100
+weight: 40
 output: 
   html_document:
     keep_md: true
@@ -27,11 +27,16 @@ slug: geopandas
 
 Dans ce tutoriel, nous allons utiliser:
 
+<!----
 * [Réseau de pistes cyclables de la ville de Paris](https://opendata.paris.fr/explore/dataset/reseau-cyclable/table/?disjunctive.typologie_simple&disjunctive.bidirectionnel&disjunctive.statut&disjunctive.sens_velo&disjunctive.voie&disjunctive.arrdt&disjunctive.bois&disjunctive.position&disjunctive.circulation&disjunctive.piste&disjunctive.couloir_bus&disjunctive.type_continuite&disjunctive.reseau&basemap=jawg.streets&location=12,48.85943,2.3493)
+------>
 * [Carte des limites administratives françaises]()
 
 La représentation des données, notamment la cartographie, est présentée plus
 amplement dans la partie [visualiser](visualiser). 
+
+Ce tutoriel s'inspire beaucoup d'un autre tutoriel que j'ai fait pour R **lien utilitR**. Il peut servir de pendant à celui-ci pour l'utilisateur de `R`. 
+
 
 
 ```python
@@ -225,3 +230,293 @@ ax
 ```
 
 ![](03_geopandas_files/figure-html/plot paris2-1.png)<!-- -->
+
+
+## Opérations sur les attributs et les géométries
+
+### Import des données velib
+
+Souvent, le découpage communal ne sert qu'en fond de cartes, pour donner des
+repères. En complément de celui-ci, on peut désirer exploiter
+un autre jeu de données. On va partir des données de localisation des
+stations velib, 
+disponibles [sur le site d'open data de la ville de Paris](https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/table/) et 
+requêtables directement par l'url
+<https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
+
+
+```python
+velib_data = 'https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr'
+stations = gpd.read_file(velib_data)
+```
+
+On peut se rassurer 
+
+
+```python
+communes['dep'] = communes.insee.str[:2]
+
+ax = stations.sample(200).plot(figsize = (10,10), color = 'red', alpha = 0.4, zorder=2)
+communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
+                                                           color = None)
+# ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
+```
+
+![](03_geopandas_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+
+### Opérations sur les attributs
+
+Toutes les opérations possibles sur un objet `pandas` le sont également
+sur un objet geopandas. Par exemple, si on désire 
+connaître quelques statistiques sur la taille des stations:
+
+
+```python
+stations.describe()
+```
+
+```
+##           capacity
+## count  1397.000000
+## mean     31.404438
+## std      12.149572
+## min       0.000000
+## 25%      23.000000
+## 50%      29.000000
+## 75%      37.000000
+## max      74.000000
+```
+
+Par exemple pour connaître les plus grands départements:
+
+
+```python
+communes.groupby('dep').sum().sort_values('surf_ha', ascending = False)
+```
+
+```
+##        surf_ha       n_sq_co      perimetre       surface       n_sq_ar   c_ar
+## dep                                                                           
+## 97   8936393.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 33   1008481.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 40    935359.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 24    922025.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 21    879892.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## ..         ...           ...            ...           ...           ...    ...
+## 90     61048.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 94     24467.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 93     23674.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 92     17546.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 75         0.0  1.500003e+10  190443.799631  1.053728e+08  1.500000e+10  210.0
+## 
+## [97 rows x 6 columns]
+```
+
+ou les plus grandes communes de France métropolitaine :
+
+
+```python
+communes[communes.dep != "97"].sort_values('surf_ha', ascending = False)
+```
+
+```
+##        insee                       nom  ...  c_ar  dep
+## 29861  13004                     Arles  ...   NaN   13
+## 29386  73290                 Val-Cenis  ...   NaN   73
+## 29632  13096  Saintes-Maries-de-la-Mer  ...   NaN   13
+## 32467  49092         Chemillé-en-Anjou  ...   NaN   49
+## 28877  49228           Noyant-Villages  ...   NaN   49
+## ...      ...                       ...  ...   ...  ...
+## 15     75113                       NaN  ...  13.0   75
+## 16     75109                       NaN  ...   9.0   75
+## 17     75118                       NaN  ...  18.0   75
+## 18     75111                       NaN  ...  11.0   75
+## 19     75116                       NaN  ...  16.0   75
+## 
+## [34870 rows x 13 columns]
+```
+
+Lors des étapes d'aggrégation, `groupby` ne conserve pas les géométries. 
+Il est néanmoins possible d'aggréger à la fois les géométries et les 
+attribus avec la méthode `dissolve`: 
+
+
+
+```python
+communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').plot(column = "surf_ha")
+```
+
+![](03_geopandas_files/figure-html/dissolve-1.png)<!-- -->
+
+### Opérations sur les géométries
+
+:warning: Les données sont en système de projection WGS 84 ou pseudo-Mercator (epsg: `4326`). C'est un format approprié lorsqu'il s'agit d'utiliser un fonds
+de carte openstreetmap, stamen, google maps, etc. Mais ce n'est pas un
+format sur lequel on désire faire des calculs car les distances sont faussées
+avec cette projection. D'ailleurs, geopandas refusera certaines opérations
+sur des données dont le crs est `4326`. On reprojete ainsi les données 
+dans la projection officielle pour la métropole, le Lambert 93
+(epsg: 2154). Plus de détails dans la partie **LIEN SECTION**
+
+
+
+```python
+communes = communes.to_crs(2154)
+stations = stations.to_crs(2154)
+```
+
+
+Outre la représentation graphique simplifiée, sur laquelle nous reviendrons
+dans la partie **LIEN PARTIE GEOPLOT**, l'intérêt principal d'utiliser
+`geopandas` est l'existence de méthodes efficaces pour
+manipuler la dimension spatiale. Un certain nombre proviennent du 
+package
+[shapely](https://shapely.readthedocs.io/en/latest/manual.html#general-attributes-and-methods). 
+
+Par exemple, on peut recalculer la taille d'une commune ou d'arrondissement
+avec la méthode `area` (et diviser par $10^6$ pour avoir des $km^2$ au lieu
+des $m^2$):
+
+
+```python
+communes['superficie'] = communes.area.div(10**6)
+communes
+```
+
+Une méthode qu'on utilise régulièrement est `centroid` qui transforme des 
+objets sous forme de polygones en un unique point. Par exemple, pour
+représenter approximativement les centres des villages de la
+Haute-Garonne (31), on
+fera
+
+
+```python
+departement = communes[communes.dep == "31"].copy()
+departement['geometry'] = departement['geometry'].centroid
+
+
+ax = departement.plot(figsize = (10,10), color = 'red', alpha = 0.4, zorder=2)
+communes[communes['dep'] == "31"].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
+                                                           color = None)
+#ctx.add_basemap(ax, crs = stations.crs.to_string(), source = #ctx.providers.Stamen.Toner)
+```
+
+![](03_geopandas_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+
+
+## Gérer le système de projection
+
+Précédemment, nous avons appliqué une méthode `to_crs` pour reprojeter
+les données dans un système de projection différent de celui du fichier
+d'origine:
+
+
+```python
+communes = communes.to_crs(2154)
+stations = stations.to_crs(2154)
+```
+
+
+Le système de projection est fondamental pour que la dimension spatiale soit bien interprétée par `python`. Un mauvais système de représentation
+fausse l'appréciation visuelle mais peut aussi entraîner des erreurs dans
+les calculs sur la dimension spatiale.
+Ce [post](https://www.earthdatascience.org/courses/earth-analytics/spatial-data-r/geographic-vs-projected-coordinate-reference-systems-UTM/) propose de riches éléments sur le sujet, notamment l'image suivante qui montre bien le principe d'une projection:
+
+![Les différents types de projection](https://www.earthdatascience.org/images/courses/earth-analytics/spatial-data/spatial-projection-transformations-crs.png)
+
+La [documentation officielle de geopandas](https://geopandas.org/projections.html) est également très bien
+faite sur le sujet. Elle fournit notamment l'avertissement suivant qu'il est
+bon d'avoir en tête:
+
+> Be aware that most of the time you don’t have to set a projection. Data loaded from a reputable source (using the geopandas.read_file() command) should always include projection information. You can see an objects current CRS through the GeoSeries.crs attribute.
+> 
+> From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so geopandas knows how to interpret the coordinates.
+
+![](https://imgs.xkcd.com/comics/bad_map_projection_south_america.png)
+*Image empruntée à <https://blog.chrislansdown.com/2020/01/17/a-great-map-projection-joke/>*
+
+Pour déterminer le système de projection d'une base de données, on peut vérifier l'attribut `crs`:
+
+
+```python
+communes.crs
+```
+
+```
+## {'init': 'epsg:4326'}
+```
+
+Les deux principales méthodes pour définir le système de projection utilisé sont:
+
+* **`df.set_crs`**: cette commande sert à préciser quel est le système de projection utilisé, c'est-à-dire comment les coordonnées *(x,y)* sont reliées à la surface terrestre. **Cette commande ne doit pas être utilisée pour transformer le système de coordonnées, seulement pour le définir**. 
+* **`df.to_crs`**: **cette commande sert à projeter les points d'une géométrie dans une autre, c'est-à-dire à recalculer les coordonnées selon un autre système de projection.** Par exemple, si on désire produire une carte avec un fond `openstreetmaps` ou une carte dynamique `leaflet` à partir de données projetées en Lambert 93, il est nécessaire de re-projeter les données dans le système WGS 84 (code EPSG 4326). Ce site [dédié aux projections géographiques](https://epsg.io/) peut-être utile pour retrouver le système de projection d'un fichier où il n'est pas indiqué. 
+
+La définition du système de projection se fait de la manière suivante (:warning: avant de le faire, se souvenir de l'avertissement !):
+
+
+```python
+communes = communes.set_crs(2154)
+```
+
+Alors que la reprojection (projection Albers: 5070) s'obtient de la manière suivante:
+
+
+```python
+communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').to_crs(5070).plot()
+```
+
+On le voit, cela modifie totalement la représentation de l'objet dans l'espace.
+Clairement, cette projection n'est pas adaptée aux longitudes et lattitudes françaises. C'est normal, il s'agit d'une projection adaptée au continent 
+nord-américain, et encore, pas dans son ensemble :
+
+
+```python
+world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+world[world.continent == "North America"].to_crs(5070).plot(alpha = 0.2, edgecolor = "k")
+```
+
+
+## Joindre des données
+
+### Joindre données sur des attributs
+
+Ce type de jointure se fait entre un objet géographique et un
+deuxième objet, géographique ou non. A l'exception de la question 
+des géométries, il n'y a pas de différence par rapport à `pandas`. 
+
+La seule différence avec `pandas` est dans la dimension géographique.
+Si on désire conserver la dimension géographique, il faut faire 
+attention à faire:
+
+```python
+geopandas_object.merge(pandas_object)
+```
+
+Si on utilise deux objets géographiques mais ne désire conserver qu'une seule
+dimension géographique^[1], on fera
+
+```python
+geopandas_object1.merge(geopandas_object2)
+```
+
+Seule la géométrie de l'objet de gauche
+sera conservée, même si on fait un *right join*. 
+
+^[1:] Il est techniquement possible d'avoir un DataFrame comportant plusieurs
+géographies. Par exemple une géométrie polygone et une géométrie point
+(le centroid). C'est néanmoins souvent compliqué à gérer et donc peu
+recommandable.
+
+
+
+### Joindre données sur dimension géographique
+
+**TO DO**
+
+**Conseils**
+Les jointures spatiales peuvent être très gourmandes en ressources (car il peut être nécessaire de croiser toutes les géométries de `x` avec toutes les géométries de `y`). Voici deux conseils qui peuvent vous aider:
+
+- Il est préférable de tester les jointures géographiques sur un petit échantillon de données, pour estimer le temps et les ressources nécessaires à la réalisation de la jointure.
+- Il est parfois possible d'écrire une fonction qui réduit la taille du problème. Exemple: vous voulez déterminer dans quelle commune se situe un logement dont vous connaissez les coordonnées et le département; vous pouvez écrire une fonction qui réalise pour chaque département une jointure spatiale entre les logements situés dans ce département et les communes de ce département, puis empiler les 101 tables de sorties.
+
+
