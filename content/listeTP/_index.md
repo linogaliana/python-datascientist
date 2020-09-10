@@ -43,3 +43,17 @@ g-started/notebooks/03_rappels_types.ipynb" class="github"><i class="fab fa-gith
 [![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master?filepath=content/manipulation/notebooks/01_tp_numpy.ipynb)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/01_tp_numpy.ipynb)
+
+
+Séance 2:
+* [Découverte de pandas par l'exemple](pandas)
+<a href="https://github.com/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/02_pandas_tp.ipynb" class="github"><i class="fab fa-github"></i></a>
+[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/02_pandas_tp.ipynb)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master?filepath=content/manipulation/notebooks/02_pandas_tp.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/02_pandas_tp.ipynb)
+
+
+Séance 3: **TO BE UPDATED**
+
+Séance 4: **TO BE UPDATED**
