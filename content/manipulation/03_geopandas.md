@@ -41,11 +41,44 @@ import geopandas as gpd
 
 ## Données spatiales: quelle différence avec des données traditionnelles ?
 
+**Le terme "données spatiales" désigne les données qui portent sur les caractéristiques géographiques des objets (localisation, contours, liens)**. Les caractéristiques géographiques des objets sont décrites à l'aide d'un **système de coordonnées** qui permetent une représentation dans un espace euclidien ($(x,y)$). Le passage de l'espace réel (la Terre, qui est une sphère) à l'espace plan se fait grâce à un **système de projection**. Voici quelques exemples de données spatiales:
+
+* Une table décrivant des bâtiments, avec les coordonnées géographiques de chaque bâtiment;
+* Le découpage communal du territoire, avec le contour du territoire de chaque commune;
+* Les routes terrestres, avec les coordonnées décrivant leur parcours.
+
+Les données spatiales rassemblent classiquement deux types de données :
+
+1. des **données géographiques** (ou géométries): objets géométriques tels que des points, des vecteurs, des polygones, ou des maillages (*raster*). Exemple: la forme de chaque chaque commune, les coordonnées d'un bâtiment;
+2. des **données attributaires** (ou attributs): des mesures et des caractéristiques associés aux objets géométriques. Exemple: la population de chaque commune, le nombre de fenêtres et le nombre d'étages d'un bâtiment.
+
+**Les données spatiales sont fréquemment traitées à l'aide d'un système d'information géographique (SIG)**, c'est-à-dire un système d'information capable de stocker, d'organiser et de présenter des données alphanumériques spatialement référencées par des coordonnées dans un système de référence (CRS). `R` dispose de fonctionnalités lui permettant de réaliser les mêmes tâches qu'un SIG (traitement de données spatiales, représentations cartographiques).
+
+**Les systèmes de projection font l'objet de standards internationaux et sont souvent désignés par des codes dits *codes EPSG* **. Ce [site](https://epsg.io/) est un bon aide-mémoire. Les plus fréquents, pour les utilisateurs français, sont les suivants (plus d'infos [ici](https://geodesie.ign.fr/contenu/fichiers/documentation/SRCfrance.pdf)):
+
+* `2154`: système de projection Lambert 93. Il s'agit du système de projection officiel: la plupart des données diffusées par l'administration pour la métropole sont disponibles dans ce système de projection. 
+* `4326`: WGS 84 ou système de pseudo-Mercator. C'est le système de projection des données GPS.
+<!-- est ce vraiment un système de projecton ? -->
+* `27572`: Lambert II étendu. Il s'agit de l'ancien système de projection officiel. Les données spatiales anciennes peuvent être dans ce format.
+
+
+### De `pandas` à `geopandas`
+
+Le *package* `geopandas` est une boîte à outils conçue pour faciliter la manipulation de données spatiales. **La grande force de `geopandas` est qu'il permet de manipuler des données spatiales comme s'il s'agissait de données traditionnelles**, car il repose sur le standard ISO 19125 [*simple feature access*](https://en.wikipedia.org/wiki/Simple_Features) défini conjointement par l'*Open Geospatial Consortium (OGC)* et l'*International Organization for Standardization (ISO)*. 
+
 Par rapport à un DataFrame standard, un objet `geopandas` comporte
 une colonne supplémentaire: `geometry`. Elle stocke les contours des
 objets géographiques. Un objet `geopandas` hérite des propriétés d'un 
 DataFrame pandas mais propose des méthodes adaptées au traitement des données
 spatiales
+
+Ainsi, grâce à  `geopandas`, on pourra effectuer des manipulations sur les attributs des données comme avec `pandas` mais on pourra également faire des manipulations sur la dimension spatiale des données. En particulier,
+
+* Calculer des distances et des surfaces;
+* Agréger rapidement des zonages (regrouper les communes en département par exemple);
+* Trouver dans quelle commune se trouve un bâtiment à partir de ses coordonnées géographiques;
+* Recalculer des coordonnées dans un autre système de projection.
+
 
 
 ## Importer des données spatiales
