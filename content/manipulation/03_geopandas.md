@@ -36,6 +36,7 @@ amplement dans la partie [visualiser](visualiser).
 
 ```python
 import geopandas as gpd
+#import contextily as ctx
 ```
 
 
@@ -78,14 +79,58 @@ Ainsi, grâce à  `geopandas`, on pourra effectuer des manipulations sur les att
 * Agréger rapidement des zonages (regrouper les communes en département par exemple);
 * Trouver dans quelle commune se trouve un bâtiment à partir de ses coordonnées géographiques;
 * Recalculer des coordonnées dans un autre système de projection.
+* Faire une carte, rapidement et simplement
 
+
+*conseil
+Les manipulations de données sur un objet geopandas sont nettement plus lentes que sur un DataFrame traditionnel (car python doit gérer les informations géographiques pendant la manipulation des données). Lorsque vous manipulez des données de grandes dimensions, il peut être préférable d’effectuer les opérations sur les données avant de joindre une géométrie à celles-ci.
+
+
+Par rapport à un logiciel spécialisé comme `QGIS`, `python` permettra 
+d'automatiser le traitement et la représentation des données. D'ailleurs,
+`QGIS` utilise lui-même `python`...
 
 
 ## Importer des données spatiales
 
-### Préliminaire: récupérer les découpages territoriaux
+Les données spatiales sont plus riches que les données traditionnelles car elles
+incluent, habituellement, des éléments supplémentaires pour placer dans
+un espace cartésien les objets. Cette dimension supplémentaire peut être simple
+(un point comporte deux informations supplémentaire: $x$ et $y$) ou
+assez complexe (polygones, lignes avec direction, etc.)
 
-Les données des limites administratives demandent un peu de travail pour être
+Les formats les plus communes de données spatiales sont les suivants:
+
+* _shapefile_ (`.shp`): format le plus commun de données géographiques.
+La table de données (attributs) est stockée dans un fichier séparé des
+données spatiales. En faisant `geopandas.read_file("monfichier.shp")`, le
+package fait lui-même le lien entre les observations et leur représentation
+spatiale ;
+* _geojson_ (`.json`): la dimension spatiale est stockée dans le même
+fichier que les attributs. Ces fichiers sont généralement beaucoup plus
+légers et rapides à l'air que les *shapefiles*. Ils deviennent le format
+dominant. Lorsqu'on a le choix, il vaut mieux privilégier le `geojson`
+au *shapefile*. 
+
+L'aide de [geopandas](https://geopandas.org/io.html) propose des bouts de code
+en fonction des différentes situations dans lesquelles on se trouve.
+
+### Exemple: récupérer les découpages territoriaux
+
+L'un des fonds de carte les plus fréquents qu'on utilise est celui des
+limites administratives. Elles peuvent être trouvées sur le
+[site de l'IGN](https://geoservices.ign.fr/documentation/diffusion/telechargement-donnees-libres.html#geofla) ou récupérées sur
+[data.gouv](https://www.data.gouv.fr/fr/datasets/decoupage-administratif-communal-francais-issu-d-openstreetmap/) (construites par `openstreetmap`).
+Nous prendrons la deuxième option car les premières données sont
+compressés au format `.7z`, ce qui n'est pas pratique à dézipper avec
+`python` (format propriétaire).
+
+L'inconvénient est que les arrondissements
+parisiens ne sont pas présents dans le fichier proposé sur `data.gouv`. Il
+faut donc utiliser une source complémentaire, issue de l'*opendata* de la 
+Mairie de Paris.
+
+Les données des limites administratives demandent donc un peu de travail pour être
 importées car elles sont zippées. Le code suivant, dont les 
 détails apparaîtront plus clairs après la lecture de la partie
 *[webscraping](webscraping)* permet
@@ -111,5 +156,44 @@ def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
       zip_ref.extractall(dirname + '/' + destname)
 ```
 
-Les découpages communaux exploités ici sont issus d'*open street map*. 
+
+```python
+download_unzip(url)
+communes = gpd.read_file(temporary_location + "/borders/communes-20190101.json")
+communes.head()
+```
+
+```
+##    insee  ...                                           geometry
+## 0  97223  ...  POLYGON ((-60.93595 14.58812, -60.93218 14.585...
+## 1  97233  ...  POLYGON ((-61.12165 14.71928, -61.11852 14.716...
+## 2  97208  ...  POLYGON ((-61.13355 14.74657, -61.13066 14.748...
+## 3  97224  ...  POLYGON ((-61.08459 14.72510, -61.08430 14.722...
+## 4  97212  ...  POLYGON ((-61.08459 14.72510, -61.08061 14.725...
+## 
+## [5 rows x 5 columns]
+```
+
+On reconnaît la structure d'un DataFrame pandas. A cette structure s'ajoute 
+une colonne `geometry` qui enregistre la position des limites de chaque
+observation. 
+
+Le système de projection est un élément crucial. Il permet à `python`
+d'interpréter les valeurs des points (deux dimensions) en position sur 
+la terre, qui n'est pas un espace plan. La partie **LIEN VERS SECTION**
+donne quelques détails supplémentaires. Ici, les données sont dans le 
+système WSG84 (epsg: 4326) ce qui permet de facilement ajouter
+un fonds de carte `openstreetmap` ou `stamen` pour rendre une représentation
+graphique plus esthétique. Par exemple, pour représenter Paris:
+
+
+```python
+paris = communes[communes.insee.str.startswith("75")]
+ax = paris.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
+#ctx.add_basemap(ax, crs = paris.crs.to_string())
+ax
+```
+
+![](03_geopandas_files/figure-html/plot paris-1.png)<!-- -->
+
 
