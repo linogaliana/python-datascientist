@@ -40,6 +40,9 @@ Dans ce tutoriel, nous allons utiliser:
 La représentation des données, notamment la cartographie, est présentée plus
 amplement dans la partie [visualiser](visualiser). 
 
+Ce tutoriel s'inspire beaucoup d'un autre tutoriel que j'ai fait pour R **lien utilitR**. Il peut servir de pendant à celui-ci pour l'utilisateur de `R`. 
+
+
 ```{python}
 import geopandas as gpd
 #import contextily as ctx
@@ -211,3 +214,57 @@ ax = paris.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
 #ctx.add_basemap(ax, crs = paris.crs.to_string())
 ax
 ```
+
+
+## Opérations sur les attributs et les géométries
+
+### Opérations sur les attributs
+
+### Opérations sur les géométries
+
+`sf` propose de nombreuses fonctions pour manipuler la dimension spatiale. On en trouve un certain nombre [ici](https://r-spatial.github.io/sf/reference/geos_unary.html) et [ici](https://r-spatial.github.io/sf/reference/geos_binary_ops.html).
+
+Par exemple, on peut calculer la superficie d'un polygone avec `sf::st_area()`. Si l'unité ne convient pas, il est possible de convertir cette superficie en $km^2$
+
+
+## Joindre des données
+
+### Joindre données sur des attributs
+
+### Joindre données sur dimension géographique
+
+
+**Conseils**
+Les jointures spatiales peuvent être très gourmandes en ressources (car il peut être nécessaire de croiser toutes les géométries de `x` avec toutes les géométries de `y`). Voici deux conseils qui peuvent vous aider:
+
+- Il est préférable de tester les jointures géographiques sur un petit échantillon de données, pour estimer le temps et les ressources nécessaires à la réalisation de la jointure.
+- Il est parfois possible d'écrire une fonction qui réduit la taille du problème. Exemple: vous voulez déterminer dans quelle commune se situe un logement dont vous connaissez les coordonnées et le département; vous pouvez écrire une fonction qui réalise pour chaque département une jointure spatiale entre les logements situés dans ce département et les communes de ce département, puis empiler les 101 tables de sorties.
+
+
+## Gérer le système de projection
+
+
+
+Le système de projection est fondamental pour que la dimension spatiale soit bien interprétée par `R`. Si un système de projection est défini, il s'affiche dans la ligne `epsg (SRID)` lorsqu'on applique la fonction `head()` à un objet `sf`. Pour vérifier le système de projection d'une base de données, on peut utiliser `sf::st_crs`:
+
+```{r}
+sf::st_crs(martinique)
+```
+
+Les deux principales fonctions pour définir le système de projection utilisé sont:
+
+* **`sf::st_set_crs`**: cette commande sert à préciser quel est le système de projection utilisé, c'est-à-dire comment les coordonnées *(x,y)* sont reliées à la surface terrestre. **Cette commande ne doit pas être utilisée pour transformer le système de coordonnées, seulement pour le définir**. 
+* **`sf::st_transform`**: **cette commande sert à projeter les points d'une géométrie dans une autre, c'est-à-dire à recalculer les coordonnées selon un autre système de projection.** Par exemple, si on désire produire une carte avec un fond `openstreetmaps` ou une carte dynamique `leaflet` à partir de données projetées en Lambert 93, il est nécessaire de re-projeter les données dans le système WGS 84 (code EPSG 4326).
+
+La définition du système de projection se fait de la manière suivante:
+
+```{r}
+martinique <- martinique %>% sf::st_set_crs(32620)
+```
+
+Alors que la reprojection s'obtient de la manière suivante:
+
+```{r}
+martinique <- martinique %>% sf::st_transform(4326)
+```
+
