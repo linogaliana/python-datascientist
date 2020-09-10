@@ -34,7 +34,9 @@ os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-min
 
 Dans ce tutoriel, nous allons utiliser:
 
+<!----
 * [Réseau de pistes cyclables de la ville de Paris](https://opendata.paris.fr/explore/dataset/reseau-cyclable/table/?disjunctive.typologie_simple&disjunctive.bidirectionnel&disjunctive.statut&disjunctive.sens_velo&disjunctive.voie&disjunctive.arrdt&disjunctive.bois&disjunctive.position&disjunctive.circulation&disjunctive.piste&disjunctive.couloir_bus&disjunctive.type_continuite&disjunctive.reseau&basemap=jawg.streets&location=12,48.85943,2.3493)
+------>
 * [Carte des limites administratives françaises]()
 
 La représentation des données, notamment la cartographie, est présentée plus
@@ -267,7 +269,7 @@ communes[communes.dep != "97"].sort_values('surf_ha', ascending = False)
 ```
 
 Lors des étapes d'aggrégation, `groupby` ne conserve pas les géométries. 
-C'est néanmoins possible d'aggréger à la fois les géométries et les 
+Il est néanmoins possible d'aggréger à la fois les géométries et les 
 attribus avec la méthode `dissolve`: 
 
 
@@ -322,12 +324,15 @@ departement['geometry'] = departement['geometry'].centroid
 ax = departement.plot(figsize = (10,10), color = 'red', alpha = 0.4, zorder=2)
 communes[communes['dep'] == "31"].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Toner)
+#ctx.add_basemap(ax, crs = stations.crs.to_string(), source = #ctx.providers.Stamen.Toner)
 ```
 
 
-
 ## Gérer le système de projection
+
+Précédemment, nous avons appliqué une méthode `to_crs` pour reprojeter
+les données dans un système de projection différent de celui du fichier
+d'origine:
 
 ```{python, eval = FALSE}
 communes = communes.to_crs(2154)
@@ -335,38 +340,92 @@ stations = stations.to_crs(2154)
 ```
 
 
-Le système de projection est fondamental pour que la dimension spatiale soit bien interprétée par `python`. Si un système de projection est défini, il s'affiche dans la ligne `epsg (SRID)` lorsqu'on applique la fonction `head()` à un objet `sf`. Pour vérifier le système de projection d'une base de données, on peut utiliser `sf::st_crs`:
+Le système de projection est fondamental pour que la dimension spatiale soit bien interprétée par `python`. Un mauvais système de représentation
+fausse l'appréciation visuelle mais peut aussi entraîner des erreurs dans
+les calculs sur la dimension spatiale.
+Ce [post](https://www.earthdatascience.org/courses/earth-analytics/spatial-data-r/geographic-vs-projected-coordinate-reference-systems-UTM/) propose de riches éléments sur le sujet, notamment l'image suivante qui montre bien le principe d'une projection:
 
-```{r}
-sf::st_crs(martinique)
+![Les différents types de projection](https://www.earthdatascience.org/images/courses/earth-analytics/spatial-data/spatial-projection-transformations-crs.png)
+
+La [documentation officielle de geopandas](https://geopandas.org/projections.html) est également très bien
+faite sur le sujet. Elle fournit notamment l'avertissement suivant qu'il est
+bon d'avoir en tête:
+
+> Be aware that most of the time you don’t have to set a projection. Data loaded from a reputable source (using the geopandas.read_file() command) should always include projection information. You can see an objects current CRS through the GeoSeries.crs attribute.
+> 
+> From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so geopandas knows how to interpret the coordinates.
+
+![](https://imgs.xkcd.com/comics/bad_map_projection_south_america.png)
+*Image empruntée à <https://blog.chrislansdown.com/2020/01/17/a-great-map-projection-joke/>*
+
+Pour déterminer le système de projection d'une base de données, on peut vérifier l'attribut `crs`:
+
+```{python}
+communes.crs
 ```
 
-Les deux principales fonctions pour définir le système de projection utilisé sont:
+Les deux principales méthodes pour définir le système de projection utilisé sont:
 
-* **`sf::st_set_crs`**: cette commande sert à préciser quel est le système de projection utilisé, c'est-à-dire comment les coordonnées *(x,y)* sont reliées à la surface terrestre. **Cette commande ne doit pas être utilisée pour transformer le système de coordonnées, seulement pour le définir**. 
-* **`sf::st_transform`**: **cette commande sert à projeter les points d'une géométrie dans une autre, c'est-à-dire à recalculer les coordonnées selon un autre système de projection.** Par exemple, si on désire produire une carte avec un fond `openstreetmaps` ou une carte dynamique `leaflet` à partir de données projetées en Lambert 93, il est nécessaire de re-projeter les données dans le système WGS 84 (code EPSG 4326).
+* **`df.set_crs`**: cette commande sert à préciser quel est le système de projection utilisé, c'est-à-dire comment les coordonnées *(x,y)* sont reliées à la surface terrestre. **Cette commande ne doit pas être utilisée pour transformer le système de coordonnées, seulement pour le définir**. 
+* **`df.to_crs`**: **cette commande sert à projeter les points d'une géométrie dans une autre, c'est-à-dire à recalculer les coordonnées selon un autre système de projection.** Par exemple, si on désire produire une carte avec un fond `openstreetmaps` ou une carte dynamique `leaflet` à partir de données projetées en Lambert 93, il est nécessaire de re-projeter les données dans le système WGS 84 (code EPSG 4326). Ce site [dédié aux projections géographiques](https://epsg.io/) peut-être utile pour retrouver le système de projection d'un fichier où il n'est pas indiqué. 
 
-La définition du système de projection se fait de la manière suivante:
+La définition du système de projection se fait de la manière suivante (:warning: avant de le faire, se souvenir de l'avertissement !):
 
-```{r}
-martinique <- martinique %>% sf::st_set_crs(32620)
+```{python, eval = FALSE}
+communes = communes.set_crs(2154)
 ```
 
-Alors que la reprojection s'obtient de la manière suivante:
+Alors que la reprojection (projection Albers: 5070) s'obtient de la manière suivante:
 
-```{r}
-martinique <- martinique %>% sf::st_transform(4326)
+```{python}
+communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').to_crs(5070).plot()
 ```
 
+On le voit, cela modifie totalement la représentation de l'objet dans l'espace.
+Clairement, cette projection n'est pas adaptée aux longitudes et lattitudes françaises. C'est normal, il s'agit d'une projection adaptée au continent 
+nord-américain, et encore, pas dans son ensemble :
 
+```{python}
+world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+world[world.continent == "North America"].to_crs(5070).plot(alpha = 0.2, edgecolor = "k")
+```
 
 
 ## Joindre des données
 
 ### Joindre données sur des attributs
 
+Ce type de jointure se fait entre un objet géographique et un
+deuxième objet, géographique ou non. A l'exception de la question 
+des géométries, il n'y a pas de différence par rapport à `pandas`. 
+
+La seule différence avec `pandas` est dans la dimension géographique.
+Si on désire conserver la dimension géographique, il faut faire 
+attention à faire:
+
+```python
+geopandas_object.merge(pandas_object)
+```
+
+Si on utilise deux objets géographiques mais ne désire conserver qu'une seule
+dimension géographique^[1], on fera
+
+```python
+geopandas_object1.merge(geopandas_object2)
+```
+
+Seule la géométrie de l'objet 1 sera conservée, même si on fait un *right join*. 
+
+^[1:] Il est techniquement possible d'avoir un DataFrame comportant plusieurs
+géographies. Par exemple une géométrie polygone et une géométrie point
+(le centroid). C'est néanmoins souvent compliqué à gérer et donc peu
+recommandable.
+
+
+
 ### Joindre données sur dimension géographique
 
+**TO DO**
 
 **Conseils**
 Les jointures spatiales peuvent être très gourmandes en ressources (car il peut être nécessaire de croiser toutes les géométries de `x` avec toutes les géométries de `y`). Voici deux conseils qui peuvent vous aider:
