@@ -184,7 +184,11 @@ la terre, qui n'est pas un espace plan. La partie **LIEN VERS SECTION**
 donne quelques détails supplémentaires. Ici, les données sont dans le 
 système WSG84 (epsg: 4326) ce qui permet de facilement ajouter
 un fonds de carte `openstreetmap` ou `stamen` pour rendre une représentation
-graphique plus esthétique. Par exemple, pour représenter Paris:
+graphique plus esthétique (avec un autre système de projection, il 
+faudrait reprojeter les données, **LIEN VERS SECTION**).
+
+On peut ainsi représenter Paris pour se donner une idée de la nature
+du shapefile utilisé :
 
 
 ```python
@@ -196,4 +200,28 @@ ax
 
 ![](03_geopandas_files/figure-html/plot paris-1.png)<!-- -->
 
+On voit ainsi que les données pour Paris ne comportent pas d'arrondissement, 
+ce qui est limitant pour une analyse focalisée sur Paris. On va donc les
+récupérer sur le site d'open data de la ville de Paris et les substituer 
+à Paris
 
+
+```python
+arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
+arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
+arrondissements['insee'] = arrondissements['insee'].astype(str)
+communes = communes[~communes.insee.str.startswith("75")].append(arrondissements)
+```
+
+En refaisant la carte ci-dessus, on obtient bien, cette fois, le résultat
+espéré
+
+
+```python
+paris = communes[communes.insee.str.startswith("75")]
+ax = paris.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
+#ctx.add_basemap(ax, crs = paris.crs.to_string())
+ax
+```
+
+![](03_geopandas_files/figure-html/plot paris2-1.png)<!-- -->
