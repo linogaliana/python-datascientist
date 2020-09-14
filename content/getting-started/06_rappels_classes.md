@@ -427,19 +427,19 @@ print(mon_chat.__getattribute__("nom"))
 
 ```python
 print(mon_chat.nom)
-
-# si l'attribut n'existe pas : on a une erreur
-# Python recherche l'attribut et, s'il ne le trouve pas dans l'objet et si une méthode __getattr__ est spécifiée, 
-# il va l'appeler en lui passant en paramètre le nom de l'attribut recherché, sous la forme d'une chaîne de caractères.
 ```
 
 ```
 ## Martin
 ```
 
-```python
+~~~python
+# si l'attribut n'existe pas : on a une erreur
+# Python recherche l'attribut et, s'il ne le trouve pas dans l'objet et si une méthode __getattr__ est spécifiée, 
+# il va l'appeler en lui passant en paramètre le nom de l'attribut recherché, sous la forme d'une chaîne de caractères.
+
 print(mon_chat.origine)
-```
+~~~
 
 ```
 ## Error in py_call_impl(callable, dots$args, dots$keywords): AttributeError: 'chat' object has no attribute 'origine'
@@ -447,6 +447,7 @@ print(mon_chat.origine)
 ## Detailed traceback: 
 ##   File "<string>", line 1, in <module>
 ```
+
 
 Mais on peut modifier les méthodes spéciales de notre classe chat pour éviter d'avoir des erreurs d'attributs. On va aussi en profiter pour modifier la représentation de l'instance chat qui pour l'instant donne  <\__main\__.chat object at 0x0000000005AB4C50>
 
@@ -533,7 +534,7 @@ print(mon_chat)
 ```
 
 ```
-## <__main__.chat object at 0x0000000027F86550>
+## <__main__.chat object at 0x7f7296838fd0>
 ```
 
 ```python
