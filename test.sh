@@ -7,5 +7,5 @@ cd "./content"
 
 
 for i in $(ls **/*.md **/*.Rmd | grep -v 'index.md$'); do
-  jupytext --to ipynb "$i"
+  jupytext --to ipynb -execute "$i"
 done
