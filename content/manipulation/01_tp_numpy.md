@@ -50,11 +50,10 @@ import numpy as np
 Si les scripts suivants sont exécutés dans un `notebook`, il est recommandé d'utiliser les paramètres suivants
 pour contrôler le rendu
 
-
-```python
+~~~python
 from IPython.core.interactiveshell import InteractiveShell
 InteractiveShell.ast_node_interactivity = "all"
-```
+~~~
 
 
 ## Le concept d'array
@@ -512,7 +511,7 @@ pour représenter graphiquement le réseau de plus proches voisins
 
 Pour la question 2, Vous devriez obtenir un graphique ayant cet aspect :
 
-![](01_tp_numpy_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+![](01_tp_numpy_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 
 
@@ -525,7 +524,7 @@ Pour la question 2, Vous devriez obtenir un graphique ayant cet aspect :
 
 Finalement, vous devriez obtenir un graphique ayant cet aspect :
 
-![](01_tp_numpy_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](01_tp_numpy_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 Ai-je inventé cet exercice corsé ? Pas du toût, il [vient de là](https://jakevdp.github.io/PythonDataScienceHandbook/02.08-sorting.html#Example:-k-Nearest-Neighbors). Mais, si je vous l'avez indiqué immédiatement, auriez-vous cherché à répondre aux questions
 
