@@ -73,10 +73,8 @@ Il est ainsi intéressant de porter attention à:
 
 * La question des
 [objets sparse](https://chrisalbon.com/machine_learning/vectors_matrices_and_arrays/create_a_sparse_matrix/)
-* Le package `dask` pour accélérer les calculs
-* 
+* Le package [`dask`](https://dask.org/) pour accélérer les calculs
+* [`pySpark`](https://spark.apache.org/docs/latest/api/python/index.html) pour des données très volumineuses
 
-# Le DataFrame pandas
 
-Une Series est un objet uni-dimensionnel similaire à un tableau, une liste ou une colonne d'une table. Chaque valeur est associée à un index qui est par défaut les entiers de 0 à N−1 (avec N la longueur de la Series).
 
