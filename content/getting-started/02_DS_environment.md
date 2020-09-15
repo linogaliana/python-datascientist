@@ -77,18 +77,34 @@ résultats très proche de ce qu’on trouve en `R`.
 
 Python est un langage très riche, grâce à sa logique open-source. Mais l'un
 des principaux intérêts réside dans le riche écosystème avec lequel Python
-s'intègre. On peut citer, dans un inventaire à la Prevert non exaustif :
+s'intègre. On peut donner quelques éléments, dans un inventaire à la Prévert non exaustif. 
 
-* Spark possède une API Python (pyspark) pour le traitement des données
-volumineuses
-* TensorFlow et Keras sont disponibles en python et proposent une grande variété
+En premier lieu, des éléments reliés au traitement des données:
+
+* [`Spark`](https://fr.wikipedia.org/wiki/Apache_Spark),
+le *framework* dominant dans le domaine du traitement des *big-ata* possède une très bonne API en Python (`pyspark`) qui facilite le traitement des données volumineuses pour les habitués de la syntaxe Python
+* [`TensorFlow`](https://www.tensorflow.org/) et [`Keras`](https://keras.io/) sont disponibles en Python et proposent une grande variété
 de modèles de machine et deep learning
-* Une bonne intégration de python à Markdown (grâce notamment à ... `R Markdown`), Sphynx et JupyterBook proposent des modèles de documentation
+* [Cython](https://cython.org/) permet d'intégrer facilement du code `C`, très
+efficace avec `Python` (équivalent de `Rcpp` pour `R`)
+
+
+Mais Python est également un outil privilégié pour communiquer:
+
+* Une bonne intégration de python à `Markdown` (grâce notamment à ... `R Markdown`) qui facilite la construction de documents HTML ou PDF (via `Latex`)
+* [Sphynx](https://www.sphinx-doc.org/en/master/) et [JupyterBook](https://jupyterbook.org/intro.html) proposent des modèles de documentation
 très complets
-* Les images Docker de Jupyterhub facilitent l'usage de l'intégration continue
-pour construire des modules, les tester et déployer des site web. Les services type `binder`, `google colab`, `onyxia` reposent sur ce principe
-* [Django](https://www.djangoproject.com/) permet de construire des applications web en python
 * [`bokeh`](https://bokeh.org/) ou [`streamlit`](https://www.streamlit.io/) comme alternative à [shiny (R)](https://shiny.rstudio.com/)
+
+Enfin, des éléments permettant un déploiement de résultats ou d'applications 
+en continue: 
+* Les images Docker de Jupyterhub facilitent l'usage de l'intégration continue
+pour construire des modules, les tester et déployer des site web.
+* Les services type `binder`, `google colab` et kaggle proposent des kernels
+python
+* [Django](https://www.djangoproject.com/) permet de construire des applications web en python
+
+Ce n'est qu'une petite partie de l'écosystème python, d'une richesse rare.
 
 ## Démarche à adopter face à un jeu de données
 
