@@ -12,6 +12,8 @@ slug: evaluation
     - De la visualisation
     - De la modélisation
 * La __date du rendu__ est fixée au : XXX
-* Au mois de janvier 2021, auront lieu des __soutenances_
+* Au mois de janvier 2021, auront lieu des __soutenances__
+* Le __projet doit utiliser `git` et être disponible sous
+[github](github.com/) ou [gitlab](gitlab.com/)__ (dépôt privé ou public)
 * Des idées de sujets seront communiquées ultérieurement.
 Les étudiants sont invités à proposer des sujets qui leur plaisent, à faire valider par le chargé de TD. 
