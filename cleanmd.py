@@ -39,4 +39,4 @@ def cleanyaml(filename, root_dir):
     print("Done: " + filename)
 
 
-# cleanblog()
+cleanblog()

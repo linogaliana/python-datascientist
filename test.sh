@@ -1,7 +1,7 @@
 #!/bin/bash
 # Test automatique des notebooks
 
-python "import cleanmd ; cleanmd.cleanblog()"
+python cleanmd.py
 
 cd "./temp"
 
