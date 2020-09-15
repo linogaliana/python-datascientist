@@ -27,7 +27,10 @@ def cleanyaml(filename, root_dir):
     # EXTRACT AND CLEAN HEADER ----------
     yaml, text = new_text.split('---\n', 2)[1:]
     yaml_jupytext, yaml_rmd = yaml.split('title:')
-    new_md = "---\n" + yaml_jupytext.rstrip() + "\n---\n" + text
+    yaml_rmd_title, yaml_rmd_other = yaml_rmd.split('date:')
+    new_md = "---\n" + yaml_jupytext.rstrip() + "\n---\n" + \
+             "# " + yaml_rmd_title.replace('"', '').replace("'", "") + \
+             "\n" + text
     # WRITE IN TEMPORARY LOCATION --------------
     write_dest = os.path.join(root_dir, "temp" + os.sep + filename)
     tempdir = write_dest.rsplit(os.sep, 1)[0]
