@@ -71,6 +71,9 @@ calcul. `pandas` peut montrer ses limites dans ce domaine.
 
 Il est ainsi intéressant de porter attention à:
 
+* Le livre [Modern Pandas](https://tomaugspurger.github.io/modern-1-intro.html)
+pour obtenir des éléments supplémentaires sur la question de la performance
+avec `pandas`
 * La question des
 [objets sparse](https://chrisalbon.com/machine_learning/vectors_matrices_and_arrays/create_a_sparse_matrix/)
 * Le package [`dask`](https://dask.org/) pour accélérer les calculs
