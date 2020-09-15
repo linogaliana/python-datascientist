@@ -75,7 +75,20 @@ résultats très proche de ce qu’on trouve en `R`.
 
 ## Environnement autour de Python
 
-**TO DO**
+Python est un langage très riche, grâce à sa logique open-source. Mais l'un
+des principaux intérêts réside dans le riche écosystème avec lequel Python
+s'intègre. On peut citer, dans un inventaire à la Prevert non exaustif :
+
+* Spark possède une API Python (pyspark) pour le traitement des données
+volumineuses
+* TensorFlow et Keras sont disponibles en python et proposent une grande variété
+de modèles de machine et deep learning
+* Une bonne intégration de python à Markdown (grâce notamment à ... `R Markdown`), Sphynx et JupyterBook proposent des modèles de documentation
+très complets
+* Les images Docker de Jupyterhub facilitent l'usage de l'intégration continue
+pour construire des modules, les tester et déployer des site web. Les services type `binder`, `google colab`, `onyxia` reposent sur ce principe
+* [Django](https://www.djangoproject.com/) permet de construire des applications web en python
+* [`bokeh`](https://bokeh.org/) ou [`streamlit`](https://www.streamlit.io/) comme alternative à [shiny (R)](https://shiny.rstudio.com/)
 
 ## Démarche à adopter face à un jeu de données
 
