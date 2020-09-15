@@ -165,12 +165,6 @@ dans la définition d'une fonction le mot-clé `**kwargs` (équivalent du `...` 
 arguments supplémentaires et les stocke sous forme de dictionnaire. Il s'agit d'une technique avancée de
 programmation qui est à utiliser avec parcimonie.
 
-<!----
-## Privilégier des fonctions imbriquées
-
-TO DO
------>
-
 # Documenter les fonctions {.docfonctions}
 
 La documentation des fonctions s'appelle la `docstrings`. Elle prend la forme suivante:
@@ -273,11 +267,13 @@ dépôt qui aura vocation à être personnel.
 
 **Lien vers TP git + intro python**
 
+<!-----
 ## Intégration continue avec python
 
 TO DO
+------->
 
-## Ne pas négliger le .gitignore
+## Ne pas négliger le `.gitignore`
 
 Un fichier à ne pas négliger est le `.gitignore`. Il s'agit d'un garde-fou car tous fichiers (notamment des
 données, potentiellement volumineuses ou confidentielles) n'ont pas vocation
