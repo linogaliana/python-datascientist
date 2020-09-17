@@ -11,6 +11,8 @@
 
 Supports associés au site disponible à l'adresse <https://linogaliana-teaching.netlify.app/>. 
 
+Les `notebooks` d'exercice sont dans l'arborescence :folder: `content/**/notebooks/*.ipynb`
+
 
 Syllabus disponible [là](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/)
 
