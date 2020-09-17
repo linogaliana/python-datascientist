@@ -33,19 +33,6 @@ Dans cette partie, nous utiliserons la fonction suivante, qui facilite
 le téléchargement et le dézippage des données proposées sur `data.gouv`:
 
 
-```python
-import requests
-import tempfile
-import zipfile
-
-temporary_location = tempfile.gettempdir()
-
-def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
-  myfile = requests.get(url)
-  open(dirname + '/' + destname + '.zip', 'wb').write(myfile.content)
-  with zipfile.ZipFile(dirname + '/' + destname + '.zip', 'r') as zip_ref:
-      zip_ref.extractall(dirname + '/' + destname)
-```
 
 
 
@@ -67,24 +54,11 @@ transformation de l'espace tridimensionnel terrestre en une surface plane.
 6. Réprésenter la carte de Paris : quel est le problème ?
 
 
-```python
-url = "https://www.data.gouv.fr/fr/datasets/r/07b7c9a2-d1e2-4da6-9f20-01a7b72d4b12"
-download_unzip(url)
-communes_borders = gpd.read_file(temporary_location + "/borders/communes-20190101.json")
-communes_borders.head()
-communes_borders.crs
-```
 
 
 
-```python
-communes_borders[communes_borders.insee.str.startswith("12")].plot()
-```
 
 
-```python
-communes_borders[communes_borders.insee.str.startswith("75")].plot()
-```
 
 En effet, on ne dispose ainsi pas des limites des arrondissements parisiens, ce
 qui appauvrit grandement la carte de Paris. On peut les récupérer directement 
@@ -107,20 +81,8 @@ la méthode `rename` et faire attention aux types des variables
 
 
 
-```python
-arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
-arrondissements.plot()
-communes_borders.crs == arrondissements.crs
-arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
-arrondissements['dep'] = "75"
-data_paris = communes_borders[~communes_borders.insee.str.startswith("75")].append(arrondissements)
-```
 
 
-```python
-data_paris['dep'] = data_paris.insee.astype(str).str[:2]
-data_paris[data_paris['dep'].isin(['75','92','93','94'])].plot()
-```
 
 # Utiliser des données géographiques comme des couches
 graphiques
@@ -143,27 +105,10 @@ Cette [page](https://geopandas.org/mapping.html#maps-with-layers) peut vous aide
 <https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
 
 
-```python
-url = "https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
-stations = gpd.read_file(url)
-```
 
 
-```python
-base = data_paris[data_paris['dep'] == '75'].plot(alpha = 0.2, edgecolor = 'black')
-stations.sort_values('capacity', ascending = False).head(50).plot(ax = base, color = 'red', alpha = 0.6)
-```
 
 
-```python
-url = "https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
-transports = gpd.read_file(url)
-
-
-base = data_paris[data_paris['dep'] == '75'].plot(alpha = 0.2, edgecolor = 'black')
-stations.sort_values('capacity', ascending = False).head(50).plot(ax = base, color = 'red', alpha = 0.6)
-transports[transports['mode'] == "Metro"].plot(ax = base, color = 'black', alpha = 0.3)
-```
 
 
 # Jointures spatiales
@@ -182,36 +127,12 @@ Vous pouvez mettre en fond de carte les arrondissements parisiens.
 4. Représenter les mêmes informations mais en densité (diviser par la surface de l'arrondissement ou commune en km2)
 
 
-```python
-stations_info = gpd.sjoin(stations, data_paris, op = 'within')
-
-base = data_paris[data_paris.dep == "75"].plot(alpha = 0.2, edgecolor = 'k')
-stations_info[stations_info['c_ar'] == 19.0].plot(ax = base, color = 'red', alpha = 0.6)
-```
 
 
-```python
-base = data_paris[data_paris['c_ar'] == 19.0].plot(alpha = 0.2, edgecolor = 'k')
-stations_info[stations_info['c_ar'] == 19.0].plot(ax = base, color = 'red', alpha = 0.6)
-transports[transports['mode'] == "Metro"].plot(ax = base, color = 'black', alpha = 0.3)
-```
 
 
-```python
-stations_agg = stations_info.groupby('insee').agg({'stationcode': 'nunique',
-                                   'capacity': 'sum'}).reset_index()
-data_paris.merge(stations_agg, how = 'inner', suffixes = [None, '_agg']).plot(column = 'capacity')
-data_paris.merge(stations_agg, how = 'inner', suffixes = [None, '_agg']).plot(column = 'stationcode')
-```
 
 
-```python
-df = data_paris.merge(stations_agg, how = 'inner', suffixes = [None, '_agg'])
-cols = ['stationcode','capacity']
-df = df[[s + '_density' for s in cols]] = df[cols].div(df.to_crs(2158).area*10**(-6), axis = 0)
-df.plot(column = 'capacity_density', cmap = 'RdYlBu_r')
-df.plot(column = 'capacity_density', cmap = 'plasma_r')
-```
 
 **Exercice 5 (optionnel): Relier distance au métro et capacité d'une station**
 
