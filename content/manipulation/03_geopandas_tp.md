@@ -33,6 +33,19 @@ Dans cette partie, nous utiliserons la fonction suivante, qui facilite
 le téléchargement et le dézippage des données proposées sur `data.gouv`:
 
 
+```python
+import requests
+import tempfile
+import zipfile
+
+temporary_location = tempfile.gettempdir()
+
+def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
+  myfile = requests.get(url)
+  open(dirname + '/' + destname + '.zip', 'wb').write(myfile.content)
+  with zipfile.ZipFile(dirname + '/' + destname + '.zip', 'r') as zip_ref:
+      zip_ref.extractall(dirname + '/' + destname)
+```
 
 
 
