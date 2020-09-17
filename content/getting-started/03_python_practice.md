@@ -15,7 +15,7 @@ La structure basique d'un projet développé en `Python` est la suivante, qu'on 
 [ce dépôt](https://github.com/navdeep-G/samplemod):
 
 
-```python
+~~~python
 README.md
 LICENSE
 setup.py
@@ -28,7 +28,7 @@ docs/index.rst
 tests/context.py
 tests/test_basic.py
 tests/test_advanced.py
-```
+~~~
 
 
 Quelques explications et parallèles avec les packages `R`^[1] :
@@ -85,9 +85,9 @@ scripts qui définissent des fonctions.
 
 Un module est un ensemble de fonctions stockées dans un fichier `.py`. Lorsqu'on écrit dans un script
 
-```python
+~~~python
 import modu
-```
+~~~
 
 `Python` commence par chercher le fichier `modu.py` dans le dossier de travail. Il n'est donc pas une bonne
 idée d'appeler un fichier du nom d'un module standard de python, par exemple `math.py` ou `os.py`. Si le fichier
@@ -100,19 +100,19 @@ dans la session via le *namespace* (espace où python associe les noms donnés a
 
 En premier lieu, ne **jamais** utiliser la syntaxe suivante:
 
-```python
+~~~python
 # A NE PAS UTILISER
 from modu import *
 x = sqrt(4)  # Is sqrt part of modu? A builtin? Defined above?
-``` 
+~~~ 
 
 L'utilisation de la syntaxe `import *` créé une ambiguité sur les fonctions disponibles dans l'environnement. Le code
 est ainsi moins clair, moins compartimenté et ainsi moins robuste. La syntaxe à privilégier est la suivante:
 
-```python
+~~~python
 import modu
 x = modu.sqrt(4)  # Is sqrt part of modu? A builtin? Defined above?
-``` 
+~~~ 
 
 ## Structuration du code
 
@@ -165,21 +165,15 @@ dans la définition d'une fonction le mot-clé `**kwargs` (équivalent du `...` 
 arguments supplémentaires et les stocke sous forme de dictionnaire. Il s'agit d'une technique avancée de
 programmation qui est à utiliser avec parcimonie.
 
-<!----
-## Privilégier des fonctions imbriquées
-
-TO DO
------>
-
 # Documenter les fonctions {.docfonctions}
 
 La documentation des fonctions s'appelle la `docstrings`. Elle prend la forme suivante:
 
-```python
+~~~python
 def square_and_rooter(x):
     """Return the square root of self times self."""
     ...
-```
+~~~
 
 Avec `PyCharm`, lorsqu'on utilise trois guillemets sous la définition d'une fonction, un *template* minimal à
 completer est automatiquement généré. Les normes à suivre pour que la *docstrings* soit reconnue par le package
@@ -219,21 +213,21 @@ On peut partir du principe suivant:
 Le fichier `tests/context.py` sert à définir le contexte dans lequel le test de la fonction s'exécute, de manière
 isolée. On peut adopter le modèle suivant, en changeant `import monmodule` par le nom de module adéquat
 
-```python
+~~~python
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import monmodule
-```
+~~~
 
 Chaque fichier du dossier de test
 (par exemple `test_basic.py` et `test_advanced.py`) incorpore ensuite la ligne suivante,
 en début de script
 
-```python
+~~~python
 from .context import sample
-```
+~~~
 
 Pour automatiser les tests, on peut utiliser le package `unittest`
 ([doc ici](https://docs.python.org/3/library/unittest.html)). L'idée est que dans un cadre contrôlé
@@ -255,7 +249,7 @@ class MyTest(unittest.TestCase):
 
 ^[2:] Le code équivalent avec `R` serait `testthat::expect_equal(fun(3),4)`
 
-Parler de codecov
+**Parler de codecov**
 
 # Partager
 
@@ -273,11 +267,13 @@ dépôt qui aura vocation à être personnel.
 
 **Lien vers TP git + intro python**
 
+<!-----
 ## Intégration continue avec python
 
 TO DO
+------->
 
-## Ne pas négliger le .gitignore
+## Ne pas négliger le `.gitignore`
 
 Un fichier à ne pas négliger est le `.gitignore`. Il s'agit d'un garde-fou car tous fichiers (notamment des
 données, potentiellement volumineuses ou confidentielles) n'ont pas vocation
@@ -285,7 +281,7 @@ données, potentiellement volumineuses ou confidentielles) n'ont pas vocation
 suivant est par exemple proposé pour les utilisateurs de `Python`, auquel on peut ajouter
 quelques lignes adaptées aux utilisateurs de données:
 
-```markdown
+~~~markdown
 *.html
 *.pdf
 *.csv
@@ -429,4 +425,4 @@ dmypy.json
 
 # pytype static type analyzer
 .pytype/
-```
+~~~

@@ -364,20 +364,18 @@ print(h_letters)
 
 Avec une list comprehension
 
-
-```python
+~~~python
 [ expression for item in list if conditional ]
-```
+~~~
 
 est équivalent à 
 
 
-
-```python
+~~~python
 for item in list:
     if conditional:
         expression  
-```
+~~~
 
 #### Mise en application
 Mettez sous forme de list comprehension le bout de code suivant
