@@ -51,7 +51,7 @@ def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
 
 **Exercice 1: lire et explorer la structure de fichiers géographiques**
 
-1. Utiliser la fonction `download_unzip` avec l'url <'https://www.data.gouv.fr/fr/datasets/r/07b7c9a2-d1e2-4da6-9f20-01a7b72d4b12'>
+1. Utiliser la fonction `download_unzip` avec l'url <https://www.data.gouv.fr/fr/datasets/r/07b7c9a2-d1e2-4da6-9f20-01a7b72d4b12>
 pour télécharger les données communales.
 2. Importer le fichier avec la package `geopandas`
 (si vous avez laissé les paramètres par défaut,
@@ -67,23 +67,11 @@ transformation de l'espace tridimensionnel terrestre en une surface plane.
 6. Réprésenter la carte de Paris : quel est le problème ?
 
 
-```python
-download_unzip(url)
-communes_borders = gpd.read_file(temporary_location + "/borders/communes-20190101.json")
-communes_borders.head()
-communes_borders.crs
-```
 
 
 
-```python
-communes_borders[communes_borders.insee.str.startswith("12")].plot()
-```
 
 
-```python
-communes_borders[communes_borders.insee.str.startswith("75")].plot()
-```
 
 En effet, on ne dispose ainsi pas des limites des arrondissements parisiens, ce
 qui appauvrit grandement la carte de Paris. On peut les récupérer directement 
@@ -106,19 +94,62 @@ la méthode `rename` et faire attention aux types des variables
 
 
 
-```python
-arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
-arrondissements.plot()
-communes_borders.crs == arrondissements.crs
-arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
-data_paris = communes_borders[~communes_borders.insee.str.startswith("75")].append(arrondissements)
-```
 
 
-```python
-data_paris['dep'] = data_paris.insee.str[:2]
-data_paris[data_paris['dep'].isin(['75','92','93','94'])].plot()
-```
+
+# Utiliser des données géographiques comme des couches
+graphiques
+
+Souvent, le découpage communal ne sert qu'en fond de cartes, pour donner des
+repères. En complément de celui-ci, on peut désirer exploiter
+un autre jeu de données. On va partir des données de localisation des
+stations velib, 
+disponibles [sur le site d'open data de la ville de Paris](https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/table/) et 
+requêtables directement par l'url
+<https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
 
 
+**Exercice 3: importer et explorer les données velib**
+
+1. Importer les données velib sous le nom station
+2. Représenter sur une carte les 100 stations les plus importantes. Vous pouvez également afficher le fonds de carte des arrondissements en ne gardant que les départements de la petite couronne (75, 92, 93, 94).
+Cette [page](https://geopandas.org/mapping.html#maps-with-layers) peut vous aider pour afficher plusieurs couches à la fois (nous irons plus loin lors du chapitre XXXX). 
+3. (optionnel) Afficher également les réseaux de transport en communs, disponibles [ici](https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/map/?location=7,48.69717,2.33167&basemap=jawg.streets). L'url à requêter est
+<https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
+
+
+
+
+
+
+
+
+# Jointures spatiales
+
+Les jointures attributaires fonctionnent comme avec un DataFrame `pandas`. Pour conserver un objet spatial *in fine*, il faut faire attention à utiliser en premier (base de gauche) l'objet `geopandas`. En revanche, l'un des intérêts des objets geopandas est qu'on peut également faire une jointure sur la dimension spatiale.
+
+La documentation à laquelle se référer est [ici](https://geopandas.org/mergingdata.html#spatial-joins). 
+
+**Exercice 4: Associer les stations aux communes et arrondissements auxquels ils appartiennent**
+
+1. Faire une jointure spatiale pour enrichir les données de stations d'informations sur l'environnement.
+Appeler cet objet `stations_info`
+2. Représenter la carte des stations du 19e arrondissement (s'aider de la variable `c_ar`).
+Vous pouvez mettre en fond de carte les arrondissements parisiens. 
+3. Compter le nombre de stations velib et le nombre de places velib par arrondissement ou communes (pour vous aider, vous pouvez compléter vos connaissances avec [ce tutoriel](https://pandas.pydata.org/docs/getting_started/intro_tutorials/06_calculate_statistics.html)). Représenter sur une carte chacune des informations
+4. Représenter les mêmes informations mais en densité (diviser par la surface de l'arrondissement ou commune en km2)
+
+
+
+
+
+
+
+
+
+**Exercice 5 (optionnel): Relier distance au métro et capacité d'une station**
+
+1. Relier chaque station velib à la station de transport en commun la plus proche
+2. Quelle ligne de transport est à proximité du plus de velib ?
+3. Calculer la distance de chaque station à la ligne de métro la plus proche. Faire un nuage de points reliant distance au métro et nombre de places en stations
 
