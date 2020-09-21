@@ -321,7 +321,7 @@ Lorsque c'est possible, il est recommandé d'utiliser les fonctions logiques de 
 qui gèrent bien la dimension). Parmi elles, on peut retrouver:
 
 * `count_nonzero`
-* `is_nan`
+* `isnan`
 * `any` ; `all` ; notamment avec l'argument `axis`
 * `np.array_equal` pour vérifier, élément par élément, l'égalité
 
@@ -344,7 +344,7 @@ y = np.array([np.nan, 0, 1])
 un *array* unidimensionnel présentant une valeur manquante. 
 
 1. Utiliser `count_nonzero` sur `y`
-2. Utiliser `is_nan` sur `y` et compter le nombre de valeurs non NaN
+2. Utiliser `isnan` sur `y` et compter le nombre de valeurs non NaN
 2. Vérifier que `x` comporte au moins une valeur positive dans son ensemble, dans chaque array et en
 
 
