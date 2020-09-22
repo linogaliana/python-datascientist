@@ -25,14 +25,19 @@ slug: geopandasTP
 library(knitr)  
 library(reticulate)  
 knitr::knit_engines$set(python = reticulate::eng_python)
-knitr::opts_chunk$set(eval = FALSE, include = FALSE, echo = FALSE)
+knitr::opts_chunk$set(eval = TRUE, include = FALSE, echo = FALSE)
 ```
 
 ```{python, include = FALSE}
 import os
 os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
+os.environ["PROJ_LIB"] = r'C:\Users\W3CRK9\AppData\Local\r-miniconda\pkgs\proj4-4.9.3-hfa6e2cd_9\Library\share'
+#os.environ['GDAL_DATA'] = "C:/Users/W3CRK9/AppData/Local/gdal-3-1-2/bin/gdal-data"
 ```
 
+```{python, echo = TRUE}
+import geopandas as gpd
+```
 
 
 # Lire et enrichir des données spatiales
@@ -147,7 +152,6 @@ Cette [page](https://geopandas.org/mapping.html#maps-with-layers) peut vous aide
 ```{python}
 url = "https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
 stations = gpd.read_file(url)
-
 ```
 
 ```{python}
@@ -205,14 +209,32 @@ data_paris.merge(stations_agg, how = 'inner', suffixes = [None, '_agg']).plot(co
 ```{python}
 df = data_paris.merge(stations_agg, how = 'inner', suffixes = [None, '_agg'])
 cols = ['stationcode','capacity']
-df = df[[s + '_density' for s in cols]] = df[cols].div(df.to_crs(2158).area*10**(-6), axis = 0)
+df[[s + '_density' for s in cols]] = df[cols].div(df.to_crs(2158).area*10**(-6), axis = 0)
 df.plot(column = 'capacity_density', cmap = 'RdYlBu_r')
 df.plot(column = 'capacity_density', cmap = 'plasma_r')
 ```
 
 **Exercice 5 (optionnel): Relier distance au métro et capacité d'une station**
 
-1. Relier chaque station velib à la station de transport en commun la plus proche
+Une aide [ici](https://pysal.org/scipy2019-intermediate-gds/deterministic/gds1-relations.html#how-about-nearest-neighbor-joins)
+
+1. Relier chaque station velib à la station de transport en commun la plus proche. Vous pouvez
+prendre les localisations des stations [ici](https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
 2. Quelle ligne de transport est à proximité du plus de velib ?
 3. Calculer la distance de chaque station à la ligne de métro la plus proche. Faire un nuage de points reliant distance au métro et nombre de places en stations
+
+```{python}
+stations_transport = gpd.read_file("https://data.ratp.fr/explore/dataset/positions-geographiques-des-stations-du-reseau-ratp/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
+```
+
+```{python, eval = FALSE}
+# un truc comme ça à revoir
+from shapely.ops import nearest_points
+pts3 = stations.geometry.unary_union
+def near(point, pts=pts3):
+     # find the nearest point and return the corresponding Place value
+     nearest = gpd2.geometry == nearest_points(point, pts)[1]
+     return gpd2[nearest].Place.get_values()[0]
+df['Nearest'] = df.apply(lambda row: near(row.geometry), axis=1)
+```
 
