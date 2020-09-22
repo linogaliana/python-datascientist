@@ -27,6 +27,7 @@ slug: geopandasTP
 
 
 
+
 # Lire et enrichir des données spatiales
 
 Dans cette partie, nous utiliserons la fonction suivante, qui facilite 
@@ -149,7 +150,14 @@ Vous pouvez mettre en fond de carte les arrondissements parisiens.
 
 **Exercice 5 (optionnel): Relier distance au métro et capacité d'une station**
 
-1. Relier chaque station velib à la station de transport en commun la plus proche
+Une aide [ici](https://pysal.org/scipy2019-intermediate-gds/deterministic/gds1-relations.html#how-about-nearest-neighbor-joins)
+
+1. Relier chaque station velib à la station de transport en commun la plus proche. Vous pouvez
+prendre les localisations des stations [ici](https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
 2. Quelle ligne de transport est à proximité du plus de velib ?
 3. Calculer la distance de chaque station à la ligne de métro la plus proche. Faire un nuage de points reliant distance au métro et nombre de places en stations
+
+
+
+
 
