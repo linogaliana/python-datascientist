@@ -334,10 +334,10 @@ communes[communes.dep != "97"].sort_values('surf_ha', ascending = False)
 ## 32467  49092         Chemillé-en-Anjou  ...   NaN   49
 ## 28877  49228           Noyant-Villages  ...   NaN   49
 ## ...      ...                       ...  ...   ...  ...
-## 15     75120                       NaN  ...  20.0   75
-## 16     75101                       NaN  ...   1.0   75
-## 17     75102                       NaN  ...   2.0   75
-## 18     75119                       NaN  ...  19.0   75
+## 15     75101                       NaN  ...   1.0   75
+## 16     75102                       NaN  ...   2.0   75
+## 17     75119                       NaN  ...  19.0   75
+## 18     75115                       NaN  ...  15.0   75
 ## 19     75112                       NaN  ...  12.0   75
 ## 
 ## [34870 rows x 13 columns]
