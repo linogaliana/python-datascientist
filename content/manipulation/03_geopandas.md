@@ -35,19 +35,26 @@ Dans ce tutoriel, nous allons utiliser:
 La représentation des données, notamment la cartographie, est présentée plus
 amplement dans la partie [visualiser](visualiser). 
 
-Ce tutoriel s'inspire beaucoup d'un autre tutoriel que j'ai fait pour R **lien utilitR**. Il peut servir de pendant à celui-ci pour l'utilisateur de `R`. 
+Ce tutoriel s'inspire beaucoup d'un autre tutoriel que j'ai fait pour
+R disponible [ici](https://linogaliana.gitlab.io/documentationR/spatdata.html).
+Il peut servir de pendant à celui-ci pour l'utilisateur de `R`. 
 
 
 
 ```python
 import geopandas as gpd
-#import contextily as ctx
+import contextily as ctx
 ```
 
 
 ## Données spatiales: quelle différence avec des données traditionnelles ?
 
-**Le terme "données spatiales" désigne les données qui portent sur les caractéristiques géographiques des objets (localisation, contours, liens)**. Les caractéristiques géographiques des objets sont décrites à l'aide d'un **système de coordonnées** qui permetent une représentation dans un espace euclidien ($(x,y)$). Le passage de l'espace réel (la Terre, qui est une sphère) à l'espace plan se fait grâce à un **système de projection**. Voici quelques exemples de données spatiales:
+**Le terme "données spatiales" désigne les données
+qui portent sur les caractéristiques géographiques des objets (localisation, contours, liens)**. Les caractéristiques géographiques des objets sont décrites à l'aide d'un **système de coordonnées**
+qui permettent une représentation dans un espace euclidien ($(x,y)$).
+Le passage de l'espace réel (la Terre, qui est une sphère) à l'espace plan
+se fait grâce à un **système de projection**. Voici quelques exemples
+de données spatiales:
 
 * Une table décrivant des bâtiments, avec les coordonnées géographiques de chaque bâtiment;
 * Le découpage communal du territoire, avec le contour du territoire de chaque commune;
@@ -259,7 +266,7 @@ communes['dep'] = communes.insee.str[:2]
 ax = stations.sample(200).plot(figsize = (10,10), color = 'red', alpha = 0.4, zorder=2)
 communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-# ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
+#ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
 ```
 
 ![](03_geopandas_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
@@ -277,9 +284,9 @@ stations.describe()
 
 ```
 ##           capacity
-## count  1397.000000
-## mean     31.404438
-## std      12.149572
+## count  1398.000000
+## mean     31.403433
+## std      12.145281
 ## min       0.000000
 ## 25%      23.000000
 ## 50%      29.000000
@@ -327,11 +334,11 @@ communes[communes.dep != "97"].sort_values('surf_ha', ascending = False)
 ## 32467  49092         Chemillé-en-Anjou  ...   NaN   49
 ## 28877  49228           Noyant-Villages  ...   NaN   49
 ## ...      ...                       ...  ...   ...  ...
-## 15     75113                       NaN  ...  13.0   75
-## 16     75109                       NaN  ...   9.0   75
-## 17     75118                       NaN  ...  18.0   75
-## 18     75111                       NaN  ...  11.0   75
-## 19     75116                       NaN  ...  16.0   75
+## 15     75120                       NaN  ...  20.0   75
+## 16     75101                       NaN  ...   1.0   75
+## 17     75102                       NaN  ...   2.0   75
+## 18     75119                       NaN  ...  19.0   75
+## 19     75112                       NaN  ...  12.0   75
 ## 
 ## [34870 rows x 13 columns]
 ```
@@ -394,11 +401,17 @@ fera
 departement = communes[communes.dep == "31"].copy()
 departement['geometry'] = departement['geometry'].centroid
 
+```
 
+```
+## C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/python.exe:1: UserWarning: Geometry is in a geographic CRS. Results from 'centroid' are likely incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before this operation.
+```
+
+```python
 ax = departement.plot(figsize = (10,10), color = 'red', alpha = 0.4, zorder=2)
 communes[communes['dep'] == "31"].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-#ctx.add_basemap(ax, crs = stations.crs.to_string(), source = #ctx.providers.Stamen.Toner)
+#ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Toner)
 ```
 
 ![](03_geopandas_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
@@ -417,10 +430,12 @@ stations = stations.to_crs(2154)
 ```
 
 
-Le système de projection est fondamental pour que la dimension spatiale soit bien interprétée par `python`. Un mauvais système de représentation
+Le système de projection est fondamental pour que la dimension
+spatiale soit bien interprétée par `python`. Un mauvais système de représentation
 fausse l'appréciation visuelle mais peut aussi entraîner des erreurs dans
 les calculs sur la dimension spatiale.
-Ce [post](https://www.earthdatascience.org/courses/earth-analytics/spatial-data-r/geographic-vs-projected-coordinate-reference-systems-UTM/) propose de riches éléments sur le sujet, notamment l'image suivante qui montre bien le principe d'une projection:
+Ce [post](https://www.earthdatascience.org/courses/earth-analytics/spatial-data-r/geographic-vs-projected-coordinate-reference-systems-UTM/) propose de riches éléments sur le
+sujet, notamment l'image suivante qui montre bien le principe d'une projection:
 
 ![Les différents types de projection](https://www.earthdatascience.org/images/courses/earth-analytics/spatial-data/spatial-projection-transformations-crs.png)
 
@@ -443,7 +458,20 @@ communes.crs
 ```
 
 ```
-## {'init': 'epsg:4326'}
+## <Projected CRS: EPSG:2154>
+## Name: RGF93 / Lambert-93
+## Axis Info [cartesian]:
+## - X[east]: Easting (metre)
+## - Y[north]: Northing (metre)
+## Area of Use:
+## - name: France
+## - bounds: (-9.86, 41.15, 10.38, 51.56)
+## Coordinate Operation:
+## - name: Lambert-93
+## - method: Lambert Conic Conformal (2SP)
+## Datum: Reseau Geodesique Francais 1993
+## - Ellipsoid: GRS 1980
+## - Prime Meridian: Greenwich
 ```
 
 Les deux principales méthodes pour définir le système de projection utilisé sont:
@@ -465,6 +493,8 @@ Alors que la reprojection (projection Albers: 5070) s'obtient de la manière sui
 communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').to_crs(5070).plot()
 ```
 
+![](03_geopandas_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+
 On le voit, cela modifie totalement la représentation de l'objet dans l'espace.
 Clairement, cette projection n'est pas adaptée aux longitudes et lattitudes françaises. C'est normal, il s'agit d'une projection adaptée au continent 
 nord-américain, et encore, pas dans son ensemble :
@@ -474,6 +504,8 @@ nord-américain, et encore, pas dans son ensemble :
 world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 world[world.continent == "North America"].to_crs(5070).plot(alpha = 0.2, edgecolor = "k")
 ```
+
+![](03_geopandas_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
 
 
 ## Joindre des données
@@ -488,16 +520,16 @@ La seule différence avec `pandas` est dans la dimension géographique.
 Si on désire conserver la dimension géographique, il faut faire 
 attention à faire:
 
-```python
+~~~~python
 geopandas_object.merge(pandas_object)
-```
+~~~~
 
 Si on utilise deux objets géographiques mais ne désire conserver qu'une seule
 dimension géographique^[1], on fera
 
-```python
+~~~~python
 geopandas_object1.merge(geopandas_object2)
-```
+~~~~
 
 Seule la géométrie de l'objet de gauche
 sera conservée, même si on fait un *right join*. 
