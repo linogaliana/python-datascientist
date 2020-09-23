@@ -57,6 +57,8 @@ Séance 2:
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/02_pandas_tp.ipynb)
 
 
-Séance 3: **TO BE UPDATED**
+Séance 3: 
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/03_geopandas_tp.ipynb)
 
 Séance 4: **TO BE UPDATED**
