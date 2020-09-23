@@ -59,6 +59,10 @@ Séance 2:
 
 Séance 3: 
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/03_geopandas_tp.ipynb)
+<a href="https://github.com/linogaliana/python-datascientist/blob/master/03_geopandas_tp.ipynb" class="github"><i class="fab fa-github"></i></a>
+[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/03_geopandas_tp.ipynb)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master?filepath=03_geopandas_tp.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/03_geopandas_tp.ipynb)
 
 Séance 4: **TO BE UPDATED**
