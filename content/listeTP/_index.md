@@ -59,6 +59,7 @@ Séance 2:
 
 Séance 3: 
 
+* [Découverte de geopandas par l'exemple](geopandas)
 <a href="https://github.com/linogaliana/python-datascientist/blob/master/03_geopandas_tp.ipynb" class="github"><i class="fab fa-github"></i></a>
 [![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/03_geopandas_tp.ipynb)
 [![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
