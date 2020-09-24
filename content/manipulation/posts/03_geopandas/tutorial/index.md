@@ -271,6 +271,7 @@ communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, ed
                                                            color = None)
 ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
 ax.set_axis_off()
+plt.tight_layout(pad=0)
 plt.show()
 ```
 
@@ -418,6 +419,7 @@ communes[communes['dep'] == "31"].plot(ax = ax, zorder=1, edgecolor = "black", f
                                                            color = None)
 ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Toner)
 ax.set_axis_off()
+plt.tight_layout(pad=0)
 plt.show()
 ```
 
