@@ -30,16 +30,9 @@ Pour visualiser le [TP associé à ce tutoriel](pandasTP) :
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master?filepath=content/manipulation/notebooks/02_pandas_tp.ipynb)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/manipulation/notebooks/02_pandas_tp.ipynb)
 
-```{r setup, include=FALSE}  
-library(knitr)  
-library(reticulate)  
-knitr::knit_engines$set(python = reticulate::eng_python)  
-```
 
-```{python, include = FALSE}
-import os
-os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
-```
+
+
 
 
 
@@ -62,7 +55,8 @@ les commandes d'import avec le chemin adéquat plutôt que l'url.
 
 Nous suivrons les conventions habituelles dans l'import des packages
 
-```{python import pkg}
+
+```python
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -71,7 +65,8 @@ import matplotlib.pyplot as plt
 Pour obtenir des résultats reproductibles, on peut fixer la racine du générateur
 pseudo-aléatoire. 
 
-```{python seed, show = FALSE}
+
+```python
 np.random.seed(123)
 ```
 
@@ -171,7 +166,8 @@ Avec une `Series`, on peut bien-sûr utiliser un indice de position mais on peut
 surtout faire appel à des indices plus explicites.
 Par exemple,
 
-```{python}
+
+```python
 taille = pd.Series(
     [1.,1.5,1],
     index = ['chat', 'chien', 'koala']
@@ -180,13 +176,25 @@ taille = pd.Series(
 taille.head()
 ```
 
+```
+## chat     1.0
+## chien    1.5
+## koala    1.0
+## dtype: float64
+```
+
 
 Cette indexation permet d'accéder à des valeurs de la `Series`
 via une valeur de l'indice. Par
 exemple, `taille['koala']`:
 
-```{python}
+
+```python
 taille['koala']
+```
+
+```
+## 1.0
 ```
 
 L'existence d'indice rend le *subsetting* particulièrement aisé, ce que vous
@@ -201,8 +209,13 @@ pouvez expérimenter dans les TP
 Pour transformer un objet `pandas.Series` en array `numpy`, 
 on utilise la méthode `values`. Par exemple, `taille.values`:
 
-```{python}
+
+```python
 taille.values
+```
+
+```
+## array([1. , 1.5, 1. ])
 ```
 
 Un avantage des `Series` par rapport à un *array* `numpy` est que
@@ -235,15 +248,28 @@ méthodes de statistiques descriptives présentées ultérieurement. Les règles
  Pour plus de détails, `help(pandas.Series.sum)`. 
 * Les méthodes `cumsum` et `cumprod` ignorent les `NA` par défaut mais les préservent dans le vecteur de sortie.
 
-```{python}
+
+```python
 x = [np.nan, np.arange(3)]
 np.mean(x)
 ```
 
+```
+## array([nan, nan, nan])
+## 
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\numpy\core\_asarray.py:136: VisibleDeprecationWarning: Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated. If you meant to do this, you must specify 'dtype=object' when creating the ndarray
+##   return array(a, dtype, copy=False, order=order, subok=True)
+```
 
-```{r}
+
+
+```r
 x <- c(NA, 1:3)
 mean(x, na.rm = TRUE)
+```
+
+```
+## [1] 2
 ```
 
 {{< /panel >}}
@@ -252,7 +278,8 @@ En revanche, ----->
 On a un comportement cohérent d'agrégation lorsqu'on combine deux `DataFrames` (ou deux colonnes).
 Par exemple,
 
-```{python}
+
+```python
 x = pd.DataFrame(
     {'prix': np.random.uniform(size = 5),
      'quantite': [i+1 for i in range(5)]
@@ -268,6 +295,15 @@ y = pd.DataFrame(
 )
 
 x + y
+```
+
+```
+##              prix  quantite
+## gateaux  1.719469         8
+## pates    2.286139         6
+## riz      3.226851         8
+## tomates       NaN         5
+## yaourt   0.696469         3
 ```
 
 donne bien une valeur manquante pour la ligne `tomates`. Au passage, on peut remarquer que l'agrégation
@@ -287,26 +323,22 @@ Exo 1
 Aller dans la doc pandas et trouver comment créer le dataFrame pandas suivant
 ------>
 
-```{python, echo = FALSE}
-df = pd.DataFrame(
-    {'taille': [1.,1.5,1],
-    'poids' : [3, 5, 2.5]
-    },
-    index = ['chat', 'chien', 'koala']
-)
-df.reset_index()
+
+```
+##    index  taille  poids
+## 0   chat     1.0    3.0
+## 1  chien     1.5    5.0
+## 2  koala     1.0    2.5
 ```
 
 Alors que le même dataframe indexé aura la structure suivante:
 
-```{python, echo = FALSE}
-df = pd.DataFrame(
-    {'taille': [1.,1.5,1],
-    'poids' : [3, 5, 2.5]
-    },
-    index = ['chat', 'chien', 'koala']
-)
-df.head()
+
+```
+##        taille  poids
+## chat      1.0    3.0
+## chien     1.5    5.0
+## koala     1.0    2.5
 ```
 
 
@@ -321,9 +353,27 @@ dans le TP
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
  ([ou depuis github](https://github.com/linogaliana/python-datascientist/blob/master/content/01_data/02_pandas_tp.ipynb))
 
-```{python}
+
+```python
 df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
 df
+```
+
+```
+##       INSEE commune                  Commune  ...       Routier     Tertiaire
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...    793.156501    367.036172
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...    348.997893    112.934207
+## 2             01004        AMBERIEU-EN-BUGEY  ...  15642.420310  10732.376930
+## 3             01005      AMBERIEUX-EN-DOMBES  ...   1756.341319    782.404357
+## 4             01006                  AMBLEON  ...    398.786800     51.681756
+## ...             ...                      ...  ...           ...           ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...    309.627908    235.439109
+## 35794         95678            VILLIERS-ADAM  ...  18759.370070    403.404815
+## 35795         95680          VILLIERS-LE-BEL  ...  12217.122400  13849.512000
+## 35796         95682          VILLIERS-LE-SEC  ...   4663.232127     85.657725
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...    504.400972    147.867245
+## 
+## [35798 rows x 12 columns]
 ```
 
 L'affichage des DataFrames est très ergonomique. On obtiendrait le même *output*
@@ -370,28 +420,79 @@ mais c'est une démarche très complexe
 Les premières méthodes utiles permettent d'afficher quelques
 attributs d'un DataFrame.
 
-```{python}
+
+```python
 df.axes
+```
+
+```
+## [RangeIndex(start=0, stop=35798, step=1), Index(['INSEE commune', 'Commune', 'Agriculture', 'Autres transports',
+##        'Autres transports international', 'CO2 biomasse hors-total', 'Déchets',
+##        'Energie', 'Industrie hors-énergie', 'Résidentiel', 'Routier',
+##        'Tertiaire'],
+##       dtype='object')]
+```
+
+```python
 df.columns
+```
+
+```
+## Index(['INSEE commune', 'Commune', 'Agriculture', 'Autres transports',
+##        'Autres transports international', 'CO2 biomasse hors-total', 'Déchets',
+##        'Energie', 'Industrie hors-énergie', 'Résidentiel', 'Routier',
+##        'Tertiaire'],
+##       dtype='object')
+```
+
+```python
 df.index
+```
+
+```
+## RangeIndex(start=0, stop=35798, step=1)
 ```
 
 Pour connaître les dimensions d'un DataFrame, on peut utiliser quelques méthodes
 pratiques:
 
 
-```{python}
+
+```python
 df.ndim
+```
+
+```
+## 2
+```
+
+```python
 df.shape
+```
+
+```
+## (35798, 12)
+```
+
+```python
 df.size
+```
+
+```
+## 429576
 ```
 
 Pour déterminer le nombre de valeurs uniques d'une variable, plutôt que chercher à écrire soi-même une fonction, 
 on utilise la
 méthode `nunique`. Par exemple,
 
-```{python}
+
+```python
 df['Commune'].nunique()
+```
+
+```
+## 33338
 ```
 
 Voici un premier résumé des méthodes `pandas` utiles, et un comparatif avec `R`
@@ -415,12 +516,98 @@ agrégées de manière efficace.
 On peut, par exemple, appliquer des méthodes pour compter le nombre de lignes,
 faire une moyenne ou une somme de l'ensemble des lignes
 
-```{python}
+
+```python
 df.count()
+```
+
+```
+## INSEE commune                      35798
+## Commune                            35798
+## Agriculture                        35736
+## Autres transports                   9979
+## Autres transports international     2891
+## CO2 biomasse hors-total            35798
+## Déchets                            35792
+## Energie                            34490
+## Industrie hors-énergie             34490
+## Résidentiel                        35792
+## Routier                            35778
+## Tertiaire                          35798
+## dtype: int64
+```
+
+```python
 df.mean()
+```
+
+```
+## Agriculture                        2459.975760
+## Autres transports                   654.919940
+## Autres transports international    7692.344960
+## CO2 biomasse hors-total            1774.381550
+## Déchets                             410.806329
+## Energie                             662.569846
+## Industrie hors-énergie             2423.127789
+## Résidentiel                        1783.677872
+## Routier                            3535.501245
+## Tertiaire                          1105.165915
+## dtype: float64
+```
+
+```python
 df.sum()
+```
+
+```
+## INSEE commune                      0100101002010040100501006010070100801009010100...
+## Commune                            L'ABERGEMENT-CLEMENCIATL'ABERGEMENT-DE-VAREYAM...
+## Agriculture                                                              8.79097e+07
+## Autres transports                                                        6.53545e+06
+## Autres transports international                                          2.22386e+07
+## CO2 biomasse hors-total                                                  6.35193e+07
+## Déchets                                                                  1.47036e+07
+## Energie                                                                   2.2852e+07
+## Industrie hors-énergie                                                   8.35737e+07
+## Résidentiel                                                              6.38414e+07
+## Routier                                                                  1.26493e+08
+## Tertiaire                                                                3.95627e+07
+## dtype: object
+```
+
+```python
 df.nunique()
+```
+
+```
+## INSEE commune                      35798
+## Commune                            33338
+## Agriculture                        35576
+## Autres transports                   9963
+## Autres transports international     2883
+## CO2 biomasse hors-total            35798
+## Déchets                            11016
+## Energie                             1453
+## Industrie hors-énergie              1889
+## Résidentiel                        35791
+## Routier                            35749
+## Tertiaire                           8663
+## dtype: int64
+```
+
+```python
 df.quantile(q = [0.1,0.25,0.5,0.75,0.9])
+```
+
+```
+##       Agriculture  Autres transports  ...      Routier    Tertiaire
+## 0.10   382.620882          25.034578  ...   199.765410    49.289082
+## 0.25   797.682631          52.560412  ...   419.700460    94.749885
+## 0.50  1559.381286         106.795928  ...  1070.895593   216.297718
+## 0.75  3007.883903         237.341501  ...  3098.612157   576.155869
+## 0.90  5442.727470         528.349529  ...  8151.047248  1897.732565
+## 
+## [5 rows x 10 columns]
 ```
 
 Les exercices de TD ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
@@ -434,8 +621,23 @@ par défaut, sont traitées comme des 0.
 Il est ainsi recommandé de systématiquement
 ajouter l'argument skipna, par exemple, 
 
-```{python}
+
+```python
 df.mean(skipna=True)
+```
+
+```
+## Agriculture                        2459.975760
+## Autres transports                   654.919940
+## Autres transports international    7692.344960
+## CO2 biomasse hors-total            1774.381550
+## Déchets                             410.806329
+## Energie                             662.569846
+## Industrie hors-énergie             2423.127789
+## Résidentiel                        1783.677872
+## Routier                            3535.501245
+## Tertiaire                          1105.165915
+## dtype: float64
 ```
 
 ----->
@@ -454,8 +656,23 @@ statistiques sur toutes les colonnes d'un dataframe en `R`.
 La méthode `describe` permet de sortir un tableau de statistiques 
 agrégées:
 
-```{python}
+
+```python
 df.describe()
+```
+
+```
+##         Agriculture  Autres transports  ...        Routier      Tertiaire
+## count  35736.000000        9979.000000  ...   35778.000000   35798.000000
+## mean    2459.975760         654.919940  ...    3535.501245    1105.165915
+## std     2926.957701        9232.816833  ...    9663.156628    5164.182507
+## min        0.003432           0.000204  ...       0.555092       0.000000
+## 25%      797.682631          52.560412  ...     419.700460      94.749885
+## 50%     1559.381286         106.795928  ...    1070.895593     216.297718
+## 75%     3007.883903         237.341501  ...    3098.612157     576.155869
+## max    98949.317760      513140.971700  ...  586054.672800  288175.400100
+## 
+## [8 rows x 10 columns]
 ```
 
 
@@ -483,14 +700,27 @@ produire rapidement un graphique, notament après des opérations
 complexes de maniement de données.
 
 
-```{python matplotlib}
+
+```python
 fig = df['Déchets'].plot()
 plt.show()
+```
+
+![](index_files/figure-html/matplotlib-1.png)<!-- -->
+
+```python
 fig = df['Déchets'].hist()
 plt.show()
+```
+
+![](index_files/figure-html/matplotlib-2.png)<!-- -->
+
+```python
 fig = df['Déchets'].plot(kind = 'hist', logy = True)
 plt.show()
 ```
+
+![](index_files/figure-html/matplotlib-3.png)<!-- -->
 
 La sortie est un objet `matplotlib`. La *customisation* de ces
 figures est ainsi
@@ -585,7 +815,8 @@ n'est pas anticipé. Si vous voulez, par sécurité, conserver intact le
 premier DataFrame, faites appel à une copie profonde (*deep copy*) en
 utilisant la méthode `copy`:
 
-```{python}
+
+```python
 df_new = df.copy()
 ```
 
@@ -596,18 +827,37 @@ d'utiliser la réassignation. Par exemple, pour créer une variable
 `x` qui est le `log` de la
 variable `Agriculture`:
 
-```{python}
+
+```python
 df_new['x'] = np.log(df_new['Agriculture'])
 ```
 
 Il est possible d'appliquer cette approche sur plusieurs colonnes. Un des
 intérêts de cette approche est qu'elle permet de recycler le nom de colonnes.
 
-```{python}
+
+```python
 vars = ['Agriculture', 'Déchets', 'Energie']
 
 df_new[[v + "_log" for v in vars]] = np.log(df_new[vars])
 df_new
+```
+
+```
+##       INSEE commune                  Commune  ...  Déchets_log  Energie_log
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...     4.619374     0.856353
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...     4.946455     0.856353
+## 2             01004        AMBERIEU-EN-BUGEY  ...     8.578159     6.906086
+## 3             01005      AMBERIEUX-EN-DOMBES  ...     5.376285     4.545232
+## 4             01006                  AMBLEON  ...     3.879532          NaN
+## ...             ...                      ...  ...          ...          ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...     4.175366     2.465791
+## 35794         95678            VILLIERS-ADAM  ...     4.713854     0.856353
+## 35795         95680          VILLIERS-LE-BEL  ...     5.418865     6.281303
+## 35796         95682          VILLIERS-LE-SEC  ...     4.691070     0.856353
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...     4.582194     1.549500
+## 
+## [35798 rows x 16 columns]
 ```
 
 Il est également possible d'utiliser la méthode `assign`. Pour des opérations
@@ -617,22 +867,76 @@ alors cette approche peut se justifier. Cette approche utilise généralement
 des *lambda functions*. Par exemple le code précédent prendrait la forme:
 
 
-```{python}
+
+```python
 df_new.assign(Energie_log = lambda x: np.log(x['Energie']))
+```
+
+```
+##       INSEE commune                  Commune  ...  Déchets_log  Energie_log
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...     4.619374     0.856353
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...     4.946455     0.856353
+## 2             01004        AMBERIEU-EN-BUGEY  ...     8.578159     6.906086
+## 3             01005      AMBERIEUX-EN-DOMBES  ...     5.376285     4.545232
+## 4             01006                  AMBLEON  ...     3.879532          NaN
+## ...             ...                      ...  ...          ...          ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...     4.175366     2.465791
+## 35794         95678            VILLIERS-ADAM  ...     4.713854     0.856353
+## 35795         95680          VILLIERS-LE-BEL  ...     5.418865     6.281303
+## 35796         95682          VILLIERS-LE-SEC  ...     4.691070     0.856353
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...     4.582194     1.549500
+## 
+## [35798 rows x 16 columns]
 ```
 
 On peut facilement renommer des variables avec la méthode `rename` qui 
 fonctionne bien avec des dictionnaires :
 
-```{python}
+
+```python
 df_new.rename({"Energie": "eneg", "Agriculture": "agr"})
+```
+
+```
+##       INSEE commune                  Commune  ...  Déchets_log  Energie_log
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...     4.619374     0.856353
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...     4.946455     0.856353
+## 2             01004        AMBERIEU-EN-BUGEY  ...     8.578159     6.906086
+## 3             01005      AMBERIEUX-EN-DOMBES  ...     5.376285     4.545232
+## 4             01006                  AMBLEON  ...     3.879532          NaN
+## ...             ...                      ...  ...          ...          ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...     4.175366     2.465791
+## 35794         95678            VILLIERS-ADAM  ...     4.713854     0.856353
+## 35795         95680          VILLIERS-LE-BEL  ...     5.418865     6.281303
+## 35796         95682          VILLIERS-LE-SEC  ...     4.691070     0.856353
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...     4.582194     1.549500
+## 
+## [35798 rows x 16 columns]
 ```
 
 Enfin, pour effacer des colonnes, on utilise la méthode `drop` avec l'argument
 `columns`:
 
-```{python}
+
+```python
 df_new.drop(columns = ["Energie", "Agriculture"])
+```
+
+```
+##       INSEE commune                  Commune  ...  Déchets_log  Energie_log
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...     4.619374     0.856353
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...     4.946455     0.856353
+## 2             01004        AMBERIEU-EN-BUGEY  ...     8.578159     6.906086
+## 3             01005      AMBERIEUX-EN-DOMBES  ...     5.376285     4.545232
+## 4             01006                  AMBLEON  ...     3.879532          NaN
+## ...             ...                      ...  ...          ...          ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...     4.175366     2.465791
+## 35794         95678            VILLIERS-ADAM  ...     4.713854     0.856353
+## 35795         95680          VILLIERS-LE-BEL  ...     5.418865     6.281303
+## 35796         95682          VILLIERS-LE-SEC  ...     4.691070     0.856353
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...     4.582194     1.549500
+## 
+## [35798 rows x 14 columns]
 ```
 
 
@@ -645,8 +949,26 @@ La méthode `sort_values` permet de réordonner un DataFrame. Par exemple,
 si on désire classer par ordre décroissant de consommation de CO2 du secteur
 résidentiel, on fera
 
-```{python}
+
+```python
 df.sort_values("Résidentiel", ascending = False)
+```
+
+```
+##       INSEE commune                   Commune  ...        Routier    Tertiaire
+## 12167         31555                  TOULOUSE  ...  586054.672800  288175.4001
+## 16774         44109                    NANTES  ...  221068.632700  173447.5828
+## 27294         67482                STRASBOURG  ...  279544.852300  179562.7614
+## 12729         33063                  BORDEAUX  ...  193411.085700  142475.5641
+## 22834         59350                     LILLE  ...  265561.183600  175581.6190
+## ...             ...                       ...  ...            ...          ...
+## 20742         55050                 BEZONVAUX  ...     113.221722       0.0000
+## 20817         55139    CUMIERES-LE-MORT-HOMME  ...     128.733542       0.0000
+## 20861         55189   FLEURY-DEVANT-DOUAUMONT  ...    1435.571489       0.0000
+## 20898         55239    HAUMONT-PRES-SAMOGNEUX  ...      91.920170       0.0000
+## 20957         55307  LOUVEMONT-COTE-DU-POIVRE  ...     236.928053       0.0000
+## 
+## [35798 rows x 12 columns]
 ```
 
 Ainsi, en une ligne de code, on identifie les villes où le secteur
@@ -666,8 +988,17 @@ Par exemple, pour sélectionner les communes dans les Hauts-de-Seine, on
 peut utiliser le résultat de la méthode `str.startswith` (qui renvoie
 `True` ou `False`) directement dans les crochets:
 
-```{python}
+
+```python
 df[df['INSEE commune'].str.startswith("92")].head(2)
+```
+
+```
+##       INSEE commune             Commune  ...      Routier   Tertiaire
+## 35490         92002              ANTONY  ...  58900.97969  31462.0380
+## 35491         92004  ASNIERES-SUR-SEINE  ...  38163.01602  42482.6351
+## 
+## [2 rows x 12 columns]
 ```
 
 Pour remplacer des valeurs spécifiques, on utilise la méthode `where` ou une
@@ -676,21 +1007,43 @@ réassignation couplée à la méthode précédente.
 Par exemple, pour assigner des valeurs manquantes aux départements du 92,
 on peut faire cela
 
-```{python}
+
+```python
 df_copy = df.copy()
 df_copy = df_copy.where(~df['INSEE commune'].str.startswith("92"))
 ```
 
 et vérifier les résultats:
 
-```{python}
+
+```python
 df_copy[df['INSEE commune'].str.startswith("92")].head(2)
+```
+
+```
+##       INSEE commune Commune  Agriculture  ...  Résidentiel  Routier  Tertiaire
+## 35490           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 35491           NaN     NaN          NaN  ...          NaN      NaN        NaN
+## 
+## [2 rows x 12 columns]
+```
+
+```python
 df_copy[~df['INSEE commune'].str.startswith("92")].head(2)
+```
+
+```
+##   INSEE commune                  Commune  ...     Routier   Tertiaire
+## 0         01001  L'ABERGEMENT-CLEMENCIAT  ...  793.156501  367.036172
+## 1         01002    L'ABERGEMENT-DE-VAREY  ...  348.997893  112.934207
+## 
+## [2 rows x 12 columns]
 ```
 
 ou alors utiliser une réassignation plus classique:
 
-```{python}
+
+```python
 df_copy = df.copy()
 df_copy[df_copy['INSEE commune'].str.startswith("92")] = np.nan
 ```
@@ -718,7 +1071,8 @@ est particulièrement utile.
 Pour donner quelques exemples, on peut créer une variable départementale qui
 servira de critère de groupe. 
 
-```{python}
+
+```python
 df['dep'] = df['INSEE commune'].str[:2]
 ```
 
@@ -738,15 +1092,37 @@ GROUP BY dep;
 
 Ce qui, en `pandas`, donne:
 
-```{python}
+
+```python
 df.groupby('dep')["INSEE commune"].count()
+```
+
+```
+## dep
+## 01    410
+## 02    805
+## 03    318
+## 04    199
+## 05    168
+##      ... 
+## 91    196
+## 92     36
+## 93     40
+## 94     47
+## 95    185
+## Name: INSEE commune, Length: 96, dtype: int64
 ```
 
 La syntaxe est quasiment transparente. On peut bien-sûr effecter des opérations
 par groupe sur plusieurs colonnes. Par exemple,
 
-```{python}
+
+```python
 df.groupby('dep').mean
+```
+
+```
+## <bound method GroupBy.mean of <pandas.core.groupby.generic.DataFrameGroupBy object at 0x000000003412F048>>
 ```
 
 A noter que la variable de groupe, ici `dep`, devient, par défaut, l'index
@@ -758,16 +1134,41 @@ Tant qu'on appelle pas une action sur un DataFrame par groupe, du type
 *lazy evaluation*. Par exemple, le résultat de `df.groupby('dep')` est
 une transformation qui n'est pas encore évaluée:
 
-```{python}
+
+```python
 df.groupby('dep')
+```
+
+```
+## <pandas.core.groupby.generic.DataFrameGroupBy object at 0x000000003412F390>
 ```
 
 Il est possible d'appliquer plus d'une opération à la fois grâce à la méthode
 `agg`. Par exemple, pour obtenir à la fois le minimum, la médiane et le maximum
 de chaque département, on peut faire:
 
-```{python}
+
+```python
 df.groupby('dep').agg(['min',"median","max"])
+```
+
+```
+##     Agriculture               ...     Tertiaire             
+##             min       median  ...        median          max
+## dep                           ...                           
+## 01     0.003432  1304.519570  ...    401.490676  30847.36686
+## 02     0.391926  1205.725078  ...    130.639994  34159.34575
+## 03     5.041238  5382.194339  ...    191.892445  31099.77288
+## 04    30.985972  1404.752852  ...    122.504902  16478.02481
+## 05    38.651727  1520.896526  ...    151.695524  23666.23590
+## ..          ...          ...  ...           ...          ...
+## 91     0.400740   516.908303  ...   1428.426303  38296.20473
+## 92     0.073468     6.505185  ...  18086.633085  65043.36450
+## 93     3.308495     3.308495  ...  20864.923340  71918.16398
+## 94     1.781885     1.781885  ...  14054.223450  58528.62348
+## 95     8.779506   445.279844  ...    725.467969  61497.82148
+## 
+## [96 rows x 30 columns]
 ```
 
 ## Appliquer des fonctions
@@ -780,8 +1181,26 @@ Dans ce cas, on recourt souvent aux `lambda` functions. Par exemple, si
 on désire connaître les communes dont le nom fait plus de 10 caractères, 
 on peut appliquer la fonction `len` de manière itérative:
 
-```{python}
+
+```python
 df[df['Commune'].apply(lambda s: len(s)>10)]
+```
+
+```
+##       INSEE commune                  Commune  ...     Tertiaire  dep
+## 0             01001  L'ABERGEMENT-CLEMENCIAT  ...    367.036172   01
+## 1             01002    L'ABERGEMENT-DE-VAREY  ...    112.934207   01
+## 2             01004        AMBERIEU-EN-BUGEY  ...  10732.376930   01
+## 3             01005      AMBERIEUX-EN-DOMBES  ...    782.404357   01
+## 7             01009         ANDERT-ET-CONDON  ...    161.266219   01
+## ...             ...                      ...  ...           ...  ...
+## 35793         95676       VILLERS-EN-ARTHIES  ...    235.439109   95
+## 35794         95678            VILLIERS-ADAM  ...    403.404815   95
+## 35795         95680          VILLIERS-LE-BEL  ...  13849.512000   95
+## 35796         95682          VILLIERS-LE-SEC  ...     85.657725   95
+## 35797         95690      WY-DIT-JOLI-VILLAGE  ...    147.867245   95
+## 
+## [16289 rows x 13 columns]
 ```
 
 
@@ -791,14 +1210,35 @@ le résultat d'agrégation précédent. Imaginons qu'on désire avoir les résul
 en milliers de tonnes. Dans ce cas, le premier réflexe est d'utiliser
 la `lambda` function suivante:
 
-```{python}
+
+```python
 df.groupby('dep').agg(['min',"median","max"])
+```
+
+```
+##     Agriculture               ...     Tertiaire             
+##             min       median  ...        median          max
+## dep                           ...                           
+## 01     0.003432  1304.519570  ...    401.490676  30847.36686
+## 02     0.391926  1205.725078  ...    130.639994  34159.34575
+## 03     5.041238  5382.194339  ...    191.892445  31099.77288
+## 04    30.985972  1404.752852  ...    122.504902  16478.02481
+## 05    38.651727  1520.896526  ...    151.695524  23666.23590
+## ..          ...          ...  ...           ...          ...
+## 91     0.400740   516.908303  ...   1428.426303  38296.20473
+## 92     0.073468     6.505185  ...  18086.633085  65043.36450
+## 93     3.308495     3.308495  ...  20864.923340  71918.16398
+## 94     1.781885     1.781885  ...  14054.223450  58528.62348
+## 95     8.779506   445.279844  ...    725.467969  61497.82148
+## 
+## [96 rows x 30 columns]
 ```
 
 En effet, cela effectue le résultat désiré. Cependant, il y a mieux: utiliser
 la méthode `div`:
 
-```{python, eval = FALSE}
+
+```python
 import timeit
 %timeit df.groupby('dep').agg(['min',"median","max"]).div(1000)
 %timeit df.groupby('dep').agg(['min',"median","max"]).apply(lambda s: s/1000)
@@ -810,7 +1250,8 @@ du *broadcasting* de numpy (cf. [chapitre numpy](numpy)) qui offre
 des performances équivalentes:
 
 
-```{python, eval = FALSE}
+
+```python
 %timeit df.groupby('dep').agg(['min',"median","max"])/1000
 ```
 
@@ -829,7 +1270,7 @@ Il est recommandé de lire [ce guide assez complet sur la question des jointures
 
 On utilise de manière indifférente les termes *merge* ou *join*. Le deuxième terme provient de la syntaxe SQL. En `pandas`, dans la plupart des cas, on peut utiliser indifféremment `df.join` et `df.merge`
 
-![](../../static/pictures/pandas/pandas_join.png)
+![](pandas_join.png)
 
 
 ## Reshape
@@ -846,7 +1287,7 @@ Un exemple de la distinction entre les deux peut être pris à l'ouvrage de réf
 
 L'aide mémoire suivante aidera à se rappeler les fonctions à appliquer si besoin:
 
-![](../../static/pictures/pandas/reshape.png)
+![](reshape.png)
 <!-- #endregion -->
 
 Le fait de passer d'un format *wide* au format *long* (ou vice-versa) peut être extrêmement pratique car certaines fonctions sont plus adéquates sur une forme de données ou sur l'autre. En règle générale, avec `python` comme avec `R`, les formats *long* sont souvent préférables.
