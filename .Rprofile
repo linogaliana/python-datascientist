@@ -1,3 +1,11 @@
+if (file.exists("~/.Rprofile")) {
+  base::sys.source("~/.Rprofile", envir = environment())
+}
+
+options(blogdown.new_bundle = TRUE)
+
+
+
 reminder_jupyter <- function(file = "./content/getting-started/06_rappels_classes.Rmd",
                              out = "ipynb"){
 
