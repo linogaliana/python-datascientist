@@ -213,7 +213,7 @@ ctx.add_basemap(ax, crs = paris.crs.to_string())
 ax
 ```
 
-{{<figure src="plot paris-1.png">}}
+{{<figure src="plot paris-1.png" >}}
 
 On voit ainsi que les données pour Paris ne comportent pas d'arrondissement, 
 ce qui est limitant pour une analyse focalisée sur Paris. On va donc les
