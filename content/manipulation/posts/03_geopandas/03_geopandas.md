@@ -213,7 +213,7 @@ ctx.add_basemap(ax, crs = paris.crs.to_string())
 ax
 ```
 
-{{<figure src="manipulation/plot paris-1.png" >}}
+{{<figure src="plot paris-1.png" >}}
 
 On voit ainsi que les données pour Paris ne comportent pas d'arrondissement, 
 ce qui est limitant pour une analyse focalisée sur Paris. On va donc les
@@ -239,7 +239,7 @@ ctx.add_basemap(ax, crs = paris.crs.to_string())
 ax
 ```
 
-{{<figure src="manipulation/plot paris2-1.png" >}}
+{{<figure src="plot paris2-1.png" >}}
 
 
 ## Opérations sur les attributs et les géométries
@@ -274,7 +274,7 @@ ax.set_axis_off()
 plt.show()
 ```
 
-{{<figure src="manipulation/unnamed-chunk-5-1.png" >}}
+{{<figure src="unnamed-chunk-5-1.png" >}}
 
 ### Opérations sur les attributs
 
@@ -358,7 +358,7 @@ attribus avec la méthode `dissolve`:
 communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').plot(column = "surf_ha")
 ```
 
-{{<figure src="manipulation/dissolve-1.png" >}}
+{{<figure src="dissolve-1.png" >}}
 
 ### Opérations sur les géométries
 
@@ -421,7 +421,7 @@ ax.set_axis_off()
 plt.show()
 ```
 
-{{<figure src="manipulation/unnamed-chunk-11-1.png" >}}
+{{<figure src="unnamed-chunk-11-1.png" >}}
 
 
 ## Gérer le système de projection
@@ -500,7 +500,7 @@ Alors que la reprojection (projection Albers: 5070) s'obtient de la manière sui
 communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').to_crs(5070).plot()
 ```
 
-{{<figure src="manipulation/unnamed-chunk-15-1.png" >}}
+{{<figure src="unnamed-chunk-15-1.png" >}}
 
 On le voit, cela modifie totalement la représentation de l'objet dans l'espace.
 Clairement, cette projection n'est pas adaptée aux longitudes et lattitudes françaises. C'est normal, il s'agit d'une projection adaptée au continent 
@@ -512,7 +512,7 @@ world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 world[world.continent == "North America"].to_crs(5070).plot(alpha = 0.2, edgecolor = "k")
 ```
 
-{{<figure src="manipulation/unnamed-chunk-16-1.png" >}}
+{{<figure src="unnamed-chunk-16-1.png" >}}
 
 
 ## Joindre des données
