@@ -209,7 +209,7 @@ du shapefile utilisé :
 ```python
 paris = communes[communes.insee.str.startswith("75")]
 ax = paris.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
-#ctx.add_basemap(ax, crs = paris.crs.to_string())
+ctx.add_basemap(ax, crs = paris.crs.to_string())
 ax
 ```
 
@@ -235,7 +235,7 @@ espéré
 ```python
 paris = communes[communes.insee.str.startswith("75")]
 ax = paris.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
-#ctx.add_basemap(ax, crs = paris.crs.to_string())
+ctx.add_basemap(ax, crs = paris.crs.to_string())
 ax
 ```
 
@@ -269,7 +269,9 @@ communes['dep'] = communes.insee.str[:2]
 ax = stations.sample(200).plot(figsize = (10,10), color = 'red', alpha = 0.4, zorder=2)
 communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-#ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
+ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
+ax.set_axis_off()
+plt.show()
 ```
 
 ![](03_geopandas_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
@@ -337,9 +339,9 @@ communes[communes.dep != "97"].sort_values('surf_ha', ascending = False)
 ## 32467  49092         Chemillé-en-Anjou  ...   NaN   49
 ## 28877  49228           Noyant-Villages  ...   NaN   49
 ## ...      ...                       ...  ...   ...  ...
-## 15     75101                       NaN  ...   1.0   75
-## 16     75102                       NaN  ...   2.0   75
-## 17     75119                       NaN  ...  19.0   75
+## 15     75117                       NaN  ...  17.0   75
+## 16     75120                       NaN  ...  20.0   75
+## 17     75116                       NaN  ...  16.0   75
 ## 18     75115                       NaN  ...  15.0   75
 ## 19     75112                       NaN  ...  12.0   75
 ## 
@@ -414,7 +416,9 @@ departement['geometry'] = departement['geometry'].centroid
 ax = departement.plot(figsize = (10,10), color = 'red', alpha = 0.4, zorder=2)
 communes[communes['dep'] == "31"].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-#ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Toner)
+ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Toner)
+ax.set_axis_off()
+plt.show()
 ```
 
 ![](03_geopandas_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
