@@ -21,23 +21,9 @@ output:
 slug: geopandas
 ---
 
-```{r setup, include=FALSE}  
-library(knitr)  
-library(reticulate)  
-knitr::knit_engines$set(python = reticulate::eng_python)
-# knitr::opts_knit$set(#fig.path = '../../static/Rmdoutput/manipulation',
-#                      root.dir = '../../static/Rmdoutput/manipulation'#,
-#                      #base.dir = '../../static/Rmdoutput/manipulation'#,
-#                      #output.dir = '../../static/Rmdoutput/manipulation'
-#                      )
-```
 
-```{python, include = FALSE}
-import os
-os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
-os.environ["PROJ_LIB"] = r'C:\Users\W3CRK9\AppData\Local\r-miniconda\pkgs\proj4-4.9.3-hfa6e2cd_9\Library\share'
-#os.environ['GDAL_DATA'] = "C:/Users/W3CRK9/AppData/Local/gdal-3-1-2/bin/gdal-data"
-```
+
+
 
 Dans ce tutoriel, nous allons utiliser:
 
@@ -57,7 +43,8 @@ R disponible [ici](https://linogaliana.gitlab.io/documentationR/spatdata.html).
 Il peut servir de pendant à celui-ci pour l'utilisateur de `R`. 
 
 
-```{python}
+
+```python
 import geopandas as gpd
 import contextily as ctx
 ```
@@ -168,7 +155,8 @@ détails apparaîtront plus clairs après la lecture de la partie
 
 La fonction suivante automatise un peu le processus:
 
-```{python download_unzip def}
+
+```python
 import requests
 import tempfile
 import zipfile
@@ -183,10 +171,22 @@ def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
       zip_ref.extractall(dirname + '/' + destname)
 ```
 
-```{python apply download_unzip}
+
+```python
 download_unzip(url)
 communes = gpd.read_file(temporary_location + "/borders/communes-20190101.json")
 communes.head()
+```
+
+```
+##    insee  ...                                           geometry
+## 0  97223  ...  POLYGON ((-60.93595 14.58812, -60.93218 14.585...
+## 1  97233  ...  POLYGON ((-61.12165 14.71928, -61.11852 14.716...
+## 2  97208  ...  POLYGON ((-61.13355 14.74657, -61.13066 14.748...
+## 3  97224  ...  POLYGON ((-61.08459 14.72510, -61.08430 14.722...
+## 4  97212  ...  POLYGON ((-61.08459 14.72510, -61.08061 14.725...
+## 
+## [5 rows x 5 columns]
 ```
 
 On reconnaît la structure d'un DataFrame pandas. A cette structure s'ajoute 
@@ -205,19 +205,23 @@ faudrait reprojeter les données, **LIEN VERS SECTION**).
 On peut ainsi représenter Paris pour se donner une idée de la nature
 du shapefile utilisé :
 
-```{python plot paris}
+
+```python
 paris = communes[communes.insee.str.startswith("75")]
 ax = paris.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
-#ctx.add_basemap(ax, crs = paris.crs.to_string())
+ctx.add_basemap(ax, crs = paris.crs.to_string())
 ax
 ```
+
+{{<figure src="plot paris-1.png" >}}
 
 On voit ainsi que les données pour Paris ne comportent pas d'arrondissement, 
 ce qui est limitant pour une analyse focalisée sur Paris. On va donc les
 récupérer sur le site d'open data de la ville de Paris et les substituer 
 à Paris
 
-```{python}
+
+```python
 arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
 arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
 arrondissements['insee'] = arrondissements['insee'].astype(str)
@@ -227,12 +231,15 @@ communes = communes[~communes.insee.str.startswith("75")].append(arrondissements
 En refaisant la carte ci-dessus, on obtient bien, cette fois, le résultat
 espéré
 
-```{python plot paris2}
+
+```python
 paris = communes[communes.insee.str.startswith("75")]
 ax = paris.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
-#ctx.add_basemap(ax, crs = paris.crs.to_string())
+ctx.add_basemap(ax, crs = paris.crs.to_string())
 ax
 ```
+
+{{<figure src="plot paris2-1.png" >}}
 
 
 ## Opérations sur les attributs et les géométries
@@ -247,21 +254,28 @@ disponibles [sur le site d'open data de la ville de Paris](https://opendata.pari
 requêtables directement par l'url
 <https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
 
-```{python}
+
+```python
 velib_data = 'https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr'
 stations = gpd.read_file(velib_data)
 ```
 
 On peut se rassurer 
 
-```{python}
+
+```python
 communes['dep'] = communes.insee.str[:2]
 
 ax = stations.sample(200).plot(figsize = (10,10), color = 'red', alpha = 0.4, zorder=2)
 communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-#ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
+ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
+ax.set_axis_off()
+plt.tight_layout(pad=0)
+plt.show()
 ```
+
+{{<figure src="unnamed-chunk-5-1.png" >}}
 
 ### Opérations sur les attributs
 
@@ -269,20 +283,70 @@ Toutes les opérations possibles sur un objet `pandas` le sont également
 sur un objet geopandas. Par exemple, si on désire 
 connaître quelques statistiques sur la taille des stations:
 
-```{python}
+
+```python
 stations.describe()
+```
+
+```
+##           capacity
+## count  1398.000000
+## mean     31.403433
+## std      12.145281
+## min       0.000000
+## 25%      23.000000
+## 50%      29.000000
+## 75%      37.000000
+## max      74.000000
 ```
 
 Par exemple pour connaître les plus grands départements:
 
-```{python}
+
+```python
 communes.groupby('dep').sum().sort_values('surf_ha', ascending = False)
+```
+
+```
+##        surf_ha       n_sq_co      perimetre       surface       n_sq_ar   c_ar
+## dep                                                                           
+## 97   8936393.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 33   1008481.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 40    935359.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 24    922025.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 21    879892.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## ..         ...           ...            ...           ...           ...    ...
+## 90     61048.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 94     24467.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 93     23674.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 92     17546.0  0.000000e+00       0.000000  0.000000e+00  0.000000e+00    0.0
+## 75         0.0  1.500003e+10  190443.799631  1.053728e+08  1.500000e+10  210.0
+## 
+## [97 rows x 6 columns]
 ```
 
 ou les plus grandes communes de France métropolitaine :
 
-```{python}
+
+```python
 communes[communes.dep != "97"].sort_values('surf_ha', ascending = False)
+```
+
+```
+##        insee                       nom  ...  c_ar  dep
+## 29861  13004                     Arles  ...   NaN   13
+## 29386  73290                 Val-Cenis  ...   NaN   73
+## 29632  13096  Saintes-Maries-de-la-Mer  ...   NaN   13
+## 32467  49092         Chemillé-en-Anjou  ...   NaN   49
+## 28877  49228           Noyant-Villages  ...   NaN   49
+## ...      ...                       ...  ...   ...  ...
+## 15     75117                       NaN  ...  17.0   75
+## 16     75120                       NaN  ...  20.0   75
+## 17     75116                       NaN  ...  16.0   75
+## 18     75115                       NaN  ...  15.0   75
+## 19     75112                       NaN  ...  12.0   75
+## 
+## [34870 rows x 13 columns]
 ```
 
 Lors des étapes d'aggrégation, `groupby` ne conserve pas les géométries. 
@@ -290,9 +354,12 @@ Il est néanmoins possible d'aggréger à la fois les géométries et les
 attribus avec la méthode `dissolve`: 
 
 
-```{python dissolve}
+
+```python
 communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').plot(column = "surf_ha")
 ```
+
+{{<figure src="dissolve-1.png" >}}
 
 ### Opérations sur les géométries
 
@@ -305,7 +372,8 @@ dans la projection officielle pour la métropole, le Lambert 93
 (epsg: 2154). Plus de détails dans la partie **LIEN SECTION**
 
 
-```{python, eval = FALSE}
+
+```python
 communes = communes.to_crs(2154)
 stations = stations.to_crs(2154)
 ```
@@ -322,7 +390,8 @@ Par exemple, on peut recalculer la taille d'une commune ou d'arrondissement
 avec la méthode `area` (et diviser par $10^6$ pour avoir des $km^2$ au lieu
 des $m^2$):
 
-```{python, eval = FALSE}
+
+```python
 communes['superficie'] = communes.area.div(10**6)
 communes
 ```
@@ -333,16 +402,28 @@ représenter approximativement les centres des villages de la
 Haute-Garonne (31), on
 fera
 
-```{python}
+
+```python
 departement = communes[communes.dep == "31"].copy()
 departement['geometry'] = departement['geometry'].centroid
 
+```
 
+```
+## C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/python.exe:1: UserWarning: Geometry is in a geographic CRS. Results from 'centroid' are likely incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before this operation.
+```
+
+```python
 ax = departement.plot(figsize = (10,10), color = 'red', alpha = 0.4, zorder=2)
 communes[communes['dep'] == "31"].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-#ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Toner)
+ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Toner)
+ax.set_axis_off()
+plt.tight_layout(pad=0)
+plt.show()
 ```
+
+{{<figure src="unnamed-chunk-11-1.png" >}}
 
 
 ## Gérer le système de projection
@@ -351,7 +432,8 @@ Précédemment, nous avons appliqué une méthode `to_crs` pour reprojeter
 les données dans un système de projection différent de celui du fichier
 d'origine:
 
-```{python, eval = TRUE}
+
+```python
 communes = communes.to_crs(2154)
 stations = stations.to_crs(2154)
 ```
@@ -379,8 +461,26 @@ bon d'avoir en tête:
 
 Pour déterminer le système de projection d'une base de données, on peut vérifier l'attribut `crs`:
 
-```{python}
+
+```python
 communes.crs
+```
+
+```
+## <Projected CRS: EPSG:2154>
+## Name: RGF93 / Lambert-93
+## Axis Info [cartesian]:
+## - X[east]: Easting (metre)
+## - Y[north]: Northing (metre)
+## Area of Use:
+## - name: France
+## - bounds: (-9.86, 41.15, 10.38, 51.56)
+## Coordinate Operation:
+## - name: Lambert-93
+## - method: Lambert Conic Conformal (2SP)
+## Datum: Reseau Geodesique Francais 1993
+## - Ellipsoid: GRS 1980
+## - Prime Meridian: Greenwich
 ```
 
 Les deux principales méthodes pour définir le système de projection utilisé sont:
@@ -390,24 +490,31 @@ Les deux principales méthodes pour définir le système de projection utilisé 
 
 La définition du système de projection se fait de la manière suivante (:warning: avant de le faire, se souvenir de l'avertissement !):
 
-```{python, eval = FALSE}
+
+```python
 communes = communes.set_crs(2154)
 ```
 
 Alors que la reprojection (projection Albers: 5070) s'obtient de la manière suivante:
 
-```{python, eval = TRUE}
+
+```python
 communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').to_crs(5070).plot()
 ```
+
+{{<figure src="unnamed-chunk-15-1.png" >}}
 
 On le voit, cela modifie totalement la représentation de l'objet dans l'espace.
 Clairement, cette projection n'est pas adaptée aux longitudes et lattitudes françaises. C'est normal, il s'agit d'une projection adaptée au continent 
 nord-américain, et encore, pas dans son ensemble :
 
-```{python, eval = TRUE}
+
+```python
 world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 world[world.continent == "North America"].to_crs(5070).plot(alpha = 0.2, edgecolor = "k")
 ```
+
+{{<figure src="unnamed-chunk-16-1.png" >}}
 
 
 ## Joindre des données
