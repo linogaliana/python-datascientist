@@ -188,7 +188,7 @@ Un exemple de la distinction entre les deux peut être pris à l'ouvrage de réf
 
 L'aide mémoire suivante aidera à se rappeler les fonctions à appliquer si besoin:
 
-![](../../static/pictures/pandas/reshape.png)
+![](../02a_pandas_tutorial/reshape.png)
 <!-- #endregion -->
 
 Le fait de passer d'un format *wide* au format *long* (ou vice-versa) peut être extrêmement pratique car certaines fonctions sont plus adéquates sur une forme de données ou sur l'autre. En règle générale, avec `python` comme avec `R`, les formats *long* sont souvent préférables.
@@ -229,7 +229,7 @@ Il est recommandé de lire [ce guide assez complet sur la question des jointures
 
 On utilise de manière indifférente les termes *merge* ou *join*. Le deuxième terme provient de la syntaxe SQL. En `pandas`, dans la plupart des cas, on peut utiliser indifféremment `df.join` et `df.merge`
 
-![](../../static/pictures/pandas/pandas_join.png)
+![](../02a_pandas_tutorial/pandas_join.png)
 
 ------------------------------------
 **Exercice 7: Calculer l'empreinte carbone par habitant**
