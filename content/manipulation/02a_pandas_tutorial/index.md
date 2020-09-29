@@ -19,7 +19,7 @@ output:
   html_document:
     keep_md: true
     self_contained: true
-slug: pandascours
+slug: pandas
 ---
 
 Pour visualiser le [TP associé à ce tutoriel](pandasTP) : 
@@ -1122,7 +1122,7 @@ df.groupby('dep').mean
 ```
 
 ```
-## <bound method GroupBy.mean of <pandas.core.groupby.generic.DataFrameGroupBy object at 0x000000003412F048>>
+## <bound method GroupBy.mean of <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000036774438>>
 ```
 
 A noter que la variable de groupe, ici `dep`, devient, par défaut, l'index
@@ -1140,7 +1140,7 @@ df.groupby('dep')
 ```
 
 ```
-## <pandas.core.groupby.generic.DataFrameGroupBy object at 0x000000003412F390>
+## <pandas.core.groupby.generic.DataFrameGroupBy object at 0x0000000036774748>
 ```
 
 Il est possible d'appliquer plus d'une opération à la fois grâce à la méthode
