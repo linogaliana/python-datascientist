@@ -119,7 +119,7 @@ data.head()
 Cette méthode n'est pas recommandée **LIEN VERS PARTIE BONNE PRATIQUE**
 {{< /panel >}}
 
-{{<div class="msg-success">
+{{<msg class="success">
   <i class="fa fa-check"></i>
   This is a success message.
 </div>
