@@ -115,9 +115,15 @@ data.head()
 ### from _Module_ Import _fonction_ - seulement une partie du module
 
 
-{{< adminition status="warning" title="warning" icon="fa fa-exclamation-triangle" >}}
+{{< panel status="danger" title="warning" icon="fa fa-exclamation-triangle" >}}
 Cette méthode n'est pas recommandée **LIEN VERS PARTIE BONNE PRATIQUE**
 {{< /panel >}}
+
+{{<div class="msg-success">
+  <i class="fa fa-check"></i>
+  This is a success message.
+</div>
+}}
 
 Si on ne veut pas être obligé de donner le nom du module avant d'appeler
 la fonction, il y a toujours la possibilité de n'importer qu'une fonction du module. Dans le cas de l'exemple, Python sait que la fonction arange est celle de numpy.
