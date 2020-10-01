@@ -128,7 +128,7 @@ pas attendre les mêmes arguments ou objets
 Example{{< /panel >}}
 
 
-{{< panel status="hint" title="Hint" icon="fa fa-lightbulb-o" >}}
+{{< panel status="hint" title="Hint" icon="fa fa-lightbulb" >}}
 Example
 {{< /panel >}}
 
@@ -136,7 +136,7 @@ Example
 Example
 {{< /panel >}}
 
-{{< panel status="tip" title="Tip" icon="fa fa-lightbulb-o" >}}
+{{< panel status="tip" title="Tip" icon="fa fa-lightbulb" >}}
 Example
 {{< /panel >}}
 
