@@ -194,10 +194,14 @@ directement le package `R` `plotly`...)
 
 ### Réplication de l'exemple précédent avec `plotly`
 
-Les modules suivant seront nécessaires pour construire des graphiques
+Les modules suivants seront nécessaires pour construire des graphiques
 avec `plotly`:
 
 
+```python
+import plotly
+import plotly.express as px
+```
 
 
 {{% panel status="exercise" title="Exercice 4: premier graphique avec plotly"
