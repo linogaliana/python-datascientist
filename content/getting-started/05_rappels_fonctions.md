@@ -115,8 +115,10 @@ data.head()
 ### from _Module_ Import _fonction_ - seulement une partie du module
 
 
-{{< panel status="warning" title="Warning ff" icon="fa fa-exclamation-triangle" >}}
-Cette méthode n'est pas recommandée **LIEN VERS PARTIE BONNE PRATIQUE**
+{{< panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" >}}
+Cette méthode n'est pas recommandée **LIEN VERS PARTIE BONNE PRATIQUE** 
+**TO DO**
+ee
 {{< /panel >}}
 
 
