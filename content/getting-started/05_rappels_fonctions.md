@@ -116,9 +116,11 @@ data.head()
 
 
 {{< panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" >}}
-Cette méthode n'est pas recommandée **LIEN VERS PARTIE BONNE PRATIQUE** 
-**TO DO**
-ee
+Cette méthode n'est pas recommandée car elle rend le code moins intelligible:
+d'où vient la fonction `floor`: de `maths` ou de `numpy` ? Elle risque
+aussi de créer des conflits de fonction, qui malgré un nom commun peuvent ne
+pas attendre les mêmes arguments ou objets
+**LIEN VERS PARTIE BONNE PRATIQUE** 
 {{< /panel >}}
 
 
