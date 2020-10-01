@@ -65,7 +65,7 @@ graphiques, reproduire les deux premiers graphiques de la
 [page d'analyse des données](https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/dataviz/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name):
 *Les 10 compteurs avec la moyenne horaire la plus élevée* et *Les 10 compteurs ayant comptabilisés le plus de vélos*.
 
-{{ /panel }}
+{{< /panel >}}
 
 {{< panel status="note" title="Conseil" icon="fa fa-comment" >}}
 Pour obtenir un graphique ordonné du plus grand au plus petit, il faut avoir les données ordonnées du plus petit au
@@ -110,7 +110,7 @@ contrôler la taille du graphique vous pouvez utiliser les arguments `height` et
 `aspect`
 2. Ajouter les titres des axes et le titre du graphique pour le premier graphique
 
-{{ /panel }}
+{{< /panel >}}
 
 
 
@@ -141,7 +141,7 @@ en variable de mois
 une variable de jour avec `.dt.day`)
 4. Refaire le graphique *Comptages vélo au cours des 7 derniers jours * (de l'échantillon)
 
-{{ /panel }}
+{{< /panel >}}
 
 
 
