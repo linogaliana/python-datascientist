@@ -55,7 +55,8 @@ qui ne nous servirons pas mais ralentissent l'import)
 
 ## Premier graphique avec l'API `matplotlib` de `pandas`
 
-**Exercice 1: Importer les données et produire un premier graphique**
+{{% panel status="exercise" title="Exercice 1: Importer les données et produire un premier graphique"
+icon="fas fa-pencil-alt" %}}
 
 1.. Importer les données `velib`. Attention, il s'agit de données
 compressées au format `gzip`, il faut donc utiliser l'option `compression`
@@ -64,8 +65,13 @@ graphiques, reproduire les deux premiers graphiques de la
 [page d'analyse des données](https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/dataviz/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name):
 *Les 10 compteurs avec la moyenne horaire la plus élevée* et *Les 10 compteurs ayant comptabilisés le plus de vélos*.
 
-*Conseil*: Pour obtenir un graphique ordonné du plus grand au plus petit, il faut avoir les données ordonnées du plus petit au
+{{ /panel }}
+
+{{< panel status="note" title="Conseil" icon="fa fa-comment" >}}
+Pour obtenir un graphique ordonné du plus grand au plus petit, il faut avoir les données ordonnées du plus petit au
 plus grand. C'est bizarre mais c'est comme ça...
+{{< /panel >}}
+
 
 
 
@@ -92,7 +98,8 @@ nomment `df1` et `df2`. Réinitialiser l'index pour avoir une colonne
 
 
 
-**Exercice 2: un peu de style**
+{{% panel status="exercise" title="Exercice 2: un peu de style"
+icon="fas fa-pencil-alt" %}}
 
 Il y a plusieurs manières de faire un *bar* plot en `seaborn`. La plus flexible,
 c'est-à-dire celle qui permet le mieux d'interagir avec `matplotlib` est
@@ -102,6 +109,8 @@ c'est-à-dire celle qui permet le mieux d'interagir avec `matplotlib` est
 contrôler la taille du graphique vous pouvez utiliser les arguments `height` et
 `aspect`
 2. Ajouter les titres des axes et le titre du graphique pour le premier graphique
+
+{{ /panel }}
 
 
 
@@ -113,7 +122,9 @@ style avec `sns.set_style("ticks", {"xtick.color": "red"})`
 
 
 
-**Exercice 3: refaire les graphiques**
+
+{{% panel status="exercise" title="Exercice 3: refaire les graphiques"
+icon="fas fa-pencil-alt" %}}
 
 Certaines opérations vont nécessiter un peu d'agilité dans la gestion des dates.
 Avant cela, il faut créer une variable temporelle (`datetime`). Pour cela, vous
@@ -129,6 +140,8 @@ en variable de mois
 3. Refaire le graphique *Moyenne journalière des comptages vélos* (créer d'abord
 une variable de jour avec `.dt.day`)
 4. Refaire le graphique *Comptages vélo au cours des 7 derniers jours * (de l'échantillon)
+
+{{ /panel }}
 
 
 
@@ -187,8 +200,8 @@ avec `plotly`:
 
 
 
-{{< panel status="exercise" title="Exercice 4: le premier graphique avec plotly"
-icon="fas fa-pencil-alt">}}
+{{% panel status="exercise" title="Exercice 4: premier graphique avec plotly"
+icon="fas fa-pencil-alt" %}}
 L'objectif est de reconstuire le premier diagramme en barre avec `plotly`
 
 1. Utiliser la fonction adéquate avec `Plotly Express`. Ne pas prendre le
