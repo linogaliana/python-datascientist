@@ -124,21 +124,6 @@ pas attendre les mêmes arguments ou objets
 {{< /panel >}}
 
 
-{{< panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" >}}
-Example{{< /panel >}}
-
-
-{{< panel status="hint" title="Hint" icon="fa fa-lightbulb" >}}
-Example
-{{< /panel >}}
-
-{{< panel status="note" title="Note" icon="fa fa-comment" >}}
-Example
-{{< /panel >}}
-
-{{< panel status="tip" title="Tip" icon="fa fa-lightbulb" >}}
-Example
-{{< /panel >}}
 
 
 
