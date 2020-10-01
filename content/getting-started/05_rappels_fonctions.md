@@ -115,9 +115,17 @@ data.head()
 ### from _Module_ Import _fonction_ - seulement une partie du module
 
 
-{{< panel status="danger" title="warning" icon="fa fa-exclamation-triangle" >}}
-Cette méthode n'est pas recommandé **LIEN VERS PARTIE BONNE PRATIQUE**
+{{< panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" >}}
+Cette méthode n'est pas recommandée car elle rend le code moins intelligible:
+d'où vient la fonction `floor`: de `maths` ou de `numpy` ? Elle risque
+aussi de créer des conflits de fonction, qui malgré un nom commun peuvent ne
+pas attendre les mêmes arguments ou objets
+**LIEN VERS PARTIE BONNE PRATIQUE** 
 {{< /panel >}}
+
+
+
+
 
 Si on ne veut pas être obligé de donner le nom du module avant d'appeler
 la fonction, il y a toujours la possibilité de n'importer qu'une fonction du module. Dans le cas de l'exemple, Python sait que la fonction arange est celle de numpy.
@@ -579,8 +587,7 @@ Ces erreurs peuvent être interceptées très facilement et c'est même, dans ce
 Cependant, il ne faut pas tout intercepter non plus : si Python envoie une erreur, c'est qu'il y a une raison. Si vous ignorez une erreur, vous risquez d'avoir des résultats très étranges dans votre programme.
 <!-- #endregion -->
 
-
-```python
+~~~python
 # éviter une division par 0, c'est une bonne idée : 
 
 def inverse(x) :
@@ -589,7 +596,7 @@ def inverse(x) :
     return y
 
 div = inverse(0)
-```
+~~~
 
 ```
 ## Error in py_call_impl(callable, dots$args, dots$keywords): ZeroDivisionError: division by zero
@@ -598,6 +605,7 @@ div = inverse(0)
 ##   File "<string>", line 1, in <module>
 ##   File "<string>", line 3, in inverse
 ```
+
 
 <!-- #region -->
 L'erreur est écrite noire sur blanc : __ZeroDivisionError__
