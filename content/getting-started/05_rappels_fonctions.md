@@ -124,6 +124,24 @@ pas attendre les mêmes arguments ou objets
 {{< /panel >}}
 
 
+{{< panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" >}}
+Example{{< /panel >}}
+
+
+{{< panel status="hint" title="Hint" icon="fa fa-lightbulb-o" >}}
+Example
+{{< /panel >}}
+
+{{< panel status="note" title="Note" icon="fa fa-comment" >}}
+Example
+{{< /panel >}}
+
+{{< panel status="tip" title="Tip" icon="fa fa-lightbulb-o" >}}
+Example
+{{< /panel >}}
+
+
+
 Si on ne veut pas être obligé de donner le nom du module avant d'appeler
 la fonction, il y a toujours la possibilité de n'importer qu'une fonction du module. Dans le cas de l'exemple, Python sait que la fonction arange est celle de numpy.
 
