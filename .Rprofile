@@ -86,13 +86,3 @@ reminder_box <- function(boxtype = "warning"){
   )
   cat(box, sep = "\n")
 }
-
-{{< panel status="hint" title="Hint" icon="fa fa-lightbulb" >}}
-
-{{< panel status="note" title="Note" icon="fa fa-comment" >}}
-Example
-{{< /panel >}}
-
-{{< panel status="tip" title="Tip" icon="fa fa-lightbulb" >}}
-Example
-{{< /panel >}}
