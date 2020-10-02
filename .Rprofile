@@ -67,7 +67,8 @@ reminder_badges <- function(notebook = ""){
 
 
 
-reminder_box <- function(boxtype = "warning"){
+reminder_box <- function(boxtype = "warning", type = c("html","markdown")){
+  type <- match.arg(type)
   icon <- switch(boxtype,
                  warning = "fa fa-exclamation-triangle",
                  hint = "fa fa-lightbulb",
@@ -84,5 +85,10 @@ reminder_box <- function(boxtype = "warning"){
     "Example",
     "{{< /panel >}}"
   )
+  if (type == "html") cat(box, sep = "\n")
+  
+  box <- gsub("<","%", box)
+  box <- gsub(">","%", box)
+  
   cat(box, sep = "\n")
 }
