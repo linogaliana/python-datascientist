@@ -13,7 +13,7 @@ slug: introgit
 Une grande partie du contenu de ce chapitre provient du cours
 [Travail collaboratif avec `R`](https://linogaliana.gitlab.io/collaboratif/git.html).
 
-## Pourquoi faire du `Git` <i class="fab fa-git-alt"></i> ?
+## Pourquoi faire du `Git` <i class="fas fa-code-branch"></i> ?
 
 Tous les statisticiens se sont déjà demandé (ou à leurs collègues) : 
 
