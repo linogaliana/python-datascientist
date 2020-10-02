@@ -15,17 +15,35 @@ https://github.com/corent01/03-Swartz/blob/master/Parcours/01-La-prairie/git/exe
 https://github.com/simplonco/cadavre-request
 ------>
 
-## Git solo
+## Git tout seul
+
+### Première étape: avoir un compte `Github`
 
 Les deux premières étapes se font sur `Github`
 
-
 {{% panel status="exercise" title="Exercise 1: créer un compte Github" icon="fab fa-github" %}}
 
-1. Si vous n'en avez pas déjà un, créer un compte sur Github
+1. Si vous n'en avez pas déjà un, créer un compte sur `github.com`
 2. Créer un dépôt vide. Ce dépôt sera personnel, vous pouvez le rendre public
 ou non, comme vous le souhaitez.
 {{% /panel %}}
+
+Pour ces exercices, je propose d'utiliser `Github` dont les fonctionalités
+nous suffiront amplement. Si, 
+dans le futur, les fonctionalités ne vous conviennent pas (sans l'apport de fonctionalités
+externes, `Github` propose moins de fonctionalités que `Gitlab`) ou vous êtes
+mal à l'aise avec le possesseur de `Github` (Microsoft), vous pourrez utiliser
+`Gitlab` <i class="fab fa-gitlab"></i>, le concurrent.
+L'avantage de `Github` par rapport à `Gitlab` est que le premier est plus visible, car
+mieux indexé par `Google` et concentre, en partie pour des raisons historiques, plus
+de développeurs `Python` et `R` (ce qui est important dans des domaines comme
+le code où les externalités de réseau jouent). Le débat `Github` vs `Gitlab` n'a
+plus beaucoup de sens aujourd'hui car les fonctionalités ont convergé (`Github` 
+a rattrapé une partie de son retard sur l'intégration continue) et, de toute
+manière, on peut tout à fait connecter des dépôts Gitlab et Github (c'est le cas
+du dépôt source <a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-github"></i></a> et <a href="https://gitlab.com/linogaliana/python-datascientist" class="github"><i class="fab fa-gitlab"></i></a> de ce cours). 
+
+### Pratique en local
 
 Maintenant, en local. Il faut ouvrir une invite de commande `git bash` (ou une
 interface graphique connectée à `git bash`)
@@ -118,6 +136,8 @@ Le fait de nommer le premier commit *"Initial commit"* est une
 habitude, vous
 n'êtes pas obligé de suivre cette convention si elle ne vous plaît pas.
 
+### Premières interactions avec `Github`
+
 
 {{% panel status="exercise" title="Exercise 5: interagir avec Github" icon="fas fa-pencil-alt" %}}
 
@@ -128,7 +148,8 @@ Observer le statut du fichier avec `git status`.
 3. Valider cette création avec le message *"j'écris comme un surréaliste*
 
 Il convient maintenant d'envoyer les fichiers sur le dépôt distant. 
-1. Récupérer l'url du dépôt
+1. Récupérer l'url du dépôt. Dans `Github`, il faut cliquer sur
+le bouton `Code`, comme ci-dessous
 
 ![](gitclone.png)
 
@@ -159,3 +180,28 @@ caractères comporte votre mot de passe)
 
 Retournez voir le dépôt sur `Github`, vous devriez maintenant voir le fichier
 `.gitignore` et le `README` devrait s'afficher en page d'accueil. 
+
+{{% panel status="exercise" title="Exercise 4: pratique de git. Enfin..." icon="fas fa-pencil-alt" %}}
+
+1. De temps en temps, il est bon de vérifier l'état d'un dépôt. Pour cela, faire
+
+~~~shell
+git status
+~~~
+
+1. Dans l'invite de commande, taper
+
+~~~shell
+git add .gitignore
+~~~
+
+2. Retaper `git status`. Observer le changement. Les nouvelles modifications (en
+l'occurrence la création du fichier et la validation de son contenu actuel)
+ne sont pas encore archivées. Pour cela, il faut faire
+
+~~~shell
+git commit -m "Initial commit"
+~~~
+
+{{% /panel %}}
+
