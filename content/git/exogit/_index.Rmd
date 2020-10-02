@@ -196,7 +196,7 @@ donner un titre suivant, en ajoutant, au début du document, la ligne suivante :
 # Mon oeuvre d'art surréaliste 
 ~~~
 
-Ajouter à ce titre le mot `:pencil2:`, ce qui
+Ajouter à ce titre le mot `:``pencil2:`, ce qui
 affichera :pencil2: dans `Github`. 
 Rédiger un titre et un message complémentaire pour faire le `commit`. Conserver
 l'option par défaut `Commit directly to the master branch`
