@@ -10,6 +10,9 @@ output:
 slug: introgit
 ---
 
+Une grande partie du contenu de ce chapitre provient du cours
+[Travail collaboratif avec `R`](https://linogaliana.gitlab.io/collaboratif/git.html).
+
 ## Pourquoi faire du `Git` <i class="fab fa-git-alt"></i> ?
 
 Tous les statisticiens se sont déjà demandé (ou à leurs collègues) : 
@@ -47,16 +50,19 @@ Une des principales fonctionnalités de la gestion de version est conserver l'en
 
 Tout repose dans la gestion et la présentation de l'historique des modifications. Chaque modification (ajout, suppression ou changement) sur un ou plusieurs fichiers est identifiée par son auteur, sa date et un bref descriptif^[Plus précisément, chaque modification est identifiée de manière unique par un code `SHA` auquel est associé l'auteur, l'horodatage et des méta-données (par exemple le message descriptif associé)]. Chaque changement est donc unique et aisément identifiable quand ils sont classés par ordre chronologique. Les modifications transmises au dépôt sont appelées **commit**.
 
-On peut ainsi vérifier l'
+Avec des outils graphiques, on peut vérifier l'
 [ensemble des évolutions d'un fichier (`history`)](https://github.com/linogaliana/python-datascientist/commits/master/README.md), 
 ou [l'histoire d'un dépôt](https://github.com/linogaliana/python-datascientist/commits/master).
 On peut aussi 
 [se concentrer sur une modification particulière d'un fichier](https://github.com/linogaliana/python-datascientist/commit/7e5d30ae0e260f9485453b42f195b0181a53e32e#diff-04c6e90faac2675aa89e2176d2eec7d8) ou vérifier, pour un fichier, la
-[modification qui a entraîné l'apparition de telle ou telle ligne](https://github.com/linogaliana/python-datascientist/blame/master/README.md)
+[modification qui a entraîné l'apparition de telle ou telle ligne (`blame`)](https://github.com/linogaliana/python-datascientist/blame/master/README.md)
 
+Sur son poste de travail, les dizaines (centaines ?) de programmes organisés à la main n'existent plus. Tout est regroupé dans un seul dossier, rassemblant les éléments du dépôt. Au sein du dépôt, tout l'historique est stocké et accessible rapidement. Si on souhaite travailler sur la dernière version des programmes (ou sur une ancienne version spécifique), il n'y a plus besoin de conserver les autres fichiers car ils sont dans l'historique du projet. Il est alors possible de choisir sur quelle version on veut travailler (la dernière commune à tout le monde, la sienne en train d'être développée, celle de l'année dernière, etc.).
 
 
 ### Travailler efficacement en équipe
+
+Le deuxième avantage de la gestion de version représente une amélioration notable du travail en équipe sur des codes en commun. 
 
 ### Améliorer la qualité des codes
 
