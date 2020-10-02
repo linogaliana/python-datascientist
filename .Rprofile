@@ -8,7 +8,7 @@ options(blogdown.new_bundle = TRUE)
 
 reminder_jupyter <- function(file = "./content/getting-started/06_rappels_classes.Rmd",
                              out = "ipynb"){
-
+  
   sprintf(
     "jupytext --to %s %s",
     out,
@@ -64,3 +64,31 @@ reminder_badges <- function(notebook = ""){
   
 }
 
+
+
+
+reminder_box <- function(boxtype = "warning", type = c("html","markdown")){
+  type <- match.arg(type)
+  icon <- switch(boxtype,
+                 warning = "fa fa-exclamation-triangle",
+                 hint = "fa fa-lightbulb",
+                 tip = "fa fa-lightbulb",
+                 note = "fa fa-comment",
+                 exercise = "fas fa-pencil-alt")
+  box <- c(
+    sprintf(
+      '{{< panel status="%s" title="%s" icon="%s" >}}',
+      boxtype,
+      Hmisc::capitalize(boxtype),
+      icon
+    ),
+    "Example",
+    "{{< /panel >}}"
+  )
+  if (type == "html") cat(box, sep = "\n")
+  
+  box <- gsub("<","%", box)
+  box <- gsub(">","%", box)
+  
+  cat(box, sep = "\n")
+}
