@@ -192,7 +192,7 @@ sur le crayon en haut à droite de l'affichage du `README`.
 L'objectif est de lui
 donner un titre suivant, en ajoutant, au début du document, la ligne suivante : 
 
-~~~~markdown
+~~~text
 # Mon oeuvre d'art surréaliste :pencil2:
 ~~~
 
