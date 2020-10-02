@@ -116,14 +116,14 @@ Il existe plusieurs manières d'utiliser le contrôle de version :
 * avec un logiciel de développement : la plupart des logiciels de développement ([RStudio](https://rstudio.com/) pour `R`, [PyCharm](https://www.jetbrains.com/fr-fr/pycharm/) ou [jupyter](https://jupyter.org/) pour `python`, [atom](https://atom.io/), etc.) proposent tous des modules graphiques facilitant l'usage de `git` dont les fonctionnalités sont très proches.
 
 
-{{< panel status="tip" title="Tip" icon="fa fa-lightbulb" >}}
+{{% panel status="tip" title="Tip" icon="fa fa-lightbulb" %}}
 `Git` a été conçu, initialement pour la ligne de commande. Il existe
 néanmoins des interfaces graphiques performantes
 et pratiques, notamment lorsqu'on désire comparer deux versions d'un même
 fichier côte à côte. Ces interfaces graphiques couvrent la majorité des
 besoins quotidiens. Néanmoins, pour certaines tâches, il faut nécessairement
 passer par la ligne de commande.
-{{< /panel >}}
+{{% /panel %}}
 
 
 
