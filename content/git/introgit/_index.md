@@ -2,7 +2,7 @@
 title: "Git: un élément essentiel au quotidien"
 date: 2020-09-30T13:00:00Z
 draft: false
-weight: 100
+weight: 10
 output: 
   html_document:
     keep_md: true
@@ -126,4 +126,5 @@ passer par la ligne de commande.
 {{% /panel %}}
 
 
+## Git: le B.A-BA
 

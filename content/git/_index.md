@@ -2,7 +2,7 @@
 title: "Git: un élément essentiel au quotidien"
 date: 2020-07-16T13:00:00Z
 draft: false
-weight: 1
+weight: 80
 slug: git
 ---
 

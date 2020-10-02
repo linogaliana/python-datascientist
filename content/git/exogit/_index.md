@@ -38,10 +38,124 @@ invite de commande
 2. Créer un dossier de travail, par exemple `Desktop/gitexo`. Dans `git bash`,
 faire 
 
-```shell
-cd `Desktop/gitexo`
-```
+~~~shell
+# remplacer par le dossier qui vous intéresse
+cd 'Desktop/gitexo'
+~~~
+
+3. Initialiser le contrôle de version en tapant dans l'invite de commande
+
+~~~shell
+git init
+~~~
+
+{{% /panel %}}
+
+Pour le moment, on a uniquement initialisé le contrôle de version avec `Git`. 
+On n'a encore ajouté aucun fichier à `Git`. D'ailleurs, la première 
+chose à faire est d'exclure un certain nombre de fichiers, afin de ne pas
+faire une erreur pénible à réparer.
+
+{{% panel status="exercise" title="Exercise 3: le fichier .gitignore" icon="fas fa-pencil-alt" %}}
+
+Lorsqu'on utilise `Git`, il y a des fichiers qu'on ne veut pas partager
+ou dont on ne veut pas suivre les modifications. C'est le fichier `.gitignore`
+qui gère les fichiers exclus du contrôle de version.
+
+1. Maintenant, créer un fichier nommé `.gitignore` (:warning: ne pas changer
+ce nom) via le bloc note ou votre IDE. 
+1. Aller sur le site <https://www.toptal.com/developers/gitignore>. Vous pouvez
+dans la barre de recherche taper  `Python`, `Pycharm`, `JupyterNotebooks`. 
+Copier-coller dans votre `.gitignore` le contenu de la page. 
+1. Quand on crée de la documentation, on veut exclure les extensions `.pdf`
+et `.html` qui sont des résultats à partager et non des fichiers source à
+suivre. Pour cela, ajouter au début du fichier `.gitignore`, les extensions:
+
+~~~markdown
+.pdf
+.html
+~~~
+
 
 {{% /panel %}}
 
 
+On a créé un fichier `.gitignore` mais on n'a encore rien fait jusqu'à présent.
+Il faut dire à `Git` de contrôler les évolutions de chaque fichier 
+(passage dans l'index). On appelle cette étape `git add`. ****
+
+{{% panel status="exercise" title="Exercise 4: pratique de git. Enfin..." icon="fas fa-pencil-alt" %}}
+
+1. De temps en temps, il est bon de vérifier l'état d'un dépôt. Pour cela, faire
+
+~~~shell
+git status
+~~~
+
+1. Dans l'invite de commande, taper
+
+~~~shell
+git add .gitignore
+~~~
+
+2. Retaper `git status`. Observer le changement. Les nouvelles modifications (en
+l'occurrence la création du fichier et la validation de son contenu actuel)
+ne sont pas encore archivées. Pour cela, il faut faire
+
+~~~shell
+git commit -m "Initial commit"
+~~~
+
+{{% /panel %}}
+
+L'option `m` permet de créer un message, qui sera disponible à l'ensemble
+des contributeurs du projet. Avec la ligne de commande, ce n'est pas toujours
+très pratique. Les interfaces graphiques permettent des messages plus
+développés (la bonne pratique veut qu'on écrive un message de commit comme un
+mail succinct: un titre et un peu d'explications, si besoin).
+
+Le fait de nommer le premier commit *"Initial commit"* est une
+habitude, vous
+n'êtes pas obligé de suivre cette convention si elle ne vous plaît pas.
+
+
+{{% panel status="exercise" title="Exercise 5: interagir avec Github" icon="fas fa-pencil-alt" %}}
+
+1. Maintenant, créer un fichier nommé `README.md` (:warning: ne pas changer
+ce nom) via le bloc note ou votre IDE. 
+2. Y écrire une phrase au format, sujet-verbe-complément mais sans majuscule ni ponctuation.
+Observer le statut du fichier avec `git status`.
+3. Valider cette création avec le message *"j'écris comme un surréaliste*
+
+Il convient maintenant d'envoyer les fichiers sur le dépôt distant. 
+1. Récupérer l'url du dépôt
+
+![](gitclone.png)
+
+2. Créer la connexion avec le dépôt distant (`remote`), qu'on va nommer `origin`,
+en utilisant la commande suivante:
+
+~~~~shell
+git remote add origin ****
+~~~~
+Remplacer les astérisques par l'url du dépôt. 
+
+3. Envoyez vos modifications vers `origin` en tapant 
+
+~~~~shell
+git push origin master
+~~~~
+
+`Git` va vous demander vos identifiants de connexion pour vérifier que vous
+êtes bien autorisés à intéragir avec ce dépôt. Il faut les taper (:warning: 
+comme le créateur de `Git` était un peu paranoiaque, c'est normal 
+de ne pas voir le curseur avancer quand on tape des caractères pour le mot de passe,
+si quelqu'un regarde votre écran il ne pourra ainsi pas savoir combien de 
+caractères comporte votre mot de passe)
+
+
+{{% /panel %}}
+
+
+Retournez voir le dépôt sur `Github`, vous devriez maintenant voir le fichier
+`.gitignore` et le `README` devrait s'afficher en page d'accueil. 
