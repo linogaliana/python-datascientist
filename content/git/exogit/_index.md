@@ -2,7 +2,7 @@
 title: "Git: faire un cadavre exquis"
 date: 2020-09-30T13:00:00Z
 draft: false
-weight: 100
+weight: 20
 output: 
   html_document:
     keep_md: true
@@ -10,7 +10,12 @@ output:
 slug: exogit
 ---
 
-## Pratique individuelle de Git
+<!--- Inspirations
+https://github.com/corent01/03-Swartz/blob/master/Parcours/01-La-prairie/git/exercice-git-cadavre-exquis.md
+https://github.com/simplonco/cadavre-request
+------>
+
+## Git solo
 
 Les deux premières étapes se font sur `Github`
 
