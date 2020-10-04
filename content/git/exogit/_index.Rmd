@@ -273,6 +273,61 @@ N'hésitez pas à aller encore plus loin dans la normalisation  !
 
 
 
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+1. Ouvrir une *issue* sur `Github`. Signaler qu'il serait bien d'ajouter un emoji chat dans le README. Dans la partie de droite, cliquer sur la petite roue à côté de `Label` et cliquer sur `Edit Labels`. Créer un label `Markdown`. Retourner sur la page de l'*issue* et ajouter ce label
+2. Sur votre dépôt local, créer une branche `issue-1` en faisant 
+
+~~~shell
+git checkout -b issue-1
+~~~~
+
+3. Ajouter un ou plusieurs emojis chat à la suite du titre. Valider avec `git add` et `git commit`. Faire un **deuxième commit** pour ajouter un emoji koala. Pousser les modifications locales:
+
+~~~shell
+git push origin issue-1
+~~~~
+
+4. Dans `Github`, devrait apparaître `issue-1 had recent pushes XX minutes ago`. 
+Cliquer sur `Compare & Pull Request`. Donner un titre informatif à votre *pull request*. Dans le message en dessous, taper `Close #1` ce qui permettra de fermer automatiquement l'*issue 1* lorsque vous ferez le *merge*. **Ne validez pas la fusion**, on le fera dans un second temps.
+
+5. En local, retourner sur `master`:
+
+~~~shell
+git checkout master
+~~~~
+
+Et ajouter une phrase à la suite de votre texte. Valider les modifications et les pusher. 
+
+6. Cliquer sur `Insights` en haut du dépôt puis, à gauche sur `Network`. Vous devriez voir apparaître l'arborescence de votre dépôt. On peut voir `issue-1` comme une ramification et `master` comme le tronc.
+
+L'objectif est maintenant de ramener les modifications faites dans `issue-1` dans la branche principale. Retournez dans l'onglet `Pull Requests`. Là, changer le type de `merge` pour `Squash and Merge`, comme ci-dessous. Vous pouvez vous reporter là [**METTRE LIEN**] pour la justification.
+
+![](squashmerge.png)
+
+
+7. Supprimer la branche. Elle est mergée, la conserver risque d'amener à des push involontaires dessus. 
+
+Faire la fusion et regarder le résultat dans la page d'accueil de `Github` (le `README`) et dans le graphique. 
+
+{{% /panel %}}
+
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+La commande `checkout` est un couteau-suisse de la gestion de branche en `Git`. Elle permet en effet de basculer d'une branche à l'autre, mais aussi d'en créer, etc. 
+{{% /panel %}}
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Comment nommer les branches ? Là encore, il y a énormément de conventions différentes. Une fréquemment observée est :
+
+- pour les nouvelles fonctionnalités : `feature/nouvelle-fonctionnalite` où `nouvelle-fontionnalite` est un nom court résumant la fonctionnalité
+- pour les corrections de bug : `issue-num` où `num` est le numéro de l'issue
+
+N'hésitez pas à aller encore plus loin dans la normalisation  !
+{{% /panel %}}
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+L'option de fusion *Squash and Merge* permet de regrouper tous les commits d'une branche (potentiellement très nombreux) en un seul dans la branche de destination. Cela évite, sur les gros projets, des branches avec des milliers de *commits*.
+{{% /panel %}}
 
 
 ## Cadavre exquis: découvrir le travail collaboratif
