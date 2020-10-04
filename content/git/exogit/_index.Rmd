@@ -232,5 +232,48 @@ que vous n'auriez pas faites
 version sont automatiquement fusionnable (deux modifications d'un fichier mais
 qui ne portent pas sur le même emplacement)
 
+
+### Même tout seul, ne pas se limiter à `master`
+
+
+Au début d’une tâche particulière ou d’un projet, il est recommandé d’ouvrir des issues. Prenant la forme d’un espace de discussion, elles correpondront à la fin à des nouvelles fonctionnalités (en anglais, features). Les issues permettent également de signaler des bugs constatés, de se les répartir et d’indiquer s’ils sont réglés ou s’ils ont avancés. Une utilisation intensive des *issues*, avec des labels adéquats, peut
+même amener à se passer d'outils de gestion de projets comme `Trello`. 
+
+
+La branche `master` est la branche principale. Elle se doit d'être "propre". On ne pousse pas des travaux non aboutis sur `master`, c'est très mal vu.  
+
+Peut-on pousser directement sur `master` ? oui, pour des petites corrections, des modifications mineures dont vous êtes certains qu'elles vont fonctionner. Mais sachez que dans le cadre de projets sensibles, c'est strictement interdit. N'ayez pas peur de fixer comme règle l'interdiction de pousser sur `master` (voir section précédente), cela obligera l'équipe projet à travailler professionnellement. 
+
+Au moindre doute, créez une branche. Les branches sont utilisées pour des travaux significatifs :
+
+- vous travaillez seul sur une tâche qui va vous prendre plusieurs heures ou jours de travail (vous ne devez pas pousser sur `master` des travaux non aboutis);
+- vous travaillez sur une fonctionnalité nouvelle et vous souhaiterez recueillir l'avis de vos collègues avant de modifier `master`;
+- vous n'êtes pas certain de réussir vos modifications du premier coup et préférez faire des tests en parallèle.
+
+{{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
+Les branches ne sont pas personnelles : **Toutes les branches sont publiées, le `rebase` est interdit. Le push force est également interdit.**
+
+Il faut **absolument** bannir les usages de `push force` qui peuvent déstabiliser les copies locales des collaborateurs. S'il est nécessaire de faire un `push force`, c'est qu'il y a un problème dans la branche, à identifier et régler **sans** faire `push force`
+
+![](https://miro.medium.com/max/400/0*XaLzNzYkA6PZjbl9.jpg)
+
+**Tous les merges dans `master` doivent se faire par l'intermédiaire d'une merge request dans `GitLab`**. En effet, il est très mal vu de merger une branche dans master localement.
+
+{{% /panel %}}
+
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Comment nommer les branches ? Là encore, il y a énormément de conventions différentes. Une fréquemment observée est :
+
+- pour les nouvelles fonctionnalités : `feature/nouvelle-fonctionnalite` où `nouvelle-fontionnalite` est un nom court résumant la fonctionnalité
+- pour les corrections de bug : `issue-num` où `num` est le numéro de l'issue
+
+N'hésitez pas à aller encore plus loin dans la normalisation  !
+{{% /panel %}}
+
+
+
+
+
 ## Cadavre exquis: découvrir le travail collaboratif
 
