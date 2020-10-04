@@ -232,5 +232,94 @@ que vous n'auriez pas faites
 version sont automatiquement fusionnable (deux modifications d'un fichier mais
 qui ne portent pas sur le même emplacement)
 
+
+### Même tout seul, ne pas se limiter à `master`
+
+
+Au début d’une tâche particulière ou d’un projet, il est recommandé d’ouvrir des issues. Prenant la forme d’un espace de discussion, elles correpondront à la fin à des nouvelles fonctionnalités (en anglais, features). Les issues permettent également de signaler des bugs constatés, de se les répartir et d’indiquer s’ils sont réglés ou s’ils ont avancés. Une utilisation intensive des *issues*, avec des labels adéquats, peut
+même amener à se passer d'outils de gestion de projets comme `Trello`. 
+
+
+La branche `master` est la branche principale. Elle se doit d'être "propre". On ne pousse pas des travaux non aboutis sur `master`, c'est très mal vu.  
+
+Peut-on pousser directement sur `master` ? oui, pour des petites corrections, des modifications mineures dont vous êtes certains qu'elles vont fonctionner. Mais sachez que dans le cadre de projets sensibles, c'est strictement interdit. N'ayez pas peur de fixer comme règle l'interdiction de pousser sur `master` (voir section précédente), cela obligera l'équipe projet à travailler professionnellement. 
+
+Au moindre doute, créez une branche. Les branches sont utilisées pour des travaux significatifs :
+
+- vous travaillez seul sur une tâche qui va vous prendre plusieurs heures ou jours de travail (vous ne devez pas pousser sur `master` des travaux non aboutis);
+- vous travaillez sur une fonctionnalité nouvelle et vous souhaiterez recueillir l'avis de vos collègues avant de modifier `master`;
+- vous n'êtes pas certain de réussir vos modifications du premier coup et préférez faire des tests en parallèle.
+
+{{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
+Les branches ne sont pas personnelles : **Toutes les branches sont publiées, le `rebase` est interdit. Le push force est également interdit.**
+
+Il faut **absolument** bannir les usages de `push force` qui peuvent déstabiliser les copies locales des collaborateurs. S'il est nécessaire de faire un `push force`, c'est qu'il y a un problème dans la branche, à identifier et régler **sans** faire `push force`
+
+![](https://miro.medium.com/max/400/0*XaLzNzYkA6PZjbl9.jpg)
+
+**Tous les merges dans `master` doivent se faire par l'intermédiaire d'une merge request dans `GitLab`**. En effet, il est très mal vu de merger une branche dans master localement.
+
+{{% /panel %}}
+
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Comment nommer les branches ? Là encore, il y a énormément de conventions différentes. Une fréquemment observée est :
+
+- pour les nouvelles fonctionnalités : `feature/nouvelle-fonctionnalite` où `nouvelle-fontionnalite` est un nom court résumant la fonctionnalité
+- pour les corrections de bug : `issue-num` où `num` est le numéro de l'issue
+
+N'hésitez pas à aller encore plus loin dans la normalisation  !
+{{% /panel %}}
+
+
+
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+1. Ouvrir une *issue* sur `Github`. Signaler qu'il serait bien d'ajouter un emoji chat dans le README. Dans la partie de droite, cliquer sur la petite roue à côté de `Label` et cliquer sur `Edit Labels`. Créer un label `Markdown`. Retourner sur la page de l'*issue* et ajouter ce label
+2. Sur votre dépôt local, créer une branche `issue-1` en faisant 
+
+~~~shell
+git checkout -b issue-1
+~~~~
+
+3. Ajouter un ou plusieurs emojis chat à la suite du titre. Valider avec `git add` et `git commit`. Faire un **deuxième commit** pour ajouter un emoji koala. Pousser les modifications locales:
+
+~~~shell
+git push origin issue-1
+~~~~
+
+4. Dans `Github`, devrait apparaître `issue-1 had recent pushes XX minutes ago`. 
+Cliquer sur `Compare & Pull Request`. Donner un titre informatif à votre *pull request*. Dans le message en dessous, taper `Close #1` ce qui permettra de fermer automatiquement l'*issue 1* lorsque vous ferez le *merge*. **Ne validez pas la fusion**, on le fera dans un second temps.
+
+5. En local, retourner sur `master`:
+
+~~~shell
+git checkout master
+~~~~
+
+Et ajouter une phrase à la suite de votre texte. Valider les modifications et les pusher. 
+
+6. Cliquer sur `Insights` en haut du dépôt puis, à gauche sur `Network`. Vous devriez voir apparaître l'arborescence de votre dépôt. On peut voir `issue-1` comme une ramification et `master` comme le tronc.
+
+L'objectif est maintenant de ramener les modifications faites dans `issue-1` dans la branche principale. Retournez dans l'onglet `Pull Requests`. Là, changer le type de `merge` pour `Squash and Merge`, comme ci-dessous. Vous pouvez vous reporter là [**METTRE LIEN**] pour la justification.
+
+![](squashmerge.png)
+
+
+7. Supprimer la branche. Elle est mergée, la conserver risque d'amener à des push involontaires dessus. 
+
+Faire la fusion et regarder le résultat dans la page d'accueil de `Github` (le `README`) et dans le graphique. 
+
+{{% /panel %}}
+
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+La commande `checkout` est un couteau-suisse de la gestion de branche en `Git`. Elle permet en effet de basculer d'une branche à l'autre, mais aussi d'en créer, etc. 
+{{% /panel %}}
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+L'option de fusion *Squash and Merge* permet de regrouper tous les commits d'une branche (potentiellement très nombreux) en un seul dans la branche de destination. Cela évite, sur les gros projets, des branches avec des milliers de *commits*.
+{{% /panel %}}
+
+
 ## Cadavre exquis: découvrir le travail collaboratif
 
