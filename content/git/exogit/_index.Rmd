@@ -316,15 +316,6 @@ Faire la fusion et regarder le résultat dans la page d'accueil de `Github` (le 
 La commande `checkout` est un couteau-suisse de la gestion de branche en `Git`. Elle permet en effet de basculer d'une branche à l'autre, mais aussi d'en créer, etc. 
 {{% /panel %}}
 
-{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
-Comment nommer les branches ? Là encore, il y a énormément de conventions différentes. Une fréquemment observée est :
-
-- pour les nouvelles fonctionnalités : `feature/nouvelle-fonctionnalite` où `nouvelle-fontionnalite` est un nom court résumant la fonctionnalité
-- pour les corrections de bug : `issue-num` où `num` est le numéro de l'issue
-
-N'hésitez pas à aller encore plus loin dans la normalisation  !
-{{% /panel %}}
-
 {{% panel status="note" title="Note" icon="fa fa-comment" %}}
 L'option de fusion *Squash and Merge* permet de regrouper tous les commits d'une branche (potentiellement très nombreux) en un seul dans la branche de destination. Cela évite, sur les gros projets, des branches avec des milliers de *commits*.
 {{% /panel %}}
