@@ -58,7 +58,7 @@ qui ne nous servirons pas mais ralentissent l'import)
 {{% panel status="exercise" title="Exercice 1: Importer les données et produire un premier graphique"
 icon="fas fa-pencil-alt" %}}
 
-1.. Importer les données `velib`. Attention, il s'agit de données
+1. Importer les données de compteurs de vélos. Vous pouvez utiliser l'url <https://github.com/linogaliana/python-datascientist/raw/master/data/bike.csv>. :warning: Il s'agit de données
 compressées au format `gzip`, il faut donc utiliser l'option `compression`
 2. En premier lieu, sans se préoccuper des éléments de style ni des labels des
 graphiques, reproduire les deux premiers graphiques de la
