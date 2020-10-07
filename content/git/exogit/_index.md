@@ -338,7 +338,7 @@ git clone https://XXXXXX
 
 4. Valider les modifications
 
-~~~~shell
+~~~shell
 git add nom-prenom.md
 git commit -m "C'est l'histoire de XXXXX"
 ~~~
