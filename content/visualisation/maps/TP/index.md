@@ -219,3 +219,12 @@ Représenter, pour ces deux moments de la journée, la `heatmap` du trafic de v�
 ```
 
 {{<figure src="heatmap-1.png" >}}
+
+
+
+## Des cartes réactives grâce à `folium`
+
+De plus en plus de données de visualisation reposent sur la cartographie réactive. Que ce soit dans l'exploration des données ou dans la représentation finale de résultats, la cartographie réactive est très appréciable. 
+
+`folium` offre une interface très flexible et très facile à prendre à main. Les cartes sont construites grâce à la librairie JavaScript `Leaflet.js` mais, sauf si on désire aller loin dans la customisation du résultat, il n'est pas nécessaire d'avoir des notions dans le domaine. 
+
