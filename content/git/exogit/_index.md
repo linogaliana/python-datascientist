@@ -324,8 +324,8 @@ L'option de fusion *Squash and Merge* permet de regrouper tous les commits d'une
 ## Cadavre exquis: découvrir le travail collaboratif
 
 
-{{% panel status="exercise" title="Exercice: s'organiser pour travailler à plusieurs" icon="fas fa-pencil-alt" %}}
-Cet exercice se fait par groupe de deux (ou trois). Il y aura deux rôles dans ce scénario: un mainteneur et un (ou deux) développeurs. 
+{{% panel status="exercise" title="Exercice: interactions avec le dépôt distant" icon="fas fa-pencil-alt" %}}
+Cet exercice se fait par groupe de trois. Il y aura deux rôles dans ce scénario: un mainteneur et deux développeurs. 
 
 1. Le mainteneur crée un dépôt sur `Github`. Il/Elle donne des droits au(x) développeur(s) du projet (`Settings > Manage Access > Invite a collaborator`).
 2. Chaque membre du projet, crée une copie locale du projet grâce à la commande `git clone`. Pour cela, récupérer l'url HTTPS du dépôt en copiant l'url du dépôt que vous pouvez trouver, par exemple, dans la page d'accueil du dépôt, en dessous de `Quick setup — if you’ve done this kind of thing before`
@@ -334,7 +334,7 @@ Cet exercice se fait par groupe de deux (ou trois). Il y aura deux rôles dans c
 git clone https://XXXXXX
 ~~~
 
-3. Chaque membre du projet crée un fichier avec son nom et son prenom, selon cette structure `nom-prenom.md` en évitant les caractères spéciaux. Il écrit dedans une phrase aléatoire.
+3. Chaque membre du projet crée un fichier avec son nom et son prenom, selon cette structure `nom-prenom.md` en évitant les caractères spéciaux. Il écrit dedans trois phrases aléatoires, sans ponctuation ni majuscules.
 
 4. Valider les modifications
 
@@ -367,7 +367,7 @@ pour ramener les modifications distantes en local.
 git pull origin master
 ~~~
 
-(si vous êtes trois, le dernier doit refaire, à nouveau, les étapes 6 à 8)
+Le dernier doit refaire, à nouveau, les étapes 6 à 8
 {{% /panel %}}
 
 
@@ -379,3 +379,34 @@ Il faut immédiatement oublier cette solution, elle crée de nombreux problèmes
 
 {{% /panel %}}
 
+
+{{% panel status="exercise" title="Exercice: gérer les conflits quand on travaille sur le même fichier" icon="fas fa-pencil-alt" %}}
+Chaque personne va travailler sur les fichiers des deux autres membres.
+
+1. Les deux développeurs ajoutent la ponctuation et les majuscules
+2. Sauter une ligne et ajouter une phrase
+3. Valider les résultats (`add` et `commit`) et faire un `push`
+4. La personne la plus rapide n'a, normalement, rencontré aucune difficulté. Les autres voient leur `push` refusé. Faire un `pull`. 
+
+:boom: Il y a conflit, ce qui doit être signalé par un message du type:
+
+~~~shell
+Auto-merging XXXXXX
+CONFLICT (content): Merge conflict in XXXXXX.md
+Automatic merge failed; fix conflicts and then commit the result.
+~~~
+
+5. Etudier le résultat de `git status` 
+
+6. Si vous ouvrez les fichiers incriminés, vous devriez voir des balises du type
+
+~~~markdown
+<<<<<<< HEAD
+this is some content to mess with
+content to append
+=======
+totally different content to merge later
+>>>>>>> new_branch_to_merge_later
+~~~
+
+{{% /panel %}}
