@@ -323,3 +323,59 @@ L'option de fusion *Squash and Merge* permet de regrouper tous les commits d'une
 
 ## Cadavre exquis: découvrir le travail collaboratif
 
+
+{{% panel status="exercise" title="Exercice: s'organiser pour travailler à plusieurs" icon="fas fa-pencil-alt" %}}
+Cet exercice se fait par groupe de deux (ou trois). Il y aura deux rôles dans ce scénario: un mainteneur et un (ou deux) développeurs. 
+
+1. Le mainteneur crée un dépôt sur `Github`. Il/Elle donne des droits au(x) développeur(s) du projet (`Settings > Manage Access > Invite a collaborator`).
+2. Chaque membre du projet, crée une copie locale du projet grâce à la commande `git clone`. Pour cela, récupérer l'url HTTPS du dépôt en copiant l'url du dépôt que vous pouvez trouver, par exemple, dans la page d'accueil du dépôt, en dessous de `Quick setup — if you’ve done this kind of thing before`
+
+~~~shell
+git clone https://XXXXXX
+~~~
+
+3. Chaque membre du projet crée un fichier avec son nom et son prenom, selon cette structure `nom-prenom.md` en évitant les caractères spéciaux. Il écrit dedans une phrase aléatoire.
+
+4. Valider les modifications
+
+~~~~shell
+git add nom-prenom.md
+git commit -m "C'est l'histoire de XXXXX"
+~~~
+
+5. Chacun essaie d'envoyer ses modifications locales sur le dépôt:
+
+~~~shell
+git push origin master
+~~~
+
+A ce stade, une seule personne (la plus rapide) devrait ne pas avoir rencontré de rejet du `push`. C'est normal, avant d'accepter une modification `Git` vérifie en premier lieu la cohérence de la branche avec le dépôt distant. Le premier ayant fait un `push` a modifié le dépôt commun ; les autres doivent intégrer ces modifications dans leur version locale avant d'avoir le droit de proposer un  changement.
+
+6. Pour celui/celle/ceux dont le `push` a été refusé, faire
+
+~~~shell
+git pull origin master
+~~~
+
+pour ramener les modifications distantes en local. 
+
+7. Taper `git log` et regarder la manière dont a été intégré la modification de votre camarade ayant pu faire son `push`
+
+8. Faire à nouveau 
+
+~~~shell
+git pull origin master
+~~~
+
+(si vous êtes trois, le dernier doit refaire, à nouveau, les étapes 6 à 8)
+{{% /panel %}}
+
+
+
+{{% panel status="warning" title="Warning à nouveau: ne JAMAIS FAIRE git push force" icon="fa fa-exclamation-triangle" %}}
+Quand on fait face à un rejet du `push`, on est tenté de faire passer en force le `push` malgré la mise en garde précédente.
+
+Il faut immédiatement oublier cette solution, elle crée de nombreux problèmes et, en fait, ne résoud rien. L'un des risques est de réécrire entièrement l'historique rendant les copies locales, et donc les modifications de vos collaborateurs, caduques. Cela vous vaudra, à raison, des remontrances de vos partenaires qui perdent le bénéfice de leur historique `Git` qui, s'ils ont des versions sans `push` depuis longtemps peuvent avoir diverger fortement du dépôt maître. 
+
+{{% /panel %}}
+
