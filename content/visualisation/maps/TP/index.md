@@ -60,6 +60,7 @@ import pandas as pd
 import geopandas as gpd
 import contextily as ctx
 import geoplot
+import matplotlib.pyplot as plt
 ```
 
 {{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
@@ -126,8 +127,10 @@ Repartir de la carte précédente.
 
 
 ```
-## 0.6.3
+## <AxesSubplot:>
 ```
+
+{{<figure src="exo3-1.png" >}}
 
 
 
