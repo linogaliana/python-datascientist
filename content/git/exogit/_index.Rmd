@@ -323,3 +323,156 @@ L'option de fusion *Squash and Merge* permet de regrouper tous les commits d'une
 
 ## Cadavre exquis: découvrir le travail collaboratif
 
+
+{{% panel status="exercise" title="Exercice: interactions avec le dépôt distant" icon="fas fa-pencil-alt" %}}
+Cet exercice se fait par groupe de trois. Il y aura deux rôles dans ce scénario: un mainteneur et deux développeurs. 
+
+1. Le mainteneur crée un dépôt sur `Github`. Il/Elle donne des droits au(x) développeur(s) du projet (`Settings > Manage Access > Invite a collaborator`).
+2. Chaque membre du projet, crée une copie locale du projet grâce à la commande `git clone`. Pour cela, récupérer l'url HTTPS du dépôt en copiant l'url du dépôt que vous pouvez trouver, par exemple, dans la page d'accueil du dépôt, en dessous de `Quick setup — if you’ve done this kind of thing before`
+
+~~~shell
+git clone https://XXXXXX
+~~~
+
+3. Chaque membre du projet crée un fichier avec son nom et son prenom, selon cette structure `nom-prenom.md` en évitant les caractères spéciaux. Il écrit dedans trois phrases aléatoires, sans ponctuation ni majuscules.
+
+4. Valider les modifications
+
+~~~shell
+git add nom-prenom.md
+git commit -m "C'est l'histoire de XXXXX"
+~~~
+
+5. Chacun essaie d'envoyer ses modifications locales sur le dépôt:
+
+~~~shell
+git push origin master
+~~~
+
+A ce stade, une seule personne (la plus rapide) devrait ne pas avoir rencontré de rejet du `push`. C'est normal, avant d'accepter une modification `Git` vérifie en premier lieu la cohérence de la branche avec le dépôt distant. Le premier ayant fait un `push` a modifié le dépôt commun ; les autres doivent intégrer ces modifications dans leur version locale avant d'avoir le droit de proposer un  changement.
+
+6. Pour celui/celle/ceux dont le `push` a été refusé, faire
+
+~~~shell
+git pull origin master
+~~~
+
+pour ramener les modifications distantes en local. 
+
+7. Taper `git log` et regarder la manière dont a été intégré la modification de votre camarade ayant pu faire son `push`
+
+8. Faire à nouveau 
+
+~~~shell
+git pull origin master
+~~~
+
+Le dernier doit refaire, à nouveau, les étapes 6 à 8
+{{% /panel %}}
+
+
+
+{{% panel status="warning" title="Warning à nouveau: ne JAMAIS FAIRE git push force" icon="fa fa-exclamation-triangle" %}}
+Quand on fait face à un rejet du `push`, on est tenté de faire passer en force le `push` malgré la mise en garde précédente.
+
+Il faut immédiatement oublier cette solution, elle crée de nombreux problèmes et, en fait, ne résoud rien. L'un des risques est de réécrire entièrement l'historique rendant les copies locales, et donc les modifications de vos collaborateurs, caduques. Cela vous vaudra, à raison, des remontrances de vos partenaires qui perdent le bénéfice de leur historique `Git` qui, s'ils ont des versions sans `push` depuis longtemps peuvent avoir diverger fortement du dépôt maître. 
+
+{{% /panel %}}
+
+
+{{% panel status="exercise" title="Exercice: gérer les conflits quand on travaille sur le même fichier" icon="fas fa-pencil-alt" %}}
+Chaque personne va travailler sur les fichiers des deux autres membres.
+
+1. Les deux développeurs ajoutent la ponctuation et les majuscules
+2. Sauter une ligne et ajouter une phrase
+3. Valider les résultats (`add` et `commit`) et faire un `push`
+4. La personne la plus rapide n'a, normalement, rencontré aucune difficulté (elle peut s'arrêter temporairement pour regarder ce qui va se passer chez les voisins, en respectant la distanciation sociale :mask:). Les autres voient leur `push` refusé. Faire un `pull`. 
+
+:boom: Il y a conflit, ce qui doit être signalé par un message du type:
+
+~~~shell
+Auto-merging XXXXXX
+CONFLICT (content): Merge conflict in XXXXXX.md
+Automatic merge failed; fix conflicts and then commit the result.
+~~~
+
+5. Etudier le résultat de `git status` 
+
+6. Si vous ouvrez les fichiers incriminés, vous devriez voir des balises du type
+
+~~~markdown
+<<<<<<< HEAD
+this is some content to mess with
+content to append
+=======
+totally different content to merge later
+>>>>>>> new_branch_to_merge_later
+~~~
+
+7. Corriger à la main les fichiers en choisissant, pour chaque ligne, la version qui vous convient et en retirant les balises. Valider en faisant: 
+
+~~~shell
+git add . && git commit -m "Résolution du conflit par XXXX"
+~~~
+Remplacer XXX par votre nom. La balise `&&` permet d'enchaîner, en une seule ligne de code, les deux commandes. `git add .` signifie qu'on ajoute à l'*index* de `Git` toutes les modifications sur les fichiers déjà suivis. 
+
+8. Faire un push. Pour la dernière personnes, refaire les opérations 4 à 8
+
+{{% /panel %}}
+
+`Git` permet donc de travailler, en même temps, sur le même fichier et de limiter le nombre de gestes manuels nécessaires pour faire la fusion. Lorsqu'on travaille sur des bouts différents du même fichier, on n'a même pas besoin de faire de modification manuelle, la fusion peut être automatique.
+
+`Git` est un outil très puissant. Mais, il ne remplace pas une bonne organisation du travail. Vous l'avez vu, ce mode de travail uniquement sur `master` peut être pénible. Les branches prennent tout leur sens dans ce cas. 
+
+
+{{% panel status="exercise" title="Exercice: gestion des branches" icon="fas fa-pencil-alt" %}}
+1. Le mainteneur va contribuer directement dans `master` et ne crée pas de branche. Chaque développeur crée une branche, en local nommée `contrib-XXXXX` où `XXXXX` est le prénom: 
+
+~~~shell
+git checkout -b contrib-prenom
+~~~
+
+2. Chaque membre du groupe crée un fichier `README.md` où il écrit une phrase sujet-verbe-complément. Le mainteneur est le seul à ajouter un titre à l'oeuvre d'art en cours de création
+
+3. Chacun pousse le produit de son subconscient sur le dépôt.
+
+4. Les développeurs ouvrent, chacun, une `pull request` sur `Github` de leur branche vers `master`. Ils lui donnent un titre explicite. 
+
+5. Dans la discussion de chaque `pull request`, le mainteneur demande au développeur d'intégrer la première phrase qu'il a écrite.  
+
+6. Les développeurs, en local, intègrent cette modification en faisant
+
+~~~shell
+# Pour être sûr d'être sur la branche personnelle
+git checkout branche-prenom
+git merge master
+~~~
+
+Régler le conflit et valider (`add` et `commit`). Pousser le résultat. Le mainteneur choisit une des `pull request` et la valide avec l'option `squash commits`. Vérifier sur la page d'accueil le résultat.
+
+7. L'auteur de la `pull request` non validée doit à nouveau répéter l'opération 6. 
+
+8. Une fois le conflit de version réglé et poussé, le mainteneur valide la `pull request` selon la même procédure que précedemment. 
+
+9. Vérifier l'arborescence du dépôt dans `Insights > Network`. Votre arbre doit avoir une forme caractéristique de ce qu'on appelle le `Github flow`:
+
+![](https://linogaliana.gitlab.io/collaboratif/pics/03_git/flow4_discuss.png)
+
+
+{{% /panel %}}
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+Les merges vers `master` doivent impérativement passer par `Github` (ou `Gitlab`). Cela permet de garder une trace explicite de ceux-ci (par exemple [ici](https://github.com/linogaliana/python-datascientist/pulls?q=is%3Apr+is%3Aclosed)), sans avoir à chercher dans l'arborescence, parfois complexe, d'un projet. La bonne pratique veut qu'on faire un `squash commit` pour éviter une inflation du nombre de commits dans `master`: les branches ont vocation à proposer une multitude de petits commits, les modifications dans `master` doivent être simple à tracer d'où le fait de modifier des petits. 
+
+Le cas échéant, il est très pratique d’ajouer dans le corps du message close `#xx` où `xx` est le numéro de l’issue décrivant la fonctionnalité que la MR implémente. Lorsque la MR sera fusionnée, l’issue sera automatiquement fermée et un lien sera créé entre l’issue et la MR. Cela vous permettra de comprendre, plusieurs mois ou années plus tard comment et pourquoi telle ou telle fonctionnalité a été implémentée.
+
+L'intégration des dernières modifications de `master` vers une branche se fait en local. Si votre branche est en conflit, **le conflit doit être résolu dans la branche et pas dans master**. 
+{{% /panel %}}
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Vous devez savoir qu’il y a plusieurs méthodes de travail avec `Git` (*flow*, en anglais). Vous pourrez trouvez des dizaines d’articles et d’ouvrages sur ce sujet dont chacun prétend avoir trouvé la meilleure organisation du travail (`Git flow`, `GitHub flow`, `GitLab flow`…). Ne lisez pas trop ces livres et articles sinon vous serez perdus (un peu comme avec les magazines destinés aux jeunes parents...)
+
+La méthode de travail la plus simple est le *Github flow* qu'on vous a proposé d'adopter. L'arborescence est reconnaissable: des branches divergent et reviennent systématiquement vers `master`. 
+
+Pour des projets plus complexes dans des équipes développant des applications, on pourra utiliser d'autres méthodes de travail, notamment le `Git flow`. Il n'existe pas de règles universelles pour déterminer la méthode de travail ; l'important c'est, avant tout, de se mettre d'accord sur des règles communes de travail.
+{{% /panel %}}
