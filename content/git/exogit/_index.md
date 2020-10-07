@@ -386,7 +386,7 @@ Chaque personne va travailler sur les fichiers des deux autres membres.
 1. Les deux développeurs ajoutent la ponctuation et les majuscules
 2. Sauter une ligne et ajouter une phrase
 3. Valider les résultats (`add` et `commit`) et faire un `push`
-4. La personne la plus rapide n'a, normalement, rencontré aucune difficulté. Les autres voient leur `push` refusé. Faire un `pull`. 
+4. La personne la plus rapide n'a, normalement, rencontré aucune difficulté (elle peut s'arrêter temporairement pour regarder ce qui va se passer chez les voisins, en respectant la distanciation sociale :mask:). Les autres voient leur `push` refusé. Faire un `pull`. 
 
 :boom: Il y a conflit, ce qui doit être signalé par un message du type:
 
@@ -409,4 +409,19 @@ totally different content to merge later
 >>>>>>> new_branch_to_merge_later
 ~~~
 
+7. Corriger à la main les fichiers en choisissant, pour chaque ligne, la version qui vous convient et en retirant les balises. Valider en faisant: 
+
+~~~shell
+git add . && git commit -m "Résolution du conflit par XXXX"
+~~~
+Remplacer XXX par votre nom. La balise `&&` permet d'enchaîner, en une seule ligne de code, les deux commandes. `git add .` signifie qu'on ajoute à l'*index* de `Git` toutes les modifications sur les fichiers déjà suivis. 
+
+8. Faire un push. Pour la dernière personnes, refaire les opérations 4 à 8
+
 {{% /panel %}}
+
+`Git` permet donc de travailler, en même temps, sur le même fichier et de limiter le nombre de gestes manuels nécessaires pour faire la fusion. Lorsqu'on travaille sur des bouts différents du même fichier, on n'a même pas besoin de faire de modification manuelle, la fusion peut être automatique.
+
+`Git` est un outil très puissant. Mais, il ne remplace pas une bonne organisation du travail. Vous l'avez vu, ce mode de travail uniquement sur `master` peut être pénible. Les branches prennent tout leur sens dans ce cas. 
+
+
