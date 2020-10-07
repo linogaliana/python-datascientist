@@ -193,7 +193,7 @@ icon="fas fa-pencil-alt" %}}
 Le principe de la *heatmap* est de construire, à partir d'un nuage de point bidimensionnel, une distribution 2D lissée. La méthode repose sur les estimateurs à noyaux qui sont des méthodes de lissage local. 
 
 
-{{% panel status="exercise" title="Exercice 5: Heatmap, enfin"
+{{% panel status="exercise" title="Exercice 5: Heatmap, enfin" icon="fas fa-pencil-alt" %}}
 
 Représenter, pour ces deux moments de la journée, la `heatmap` du trafic de vélo avec `geoplot.kdeplot`. Pour cela,
 
