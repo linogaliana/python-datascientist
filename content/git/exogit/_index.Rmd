@@ -425,3 +425,54 @@ Remplacer XXX par votre nom. La balise `&&` permet d'enchaîner, en une seule li
 `Git` est un outil très puissant. Mais, il ne remplace pas une bonne organisation du travail. Vous l'avez vu, ce mode de travail uniquement sur `master` peut être pénible. Les branches prennent tout leur sens dans ce cas. 
 
 
+{{% panel status="exercise" title="Exercice: gestion des branches" icon="fas fa-pencil-alt" %}}
+1. Le mainteneur va contribuer directement dans `master` et ne crée pas de branche. Chaque développeur crée une branche, en local nommée `contrib-XXXXX` où `XXXXX` est le prénom: 
+
+~~~shell
+git checkout -b contrib-prenom
+~~~
+
+2. Chaque membre du groupe crée un fichier `README.md` où il écrit une phrase sujet-verbe-complément. Le mainteneur est le seul à ajouter un titre à l'oeuvre d'art en cours de création
+
+3. Chacun pousse le produit de son subconscient sur le dépôt.
+
+4. Les développeurs ouvrent, chacun, une `pull request` sur `Github` de leur branche vers `master`. Ils lui donnent un titre explicite. 
+
+5. Dans la discussion de chaque `pull request`, le mainteneur demande au développeur d'intégrer la première phrase qu'il a écrite.  
+
+6. Les développeurs, en local, intègrent cette modification en faisant
+
+~~~shell
+# Pour être sûr d'être sur la branche personnelle
+git checkout branche-prenom
+git merge master
+~~~
+
+Régler le conflit et valider (`add` et `commit`). Pousser le résultat. Le mainteneur choisit une des `pull request` et la valide avec l'option `squash commits`. Vérifier sur la page d'accueil le résultat.
+
+7. L'auteur de la `pull request` non validée doit à nouveau répéter l'opération 6. 
+
+8. Une fois le conflit de version réglé et poussé, le mainteneur valide la `pull request` selon la même procédure que précedemment. 
+
+9. Vérifier l'arborescence du dépôt dans `Insights > Network`. Votre arbre doit avoir une forme caractéristique de ce qu'on appelle le `Github flow`:
+
+![](https://linogaliana.gitlab.io/collaboratif/pics/03_git/flow4_discuss.png)
+
+
+{{% /panel %}}
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+Les merges vers `master` doivent impérativement passer par `Github` (ou `Gitlab`). Cela permet de garder une trace explicite de ceux-ci (par exemple [ici](https://github.com/linogaliana/python-datascientist/pulls?q=is%3Apr+is%3Aclosed)), sans avoir à chercher dans l'arborescence, parfois complexe, d'un projet. La bonne pratique veut qu'on faire un `squash commit` pour éviter une inflation du nombre de commits dans `master`: les branches ont vocation à proposer une multitude de petits commits, les modifications dans `master` doivent être simple à tracer d'où le fait de modifier des petits. 
+
+Le cas échéant, il est très pratique d’ajouer dans le corps du message close `#xx` où `xx` est le numéro de l’issue décrivant la fonctionnalité que la MR implémente. Lorsque la MR sera fusionnée, l’issue sera automatiquement fermée et un lien sera créé entre l’issue et la MR. Cela vous permettra de comprendre, plusieurs mois ou années plus tard comment et pourquoi telle ou telle fonctionnalité a été implémentée.
+
+L'intégration des dernières modifications de `master` vers une branche se fait en local. Si votre branche est en conflit, **le conflit doit être résolu dans la branche et pas dans master**. 
+{{% /panel %}}
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Vous devez savoir qu’il y a plusieurs méthodes de travail avec `Git` (*flow*, en anglais). Vous pourrez trouvez des dizaines d’articles et d’ouvrages sur ce sujet dont chacun prétend avoir trouvé la meilleure organisation du travail (`Git flow`, `GitHub flow`, `GitLab flow`…). Ne lisez pas trop ces livres et articles sinon vous serez perdus (un peu comme avec les magazines destinés aux jeunes parents...)
+
+La méthode de travail la plus simple est le *Github flow* qu'on vous a proposé d'adopter. L'arborescence est reconnaissable: des branches divergent et reviennent systématiquement vers `master`. 
+
+Pour des projets plus complexes dans des équipes développant des applications, on pourra utiliser d'autres méthodes de travail, notamment le `Git flow`. Il n'existe pas de règles universelles pour déterminer la méthode de travail ; l'important c'est, avant tout, de se mettre d'accord sur des règles communes de travail.
+{{% /panel %}}
