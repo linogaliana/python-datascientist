@@ -13,7 +13,7 @@ jupyter:
 title: "De belles cartes avec python: mise en pratique"
 date: 2020-10-06T13:00:00Z
 draft: false
-weight: 10
+weight: 20
 output: 
   html_document:
     keep_md: true
@@ -91,6 +91,7 @@ import geopandas as gpd
 import contextily as ctx
 import geoplot
 import matplotlib.pyplot as plt
+import folium
 ```
 
 {{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
@@ -323,3 +324,92 @@ De plus en plus de données de visualisation reposent sur la cartographie réact
 
 `folium` offre une interface très flexible et très facile à prendre à main. Les cartes sont construites grâce à la librairie JavaScript `Leaflet.js` mais, sauf si on désire aller loin dans la customisation du résultat, il n'est pas nécessaire d'avoir des notions dans le domaine. 
 
+
+Un objet folium se construit par couche. La première est l'initialisation de la carte. Les couches suivantes sont les éléments à exhiber. 
+
+{{% panel status="exercise" title="Exercice 6: Visualiser la localisation des stations" icon="fas fa-pencil-alt" %}}
+
+A partir des données `compteurs`, représenter la localisation des stations. Les consignes sont:
+
+* le centre de la carte s'obtient avec le morceau de code ci-dessous qui agrège l'ensemble des géométries, calcule le centroid et récupère la valeur sous forme de liste
+* ne pas afficher le fonds de carte par défaut
+* un zoom de départ de 12 (vous pouvez ensuite essayer d'autres zoom)
+
+~~~python
+compteurs['temp'] = 1
+point_geom = compteurs.dissolve(by = "temp")
+point_geom["x"] = point_geom.centroid.x
+point_geom["y"] = point_geom.centroid.y
+center = [point_geom.iloc[0].y, point_geom.iloc[0].x]
+~~~
+
+{{< /panel >}}
+
+```{python folium1, include = FALSE}
+compteurs['temp'] = 1
+point_geom = compteurs.dissolve(by = "temp")
+point_geom["x"] = point_geom.centroid.x
+point_geom["y"] = point_geom.centroid.y
+center = [point_geom.iloc[0].y, point_geom.iloc[0].x]
+
+
+m = folium.Map(location = center, tiles='Stamen Toner', zoom_start = 12)
+
+compteurs['lon'] = compteurs.geometry.x
+compteurs['lat'] = compteurs.geometry.y
+
+# I can add marker one by one on the map
+for i in range(0,len(compteurs)):
+    folium.Marker([compteurs.iloc[i]['lat'], compteurs.iloc[i]['lon']], popup=compteurs.iloc[i]['nom_compteur']).add_to(m)
+    
+m.save('folium1.html')
+```
+
+```{r}
+htmltools::includeHTML('folium1.html')
+```
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Si un fond gris s'affiche, c'est qu'il y a un problème de localisation. Cela provient généralement d'un problème de projection ou d'une inversion des longitudes et latitudes. 
+
+Les longitudes représentent les *x* (axe ouest-nord) et les latitudes *y* (axe sud-nord). `folium` attend qu'on lui fournisse les données sous la forme `[latitude, longitude]` donc `[y,x]`
+{{% /panel %}}
+
+
+{{% panel status="exercise" title="Exercice 7: Représenter les stations" icon="fas fa-pencil-alt" %}}
+
+Faire une carte avec des ronds proportionnels au nombre de comptages:
+
+  + Pour le rayon de chaque cercle, en notant vous pouvez faire `500*x/max(x)` (règle au doigt mouillé)
+  + (Optionnel) Colorer les 10 plus grosses stations
+
+{{< /panel >}}
+
+
+```{python}
+df1['lon'] = df1.geometry.x
+df1['lat'] = df1.geometry.y
+
+df1['color'] = 'green'
+top_10 = df1.sort_values('Comptage horaire', ascending = False).head(10).nom_compteur
+df1.loc[df1.nom_compteur.isin(top_10.tolist()), 'color'] = 'red'
+
+m = folium.Map(location = center, tiles='Stamen Toner', zoom_start = 12)
+
+# I can add marker one by one on the map
+for i in range(0,len(df1)):
+   folium.Circle(
+      location=[df1.iloc[i]['lat'], df1.iloc[i]['lon']],
+      popup=df1.iloc[i]['nom_compteur'],
+      radius=500*df1.iloc[i]['Comptage horaire']/df1.iloc[i]['Comptage horaire'].max(),
+      color='grey',
+      fill=True,
+      fill_color=df1.iloc[i]['color']
+   ).add_to(m)
+    
+m.save('folium2.html')
+```
+
+```{r}
+htmltools::includeHTML('folium2.html')
+```
