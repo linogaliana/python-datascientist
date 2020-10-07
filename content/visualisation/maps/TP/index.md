@@ -133,9 +133,89 @@ Repartir de la carte précédente.
 {{<figure src="exo3-1.png" >}}
 
 
+Pour le moment, la fonction  `geoplot.kdeplot` n'incorpore pas toutes les fonctionalités de `seaborn.kdeplot`. Pour être en mesure de construire une `heatmap` avec des données pondérées (cf. [cette issue dans le dépôt seaborn](https://github.com/mwaskom/seaborn/issues/1364)), il y a une astuce. Il faut simuler *k* points de valeur 1 autour de la localisation observée. La fonction ci-dessous, qui m'a été bien utile, est pratique
 
-Exercice 2: matin vs soir
+~~~markdown
+def expand_points(shapefile,
+                  index_var = "grid_id",
+                  weight_var = 'prop',
+                  radius_sd = 100,
+                  crs = 2154):
+    """
+    Multiply number of points to be able to have a weighted heatmap
+    :param shapefile: Shapefile to consider
+    :param index_var: Variable name to set index
+    :param weight_var: Variable that should be used
+    :param radius_sd: Standard deviation for the radius of the jitter
+    :param crs: Projection system that should be used. Recommended option
+      is Lambert 93 because points will be jitterized using meters
+    :return:
+      A geopandas point object with as many points by index as weight
+    """
+
+    shpcopy = shapefile
+    shpcopy = shpcopy.set_index(index_var)
+    shpcopy['npoints'] = np.ceil(shpcopy[weight_var])
+    shpcopy['geometry'] = shpcopy['geometry'].centroid
+    shpcopy['x'] = shpcopy.geometry.x
+    shpcopy['y'] = shpcopy.geometry.y
+    shpcopy = shpcopy.to_crs(crs)
+    shpcopy = shpcopy.loc[np.repeat(shpcopy.index.values, shpcopy.npoints)]
+    shpcopy['x'] = shpcopy['x'] + np.random.normal(0, radius_sd, shpcopy.shape[0])
+    shpcopy['y'] = shpcopy['y'] + np.random.normal(0, radius_sd, shpcopy.shape[0])
+
+    gdf = gpd.GeoDataFrame(
+        shpcopy,
+        geometry = gpd.points_from_xy(shpcopy.x, shpcopy.y),
+        crs = crs)
+
+    return gdf
+~~~
+
+
+{{% panel status="exercise" title="Exercice 4: Data cleaning avant de pouvoir faire une heatmap"
+icon="fas fa-pencil-alt" %}}
+1. Calculer le trafic moyen, pour chaque station, entre 7 heures et 10 heures (bornes incluses) et nommer cet objet `df1`. Faire la même chose, en nommant `df2`, pour le trafic entre 17 et 20 heures (bornes incluses)
+1. Essayer de comprendre ce que fait la fonction `expand_points`
+2. Créer une fonction qui suive les étapes suivantes:
+  + Convertit un DataFrame dans le système de projection Lambert 93 (epsg: 2154)
+  + Applique la fonction `expand_points` avec les noms de variable adéquats. Vous pouvez fixer la valeur de `radius_sd` à `100`. 
+  + Reconvertit l'output au format WGS 84 (epsg: 4326)
+3. Appliquer cette fonction à `df1` et `df2`
+
+{{< /panel >}}
 
 
 
 
+
+
+Le principe de la *heatmap* est de construire, à partir d'un nuage de point bidimensionnel, une distribution 2D lissée. La méthode repose sur les estimateurs à noyaux qui sont des méthodes de lissage local. 
+
+
+{{% panel status="exercise" title="Exercice 5: Heatmap, enfin"
+
+Représenter, pour ces deux moments de la journée, la `heatmap` du trafic de vélo avec `geoplot.kdeplot`. Pour cela,
+
+1. Appliquer la fonction `geoplot.kdeplot` avec comme consigne:
+    + d'utiliser les arguments `shade=True` et `shade_lowest=True` pour colorer l'intérieur des courbes de niveaux obtenues
+    + d'utiliser une palette de couleur rouge avec une transparence modérée (`alpha = 0.6`)
+    + d'utiliser l'argument `clip` pour ne pas déborder hors de Paris (en cas de doute, se référer à l'aide de `geoplot.kdeplot`)
+    + L'argument *bandwidth* détermine le plus ou moins fort lissage spatial. La carte d'exemple est produite avec un bandwidth de `.005`. Vous pouvez utiliser celui-ci puis, dans un second temps, le faire varier pour voir l'effet sur le résultat 
+2. Ne pas oublier d'ajouter les arrondissements. Avec `geoplot`, il faut utiliser `geoplot.polyplot`
+
+
+{{< /panel >}}
+
+
+
+```
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\seaborn\_decorators.py:36: FutureWarning: Pass the following variable as a keyword arg: y. From version 0.12, the only valid positional argument will be `data`, and passing other arguments without an explicit keyword will result in an error or misinterpretation.
+##   warnings.warn(
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\seaborn\distributions.py:1659: FutureWarning: The `bw` parameter is deprecated in favor of `bw_method` and `bw_adjust`. Using 0.005 for `bw_method`, but please see the docs for the new parameters and update your code.
+##   warnings.warn(msg, FutureWarning)
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\seaborn\distributions.py:1678: UserWarning: `shade_lowest` is now deprecated in favor of `thresh`. Setting `thresh=0`, but please update your code.
+##   warnings.warn(msg, UserWarning)
+```
+
+{{<figure src="heatmap-1.png" >}}
