@@ -92,3 +92,6 @@ reminder_box <- function(boxtype = "warning", type = c("html","markdown")){
   
   cat(box, sep = "\n")
 }
+
+
+message("For local preview when the pages are built: blogdown::hugo_build(local = TRUE)")
