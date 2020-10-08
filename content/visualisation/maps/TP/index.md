@@ -272,7 +272,7 @@ A partir des données `compteurs`, représenter la localisation des stations. Le
 
 
 {{< rawhtml >}}
-<iframe seamless src="/static/leaflet/folium1.html" width="100%" height="500"></iframe>
+<iframe seamless src="/leaflet/folium1.html" width="100%" height="500"></iframe>
 {{< /rawhtml >}}
 
 
@@ -295,6 +295,6 @@ Faire une carte avec des ronds proportionnels au nombre de comptages:
 
 
 {{< rawhtml >}}
-<iframe seamless src="/static/leaflet/folium2.html" width="100%" height="500"></iframe>
+<iframe seamless src="/leaflet/folium2.html" width="100%" height="500"></iframe>
 {{< /rawhtml >}}
 
