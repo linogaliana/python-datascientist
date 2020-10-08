@@ -286,10 +286,14 @@ A partir des données `compteurs`, représenter la localisation des stations. Le
 
 Faire une carte avec des ronds proportionnels au nombre de comptages:
 
-  + Pour le rayon de chaque cercle, en notant vous pouvez faire `500*x/max(x)` (règle au doigt mouillé)
-  + (Optionnel) Colorer les 10 plus grosses stations
+* Pour le rayon de chaque cercle, en notant vous pouvez faire `500*x/max(x)` (règle au doigt mouillé)
+* Vous pouvez réduire la taille des bordures de cercle avec l'option `weight = 1` et fixer la couleur avec `color = 'grey'`
+* (Optionnel) Colorer les 10 plus grosses stations. L'opacité étant, par défaut, un peu faible, le paramètre `fill_opacity = 0.4` améliore le rendu. 
+* (Optionnel) Afficher, en supplément du nom du compteur lorsqu'on clique, la valeur du comptage en revenant à la ligne
 
 {{< /panel >}}
+
+La carte obtenue devrait être la suivante:
 
 
 

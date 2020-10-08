@@ -409,32 +409,46 @@ m.save("static/leaflet/folium1.html")
 
 Faire une carte avec des ronds proportionnels au nombre de comptages:
 
-  + Pour le rayon de chaque cercle, en notant vous pouvez faire `500*x/max(x)` (règle au doigt mouillé)
-  + (Optionnel) Colorer les 10 plus grosses stations
+* Pour le rayon de chaque cercle, en notant vous pouvez faire `500*x/max(x)` (règle au doigt mouillé)
+* Vous pouvez réduire la taille des bordures de cercle avec l'option `weight = 1` et fixer la couleur avec `color = 'grey'`
+* (Optionnel) Colorer les 10 plus grosses stations. L'opacité étant, par défaut, un peu faible, le paramètre `fill_opacity = 0.4` améliore le rendu. 
+* (Optionnel) Afficher, en supplément du nom du compteur lorsqu'on clique, la valeur du comptage en revenant à la ligne
 
 {{< /panel >}}
 
+La carte obtenue devrait être la suivante:
+
 
 ```{python, include = FALSE}
-df1['lon'] = df1.geometry.x
-df1['lat'] = df1.geometry.y
-
 df1['color'] = 'green'
 top_10 = df1.sort_values('Comptage horaire', ascending = False).head(10).nom_compteur
 df1.loc[df1.nom_compteur.isin(top_10.tolist()), 'color'] = 'red'
 
-m = folium.Map(location = center, tiles='Stamen Toner', zoom_start = 12)
+df1['lon'] = df1.geometry.x
+df1['lat'] = df1.geometry.y
+center = df1[['lat', 'lon']].mean().values.tolist()
+sw = df1[['lat', 'lon']].min().values.tolist()
+ne = df1[['lat', 'lon']].max().values.tolist()
+
+
+
+m = folium.Map(location = center, tiles='Stamen Toner')
 
 # I can add marker one by one on the map
 for i in range(0,len(df1)):
    folium.Circle(
       location=[df1.iloc[i]['lat'], df1.iloc[i]['lon']],
-      popup=df1.iloc[i]['nom_compteur'],
+      popup= df1.iloc[i]['nom_compteur'] + ": <br> " + str(df1.iloc[i]['Comptage horaire'].round()),
       radius=500*df1.iloc[i]['Comptage horaire']/df1.iloc[i]['Comptage horaire'].max(),
       color='grey',
+      weight = 1,
       fill=True,
-      fill_color=df1.iloc[i]['color']
+      fill_color=df1.iloc[i]['color'],
+      fill_opacity=1
    ).add_to(m)
+
+m.fit_bounds([sw, ne])
+
 
 m.save("static/leaflet/folium2.html")
 ```
