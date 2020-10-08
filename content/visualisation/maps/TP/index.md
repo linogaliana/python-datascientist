@@ -202,7 +202,7 @@ Représenter, pour ces deux moments de la journée, la `heatmap` du trafic de v�
     + d'utiliser les arguments `shade=True` et `shade_lowest=True` pour colorer l'intérieur des courbes de niveaux obtenues
     + d'utiliser une palette de couleur rouge avec une transparence modérée (`alpha = 0.6`)
     + d'utiliser l'argument `clip` pour ne pas déborder hors de Paris (en cas de doute, se référer à l'aide de `geoplot.kdeplot`)
-    + L'argument *bandwidth* détermine le plus ou moins fort lissage spatial. La carte d'exemple est produite avec un bandwidth de `.005`. Vous pouvez utiliser celui-ci puis, dans un second temps, le faire varier pour voir l'effet sur le résultat 
+    + L'argument *bandwidth* détermine le plus ou moins fort lissage spatial. Vous pouvez partir d'un bandwidth égal à 0.01 et le faire varier pour voir l'effet sur le résultat 
 2. Ne pas oublier d'ajouter les arrondissements. Avec `geoplot`, il faut utiliser `geoplot.polyplot`
 
 
@@ -213,7 +213,7 @@ Représenter, pour ces deux moments de la journée, la `heatmap` du trafic de v�
 ```
 ## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\seaborn\_decorators.py:36: FutureWarning: Pass the following variable as a keyword arg: y. From version 0.12, the only valid positional argument will be `data`, and passing other arguments without an explicit keyword will result in an error or misinterpretation.
 ##   warnings.warn(
-## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\seaborn\distributions.py:1659: FutureWarning: The `bw` parameter is deprecated in favor of `bw_method` and `bw_adjust`. Using 0.007 for `bw_method`, but please see the docs for the new parameters and update your code.
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\seaborn\distributions.py:1659: FutureWarning: The `bw` parameter is deprecated in favor of `bw_method` and `bw_adjust`. Using 0.35 for `bw_method`, but please see the docs for the new parameters and update your code.
 ##   warnings.warn(msg, FutureWarning)
 ## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\seaborn\distributions.py:1678: UserWarning: `shade_lowest` is now deprecated in favor of `thresh`. Setting `thresh=0`, but please update your code.
 ##   warnings.warn(msg, UserWarning)
