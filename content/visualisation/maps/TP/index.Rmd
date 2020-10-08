@@ -325,59 +325,101 @@ De plus en plus de données de visualisation reposent sur la cartographie réact
 `folium` offre une interface très flexible et très facile à prendre à main. Les cartes sont construites grâce à la librairie JavaScript `Leaflet.js` mais, sauf si on désire aller loin dans la customisation du résultat, il n'est pas nécessaire d'avoir des notions dans le domaine. 
 
 
-Un objet folium se construit par couche. La première est l'initialisation de la carte. Les couches suivantes sont les éléments à exhiber. 
+Un objet folium se construit par couche. La première est l'initialisation de la carte. Les couches suivantes sont les éléments à mettre en valeur. L'initialisation de la carte nécessite la définition d'un point central (paramètre `location`) et d'un zoom de départ (`zoom_start`). Plutôt que de fournir manuellement le point central et le zoom on peut:
 
-{{% panel status="exercise" title="Exercice 6: Visualiser la localisation des stations" icon="fas fa-pencil-alt" %}}
+1. Déterminer le point central en construisant des colonnes longitudes et latitudes et en prenant la moyenne de celles-ci
+2. Utiliser la méthode `fit_bounds` qui cale la carte sur les coins sud-ouest et nord-est. En supposant que la carte s'appelle `m`, on fera `m.fit_bounds([sw, ne])`
 
-A partir des données `compteurs`, représenter la localisation des stations. Les consignes sont:
-
-* le centre de la carte s'obtient avec le morceau de code ci-dessous qui agrège l'ensemble des géométries, calcule le centroid et récupère la valeur sous forme de liste
-* ne pas afficher le fonds de carte par défaut
-* un zoom de départ de 12 (vous pouvez ensuite essayer d'autres zoom)
+Le bout de code suivant permet de calculer le centre de la carte
 
 ~~~python
-compteurs['temp'] = 1
-point_geom = compteurs.dissolve(by = "temp")
-point_geom["x"] = point_geom.centroid.x
-point_geom["y"] = point_geom.centroid.y
-center = [point_geom.iloc[0].y, point_geom.iloc[0].x]
+df['lon'] = df.geometry.x
+df['lat'] = df.geometry.y
+center = compteurs[['lat', 'lon']].mean().values.tolist()
 ~~~
 
-{{< /panel >}}
+Alors que le code suivant permet de calculer les coins:
 
-```{python folium1, include = FALSE}
-compteurs['temp'] = 1
-point_geom = compteurs.dissolve(by = "temp")
-point_geom["x"] = point_geom.centroid.x
-point_geom["y"] = point_geom.centroid.y
-center = [point_geom.iloc[0].y, point_geom.iloc[0].x]
+~~~python
+sw = compteurs[['lat', 'lon']].min().values.tolist()
+ne = compteurs[['lat', 'lon']].max().values.tolist()
+~~~
 
-
-m = folium.Map(location = center, tiles='Stamen Toner', zoom_start = 12)
-
-compteurs['lon'] = compteurs.geometry.x
-compteurs['lat'] = compteurs.geometry.y
-
-# I can add marker one by one on the map
-for i in range(0,len(compteurs)):
-    folium.Marker([compteurs.iloc[i]['lat'], compteurs.iloc[i]['lon']], popup=compteurs.iloc[i]['nom_compteur']).add_to(m)
-    
-m.save('folium1.html')
-```
-
-{{< rawhtml >}}
-```{python}
-import dash_html_components as html
-html.Iframe(srcDoc = open('folium2.html', 'r').read())
-#htmltools::includeHTML("folium2.html")
-```
-{{< /rawhtml >}}
 
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 Si un fond gris s'affiche, c'est qu'il y a un problème de localisation. Cela provient généralement d'un problème de projection ou d'une inversion des longitudes et latitudes. 
 
 Les longitudes représentent les *x* (axe ouest-nord) et les latitudes *y* (axe sud-nord). `folium` attend qu'on lui fournisse les données sous la forme `[latitude, longitude]` donc `[y,x]`
 {{% /panel %}}
+
+
+{{% panel status="exercise" title="Exercice 6: Visualiser la localisation des stations" icon="fas fa-pencil-alt" %}}
+
+A partir des données `compteurs`, représenter la localisation des stations. Les consignes sont:
+
+* le centre de la carte s'obtient avec le morceau de code ci-dessous qui agrège l'ensemble des géométries, calcule le centroid et récupère la valeur sous forme de liste
+* un zoom optimal
+
+
+{{< /panel >}}
+
+```{python folium1, include = FALSE}
+compteurs['lon'] = compteurs.geometry.x
+compteurs['lat'] = compteurs.geometry.y
+center = compteurs[['lat', 'lon']].mean().values.tolist()
+sw = compteurs[['lat', 'lon']].min().values.tolist()
+ne = compteurs[['lat', 'lon']].max().values.tolist()
+
+m = folium.Map(location = center, tiles='Stamen Toner')
+
+# I can add marker one by one on the map
+for i in range(0,len(compteurs)):
+    folium.Marker([compteurs.iloc[i]['lat'], compteurs.iloc[i]['lon']], popup=compteurs.iloc[i]['nom_compteur']).add_to(m)
+
+m.fit_bounds([sw, ne])
+```
+
+
+```{python, echo = FALSE}
+def embed(fmaps, width='100%', height='510px', *args, **kwargs):
+    """
+    Embeds a folium map in a IPython/Jupyter notebook.
+    This method will not work if the map depends on any files (json data). Also this uses
+    the HTML5 srcdoc attribute, which may not be supported in all browsers.
+    fmaps -- a single folium map or an iterable containing folium maps
+    """
+    from IPython.display import HTML
+    template = '<iframe srcdoc="{srcdoc}" style="width: {width}; height: {height}; border: none"></iframe>'
+    html = ''
+    try:
+        for fmap in fmaps:
+            fmap._build_map()
+            html += template.format(
+                srcdoc=fmap.HTML.replace('"', '&quot;'),
+                height=str(height),
+                width=str(width),
+            )
+    except TypeError:
+        fmap = fmaps
+        fmap._build_map()
+        html = template.format(
+            srcdoc=fmap.HTML.replace('"', '&quot;'),
+            height=str(height),
+            width=str(width),
+        )
+        return HTML(html)
+```
+
+{{< rawhtml >}}
+```{python}
+#import dash_html_components as html
+#html.Iframe(srcDoc = open('folium2.html', 'r').read())
+#htmltools::includeHTML("folium2.html")
+#embed(m)
+m._repr_html_()
+```
+{{< /rawhtml >}}
+
 
 
 {{% panel status="exercise" title="Exercice 7: Représenter les stations" icon="fas fa-pencil-alt" %}}
@@ -416,8 +458,11 @@ m.save('folium2.html')
 
 {{< rawhtml >}}
 ```{python}
-html.Iframe(srcDoc = open('folium2.html', 'r').read())
+#import dash_html_components as html
+#html.Iframe(srcDoc = open('folium2.html', 'r').read())
 #htmltools::includeHTML("folium2.html")
+#embed(m)
+m._repr_html_()
 ```
 {{< /rawhtml >}}
 
