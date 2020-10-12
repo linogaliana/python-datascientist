@@ -36,7 +36,40 @@ Nous utiliserons de manière indifférente les termes modules et packages.
 
 ## Comment installer un module Python ? 
 
-### Jupyter
+Il existe deux approches pour installer un module:
+
+* Utiliser le gestionnaire de package `pip`
+* Utiliser un environnement `anaconda` (ou sa version minimaliste `miniconda`)
+
+`pip` est le gestionnaire historique de packages en `Python`. Néanmoins, avec la
+multiplication de librairies dépendantes de langages externes à `Python`, il 
+est devenu de plus en plus complexe d'avoir
+un environnement complet et fonctionnel
+avec `pip`, notamment sous Windows. `anaconda` est ainsi, pour les packages
+qui dépendent de librairies additionnelles, particulièrement bien adapté
+
+|                 | pip                     | conda                           |
+|-----------------|-------------------------|---------------------------------|                 
+|Terminal         | pip install modulename  | conda install modulename --yes  |
+|Jupyter notebook | !pip install modulename | !conda install modulename --yes |
+
+
+Quand on se trouve derrière un proxy, il convient d'ajouter des paramètres.
+Pour une installation via `pip`, il faut faire :
+
+~~~~shell
+pip install modulename --proxy="https://[username:password@]proxyserver:port"
+~~~~
+
+Pour `anaconda`, il faut éditer le fichier `.condarc` à la racine d'Anaconda (
+par exemple `C:/Users/Anaconda3`) en personnalisant les lignes suivantes:
+
+~~~yaml
+proxy_servers:
+    http: http://[username:password@]proxyserver:port
+    https: https://[username:password@]proxyserver:port
+~~~
+
 
 ### Pycharm
 
