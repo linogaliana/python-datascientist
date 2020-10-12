@@ -36,7 +36,33 @@ Nous utiliserons de manière indifférente les termes modules et packages.
 
 ## Comment installer un module Python ? 
 
+Il existe deux approches pour installer un module:
+
+* Utiliser le gestionnaire de package `pip`
+* Utiliser un environnement `anaconda` (ou sa version minimaliste `miniconda`)
+
+`pip` est le gestionnaire historique de packages en `Python`. Néanmoins, avec la
+multiplication de librairies dépendantes de langages externes à `Python`, il 
+est devenu de plus en plus complexe d'avoir
+un environnement complet et fonctionnel
+avec `pip`, notamment sous Windows. 
+
+Dans un terminal, pour installer un package
+
+{{< tabs tabTotal="1" tabID="1" tabName1="Tab 1" >}}
+{{< tab tabNum="1" >}}
+
+**Tab 1 Content**
+
+{{< /tab >}}
+{{< /tabs >}}
+
+
+
+
 ### Jupyter
+
+Dans `Jupyter`, il faut ouvrir un terminal ou, en passant par un notebook,
 
 ### Pycharm
 
