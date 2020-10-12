@@ -45,27 +45,15 @@ Il existe deux approches pour installer un module:
 multiplication de librairies dépendantes de langages externes à `Python`, il 
 est devenu de plus en plus complexe d'avoir
 un environnement complet et fonctionnel
-avec `pip`, notamment sous Windows. 
+avec `pip`, notamment sous Windows. `anaconda` est ainsi, pour les packages
+qui dépendent de librairies additionnelles, particulièrement bien adapté
 
-Dans un terminal, pour installer un package
+                 | pip                     | conda                           |
+-----------------|-------------------------|---------------------------------|                 
+Terminal         | pip install modulename  | conda install modulename --yes  |
+Jupyter notebook | !pip install modulename | !conda install modulename --yes |
 
-{{% tabs tabTotal="3" tabID="1" tabName1="Tab 1" tabName2="Tab 2" tabName3="Tab 3" %}}
-{{% tab tabNum="1" %}}
 
-**Tab 1 Content**
-
-{{% /tab %}}
-{{% tab tabNum="2" %}}
-
-**Tab 2 Content**
-
-{{% /tab %}}
-{{% tab tabNum="3" %}}
-
-**Tab 3 Content**
-
-{{% /tab %}}
-{{% /tabs %}}
 
 
 
