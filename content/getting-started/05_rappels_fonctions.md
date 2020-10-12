@@ -55,6 +55,11 @@ Dans un terminal, pour installer un package
 **Tab 1 Content**
 
 {{< /tab >}}
+{{< tab tabNum="2" >}}
+
+**Tab 2 Content**
+
+{{< /tab >}}
 {{< /tabs >}}
 
 
