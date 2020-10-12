@@ -48,10 +48,10 @@ un environnement complet et fonctionnel
 avec `pip`, notamment sous Windows. `anaconda` est ainsi, pour les packages
 qui dépendent de librairies additionnelles, particulièrement bien adapté
 
-                 | pip                     | conda                           |
------------------|-------------------------|---------------------------------|                 
-Terminal         | pip install modulename  | conda install modulename --yes  |
-Jupyter notebook | !pip install modulename | !conda install modulename --yes |
+|                 | pip                     | conda                           |
+|-----------------|-------------------------|---------------------------------|                 
+|Terminal         | pip install modulename  | conda install modulename --yes  |
+|Jupyter notebook | !pip install modulename | !conda install modulename --yes |
 
 
 Quand on se trouve derrière un proxy, il convient d'ajouter des paramètres.
@@ -70,10 +70,6 @@ proxy_servers:
     https: https://[username:password@]proxyserver:port
 ~~~
 
-
-### Jupyter
-
-Dans `Jupyter`, il faut ouvrir un terminal ou, en passant par un notebook,
 
 ### Pycharm
 
