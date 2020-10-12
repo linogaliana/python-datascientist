@@ -54,8 +54,21 @@ Terminal         | pip install modulename  | conda install modulename --yes  |
 Jupyter notebook | !pip install modulename | !conda install modulename --yes |
 
 
+Quand on se trouve derrière un proxy, il convient d'ajouter des paramètres.
+Pour une installation via `pip`, il faut faire :
 
+~~~~shell
+pip install modulename --proxy="https://[username:password@]proxyserver:port"
+~~~~
 
+Pour `anaconda`, il faut éditer le fichier `.condarc` à la racine d'Anaconda (
+par exemple `C:/Users/Anaconda3`) en personnalisant les lignes suivantes:
+
+~~~yaml
+proxy_servers:
+    http: http://[username:password@]proxyserver:port
+    https: https://[username:password@]proxyserver:port
+~~~
 
 
 ### Jupyter
