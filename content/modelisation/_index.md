@@ -25,15 +25,31 @@ par le modélisateur.
 
 L'adoption du Machine Learning dans la littérature économique a été longue car la structuration des données est souvent le pendant empirique d'hypothèses théoriques sur le comportement des acteurs ou des marchés (Athey and Imbens, 2019). 
 
+Pour caricaturer, l’économétrie s’attache à comprendre la causalité des certaines variables sur une autre donc s'attache principalement à l'estimation des paramètres alors que le Machine Learning se focalise sur un simple objectif prédictif en exploitant les relations de corrélations entre les variables.
+
 ## Panorama d'un éco-système vaste
 
 Grâce aux principaux packages de Machine Learning (`scikit`), Deep Learning (`keras`, `pytorch`, `TensorFlow`...) et économétrie  (`statsmodels`), la modélisation est extrêmement simplifiée. Cela ne doit pas faire oublier l'importance de la structuration et de la préparation des données. Souvent, l'étape la plus cruciale est le choix du modèle le plus adapté à la structure du modèle. L'aide suivante, issue de l'aide de `scikit`, concernant les modèles de Machine Learning peut déjà donner de premiers enseignements sur les différentes familles de modèles:
 
+L'aide-mémoire suivante peut aider à se diriger dans la large gamme des modèles de `scikit-learn`: 
 
 ![](https://scikit-learn.org/stable/_static/ml_map.png)
 
 
+## Contenu de la partie:
 
+* Préparation des données: Feature extraction, normalization, constitution d'échantillons
+https://scikit-learn.org/stable/modules/preprocessing.html#preprocessing
+* Régression: régression linéaire, logistique, lasso/ridge/elasticnet
+https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
+* Classification: logit, SVM, arbres de décision
+https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
+* Réduction dimension: PCA
+* Clustering: kmeans, hiearchical clustering
+
+Autres champs:
+* maximum vraisemblance
+* stats bayésiennes
 
 ## Références
 
