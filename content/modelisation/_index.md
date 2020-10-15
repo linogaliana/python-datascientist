@@ -38,7 +38,10 @@ L'aide-mémoire suivante peut aider à se diriger dans la large gamme des modèl
 
 ## Contenu de la partie:
 
-* Préparation des données: Feature extraction, normalization, constitution d'échantillons
+Plan prévisionnel:
+
+* Préparation des données: Feature extraction, normalization, constitution d'échantillons,
+Model selection and evaluation
 https://scikit-learn.org/stable/modules/preprocessing.html#preprocessing
 * Régression: régression linéaire, logistique, lasso/ridge/elasticnet
 https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
@@ -50,6 +53,8 @@ https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
 Autres champs:
 * maximum vraisemblance
 * stats bayésiennes
+* semi et non paramétrique: méthodes noyaux, GAM
+
 
 ## Références
 
