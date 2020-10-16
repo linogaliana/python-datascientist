@@ -1,0 +1,85 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.6.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+title: "Travail de données pour construire un modèle"
+date: 2020-10-15T13:00:00Z
+draft: false
+weight: 10
+output: 
+  html_document:
+    keep_md: true
+    self_contained: true
+slug: MLintro
+---
+
+
+
+
+
+Pour illustrer le travail de données nécessaire pour construire un modèle de Machine Learning, mais aussi nécessaire pour l'exploration de données avant de faire une régression linéaire, nous allons partir du jeu de données de [résultat des élections US 2016 au niveau des comtés](https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
+
+## Explorer la structure des données
+
+La première étape nécessaire à suivre avant de modéliser est de déterminer les variables à inclure dans le modèle. Les fonctionalités de `pandas` sont, à ce niveau, suffisantes pour explorer des structures simples. Néanmoins, lorsqu'on est face à un jeu de données présentant de nombreuses variables explicatives (*features* en machine learning, *covariates* en économétrie), il est souvent judicieux d'avoir une première étape de sélection de variable, ce que nous verrons par la suite [**LIEN**]  
+
+{{% panel status="exercise" title="Exercise 1: importer les données" icon="fas fa-pencil-alt" %}}
+1. Importer les données (l'appeler `df`) des élections américaines et regarder les informations dont on dispose
+2. Créer une variable `republican_winner` égale à `red`  quand la variable `rep16_frac` est supérieure à `dep16_frac` (`blue` sinon)
+3. Représenter une carte des résultats avec en rouge les comtés où les républicains ont gagné et en bleu ceux où se sont
+les démocrates
+{{% /panel %}}
+
+{{<figure src="unnamed-chunk-2-1.png" >}}
+
+Avant d'être en mesure de sélectionner le meilleur ensemble de variables explicatives, nous allons prendre un nombre restreint et arbitraire de variables. La première tâche est de représenter les relations entre les données, notamment leur relation à la variable que l'on va chercher à expliquer (le score du parti républicain aux élections 2016) ainsi que les relations entre les variables ayant vocation à expliquer la variable dépendante. 
+
+{{% panel status="exercise" title="Exercise 2: regarder la corrélation entre les variables", icon="fas fa-pencil-alt" %}}
+
+Créer un DataFrame plus petit avec les variables `rep16_frac` et `unemployment`, `median_age`, `asian`, `black`, `white_not_latino_population`,`latino_population`, `gini_coefficient`, `less_than_high_school`, `adult_obesity`, `median_earnings_2010_dollars` et ensuite :
+
+1. Représenter une matrice de corrélation graphique
+1. Choisir quelques variables (pas plus de 4 ou 5) dont `rep16_frac` et représenter une matrice de nuages de points
+
+{{% /panel %}}
+
+La matrice de corrélation donne, avec les fonctionalités de `pandas`:
+
+
+```
+## <pandas.io.formats.style.Styler object at 0x0000000037B2B9A0>
+```
+
+Alors que celle construite avec `seaborn` aura l'aspect suivant:
+
+{{<figure src="unnamed-chunk-4-1.png" >}}
+
+
+La matrice de nuage de point aura, par exemple, l'aspect suivant:
+
+
+
+## Explorer les données
+
+scatter_matrix(dataset)
+
+
+## Transformer les données
+
+Les transformations à montrer (https://scikit-learn.org/stable/modules/preprocessing.html):
+normalization
+standardization
+encoding ordinal values (OrdinalEncoder + OneHotEncoder)
+Note sur l'imputation des valeurs manquantes
+
+## Découper l'échantillon
+
+## Mesurer la performance
