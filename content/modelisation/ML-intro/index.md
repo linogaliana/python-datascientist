@@ -38,7 +38,7 @@ La première étape nécessaire à suivre avant de modéliser est de déterminer
 les démocrates
 {{% /panel %}}
 
-{{<figure src="unnamed-chunk-2-1.png" >}}
+
 
 Avant d'être en mesure de sélectionner le meilleur ensemble de variables explicatives, nous allons prendre un nombre restreint et arbitraire de variables. La première tâche est de représenter les relations entre les données, notamment leur relation à la variable que l'on va chercher à expliquer (le score du parti républicain aux élections 2016) ainsi que les relations entre les variables ayant vocation à expliquer la variable dépendante. 
 
@@ -55,8 +55,10 @@ La matrice de corrélation donne, avec les fonctionalités de `pandas`:
 
 
 ```
-## <pandas.io.formats.style.Styler object at 0x00000000375E79D0>
+## <pandas.io.formats.style.Styler object at 0x00000000060C27C0>
 ```
+
+{{<figure src="unnamed-chunk-3-1.png" >}}
 
 Alors que celle construite avec `seaborn` aura l'aspect suivant:
 
