@@ -36,6 +36,14 @@ L'aide-mémoire suivante peut aider à se diriger dans la large gamme des modèl
 ![](https://scikit-learn.org/stable/_static/ml_map.png)
 
 
+On distingue généralement deux types de méthodes, selon qu'on dispose d'information, dans l'échantillon
+d'apprentissage, sur les *y* (on utilisera parfois le terme *label*) :
+
+* apprentissage supervisé: la valeur cible est connue et peut-être utilisée pour évaluer la qualité d'un modèle
+* apprentissage non supervisé: la valeur cible est inconnue et ce sont des critères statistiques qui vont amener
+à sélectionner la structure de données la plus plausible. 
+
+
 ## Contenu de la partie:
 
 Plan prévisionnel:
