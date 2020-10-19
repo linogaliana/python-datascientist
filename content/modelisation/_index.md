@@ -2,7 +2,7 @@
 title: "Partie 3: modéliser"
 date: 2020-10-14T13:00:00Z
 draft: false
-weight: 25
+weight: 35
 slug: "modelisation"
 ---
 
