@@ -237,19 +237,55 @@ Les transformations à montrer (https://scikit-learn.org/stable/modules/preproce
 
 ### Encodage des valeurs catégorielles
 
-Les données catégorielles doivent être recodées sous forme de valeurs numériques pour être intégrables dans le cadre d'un modèle. Cela peut être fait de deux manières:
+Les données catégorielles doivent être recodées sous forme de valeurs numériques pour être intégrables dans le cadre d'un modèle. Cela peut être fait de plusieurs manières:
 
 * `LabelEncoder`: transforme un vecteur `["a","b","c"]` en vecteur numérique `[0,1,2]`. Cette approche a l'inconvénient d'introduire un ordre dans les modalités, ce qui n'est pas toujours désiré
-* `OrdinalEncoder`: une version généralisée du recodage précédent. `OrdinalEncoder` a vocation à s'appliquer sur des matrices ($X$), alors que `LabelEncoder` est plutôt pour un vecteur ($y$)
-* `OneHotEncoder` effectue une opération de *dummy expansion*. Un vecteur de taille *n* avec *K* catégories sera transformé en matrice de taille $n \times (K-1)$ pour lequel chaque colonne sera une variable *dummy* pour la modalité *k*. Pour éviter la multicollinéarité. C'est la formalisation faite, par exemple, pour la régression linéaire.
+* `pandas.get_dummies` effectue une opération de *dummy expansion*. Un vecteur de taille *n* avec *K* catégories sera transformé en matrice de taille $n \times (K-1)$ pour lequel chaque colonne sera une variable *dummy* pour la modalité *k*. Il y a ici $K$ modalité, il y a donc multicollinéarité. Avec une régression linéaire avec constante, il convient de retirer une modalité avant l'estimation.
+* `OrdinalEncoder`: une version généralisée du `LabelEncoder`. `OrdinalEncoder` a vocation à s'appliquer sur des matrices ($X$), alors que `LabelEncoder` est plutôt pour un vecteur ($y$)
+* `OneHotEncoder` 
 
 
 {{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
-Prendra la variable `state` dans `df`
-1. Lui appliquer 
+Prendra les variables `state` et `county` dans `df`
+1. Appliquer à `state` un `LabelEncoder`
+2. Regarder la *dummy expansion* de `state`
+3. Appliquer un `OrdinalEncoder` à `df[['state', 'county']]` ainsi qu'un `OneHotEncoder`
 {{% /panel %}}
 
-Note sur l'imputation des valeurs manquantes
+Le résultat du *label encoding* est relativement intuitif, notamment quand on le met en relation avec le vecteur initial
+
+```{python}
+# Question 1
+label_enc = preprocessing.LabelEncoder().fit(df['state'])
+np.column_stack((label_enc.transform(df['state']),df['state']))
+```
+
+```{python}
+# Question 2
+pd.get_dummies(df['state'])
+```
+
+Le résultat du *ordinal encoding* est cohérent avec celui du *label encoding*:
+
+```{python}
+ord_enc = preprocessing.OrdinalEncoder().fit(df[['state', 'county']])
+# ord_enc.transform(df[['state', 'county']])
+```
+
+```{python}
+ord_enc.transform(df[['state', 'county']])[:,0]
+```
+
+Enfin, on peut noter que `scikit` optimise l'objet nécessaire pour stocker le résultat d'un modèle de transformation. Par exemple, le résultat de l'encoding *One Hot* est un objet très volumineux. Dans ce cas, scikit utilise une matrice *Sparse*:
+
+```{python}
+onehot_enc = preprocessing.OneHotEncoder().fit(df[['state', 'county']])
+```
+
+```{python}
+onehot_enc.transform(df[['state', 'county']])
+```
+
 
 ## Découper l'échantillon
 
