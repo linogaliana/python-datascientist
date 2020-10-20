@@ -406,17 +406,149 @@ informations en faisant varier $c$ de 0 à 1
 L'aire sous la courbe (**AUC**) permet d'évaluer quantitativement le meilleur modèle au
 sens de ce critère. L'AUC représente la probabilité que le modèle soit capable de distinguer entre la classe positive et négative. 
 
-### La méthode des SVM
+### La méthode des SVM (Support Vector Machines)
+
+L'une des méthodes de *Machine Learning* les plus utilisées en classification est les SVM. Il s'agit de trouver, dans un système de projection adéquat (noyau ou *kernel*), les paramètres de l'hyperplan (en fait d'un hyperplan à marges maximales) séparant les classes de données: 
 
 ![](https://scikit-learn.org/stable/auto_examples/svm/plot_iris_svc.html)
+
+{{% panel status="hint" title="Formalisation mathématique" icon="fa fa-lightbulb" %}}
+On peut, sans perdre de généralité, supposer que le problème consiste à supposer l'existence d'une loi de probabilité $\mathbb{P}(x,y)$ ($\mathbb{P} \to \{-1,1\}$) qui est inconnue. Le problème de discrimination
+vise à construire un estimateur de la fonction de décision idéale qui minimise la probabilité d'erreur, autrement dit $\theta = \arg\min_\Theta \mathbb{P}(h_\theta(X) \neq y |x)$
+
+Les SVM les plus simples sont les SVM linéaires. Dans ce cas, on suppose qu'il existe un séparateur linéaire qui permet d'associer chaque classe à son signe:
+
+$$
+h_\theta(x) = \text{signe}(f_\theta(x)) ; \text{ avec } f_\theta(x) = \theta^T x + b
+$$
+avec $\theta \in \mathbb{R}^p$ et $w \in \mathbb{R}$. 
+
+![](https://en.wikipedia.org/wiki/File:SVM_margin.png)
+
+Lorsque des observations sont linéairement séparables, il existe une infinité de frontières de décision linéaire séparant les deux classes. Le "meilleur" choix est de prendre la marge maximale permettant de séparer les données. La distance entre les deux marges est $\frac{2}{||\theta||}$. Donc maximiser cette distance entre deux hyperplans revient à minimiser $||\theta||^2$ sous la contrainte $y_i(\theta^Tx_i + b) \geq 1$. 
+
+
+Dans le cas non linéairement séparable, la *hinge loss* $\max\big(0,y_i(\theta^Tx_i + b)\big)$ permet de linéariser la fonction de perte:
+
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Hinge_loss_vs_zero_one_loss.svg/1024px-Hinge_loss_vs_zero_one_loss.svg.png)
+
+ce qui donne le programme d'optimisation suivant:
+
+$$
+\frac{1}{n} \sum_{i=1}^n \max\big(0,y_i(\theta^Tx_i + b)\big) + \lambda ||\theta||^2
+$$
+
+La généralisation au cas non linéaire implique d'introduire des noyaux transformant l'espace de coordonnées des observations.
+
 ![](https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Kernel_Machine.svg/1920px-Kernel_Machine.svg.png)
+
+{{% /panel %}}
+
 
 ### Exercice
 
 {{% panel status="exercise" title="Premier algorithme de classification" icon="fas fa-pencil-alt" %}}
+1. Créer une variable *dummy* `y` dont la valeur vaut 1 quand les républicains l'emportent
+2. Créer des échantillons de test (20% des observations) et d'estimation avec comme *features*: `'less_than_high_school',	'adult_obesity', 'median_earnings_2010_dollars'` et comme *label* la variable `y`. Pour éviter le *warning* 
 
+> A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel()
 
+à chaque fois que vous estimez votre modèle, vous pouvez utiliser `DataFrame[['y']].values.ravel()` plutôt que `DataFrame[['y']]` lorsque vous constituez vos échantillons.
+
+3. Entraîner un classifieur SVM avec comme paramètre de régularisation `C = 1`. Regarder les mesures de performance suivante: `accuracy`, `f1`, `recall` et `precision`. Vérifier la matrice de confusion: vous devriez voir que malgré des scores en apparence pas si mauvais, il y a un problème
+
+4. Refaire les questions précédentes avec des 
 {{% /panel %}}
+
+```{python}
+from sklearn import svm
+import sklearn.metrics
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+
+df2['y'] = (df2['rep16_frac']>50).astype(int)
+tempdf = df2[['less_than_high_school', 'adult_obesity', 'median_earnings_2010_dollars','y']].dropna(how = "any")
+
+X_train, X_test, y_train, y_test = train_test_split(
+    tempdf[['less_than_high_school', 'adult_obesity', 'median_earnings_2010_dollars']],
+    tempdf[['y']].values.ravel(), test_size=0.2, random_state=0
+)
+     
+clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+
+sc_accuracy = sklearn.metrics.accuracy_score(y_pred, y_test)
+sc_f1 = sklearn.metrics.f1_score(y_pred, y_test)
+sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
+sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
+```
+
+Le classifieur avec `C = 1` devrait avoir les performances suivantes:
+
+
+| Métrique | Score |
+|----------|-------|
+| Accuracy | `python sc_accuracy` |
+| Recall | `python sc_recall` |
+| Precision | `python sc_precision` |
+| F1 | `python sc_f1` |
+
+```{python}
+sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
+```
+
+Notre classifieur manque totalement les *labels* 0, qui sont minoritaires. Une raison possible ? L'échelle des variables: le revenu a une distribution qui peut écraser celle des autres variables, dans un modèle linéaire. Il faut donc, a minima, standardiser les variables. Néanmoins, ici cela n'apporte pas de gain:
+
+```{python}
+import sklearn.preprocessing as preprocessing
+
+X = tempdf[['less_than_high_school', 'adult_obesity', 'median_earnings_2010_dollars']]
+y = tempdf[['y']]
+scaler = preprocessing.StandardScaler().fit(X)
+X = scaler.transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y.values.ravel(), test_size=0.2, random_state=0
+)
+
+clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
+```
+
+Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables. C'est pour cette raison que l'étape de sélection de variable est cruciale. En utilisant uniquement le résultat passé du vote démocrate et le revenu (`dem12_frac` et `median_earnings_2010_dollars`), on obtient un résultat beaucoup plus cohérent:
+
+```{python}
+df['y'] = (df['rep16_frac']>50).astype(int)
+tempdf = df[['dem12_frac', 'median_earnings_2010_dollars','y']].dropna(how = "any")
+X = tempdf[['dem12_frac', 'median_earnings_2010_dollars']]
+y = tempdf[['y']]
+scaler = preprocessing.StandardScaler().fit(X)
+X = scaler.transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y.values.ravel(), test_size=0.2, random_state=0
+)
+
+clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+
+sc_accuracy = sklearn.metrics.accuracy_score(y_pred, y_test)
+sc_f1 = sklearn.metrics.f1_score(y_pred, y_test)
+sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
+sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
+
+sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
+```
+
+| Métrique | Score |
+|----------|-------|
+| Accuracy | `python sc_accuracy` |
+| Recall | `python sc_recall` |
+| Precision | `python sc_precision` |
+| F1 | `python sc_f1` |
 
 ### Régression
 
