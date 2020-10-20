@@ -103,14 +103,14 @@ Le classifieur avec `C = 1` devrait avoir les performances suivantes:
 
 | Métrique | Score |
 |----------|-------|
-| Accuracy | `python sc_accuracy` |
-| Recall | `python sc_recall` |
-| Precision | `python sc_precision` |
-| F1 | `python sc_f1` |
+| Accuracy | 0.8025478 |
+| Recall | 0.8025478 |
+| Precision | 1 |
+| F1 | 0.8904594 |
 
 
 ```
-## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x0000000008589970>
+## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x0000000006CBF9D0>
 ```
 
 {{<figure src="unnamed-chunk-4-1.png" >}}
@@ -119,7 +119,7 @@ Notre classifieur manque totalement les *labels* 0, qui sont minoritaires. Une r
 
 
 ```
-## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x0000000008589AF0>
+## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x0000000006CBFB80>
 ```
 
 {{<figure src="unnamed-chunk-5-1.png" >}}
@@ -128,7 +128,7 @@ Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du c
 
 
 ```
-## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x00000000085969A0>
+## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x0000000007A5A8E0>
 ```
 
 {{<figure src="unnamed-chunk-6-1.png" >}}
