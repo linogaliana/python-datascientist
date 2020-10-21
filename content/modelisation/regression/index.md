@@ -173,7 +173,7 @@ La
 ## Model:                            OLS   Adj. R-squared (uncentered):              0.976
 ## Method:                 Least Squares   F-statistic:                          1.291e+04
 ## Date:                Wed, 21 Oct 2020   Prob (F-statistic):                        0.00
-## Time:                        15:01:56   Log-Likelihood:                         -11583.
+## Time:                        15:06:43   Log-Likelihood:                         -11583.
 ## No. Observations:                3110   AIC:                                  2.319e+04
 ## Df Residuals:                    3100   BIC:                                  2.325e+04
 ## Df Model:                          10                                                  
@@ -214,7 +214,7 @@ La
 ## Model:                            OLS   Adj. R-squared:                  0.113
 ## Method:                 Least Squares   F-statistic:                     133.0
 ## Date:                Wed, 21 Oct 2020   Prob (F-statistic):           4.84e-81
-## Time:                        15:01:57   Log-Likelihood:                -12773.
+## Time:                        15:06:43   Log-Likelihood:                -12773.
 ## No. Observations:                3110   AIC:                         2.555e+04
 ## Df Residuals:                    3106   BIC:                         2.558e+04
 ## Df Model:                           3                                         
@@ -247,11 +247,11 @@ la méthode [`Summary.as_latex`](https://www.statsmodels.org/devel/generated/sta
 ## La régression logistique
 
 Ce modèle s'applique à une distribution binaire.
-Dans ce cas, $\mathbb{E}_{\theta}(Y|X) = \mathbb{P}_{\theta}(Y = 1|X)$.
+Dans ce cas, $\mathbb{E}\_{\theta}(Y|X) = \mathbb{P}\_{\theta}(Y = 1|X)$.
 La régression logistique peut être vue comme un modèle linéaire en probabilité:
 
 $$
-\text{logit}\bigg(\mathbb{E}_\theta(Y|X)\bigg) = \text{logit}\bigg(\mathbb{P}_\theta(Y = 1|X)\bigg) = X\beta
+\text{logit}\bigg(\mathbb{E}\_{\theta}(Y|X)\bigg) = \text{logit}\bigg(\mathbb{P}\_{\theta}(Y = 1|X)\bigg) = X\beta
 $$
 
 La fonction $\text{logit}$ est $]0,1[ \to \mathbb{R}: p \mapsto \log(\frac{p}{1-p})$
