@@ -68,7 +68,7 @@ La première étape nécessaire à suivre avant de modéliser est de déterminer
 {{% panel status="exercise" title="Exercise 1: importer les données" icon="fas fa-pencil-alt" %}}
 1. Importer les données (l'appeler `df`) des élections américaines et regarder les informations dont on dispose
 2. Créer une variable `republican_winner` égale à `red`  quand la variable `rep16_frac` est supérieure à `dep16_frac` (`blue` sinon)
-3. Représenter une carte des résultats avec en rouge les comtés où les républicains ont gagné et en bleu ceux où se sont
+3. (optionnel) Représenter une carte des résultats avec en rouge les comtés où les républicains ont gagné et en bleu ceux où se sont
 les démocrates
 {{% /panel %}}
 
@@ -98,7 +98,7 @@ La matrice de corrélation donne, avec les fonctionalités de `pandas`:
 
 ```{python}
 df2 = df[["rep16_frac", "unemployment", "median_age", "asian", "black", "white_not_latino_population","latino_population", "gini_coefficient", "less_than_high_school", "adult_obesity", "median_earnings_2010_dollars"]]
-df2.corr().style.background_gradient(cmap='coolwarm').set_precision(2)
+df2.corr()#.style.background_gradient(cmap='coolwarm').set_precision(2)
 plt.show()
 ```
 
@@ -112,10 +112,13 @@ sns.heatmap(df2.corr(), cmap='coolwarm', annot=True, fmt=".2f")
 La matrice de nuage de point aura, par exemple, l'aspect suivant:
 
 ```{python}
-pd.plotting.scatter_matrix(df2[["rep16_frac", "unemployment", "median_age", "asian", "black"]], figsize = (15,15))
+ax = pd.plotting.scatter_matrix(df2[["rep16_frac", "unemployment", "median_age", "asian", "black"]], figsize = (15,15))
+ax
+plt.show()
 ```
 
-```{python}
+
+```{python, include = FALSE}
 import plotly
 import plotly.express as px
 htmlsnip2 = px.scatter_matrix(df2[["rep16_frac", "unemployment", "median_age", "asian", "black"]])
@@ -125,7 +128,7 @@ htmlsnip2 = plotly.io.to_html(htmlsnip2, include_plotlyjs=False)
 ```
 
 
-Le résultat devrait ressembler aux deux graphiques suivants:
+Avec `plotly`, le résultat devrait ressembler au graphique suivant:
 
 {{< rawhtml >}}
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> 
@@ -151,21 +154,21 @@ cohérentes avec les hypothèses des modèles.
 La standardisation consiste à transformer des données pour que la distribution empirique suive une loi $\mathcal{N}(0,1)$. Pour être performants, la plupart des modèles de machine learning nécessitent d'avoir des données dans cette distribution. 
 
 {{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
-Pour un statisticien, le terme `normalization` dans le vocable `scikit` peut avoir un sens contre-intuitif. On s'attendrait à ce que la normalisation consiste à transformer une variable de manière à ce que $X \sym \mathcal{N}(0,1)$. C'est, en fait, la **standardisation** en `scikit`. 
+Pour un statisticien, le terme `normalization` dans le vocable `scikit` peut avoir un sens contre-intuitif. On s'attendrait à ce que la normalisation consiste à transformer une variable de manière à ce que $X \sim \mathcal{N}(0,1)$. C'est, en fait, la **standardisation** en `scikit`. 
 
-La **normalisation** consiste à modifier les données de manière à avoir une norme unitaire. *Lien vers section normalisation*
+La **normalisation** consiste à modifier les données de manière à avoir une norme unitaire. La raison est expliquée plus bas
 {{% /panel %}}
 
 
-{{% panel status="exercise" title="Exercice: normalisation" icon="fas fa-pencil-alt" %}}
+{{% panel status="exercise" title="Exercice: standardisation" icon="fas fa-pencil-alt" %}}
 1. Standardiser la variable `median_earnings_2010_dollars` (ne pas écraser les valeurs !) et regarder l'histogramme avant/après normalisation
 2. Créer `scaler`, un `Transformer` que vous construisez sur les 1000 premières lignes de votre DataFrame. Vérifier la moyenne et l'écart-type de chaque colonne sur ces mêmes observations.
 3. Appliquer `scaler` sur les autres lignes du DataFrame et comparer les distributions obtenues de la variable `median_earnings_2010_dollars`.
 {{% /panel %}}
 
-La normalisation permet d'obtenir la modification suivante de la distribution:
+La standardisation permet d'obtenir la modification suivante de la distribution:
 
-```{python}
+```{python, message = FALSE, warning = FALSE}
 # Question 1
 from sklearn import preprocessing
 df2['y_standard'] = preprocessing.scale(df2['median_earnings_2010_dollars'])
@@ -174,7 +177,7 @@ sns.distplot(df2["median_earnings_2010_dollars"] , color="skyblue", ax=axes[0])
 sns.distplot(df2["y_standard"] , color="olive", ax=axes[1])
 ```
 
-On obtient bien une distribution centrée à zéro et on pourrait vérifier que la variance empirique est bien égale à 1. On peut aussi vérifier que ceci est vraiment quand on transforme plusieurs colonnes à la fois
+On obtient bien une distribution centrée à zéro et on pourrait vérifier que la variance empirique soit bien égale à 1. On pourrait aussi vérifier que ceci est vrai également quand on transforme plusieurs colonnes à la fois
 
 ```{python}
 # Question 2
@@ -186,14 +189,14 @@ print("Ecart-type de chaque variable sur 1000 premières observations")
 scaler.transform(df2.head(1000)).std(axis=0)
 ```
 
-On peut vérifier les paramètres qui seront utilisés pour une standardisation ultérieure de la manière suivante
+Les paramètres qui seront utilisés pour une standardisation ultérieure de la manière suivante sont stockés dans les attributs `.mean_` et `.scale_`
 
 ```{python, echo = TRUE}
 scaler.mean_
 scaler.scale_
 ```
 
-Et, une fois appliqués, on peut remarquer que la distribution n'est pas exactement centrée-réduite dans le `DataFrame` sur lequel les paramètres n'ont pas été estimés. C'est normal, l'échantillon initial n'était pas aléatoire. 
+Une fois appliqués à un autre `DataFrame`, on peut remarquer que la distribution n'est pas exactement centrée-réduite dans le `DataFrame` sur lequel les paramètres n'ont pas été estimés. C'est normal, l'échantillon initial n'était pas aléatoire, les moyennes et variances de cet échantillon n'ont pas de raison de coïncider avec les moments de l'échantillon complet. 
 
 ```{python}
 # Question 3
@@ -210,7 +213,7 @@ sns.distplot(X2[:,col_pos] , color="olive", ax=axes[1])
 
 ### Normalisation
 
-La normalisation est l'action de transformer les données de manière à obtenir une norme ($\mathcal{l}_1$ ou $\mathcal{l}_2$) unitaire. Autrement dit, avec la norme adéquate, la somme des éléments est égale à 1. Par défaut, la norme est dans $\mathcal{l}_2$. Cette transformation est particulièrement utilisée en classification de texte ou pour effectuer du *clustering*
+La **normalisation** est l'action de transformer les données de manière à obtenir une norme ($\mathcal{l}_1$ ou $\mathcal{l}_2$) unitaire. Autrement dit, avec la norme adéquate, la somme des éléments est égale à 1. Par défaut, la norme est dans $\mathcal{l}_2$. Cette transformation est particulièrement utilisée en classification de texte ou pour effectuer du *clustering*
 
 {{% panel status="exercise" title="Exercice: normalization" icon="fas fa-pencil-alt" %}}
 1. Normaliser la variable `median_earnings_2010_dollars` (ne pas écraser les valeurs !) et regarder l'histogramme avant/après normalisation
@@ -233,7 +236,7 @@ sns.distplot(X1[:,col_pos] , color="olive", ax=axes[1])
 ` preprocessing.Normalizer` n'accepte pas les valeurs manquantes, alors que `preprocessing.StandardScaler()` s'en accomode (dans la version `0.22` de scikit). Pour pouvoir aisément appliquer le *normalizer*, il faut
 
 * retirer les valeurs manquantes du DataFrame avec la méthode `dropna`: `df.dropna(how = "any")`;
-* les imputer avec un modèle adéquat. `scikit` permet de le faire ([info](https://scikit-learn.org/stable/modules/preprocessing.html#imputation-of-missing-values)) 
+* ou les imputer avec un modèle adéquat. `scikit` permet de le faire ([info](https://scikit-learn.org/stable/modules/preprocessing.html#imputation-of-missing-values)) 
 {{% /panel %}}
 
 
@@ -242,9 +245,9 @@ sns.distplot(X1[:,col_pos] , color="olive", ax=axes[1])
 Les données catégorielles doivent être recodées sous forme de valeurs numériques pour être intégrables dans le cadre d'un modèle. Cela peut être fait de plusieurs manières:
 
 * `LabelEncoder`: transforme un vecteur `["a","b","c"]` en vecteur numérique `[0,1,2]`. Cette approche a l'inconvénient d'introduire un ordre dans les modalités, ce qui n'est pas toujours désiré
-* `pandas.get_dummies` effectue une opération de *dummy expansion*. Un vecteur de taille *n* avec *K* catégories sera transformé en matrice de taille $n \times (K-1)$ pour lequel chaque colonne sera une variable *dummy* pour la modalité *k*. Il y a ici $K$ modalité, il y a donc multicollinéarité. Avec une régression linéaire avec constante, il convient de retirer une modalité avant l'estimation.
+* `pandas.get_dummies` effectue une opération de *dummy expansion*. Un vecteur de taille *n* avec *K* catégories sera transformé en matrice de taille $n \times K$ pour lequel chaque colonne sera une variable *dummy* pour la modalité *k*. Il y a ici $K$ modalité, il y a donc multicollinéarité. Avec une régression linéaire avec constante, il convient de retirer une modalité avant l'estimation.
 * `OrdinalEncoder`: une version généralisée du `LabelEncoder`. `OrdinalEncoder` a vocation à s'appliquer sur des matrices ($X$), alors que `LabelEncoder` est plutôt pour un vecteur ($y$)
-* `OneHotEncoder` 
+* `OneHotEncoder`: une version généralisée (et optimisée) de la *dummy expansion*. Il a plutôt vocation à s'appliquer sur les *features* ($X$) du modèle
 
 
 {{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
@@ -261,6 +264,8 @@ Le résultat du *label encoding* est relativement intuitif, notamment quand on l
 label_enc = preprocessing.LabelEncoder().fit(df['state'])
 np.column_stack((label_enc.transform(df['state']),df['state']))
 ```
+
+L'expansion par variables dichotomiques également:
 
 ```{python}
 # Question 2

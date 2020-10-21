@@ -110,7 +110,7 @@ Le classifieur avec `C = 1` devrait avoir les performances suivantes:
 
 
 ```
-## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x0000000006CBF9D0>
+## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x0000000007C769A0>
 ```
 
 {{<figure src="unnamed-chunk-4-1.png" >}}
@@ -119,7 +119,7 @@ Notre classifieur manque totalement les *labels* 0, qui sont minoritaires. Une r
 
 
 ```
-## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x0000000006CBFB80>
+## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x0000000007C76F10>
 ```
 
 {{<figure src="unnamed-chunk-5-1.png" >}}
@@ -128,25 +128,14 @@ Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du c
 
 
 ```
-## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x0000000007A5A8E0>
+## <sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x000000000A090550>
 ```
 
 {{<figure src="unnamed-chunk-6-1.png" >}}
 
 | Métrique | Score |
 |----------|-------|
-| Accuracy | `python sc_accuracy` |
-| Recall | `python sc_recall` |
-| Precision | `python sc_precision` |
-| F1 | `python sc_f1` |
-
-### Régression
-
-Les indicateurs de performance en régression sont les suivants:
-
-| Nom | Formule |
-|-----|---------|
-| Mean squared error | $MSE = \mathbb{E}\left[(y - h_\theta(X))^2\right]$ |
-| Root Mean squared error | $RMSE = \sqrt{\mathbb{E}\left[(y - h_\theta(X))^2\right]}$ |
-| Mean Absolute Error | $MAE = \mathbb{E}\left[|y - h_\theta(X)|\right]$ |
-| Mean Absolute Percentage Error | $MAE = \mathbb{E}\left[\left|\frac{y - h_\theta(X)}{y}\right|\right]$ |
+| Accuracy | 0.94061 |
+| Recall | 0.9668616 |
+| Precision | 0.9612403 |
+| F1 | 0.9640428 |
