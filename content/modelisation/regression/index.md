@@ -153,7 +153,7 @@ Dans ce cas, $\mathbb{E}\_{\theta}(Y|X) = \mathbb{P}\_{\theta}(Y = 1|X)$.
 La régression logistique peut être vue comme un modèle linéaire en probabilité:
 
 $$
-\text{logit}\bigg(\mathbb{E}_\theta(Y|X)\bigg) = \text{logit}\bigg(\mathbb{P}_\theta(Y = 1|X)\bigg) = X\beta
+\text{logit}\bigg(\mathbb{E}\_\theta(Y|X)\bigg) = \text{logit}\bigg(\mathbb{P}\_\theta(Y = 1|X)\bigg) = X\beta
 $$
 
 La fonction $\text{logit}$ est $]0,1[ \to \mathbb{R}: p \mapsto \log(\frac{p}{1-p})$
