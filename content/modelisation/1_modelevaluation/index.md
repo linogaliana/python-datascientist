@@ -29,7 +29,7 @@ Pour illustrer le travail de données nécessaire pour construire un modèle de 
 
 ## Découper l'échantillon
 
-![](https://scikit-learn.org/stable/_images/grid_search_workflow.png")
+![](https://scikit-learn.org/stable/_images/grid_search_workflow.png){width="50%"}
 
 ### Le problème du sur-apprentissage
 
@@ -81,7 +81,7 @@ Lorsqu'on travaille avec des séries temporelles, l'échantillonnage aléatoire 
 Avec des données multi-niveaux, comme c'est le cas de données géographiques ou de données individuelles avec des variables de classe, il peut être intéressant d'utiliser un échantillonnage stratifié. Cela permet de garder une proportion équivalente de chaque groupe dans les deux jeux de données de test ou d'apprentissage. Ce type d'échantillonnage stratifié est possible avec `scikit`.
 {{% /panel %}}
 
-[L'exercice sur les SVM](SVM) illustre cette construction et la manière
+L'exercice sur les SVM illustre cette construction et la manière
 dont elle facilite l'évaluation de la qualité d'un modèle.
 
 ### Validation croisée
