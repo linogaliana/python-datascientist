@@ -138,22 +138,89 @@ un problème de spécification
 ## Coefficient of determination: 0.59
 ```
 
-Avec ce modèle, on se trompe ainsi, en moyenne de 9.9 points
-et on explique 59 % de la variance observée des scores républicains.
-Le nuage de point suggère 
+{{% panel status="exercise" title="Exercise: régression linéaire avec scikit [parcours économie]" icon="fas fa-pencil-alt" %}}
+Cet exercice vise à illustrer la manière d'effectuer une régression linéaire avec `statsmodels` qui offre une interface proche de celle de `R`
 
-{{<figure src="unnamed-chunk-4-1.png" >}}
+L'objectif est d'expliquer le score des Républicains en fonction de quelques
+variables
+
+1. A partir de quelques variables, par exemple, *"unemployment", "median_age", "asian", "black", "white_not_latino_population","latino_population", "gini_coefficient", "less_than_high_school", "adult_obesity", "median_earnings_2010_dollars"*, expliquer la variable `rep16_frac`. :warning: utiliser la variable `median_earnings_2010_dollars`
+en `log` sinon son échelle risque d'écraser tout effet.
+2. Afficher un tableau de régression
+3. Evaluer la pertinence du modèle avec le R^2
+4. Utiliser l'API `formula` pour régresser le score des républicains en fonction de la variable `unemployment`, de `unemployment` au carré et du log de 
+`median_earnings_2010_dollars`
+{{% /panel %}}
+
+La 
 
 
+```
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\pandas\core\series.py:726: RuntimeWarning: divide by zero encountered in log
+##   result = getattr(ufunc, method)(*inputs, **kwargs)
+## <string>:1: SettingWithCopyWarning: 
+## A value is trying to be set on a copy of a slice from a DataFrame.
+## Try using .loc[row_indexer,col_indexer] = value instead
+## 
+## See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+```
+
+
+```
+## <bound method Summary.as_html of <class 'statsmodels.iolib.summary.Summary'>
+## """
+##                                  OLS Regression Results                                
+## =======================================================================================
+## Dep. Variable:             rep16_frac   R-squared (uncentered):                   0.977
+## Model:                            OLS   Adj. R-squared (uncentered):              0.976
+## Method:                 Least Squares   F-statistic:                          1.291e+04
+## Date:                Wed, 21 Oct 2020   Prob (F-statistic):                        0.00
+## Time:                        14:52:25   Log-Likelihood:                         -11583.
+## No. Observations:                3110   AIC:                                  2.319e+04
+## Df Residuals:                    3100   BIC:                                  2.325e+04
+## Df Model:                          10                                                  
+## Covariance Type:            nonrobust                                                  
+## ===============================================================================================
+##                                   coef    std err          t      P>|t|      [0.025      0.975]
+## -----------------------------------------------------------------------------------------------
+## unemployment                 -130.6126      7.576    -17.240      0.000    -145.467    -115.758
+## median_age                      0.3444      0.043      8.047      0.000       0.260       0.428
+## asian                          -1.0656      0.102    -10.492      0.000      -1.265      -0.866
+## black                          -0.2110      0.030     -7.067      0.000      -0.270      -0.152
+## white_not_latino_population     0.3744      0.029     13.082      0.000       0.318       0.430
+## latino_population               0.0381      0.033      1.155      0.248      -0.027       0.103
+## gini_coefficient              -33.7733      5.171     -6.531      0.000     -43.913     -23.634
+## less_than_high_school           0.9041      0.037     24.689      0.000       0.832       0.976
+## adult_obesity                  65.7221      5.629     11.677      0.000      54.686      76.758
+## log_income                      1.2057      0.413      2.918      0.004       0.395       2.016
+## ==============================================================================
+## Omnibus:                       66.723   Durbin-Watson:                   2.068
+## Prob(Omnibus):                  0.000   Jarque-Bera (JB):               75.897
+## Skew:                          -0.315   Prob(JB):                     3.31e-17
+## Kurtosis:                       3.434   Cond. No.                     3.93e+03
+## ==============================================================================
+## 
+## Notes:
+## [1] R² is computed without centering (uncentered) since the model does not contain a constant.
+## [2] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+## [3] The condition number is large, 3.93e+03. This might indicate that there are
+## strong multicollinearity or other numerical problems.
+## """>
+```
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Pour sortir une belle table pour un rapport sous $\LaTeX$, il est possible d'utiliser
+la méthode [`Summary.as_latex`](https://www.statsmodels.org/devel/generated/statsmodels.iolib.summary.Summary.as_latex.html#statsmodels.iolib.summary.Summary.as_latex). Pour un rapport HTML, on utilisera [`Summary.as_html`](https://www.statsmodels.org/devel/generated/statsmodels.iolib.summary.Summary.as_latex.html#statsmodels.iolib.summary.Summary.as_latex)
+{{% /panel %}}
 
 ## La régression logistique
 
 Ce modèle s'applique à une distribution binaire.
-Dans ce cas, $\mathbb{E}\_{\theta}(Y|X) = \mathbb{P}\_{\theta}(Y = 1|X)$.
+Dans ce cas, $\mathbb{E}_{\theta}(Y|X) = \mathbb{P}_{\theta}(Y = 1|X)$.
 La régression logistique peut être vue comme un modèle linéaire en probabilité:
 
 $$
-\text{logit}\bigg(\mathbb{E}\_\theta(Y|X)\bigg) = \text{logit}\bigg(\mathbb{P}\_\theta(Y = 1|X)\bigg) = X\beta
+\text{logit}\bigg(\mathbb{E}_\theta(Y|X)\bigg) = \text{logit}\bigg(\mathbb{P}_\theta(Y = 1|X)\bigg) = X\beta
 $$
 
 La fonction $\text{logit}$ est $]0,1[ \to \mathbb{R}: p \mapsto \log(\frac{p}{1-p})$
@@ -173,6 +240,10 @@ dans la bonne catégorie les observations
 
 
 ## Modèles linéaires généralisés
+
+## Autres modèles de Machine Learning
+
+
 
 ## Tests d'hypothèses
 

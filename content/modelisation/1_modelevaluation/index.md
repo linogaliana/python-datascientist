@@ -29,7 +29,7 @@ Pour illustrer le travail de données nécessaire pour construire un modèle de 
 
 ## Découper l'échantillon
 
-![](https://scikit-learn.org/stable/_images/grid_search_workflow.png"){width=50%}
+![](https://scikit-learn.org/stable/_images/grid_search_workflow.png")
 
 ### Le problème du sur-apprentissage
 
@@ -150,7 +150,7 @@ sens de ce critère. L'AUC représente la probabilité que le modèle soit capab
 
 ### Régression
 
-Les indicateurs de performance en régression sont les suivants:
+En Machine Learning, les indicateurs de performance en régression sont les suivants:
 
 | Nom | Formule |
 |-----|---------|
@@ -158,3 +158,8 @@ Les indicateurs de performance en régression sont les suivants:
 | Root Mean squared error | $RMSE = \sqrt{\mathbb{E}\left[(y - h_\theta(X))^2\right]}$ |
 | Mean Absolute Error | $MAE = \mathbb{E}\left[ |y - h_\theta(X)| \right]$ |
 | Mean Absolute Percentage Error | $MAE = \mathbb{E}\left[\left|\frac{y - h_\theta(X)}{y}\right|\right]$ |
+
+L'économètre se focalise moins sur la qualité de la prédiction et utilisera 
+d'autres critères pour évaluer la qualité d'un modèle (certains, comme le BIC, sont
+à regarder aussi dans une optique *Machine Learning*): $R^2$, $BIC$,
+$AIC$, *log-likelihood*, etc. 
