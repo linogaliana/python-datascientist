@@ -167,15 +167,13 @@ La
 
 
 ```
-## <bound method Summary.as_html of <class 'statsmodels.iolib.summary.Summary'>
-## """
 ##                                  OLS Regression Results                                
 ## =======================================================================================
 ## Dep. Variable:             rep16_frac   R-squared (uncentered):                   0.977
 ## Model:                            OLS   Adj. R-squared (uncentered):              0.976
 ## Method:                 Least Squares   F-statistic:                          1.291e+04
 ## Date:                Wed, 21 Oct 2020   Prob (F-statistic):                        0.00
-## Time:                        14:52:25   Log-Likelihood:                         -11583.
+## Time:                        15:01:56   Log-Likelihood:                         -11583.
 ## No. Observations:                3110   AIC:                                  2.319e+04
 ## Df Residuals:                    3100   BIC:                                  2.325e+04
 ## Df Model:                          10                                                  
@@ -205,7 +203,40 @@ La
 ## [2] Standard Errors assume that the covariance matrix of the errors is correctly specified.
 ## [3] The condition number is large, 3.93e+03. This might indicate that there are
 ## strong multicollinearity or other numerical problems.
-## """>
+```
+
+
+
+```
+##                             OLS Regression Results                            
+## ==============================================================================
+## Dep. Variable:             rep16_frac   R-squared:                       0.114
+## Model:                            OLS   Adj. R-squared:                  0.113
+## Method:                 Least Squares   F-statistic:                     133.0
+## Date:                Wed, 21 Oct 2020   Prob (F-statistic):           4.84e-81
+## Time:                        15:01:57   Log-Likelihood:                -12773.
+## No. Observations:                3110   AIC:                         2.555e+04
+## Df Residuals:                    3106   BIC:                         2.558e+04
+## Df Model:                           3                                         
+## Covariance Type:            nonrobust                                         
+## ========================================================================================================
+##                                            coef    std err          t      P>|t|      [0.025      0.975]
+## --------------------------------------------------------------------------------------------------------
+## Intercept                              239.8566     14.241     16.843      0.000     211.934     267.779
+## unemployment                          -226.1863     33.202     -6.812      0.000    -291.286    -161.086
+## I(unemployment ** 2)                   293.1405    182.496      1.606      0.108     -64.684     650.965
+## np.log(median_earnings_2010_dollars)   -15.8818      1.396    -11.379      0.000     -18.618     -13.145
+## ==============================================================================
+## Omnibus:                      337.717   Durbin-Watson:                   1.986
+## Prob(Omnibus):                  0.000   Jarque-Bera (JB):              457.853
+## Skew:                          -0.878   Prob(JB):                    3.79e-100
+## Kurtosis:                       3.669   Cond. No.                     7.15e+03
+## ==============================================================================
+## 
+## Notes:
+## [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+## [2] The condition number is large, 7.15e+03. This might indicate that there are
+## strong multicollinearity or other numerical problems.
 ```
 
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
