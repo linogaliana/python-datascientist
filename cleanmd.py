@@ -11,7 +11,7 @@ def cleanblog():
         files_grabbed.extend(glob.glob(files, recursive=True))
     list_files = []
     for i in files_grabbed:
-        if "index.md" not in i:
+        if "_index.md" not in i:
             list_files = list_files + [i]
     # APPLY cleanyaml
     for i in list_files:
