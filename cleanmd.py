@@ -1,5 +1,6 @@
 import os
 import glob
+import re
 
 def cleanblog():
     # LIST (R)MARKDOWN FILES ----------------
@@ -23,7 +24,8 @@ def cleanyaml(filename, root_dir):
     with open(filename, 'r', encoding='utf-8') as f:
         text = f.readlines()
         new_text = "".join([line for line in text])
-    s = new_text
+    # REMOVE HUGO SHORTCODES
+    s = re.sub(r"(\{\{[^}]+}\})", "", new_text) 
     # EXTRACT AND CLEAN HEADER ----------
     yaml, text = new_text.split('---\n', 2)[1:]
     yaml_jupytext, yaml_rmd = yaml.split('title:')
@@ -43,3 +45,4 @@ def cleanyaml(filename, root_dir):
 
 
 cleanblog()
+
