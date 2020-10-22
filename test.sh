@@ -24,6 +24,8 @@ else
   for i in $(find . -type f -iname "*.$extension"); do
     # jupytext --to py --execute "$i"
     jupytext --to ipynb "$i"
+    rm "$i"
   done
 fi
+
 
