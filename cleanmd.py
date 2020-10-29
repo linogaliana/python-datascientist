@@ -33,6 +33,8 @@ def cleanyaml(filename, root_dir):
     new_md = "---\n" + yaml_jupytext.rstrip() + "\n---\n" + \
              "# " + yaml_rmd_title.replace('"', '').replace("'", "") + \
              "\n" + text
+    # REMOVE R CHUNKS ------
+    new_md = remove_between(new_md, "```{r", '```')
     # WRITE IN TEMPORARY LOCATION --------------
     write_dest = os.path.join(root_dir, "temp" + os.sep + filename)
     tempdir = write_dest.rsplit(os.sep, 1)[0]
@@ -42,6 +44,17 @@ def cleanyaml(filename, root_dir):
     with open(write_dest, mode, encoding='utf-8') as f:
         f.write(new_md)
     print("Done: " + filename)
+
+
+
+def remove_chunk( s, first, last ):
+    try:
+        start = s.index( first ) + len( first )
+        end = s.index( last, start )
+        return s[:(start-5)] + s[(end+3):]
+    except ValueError:
+        return s
+
 
 
 cleanblog()
