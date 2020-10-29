@@ -19,7 +19,7 @@ echo "extension: $extension"
 
 if [ "$test" = true ] ; then
   # CONVERT INTO NOTEBOOKS AND EXECUTE
-  for i in $(ls **/*.md **/*.Rmd | grep -v 'index.md$'); do
+  for i in $(find . -type f \( -iname "*.md" -o -iname "*.Rmd" \)); do
     echo "Executing $i"
     jupytext --to py --execute "$i"
   done
