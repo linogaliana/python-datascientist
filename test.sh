@@ -31,8 +31,9 @@ else
     echo "Converting $i"
     # jupytext --to py --execute "$i"
     jupytext --to ipynb "$i"
-    rm "$i"
   done
 fi
 
-
+for i in $(find . -type f \( -iname "*.md" -o -iname "*.Rmd" \)); do
+  rm "$i"
+done
