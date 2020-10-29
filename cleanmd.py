@@ -26,6 +26,8 @@ def cleanyaml(filename, root_dir):
         new_text = "".join([line for line in text])
     # REMOVE HUGO SHORTCODES
     s = re.sub(r"(\{\{[^}]+}\})", "", new_text) 
+    # REMOVE R CHUNKS ------
+    s = remove_between(s, "```{r", '```')
     # EXTRACT AND CLEAN HEADER ----------
     yaml, text = new_text.split('---\n', 2)[1:]
     yaml_jupytext, yaml_rmd = yaml.split('title:')
@@ -33,8 +35,6 @@ def cleanyaml(filename, root_dir):
     new_md = "---\n" + yaml_jupytext.rstrip() + "\n---\n" + \
              "# " + yaml_rmd_title.replace('"', '').replace("'", "") + \
              "\n" + text
-    # REMOVE R CHUNKS ------
-    new_md = remove_between(new_md, "```{r", '```')
     # WRITE IN TEMPORARY LOCATION --------------
     write_dest = os.path.join(root_dir, "temp" + os.sep + filename)
     tempdir = write_dest.rsplit(os.sep, 1)[0]
