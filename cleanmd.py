@@ -1,5 +1,6 @@
 import os
 import glob
+import re
 
 def cleanblog():
     # LIST (R)MARKDOWN FILES ----------------
@@ -11,7 +12,7 @@ def cleanblog():
         files_grabbed.extend(glob.glob(files, recursive=True))
     list_files = []
     for i in files_grabbed:
-        if "index.md" not in i:
+        if "_index.md" not in i:
             list_files = list_files + [i]
     # APPLY cleanyaml
     for i in list_files:
@@ -23,7 +24,10 @@ def cleanyaml(filename, root_dir):
     with open(filename, 'r', encoding='utf-8') as f:
         text = f.readlines()
         new_text = "".join([line for line in text])
-    s = new_text
+    # REMOVE HUGO SHORTCODES
+    s = re.sub(r"(\{\{[^}]+}\})", "", new_text) 
+    # REMOVE R CHUNKS ------
+    s = re.sub(r'(?s)(```\{r)(.*?)(```)', "", s)
     # EXTRACT AND CLEAN HEADER ----------
     yaml, text = new_text.split('---\n', 2)[1:]
     yaml_jupytext, yaml_rmd = yaml.split('title:')
@@ -42,4 +46,16 @@ def cleanyaml(filename, root_dir):
     print("Done: " + filename)
 
 
+
+def remove_chunk( s, first, last ):
+    try:
+        start = s.index( first ) + len( first )
+        end = s.index( last, start )
+        return s[:(start-5)] + s[(end+3):]
+    except ValueError:
+        return s
+
+
+
 cleanblog()
+
