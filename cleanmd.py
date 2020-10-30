@@ -27,7 +27,7 @@ def cleanyaml(filename, root_dir):
     # REMOVE HUGO SHORTCODES
     s = re.sub(r"(\{\{[^}]+}\})", "", new_text) 
     # REMOVE R CHUNKS ------
-    s = remove_chunk(s, "```{r", '```')
+    s = re.sub(r'(?s)(```\{r)(.*?)(```)', "", s)
     # EXTRACT AND CLEAN HEADER ----------
     yaml, text = new_text.split('---\n', 2)[1:]
     yaml_jupytext, yaml_rmd = yaml.split('title:')
