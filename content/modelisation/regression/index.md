@@ -152,7 +152,6 @@ en `log` sinon son échelle risque d'écraser tout effet.
 `median_earnings_2010_dollars`
 {{% /panel %}}
 
-La 
 
 
 ```
@@ -172,8 +171,8 @@ La
 ## Dep. Variable:             rep16_frac   R-squared (uncentered):                   0.977
 ## Model:                            OLS   Adj. R-squared (uncentered):              0.976
 ## Method:                 Least Squares   F-statistic:                          1.291e+04
-## Date:                Wed, 21 Oct 2020   Prob (F-statistic):                        0.00
-## Time:                        15:06:43   Log-Likelihood:                         -11583.
+## Date:                Mon, 02 Nov 2020   Prob (F-statistic):                        0.00
+## Time:                        09:26:18   Log-Likelihood:                         -11583.
 ## No. Observations:                3110   AIC:                                  2.319e+04
 ## Df Residuals:                    3100   BIC:                                  2.325e+04
 ## Df Model:                          10                                                  
@@ -213,8 +212,8 @@ La
 ## Dep. Variable:             rep16_frac   R-squared:                       0.114
 ## Model:                            OLS   Adj. R-squared:                  0.113
 ## Method:                 Least Squares   F-statistic:                     133.0
-## Date:                Wed, 21 Oct 2020   Prob (F-statistic):           4.84e-81
-## Time:                        15:06:43   Log-Likelihood:                -12773.
+## Date:                Mon, 02 Nov 2020   Prob (F-statistic):           4.84e-81
+## Time:                        09:26:18   Log-Likelihood:                -12773.
 ## No. Observations:                3110   AIC:                         2.555e+04
 ## Df Residuals:                    3106   BIC:                         2.558e+04
 ## Df Model:                           3                                         
@@ -244,6 +243,20 @@ Pour sortir une belle table pour un rapport sous $\LaTeX$, il est possible d'uti
 la méthode [`Summary.as_latex`](https://www.statsmodels.org/devel/generated/statsmodels.iolib.summary.Summary.as_latex.html#statsmodels.iolib.summary.Summary.as_latex). Pour un rapport HTML, on utilisera [`Summary.as_html`](https://www.statsmodels.org/devel/generated/statsmodels.iolib.summary.Summary.as_latex.html#statsmodels.iolib.summary.Summary.as_latex)
 {{% /panel %}}
 
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+Les utilisateurs de `R` retrouveront des éléments très familiers avec `statsmodels`,
+notamment la possibilité d'utiliser une formule pour définir une régression.
+La philosophie de `statsmodels` est similaire à celle qui a présidé à la construction
+des packages `stats` et `MASS` de `R`: offrir une librairie généraliste, proposant
+une large gamme de modèles. Néanmoins, `statsmodels` bénéficie de sa jeunesse
+par rapport aux packages `R`. Depuis les années 1990, les packages `R` visant 
+à proposer des fonctionalités manquantes dans `stats` et `MASS` se sont
+multipliés alors que `statsmodels`, enfant des années 2010, n'a eu qu'à
+proposer un cadre général (les *generalized estimating equations*) pour
+englober ces modèles.
+{{% /panel %}}
+
 ## La régression logistique
 
 Ce modèle s'applique à une distribution binaire.
@@ -260,7 +273,7 @@ Sa fonction réciproque est la sigmoïde ($\frac{1}{1 + e^{-x}}$),
 objet central du *Deep Learning*.
 
 Il convient de noter que les probabilités ne sont pas observées, c'est l'*outcome*
-binaire (0/1) qui l'est. Selon amène à voir la régression logistique de deux
+binaire (0/1) qui l'est. Cela amène à voir la régression logistique de deux
 manières différente:
 
 * En économétrie, on s'intéresse au modèle latent qui détermine le choix de
@@ -269,6 +282,32 @@ du travail, on va modéliser les facteurs déterminant ce choix
 * En *Machine Learning*, le modèle latent n'est nécessaire que pour classifier
 dans la bonne catégorie les observations
 
+L'estimation des paramètres $\beta$ peut se faire par maximum de vraisemblance
+ou par régression, les deux solutions sont équivalentes. 
+
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+Par défaut, `scikit` applique une régularisation pour pénaliser les modèles
+peu parcimonieux (comportement différent
+de celui de `statsmodels`). Ce comportement par défaut est à garder à l'esprit
+si l'objectif n'est pas de faire de la prédiction. 
+{{% /panel %}}
+
+{{% panel status="exercise" title="Régression logistique [data-scientists]" icon="fas fa-pencil-alt" %}}
+Avec `scikit`, en utilisant échantillons d'apprentissage et d'estimation:
+
+1. Evaluer l'effet des variables déjà utilisées sur la probabilité des Républicains
+de gagner
+2. Faire varier le paramètre de régularisation. Quel effet sur les paramètres
+{{% /panel %}}
+
+{{% panel status="exercise" title="Régression logistique [economists]" icon="fas fa-pencil-alt" %}}
+En utilisant échantillons d'apprentissage et d'estimation:
+
+1. Evaluer l'effet des variables déjà utilisées sur la probabilité des Républicains
+de gagner
+2. Faire un test XXX
+{{% /panel %}}
 
 ## Modèles linéaires généralisés
 
