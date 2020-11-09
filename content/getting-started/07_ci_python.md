@@ -142,6 +142,7 @@ Le modèle suivant, expliqué en dessous, fournit un modèle de recette pour
 tester un notebook:
 
 ```shell
+# Modèle de fichier .travis.yml
 language: python
 python:
   - "3.7"
@@ -168,6 +169,8 @@ install:
 script:
   - jupytext --to py --execute myfile.ipynb
 ``` 
+
+### Explications
 
 Les lignes:
 
