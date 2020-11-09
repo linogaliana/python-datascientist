@@ -31,6 +31,7 @@ else
     echo "Converting $i"
     # jupytext --to py --execute "$i"
     jupytext --to ipynb "$i"
+    jupyter nbconvert --to notebook --execute --inplace ${i/$extension/ipynb}
   done
 fi
 
