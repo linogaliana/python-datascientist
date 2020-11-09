@@ -80,6 +80,43 @@ Cette section n'est absolument pas exaustive. Au contraire, elle ne fournit
 qu'un exemple minimal pour expliquer la logique de l'intégration continue. Il
 ne s'agit ainsi pas d'une garantie absolue de reproductibilité d'un *notebook*.
 
+### Lister les dépendances
+
+Avant d'écrire les instructions à exécuter par `Travis`, il faut définir un 
+environnement d'exécution car `Travis` ne connaît pas la configuration `Python`
+dont vous avez besoin. 
+
+Il convient ainsi de lister les dépendances nécessaires dans un fichier 
+`requirements`, comme expliqué dans la partie
+[Bonnes pratiques](#bonnespratiques), ou un fichier `environment.yml`.
+Ce fichier fait la liste des dépendances à installer. 
+Si on fait le choix de l'option `environment.yml`,
+le fichier prendra ainsi la forme
+suivante:
+
+```yaml
+channels:
+  - conda-forge
+
+dependencies:
+  - python
+  - jupyter
+  - jupytext
+  - matplotlib
+  - nbconvert
+  - numpy
+  - pandas
+  - scipy
+  - seaborn
+```
+
+Le choix du *channel* `conda-forge` vise à contrôler le dépôt utilisé par 
+`Anaconda`. 
+
+Ne pas oublier de mettre ce fichier sous contrôle de version et de l'envoyer
+sur le dépôt par un `push`.
+
+
 ### Connecter son compte `Github` à `Travis`
 
 Les étapes sont expliquées dans
@@ -92,12 +129,80 @@ Les étapes sont expliquées dans
 4. Cliquer, en haut à droite, sur la photo de profil. Cliquer sur `Settings`
 puis `Activate` (bouton vert). Sélectionner le dépôt qui doit utiliser `Travis`
 
-### Lister les dépendances
+### Tester un notebook `myfile.ipynb`
 
-Avant d'écrire les instructions à exécuter par `Travis`, il faut définir un 
-environnement d'exécution car `Travis` ne connaît pas la configuration `Python`
-dont vous avez besoin. 
+Le fichier qui contrôle les instructions exécutées dans l'environnement `Travis`
+est le fichier `.travis.yml` (:warning: ne pas oublier le point au début du 
+nom du fichier). 
 
-Il convient ainsi de lister les dépendances nécessaires dans un fichier 
-`requirements`, comme expliqué dans la partie
-[Bonnes pratiques](#bonnespratiques)
+Le modèle suivant, expliqué en dessous, fournit un modèle de recette pour 
+tester un notebook:
+
+```shell
+language: python
+python:
+  - "3.7"
+
+install:
+  - sudo apt-get update
+  # We do this conditionally because it saves us some downloading if the
+  # version is the same.
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+  - conda env create -n test-environment python=$TRAVIS_PYTHON_VERSION -f environment.yml
+  - source activate test-environment
+
+script:
+  - 
+``` 
+
+Les lignes:
+
+```shell
+language: python
+python:
+  - "3.7"
+``` 
+
+définissent la version de Python qui sera utilisée. Cependant, il convient
+d'installer `Anaconda` (en fait une version minimaliste d'`Anaconda` nommée
+`Miniconda`) ainsi que configurer la machine pour utiliser Anaconda plutôt
+que la version de base de `Python`. Ce sont les lignes suivantes
+qui contrôlent ces opérations:
+
+```yaml
+install:
+  - sudo apt-get update
+  # We do this conditionally because it saves us some downloading if the
+  # version is the same.
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+```
+
+Enfin, le reste de la tâche `install` est consacrée à la construction d'un 
+environnement Anaconda cohérent avec les packages définis dans `environment.yml`:
+
+```yaml
+- conda env create -n test-environment python=$TRAVIS_PYTHON_VERSION -f environment.yml
+- source activate test-environment
+```
