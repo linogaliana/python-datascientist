@@ -19,6 +19,7 @@ Résumé :
 [github](https://github.com/) <a href="https://github.com" class="github"><i class="fab fa-github"></i></a> ou [gitlab](https://gitlab.com/)__ <a href="https://gitlab.com" class="gitlab"><i class="fab fa-gitlab"></i></a>
 (dépôt public ou dépôt privé à partager avec le chargé de TD)
 * Les étudiants sont invités à proposer des sujets qui leur plaisent, à faire valider par le chargé de TD. 
+* Un exemple de configuration d'intégration continue est disponible [ici](/getting-started/pythonCI) pour aider à avoir un notebook reproductible (:warning: ce n'est pas une garantie)
 
 ## Attentes du projet
 
@@ -71,6 +72,8 @@ Même si le projet n’est pas celui du cours de stats, il faut que la démarche
 * Le code contenu dans le rapport devra être un maximum propre (pas de copier coller de cellule, préférez des fonctions)
 
 Le test à réaliser : faire tourner toutes les cellules de votre notebook et ne pas avoir d’erreur est une condition sine qua non pour avoir la moyenne.
+Un exemple de configuration d'intégration continue est disponible [ici](/getting-started/pythonCI) pour aider à avoir un notebook reproductible (:warning: ce n'est pas une garantie)
+
 
 ## Barême approximatif
 
