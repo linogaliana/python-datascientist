@@ -19,7 +19,7 @@ Résumé :
 [github](https://github.com/) <a href="https://github.com" class="github"><i class="fab fa-github"></i></a> ou [gitlab](https://gitlab.com/)__ <a href="https://gitlab.com" class="gitlab"><i class="fab fa-gitlab"></i></a>
 (dépôt public ou dépôt privé à partager avec le chargé de TD)
 * Les étudiants sont invités à proposer des sujets qui leur plaisent, à faire valider par le chargé de TD. 
-* Un exemple de configuration d'intégration continue est disponible [ici](#manipulation/pythonCI) pour aider à avoir un notebook reproductible (:warning: ce n'est pas une garantie)
+* Un exemple de configuration d'intégration continue est disponible [ici](/manipulation/pythonCI) pour aider à avoir un notebook reproductible (:warning: ce n'est pas une garantie)
 
 ## Attentes du projet
 
