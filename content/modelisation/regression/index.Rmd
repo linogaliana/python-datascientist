@@ -221,9 +221,11 @@ print(results.summary())
 
 
 ```{python}
-results = smf.ols('rep16_frac ~ unemployment + I(unemployment**2) + np.log(median_earnings_2010_dollars)', data=df2).fit()
+results = smf.ols('rep16_frac ~ unemployment + I(unemployment**2) + np.log(median_earnings_2010_dollars)', data=df2, fit_intercept = True).fit()
 print(results.summary())
 ```
+
+
 
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 Pour sortir une belle table pour un rapport sous $\LaTeX$, il est possible d'utiliser
@@ -285,7 +287,9 @@ Avec `scikit`, en utilisant échantillons d'apprentissage et d'estimation:
 
 1. Evaluer l'effet des variables déjà utilisées sur la probabilité des Républicains
 de gagner
-2. Faire varier le paramètre de régularisation. Quel effe.t sur les paramètres
+2. Faire varier le paramètre de régularisation. Quel effet sur les paramètres estimés?
+3. Classifier le fait que chaque comté soit ou non gagné par les Républicains en fonction du score prédit. En déduire une matrice de confusion et 
+une mesure de qualité du modèle
 {{% /panel %}}
 
 {{% panel status="exercise" title="Régression logistique [economists]" icon="fas fa-pencil-alt" %}}
@@ -293,8 +297,36 @@ En utilisant échantillons d'apprentissage et d'estimation:
 
 1. Evaluer l'effet des variables déjà utilisées sur la probabilité des Républicains
 de gagner
-2. Faire un test XXX
+2. Faire un test de ratio de vraisemblance concernant l'inclusion de la variable de (log)-revenu 
 {{% /panel %}}
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+La statistique du test est:
+$$
+LR = -2\log\bigg(\frac{\mathcal{L}_\theta}{\mathcal{L}_{\theta_0}}\bigg) = -2(\mathcal{l}_\theta - \mathcal{l}_{\theta_0})
+$$
+{{% /panel %}}
+
+```{python}
+from scipy import stats
+
+df2 = df[["rep16_frac", "unemployment", "median_age", "asian", "black", "white_not_latino_population","latino_population", "gini_coefficient", "less_than_high_school", "adult_obesity", "median_earnings_2010_dollars"]]
+df2['y'] = (df2['rep16_frac']>50).astype(int)
+mylogit = smf.logit(formula = 'y ~ unemployment + I(unemployment**2) + np.log(median_earnings_2010_dollars)', data=df2[df2['median_earnings_2010_dollars']>0]).fit()
+print(mylogit.summary())
+
+logit_h0 = smf.logit(formula = 'y ~ unemployment + I(unemployment**2)', data=df2[df2['median_earnings_2010_dollars']>0]).fit()
+# print(logit_h0.summary())
+
+lr = -2*(mylogit.llf - logit_h0.llf)
+lrdf = (logit_h0.df_resid - mylogit.df_resid)
+
+lr_pvalue = stats.chi2.sf(lr, df=lrdf)
+lr_pvalue
+# pvalue de 1: ajout de la variable log ajoute à coup sur de l'info
+```
+
+
 
 ## Modèles linéaires généralisés
 
