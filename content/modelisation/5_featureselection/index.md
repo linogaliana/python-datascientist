@@ -58,4 +58,21 @@ Contrairement à la régression linéaire classique, elles fonctionnent égaleme
 dans un cadre où $p>N$, c'est à dire où le nombre de régresseur est supérieur
 au nombre d'observations.
 
+Le lien pour importer le fichier en csv est [là](https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
 
+
+
+En adoptant le principe d'une fonction objectif pénalisée, le LASSO permet de fixer un certain nombre de coefficients à 0. Les variables dont la norme est non nulle passent ainsi le test de sélection. 
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Le LASSO est un programme d'optimisation sous contrainte. On cherche à trouver l'estimateur $\beta$ qui minimise l'erreur quadratique (régression linéaire) sous une contrainte additionnelle régularisant les paramètres:
+$$
+\min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) \\
+\text{s.t. } \sum_{j=1}^p |\beta_j| \leq t
+$$
+Ce programme se reformule grâce au Lagrangien est permet ainsi d'obtenir un programme de minimisation plus maniable: 
+$$
+\beta^{\text{LASSO}} = \arg \min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) + \lambda \sum_{j=1}^p |\beta_j| = \arg \min_{\beta} ||y-X\beta||_{2}^{2} + \lambda ||\beta||_1
+$$
+où $\lambda$ est une réécriture de la régularisation précédente. 
+{{% /panel %}}
