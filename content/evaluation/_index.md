@@ -72,7 +72,7 @@ Même si le projet n’est pas celui du cours de stats, il faut que la démarche
 * Le code contenu dans le rapport devra être un maximum propre (pas de copier coller de cellule, préférez des fonctions)
 
 Le test à réaliser : faire tourner toutes les cellules de votre notebook et ne pas avoir d’erreur est une condition sine qua non pour avoir la moyenne.
-Un exemple de configuration d'intégration continue est disponible [ici](#pythonCI) pour aider à avoir un notebook reproductible (:warning: ce n'est pas une garantie)
+Un exemple de configuration d'intégration continue est disponible [ici](/manipulation/pythonCI) pour aider à avoir un notebook reproductible (:warning: ce n'est pas une garantie)
 
 
 ## Barême approximatif
