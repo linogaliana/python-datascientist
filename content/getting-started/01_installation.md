@@ -142,9 +142,7 @@ fournit un raccourci pour lancer le notebook dans un environnement dédié.
 
 ### Docker
 
-Derrière ces outils pour exécuter de manière simple des scripts Python sur un serveur temporaire se cache
-`Docker`. `Docker` est une technologie qui vise à permettre la construction de machines autosuffisantes
-(que l'on nomme containeurs) répliquant un environnement contrôlé (que l'on nomme image).
+**TO DO**
  
 # Installer et configurer git
 
