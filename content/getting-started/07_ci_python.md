@@ -131,6 +131,9 @@ puis `Activate` (bouton vert). Sélectionner le dépôt qui doit utiliser `Travi
 
 ### Tester un notebook `myfile.ipynb`
 
+Dans cette partie, on va supposer que le *notebook* à tester s'appelle `myfile.ipynb`
+et se trouve à la racine du dépôt. 
+
 Le fichier qui contrôle les instructions exécutées dans l'environnement `Travis`
 est le fichier `.travis.yml` (:warning: ne pas oublier le point au début du 
 nom du fichier). 
@@ -163,7 +166,7 @@ install:
   - source activate test-environment
 
 script:
-  - 
+  - jupytext --to py --execute myfile.ipynb
 ``` 
 
 Les lignes:
@@ -206,3 +209,22 @@ environnement Anaconda cohérent avec les packages définis dans `environment.ym
 - conda env create -n test-environment python=$TRAVIS_PYTHON_VERSION -f environment.yml
 - source activate test-environment
 ```
+
+Tout cela permet de construire un conteneur qui a vocation à être suffisant
+pour exécuter `myfile.ipynb`. C'est l'objet de la tâche `script`:
+
+```yaml
+script:
+  - jupytext --to py --execute myfile.ipynb
+``` 
+
+`jupytext` est une extension de `jupyter` qui fournit des éléments pour passer d'un
+notebook à un autre format. En l'occurrence, il s'agit de convertir
+un *notebook* en
+script `.py` et l'exécuter. Ce test pourrait également être fait en n'utilisant
+que `Jupyter`:
+
+```yaml
+script:
+  - jupyter nbconvert --to notebook --execute --inplace myfile.ipynb
+``` 
