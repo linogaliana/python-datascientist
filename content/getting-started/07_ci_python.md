@@ -1,5 +1,5 @@
 ---
-title: "Bonne pratique de Python"
+title: "Intégration continue avec Python"
 date: 2020-07-22T12:00:00Z
 draft: false
 weight: 80
