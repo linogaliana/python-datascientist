@@ -62,6 +62,8 @@ Le lien pour importer le fichier en csv est [là](https://public.opendatasoft.co
 
 
 
+## Principe
+
 En adoptant le principe d'une fonction objectif pénalisée, le LASSO permet de fixer un certain nombre de coefficients à 0. Les variables dont la norme est non nulle passent ainsi le test de sélection. 
 
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
@@ -76,3 +78,99 @@ $$
 $$
 où $\lambda$ est une réécriture de la régularisation précédente. 
 {{% /panel %}}
+
+warning: sélection de variables corrélées
+
+## Exemples
+
+Avant de se lancer dans les exercices, on va éliminer quelques colonnes redondantes, celles qui terminent par `_frac2`:
+
+
+```python
+df2 = df.loc[:,~df.columns.str.endswith('frac2')]
+```
+
+
+{{% panel status="exercise" title="Exercise 1: premier LASSO" icon="fas fa-pencil-alt" %}}
+1. Importer les données (l'appeler `df`)
+2. Standardiser les variables. :warning: Avant ça,
+ne garder que les colonnes numériques (idéalement on transformerait
+les variables non numériques en numériques)
+3. Estimer un modèle LASSO. Afficher les valeurs des coefficients: qu'en déduire sur le modèle idéal ? Quelle variable a une valeur non nulle ?
+4. Faire une régression linéaire avec le modèle parcimonieux et comparer la
+performance à un modèle avec plus de variables
+{{% /panel %}}
+
+
+
+Les coefficients estimés sont ainsi les suivants:
+
+
+```
+## array([0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.07813951,
+##        0.        , 0.        , 0.        , 0.        , 0.        ,
+##        0.        , 0.        , 0.        , 0.        , 0.        ])
+```
+
+Le modèle est donc extrêmement parcimonieux puisque, avec le paramètre par défaut, seulement une variable explicative est sélectionnée. La variable sélectionnée est
+
+
+```python
+df2.select_dtypes(include=np.number).drop("rep16_frac", axis = 1).columns[np.abs(lasso1.coef_)>0]
+```
+
+```
+## Index(['rep12_frac'], dtype='object')
+```
+
+Autrement dit, le meilleur prédicteur pour le score des Républicains en 2016 est... le score des Républicains en 2012.
+D'ailleurs, cette information est de loin la meilleure pour prédire le score 
+des Républicains au point que si on tente de faire varier $\alpha$, un 
+hyperparamètre du LASSO, on continuera à ne sélectionner qu'une seule variable
+
+Pour la suite, on va ainsi se contenter de variables moins bonnes mais qui 
+présentent un intérêt pour la sélection.
+
+
+
+{{% panel status="exercise" title="Exercise 2: parcimonie et paramètre alpha" icon="fas fa-pencil-alt" %}}
+1. Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
+varie (parcourir $[0,1]$ pour les valeurs de $\alpha$)
+2. Regarder les paramètres qui sont sélectionnés pour, par exemple, $\alpha=0.5$
+{{% /panel %}}
+
+
+
+```
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\sklearn\linear_model\_coordinate_descent.py:525: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 133.78377876022307, tolerance: 0.36418455939726874
+##   model = cd_fast.enet_coordinate_descent_gram(
+```
+
+```
+## [Text(0.5, 1.0, 'Number variables and regularization parameter ($\\alpha$)'), Text(0.5, 0, '$\\alpha$'), Text(0, 0.5, 'Nb. de variables')]
+```
+
+{{<figure src="unnamed-chunk-7-1.png" >}}
+
+
+
