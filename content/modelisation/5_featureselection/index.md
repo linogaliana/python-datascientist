@@ -170,7 +170,10 @@ varie (parcourir $[0,1]$ pour les valeurs de $\alpha$)
 ## [Text(0.5, 1.0, 'Number variables and regularization parameter ($\\alpha$)'), Text(0.5, 0, '$\\alpha$'), Text(0, 0.5, 'Nb. de variables')]
 ```
 
-{{<figure src="unnamed-chunk-7-1.png" >}}
+{{<figure src="lassoplot-1.png" >}}
 
 
 
+```
+## Index(['white_not_latino_population', 'graduate_degree'], dtype='object')
+```
