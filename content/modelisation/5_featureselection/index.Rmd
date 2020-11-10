@@ -133,23 +133,27 @@ df2 = df.loc[:,~df.columns.str.endswith('frac2')]
 ne garder que les colonnes numériques (idéalement on transformerait
 les variables non numériques en numériques)
 3. Estimer un modèle LASSO. Afficher les valeurs des coefficients: qu'en déduire sur le modèle idéal ? Quelle variable a une valeur non nulle ?
+4. Faire une régression linéaire avec le modèle parcimonieux et comparer la
+performance à un modèle avec plus de variables
 {{% /panel %}}
 
-```{python, eval = FALSE}
+```{python lasso}
 from sklearn.svm import LinearSVC
 from sklearn.feature_selection import SelectFromModel
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Lasso
 
-df2 = df2.select_dtypes(include=np.number)
-data = scaler.fit(df2).transform(df2.fillna(0))
+def make_lasso(dataframe, alpha = 1):
+  df2 = dataframe.select_dtypes(include=np.number)
+  scaler = StandardScaler()
+  data = scaler.fit(df2).transform(df2.fillna(0))
+  yindex = df2.columns.get_loc("rep16_frac")
+  lasso1 = Lasso(fit_intercept=False,normalize=False, alpha = alpha)
+  lasso1.fit(np.delete(data, yindex, axis = 1),data[:,yindex])
+  return lasso1, data, yindex
 
-yindex = df2.columns.get_loc("rep16_frac")
-
-lasso1 = Lasso(fit_intercept=False,normalize=False)
-
-lasso1.fit(np.delete(data, yindex, axis = 1),data[:,yindex])
+lasso1,_,_ = make_lasso(df2)
 ```
 
 Les coefficients estimés sont ainsi les suivants:
@@ -161,26 +165,53 @@ np.abs(lasso1.coef_)
 Le modèle est donc extrêmement parcimonieux puisque, avec le paramètre par défaut, seulement une variable explicative est sélectionnée. La variable sélectionnée est
 
 ```{python, echo = TRUE}
-df2.drop("rep16_frac", axis = 1).columns[np.abs(lasso1.coef_)>0]
+df2.select_dtypes(include=np.number).drop("rep16_frac", axis = 1).columns[np.abs(lasso1.coef_)>0]
 ```
 
-Autrement dit, le meilleur prédicteur pour le score des Républicains en 2016 est... le score des Républicains en 2012. 
+Autrement dit, le meilleur prédicteur pour le score des Républicains en 2016 est... le score des Républicains en 2012.
+D'ailleurs, cette information est de loin la meilleure pour prédire le score 
+des Républicains au point que si on tente de faire varier $\alpha$, un 
+hyperparamètre du LASSO, on continuera à ne sélectionner qu'une seule variable
+
+Pour la suite, on va ainsi se contenter de variables moins bonnes mais qui 
+présentent un intérêt pour la sélection.
+
+```{python}
+cols_to_exclude = df.filter(regex = "(dem[0-9]+|rep[0-9]+)", axis=1).columns
+df2 = df[[c for c in df.columns if c not in cols_to_exclude] + ['rep16_frac']]
+```
 
 {{% panel status="exercise" title="Exercise 2: parcimonie et paramètre alpha" icon="fas fa-pencil-alt" %}}
-1. 
+1. Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
+varie (parcourir $[0,1]$ pour les valeurs de $\alpha$)
+2. Regarder les paramètres qui sont sélectionnés pour, par exemple, $\alpha=0.5$
 {{% /panel %}}
 
 
 ```{python}
+# Graphe emprunté à http://tutoriels-data-mining.blogspot.com/2018/05/regression-lasso-sous-python.html
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
+from sklearn.linear_model import lasso_path
+import seaborn as sns
 
-couleurs = cm.rainbow(np.linspace(0,1,16))
-#graphique lasso path (une courbe par
-for i in range(coefs_lasso.shape[0]):
-    plt.plot(alpha_for_path,coefs_lasso[i,:],c=couleurs[i])
-    plt.xlabel('Alpha')
-    plt.ylabel('Coefficients')
-    plt.title('Lasso path')
-    plt.show()
+lasso2,data,yindex = make_lasso(df2)
+
+my_alphas = np.array([0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0])
+alpha_for_path, coefs_lasso, _ = lasso_path(np.delete(data, yindex, axis = 1),data[:,yindex],alphas=my_alphas)
+nb_non_zero = np.apply_along_axis(func1d=numpy.count_nonzero,arr=coefs_lasso,axis=0)
+
+lasso2,data,yindex = make_lasso(df2)
+
+my_alphas = np.array([0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0])
+alpha_for_path, coefs_lasso, _ = lasso_path(np.delete(data, yindex, axis = 1),data[:,yindex],alphas=my_alphas)
+nb_non_zero = np.apply_along_axis(func1d=np.count_nonzero,arr=coefs_lasso,axis=0)
+
+p = sns.lineplot(y=nb_non_zero, x=alpha_for_path).set(title = r"Number variables and regularization parameter ($\alpha$)", xlabel=r'$\alpha$', ylabel='Nb. de variables')
+p
+```
+
+
+```{python}
+lasso2,data,yindex = make_lasso(df2, alpha = 0.5)
 ```
