@@ -115,25 +115,67 @@ où $\lambda$ est une réécriture de la régularisation précédente.
 {{% /panel %}}
 
 
+Avant de se lancer dans les exercices, on va éliminer quelques colonnes redondantes, celles qui terminent par `_frac2`:
+
+```{python, echo = TRUE}
+df2 = df.loc[:,~df.columns.str.endswith('frac2')]
+```
 
 
-{{% panel status="exercise" title="Exercise 1: importer les données" icon="fas fa-pencil-alt" %}}
-1. Importer les données (l'appeler `df`) des élections américaines et regarder les informations dont on dispose
-2. Standardiser les variables
-3. Estimer un modèle LASSO
-4. (optionnel): faire une validation croisée sur le paramètre `C`
+{{% panel status="exercise" title="Exercise 1: premier LASSO" icon="fas fa-pencil-alt" %}}
+1. Importer les données (l'appeler `df`)
+2. Standardiser les variables. :warning: Avant ça,
+ne garder que les colonnes numériques (idéalement on transformerait
+les variables non numériques en numériques)
+3. Estimer un modèle LASSO. Afficher les valeurs des coefficients: qu'en déduire sur le modèle idéal ? Quelle variable a une valeur non nulle ?
 {{% /panel %}}
 
 ```{python, eval = FALSE}
 from sklearn.svm import LinearSVC
 from sklearn.feature_selection import SelectFromModel
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import Lasso
+
+df2 = df2.select_dtypes(include=np.number)
+data = scaler.fit(df2).transform(df2.fillna(0))
+
+yindex = df2.columns.get_loc("rep16_frac")
+
+lasso1 = Lasso(fit_intercept=False,normalize=False)
+
+lasso1.fit(np.delete(data, yindex, axis = 1),data[:,yindex])
+```
+
+Les coefficients estimés sont ainsi les suivants:
+
+```{python}
+np.abs(lasso1.coef_)
+```
+
+Le modèle est donc extrêmement parcimonieux puisque, avec le paramètre par défaut, seulement une variable explicative est sélectionnée. La variable sélectionnée est
+
+```{python, echo = TRUE}
+df2.drop("rep16_frac", axis = 1).columns[np.abs(lasso1.coef_)>0]
+```
+
+Autrement dit, le meilleur prédicteur pour le score des Républicains en 2016 est... le score des Républicains en 2012. 
+
+{{% panel status="exercise" title="Exercise 2: parcimonie et paramètre alpha" icon="fas fa-pencil-alt" %}}
+1. 
+{{% /panel %}}
 
 
-X_train, X_test, y_train, y_test = train_test_split(
-    df.drop('rep16_frac', axis = 1),
-    tempdf[['rep16_frac']].values.ravel(), test_size=0, random_state=0
-)
+```{python}
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 
-lsvc = LinearSVC(C=0.01, penalty="l1", dual=False).fit(X, y)
+couleurs = cm.rainbow(np.linspace(0,1,16))
+#graphique lasso path (une courbe par
+for i in range(coefs_lasso.shape[0]):
+    plt.plot(alpha_for_path,coefs_lasso[i,:],c=couleurs[i])
+    plt.xlabel('Alpha')
+    plt.ylabel('Coefficients')
+    plt.title('Lasso path')
+    plt.show()
 ```
