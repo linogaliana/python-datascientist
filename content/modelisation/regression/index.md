@@ -316,7 +316,7 @@ de gagner
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 La statistique du test est:
 $$
-LR = -2\log\bigg(\frac{\mathcal{L}_\theta}{\mathcal{L}_{\theta_0}}\bigg) = -2(\mathcal{l}_\theta - \mathcal{l}_{\theta_0})
+LR = -2\log\bigg(\frac{\mathcal{L}_{\theta}}{\mathcal{L}_{\theta_0}}\bigg) = -2(\mathcal{l}_{\theta} - \mathcal{l}_{\theta_0})
 $$
 {{% /panel %}}
 
