@@ -1,0 +1,256 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.6.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+title: "Sélection de variables: une introduction"
+date: 2020-10-15T13:00:00Z
+draft: false
+weight: 50
+output: 
+  html_document:
+    keep_md: true
+    self_contained: true
+slug: lasso
+---
+
+
+```{r setup, include=FALSE}
+library(knitr)  
+library(reticulate)  
+knitr::knit_engines$set(python = reticulate::eng_python)
+knitr::opts_chunk$set(fig.path = "")
+knitr::opts_chunk$set(eval = TRUE, echo = FALSE, warning = FALSE, message = FALSE)
+
+# Hook from Maelle Salmon: https://ropensci.org/technotes/2020/04/23/rmd-learnings/
+knitr::knit_hooks$set(
+  plot = function(x, options) {
+    hugoopts <- options$hugoopts
+    paste0(
+      "{", "{<figure src=", # the original code is simpler
+      # but here I need to escape the shortcode!
+      '"', x, '" ',
+      if (!is.null(hugoopts)) {
+        glue::glue_collapse(
+          glue::glue('{names(hugoopts)}="{hugoopts}"'),
+          sep = " "
+        )
+      },
+      ">}}\n"
+    )
+  }
+)
+
+```
+
+```{python, include = FALSE}
+import os
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
+os.environ["PROJ_LIB"] = r'C:\Users\W3CRK9\AppData\Local\r-miniconda\pkgs\proj4-4.9.3-hfa6e2cd_9\Library\share'
+os.environ['GDAL_DATA'] = r"C:\Users\W3CRK9\AppData\Local\r-miniconda\envs\r-reticulate\Library\share\gdal"
+```
+
+Pour illustrer le travail de données nécessaire pour faire de la sélection de variable,
+nous allons partir du jeu de données de [résultat des élections US 2016 au niveau des comtés](https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
+
+
+Jusqu'à présent, nous avons supposé que les variables permettant d'éclairer le
+vote Républicain étaient connues. Nous n'avons ainsi exploité qu'une partie
+limitée de l'information disponible dans nos données. Néanmoins, outre le fléau
+computationnel que représenterait la construction d'un modèle avec un grand
+nombre de variable, le choix d'un nombre restreint de variables
+(modèle parcimonieux) limite le risque de sur-apprentissage.
+
+Comment, dès-lors, choisir le bon nombre de variables et la meilleure
+combinaison de ces variables ? Il existe de multiples méthodes, parmi lesquelles :
+
+* se fonder sur des critères statistiques de performance qui pénalisent les
+modèles non parcimonieux. Par exemple, le BIC
+* techniques de *backward elimination*
+* construire des modèles pour lesquels la statistique d'intérêt pénalise l'absence
+de parcimonie. 
+
+
+La classe des modèles de *feature selection* est ainsi très vaste et regroupe
+un ensemble très diverse de modèles. Nous allons nous focaliser sur le LASSO
+(*Least Absolute Shrinkage and Selection Operator*)
+qui est une extension de la régression linéaire qui vise à sélectionner des
+modèles *sparses*. Ce type de modèle est central dans le champ du 
+*Compressed sensing* (où on emploie plutôt le terme 
+de *L1-regularization* que de LASSO). Le LASSO est un cas particulier des
+régressions elastic-net dont un autre cas fameux est la régression *ridge*.
+Contrairement à la régression linéaire classique, elles fonctionnent également
+dans un cadre où $p>N$, c'est à dire où le nombre de régresseur est supérieur
+au nombre d'observations.
+
+Le lien pour importer le fichier en csv est [là](https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
+
+```{python}
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+
+df = gpd.read_file("https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
+```
+
+## Principe
+
+En adoptant le principe d'une fonction objectif pénalisée, le LASSO permet de fixer un certain nombre de coefficients à 0. Les variables dont la norme est non nulle passent ainsi le test de sélection. 
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Le LASSO est un programme d'optimisation sous contrainte. On cherche à trouver l'estimateur $\beta$ qui minimise l'erreur quadratique (régression linéaire) sous une contrainte additionnelle régularisant les paramètres:
+$$
+\min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) \\
+\text{s.t. } \sum_{j=1}^p |\beta_j| \leq t
+$$
+Ce programme se reformule grâce au Lagrangien est permet ainsi d'obtenir un programme de minimisation plus maniable: 
+$$
+\beta^{\text{LASSO}} = \arg \min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) + \alpha \sum_{j=1}^p |\beta_j| = \arg \min_{\beta} ||y-X\beta||_{2}^{2} + \alpha ||\beta||_1
+$$
+où $\lambda$ est une réécriture de la régularisation précédente. 
+{{% /panel %}}
+
+warning: sélection de variables corrélées
+
+## Première régression LASSO
+
+Avant de se lancer dans les exercices, on va éliminer quelques colonnes redondantes, celles qui terminent par `_frac2`:
+
+```{python, echo = TRUE}
+df2 = df.loc[:,~df.columns.str.endswith('frac2')]
+```
+
+
+{{% panel status="exercise" title="Exercise 1: premier LASSO" icon="fas fa-pencil-alt" %}}
+1. Importer les données (l'appeler `df`)
+2. Standardiser les variables. :warning: Avant ça,
+ne garder que les colonnes numériques (idéalement on transformerait
+les variables non numériques en numériques)
+3. Estimer un modèle LASSO. Afficher les valeurs des coefficients: qu'en déduire sur le modèle idéal ? Quelle variable a une valeur non nulle ?
+4. Faire une régression linéaire avec le modèle parcimonieux et comparer la
+performance à un modèle avec plus de variables
+{{% /panel %}}
+
+```{python lasso}
+from sklearn.svm import LinearSVC
+from sklearn.feature_selection import SelectFromModel
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import Lasso
+
+def make_lasso(dataframe, alpha = 1):
+  df2 = dataframe.select_dtypes(include=np.number)
+  scaler = StandardScaler()
+  data = scaler.fit(df2).transform(df2.fillna(0))
+  yindex = df2.columns.get_loc("rep16_frac")
+  lasso1 = Lasso(fit_intercept=False,normalize=False, alpha = alpha)
+  lasso1.fit(np.delete(data, yindex, axis = 1),data[:,yindex])
+  return lasso1, data, yindex
+
+lasso1,_,_ = make_lasso(df2)
+```
+
+Les coefficients estimés sont ainsi les suivants:
+
+```{python}
+np.abs(lasso1.coef_)
+```
+
+Le modèle est donc extrêmement parcimonieux puisque, avec le paramètre par défaut, seulement une variable explicative est sélectionnée. La variable sélectionnée est
+
+```{python, echo = TRUE}
+df2.select_dtypes(include=np.number).drop("rep16_frac", axis = 1).columns[np.abs(lasso1.coef_)>0]
+```
+
+Autrement dit, le meilleur prédicteur pour le score des Républicains en 2016 est... le score des Républicains en 2012.
+D'ailleurs, cette information est de loin la meilleure pour prédire le score 
+des Républicains au point que si on tente de faire varier $\alpha$, un 
+hyperparamètre du LASSO, on continuera à ne sélectionner qu'une seule variable
+
+Pour la suite, on va ainsi se contenter de variables moins bonnes mais qui 
+présentent un intérêt pour la sélection.
+
+```{python}
+cols_to_exclude = df.filter(regex = "(dem[0-9]+|rep[0-9]+)", axis=1).columns
+df2 = df[[c for c in df.columns if c not in cols_to_exclude] + ['rep16_frac']]
+```
+
+## Effet du paramètre de pénalisation sur la sélection de variables
+
+{{% panel status="exercise" title="Exercise 2: parcimonie et paramètre alpha" icon="fas fa-pencil-alt" %}}
+1. Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
+varie (parcourir $[0,1]$ pour les valeurs de $\alpha$)
+2. Regarder les paramètres qui sont sélectionnés pour, par exemple, $\alpha=0.5$
+{{% /panel %}}
+
+
+```{python lassoplot}
+# Graphe emprunté à http://tutoriels-data-mining.blogspot.com/2018/05/regression-lasso-sous-python.html
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+from sklearn.linear_model import lasso_path
+import seaborn as sns
+
+lasso2,data,yindex = make_lasso(df2)
+
+my_alphas = np.array([0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0])
+alpha_for_path, coefs_lasso, _ = lasso_path(np.delete(data, yindex, axis = 1),data[:,yindex],alphas=my_alphas)
+nb_non_zero = np.apply_along_axis(func1d=np.count_nonzero,arr=coefs_lasso,axis=0)
+
+sns.set_style("whitegrid")
+p = sns.lineplot(y=nb_non_zero, x=alpha_for_path).set(title = r"Number variables and regularization parameter ($\alpha$)", xlabel=r'$\alpha$', ylabel='Nb. de variables')
+p
+plt.show()
+```
+
+
+```{python}
+lasso2,data,yindex = make_lasso(df2, alpha = 0.2)
+```
+
+Les variables sélectionnées, lorsque $\alpha = 0.2$, sont les suivantes:
+
+```{python, echo = FALSE}
+df2.select_dtypes(include=np.number).drop("rep16_frac", axis = 1).columns[np.abs(lasso2.coef_)>0]
+```
+
+On voit ici que le LASSO sélectionne des variables mais celles-ci peuvent en fait masquer d'autres variables omises. Par exemple, la variable `lat` est une approximation de la géographie du vote: les Etats du Sud votant majoritairement Républicain, les Etats du nord plutôt démocrate.
+
+## Validation croisée pour sélectionner le modèle
+
+Faut-il privilégier le modèle où $\alpha = 1$ ou $\alpha = 0.2$ ? Pour cela, 
+il convient d'effectuer une validation croisée afin de prendre le modèle pour
+lequel les variables qui passent la phase de sélection permettent de mieux 
+prédire le résultat Républicain.
+
+```{python}
+from sklearn.linear_model import LassoCV
+
+df3 = df2.select_dtypes(include=np.number)
+scaler = StandardScaler()
+yindex = df3.columns.get_loc("rep16_frac")
+df3 = scaler.fit(df3).transform(df3.fillna(0))
+# X_train, X_test , y_train, y_test = train_test_split(np.delete(data, yindex, axis = 1),data[:,yindex], test_size=0.2, random_state=0)
+
+lcv = LassoCV(alphas=my_alphas ,normalize=False,fit_intercept=False,random_state=0,cv=5).fit(np.delete(data, yindex, axis = 1), data[:,yindex])
+lcv.alpha_
+```
+
+```{python}
+lasso3,data,yindex = make_lasso(df2, alpha = lcv.alpha_)
+df2.select_dtypes(include=np.number).drop("rep16_frac", axis = 1).columns[np.abs(lasso3.coef_)>0]
+```
+
+
+```{python}
+nlasso = sum(np.abs(lasso3.coef_)>0)
+```
+
+ce qui correspond à un modèle avec `r py$nlasso` variables sélectionnées. C'est sans aucun doute trop peu parcimonieux : il faudrait revoir la phase de définition des variables pertinentes pour comprendre si des échelles différentes de certaines variables ne seraient pas plus appropriées (par exemple du `log`). 
