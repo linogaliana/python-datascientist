@@ -111,14 +111,14 @@ $$
 $$
 Ce programme se reformule grâce au Lagrangien est permet ainsi d'obtenir un programme de minimisation plus maniable: 
 $$
-\beta^{\text{LASSO}} = \arg \min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) + \lambda \sum_{j=1}^p |\beta_j| = \arg \min_{\beta} ||y-X\beta||_{2}^{2} + \lambda ||\beta||_1
+\beta^{\text{LASSO}} = \arg \min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) + \alpha \sum_{j=1}^p |\beta_j| = \arg \min_{\beta} ||y-X\beta||_{2}^{2} + \alpha ||\beta||_1
 $$
 où $\lambda$ est une réécriture de la régularisation précédente. 
 {{% /panel %}}
 
 warning: sélection de variables corrélées
 
-## Exemples
+## Première régression LASSO
 
 Avant de se lancer dans les exercices, on va éliminer quelques colonnes redondantes, celles qui terminent par `_frac2`:
 
@@ -181,6 +181,8 @@ cols_to_exclude = df.filter(regex = "(dem[0-9]+|rep[0-9]+)", axis=1).columns
 df2 = df[[c for c in df.columns if c not in cols_to_exclude] + ['rep16_frac']]
 ```
 
+## Effet du paramètre de pénalisation sur la sélection de variables
+
 {{% panel status="exercise" title="Exercise 2: parcimonie et paramètre alpha" icon="fas fa-pencil-alt" %}}
 1. Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
 varie (parcourir $[0,1]$ pour les valeurs de $\alpha$)
@@ -209,7 +211,43 @@ plt.show()
 
 
 ```{python}
-lasso2,data,yindex = make_lasso(df2, alpha = 0.5)
-df2.select_dtypes(include=np.number).drop("rep16_frac", axis = 1).columns[np.abs(lasso2.coef_)>0]
-
+lasso2,data,yindex = make_lasso(df2, alpha = 0.2)
 ```
+
+Les variables sélectionnées, lorsque $\alpha = 0.2$, sont les suivantes:
+
+```{python, echo = FALSE}
+df2.select_dtypes(include=np.number).drop("rep16_frac", axis = 1).columns[np.abs(lasso2.coef_)>0]
+```
+
+On voit ici que le LASSO sélectionne des variables mais celles-ci peuvent en fait masquer d'autres variables omises. Par exemple, la variable `lat` est une approximation de la géographie du vote: les Etats du Sud votant majoritairement Républicain, les Etats du nord plutôt démocrate.
+
+## Validation croisée pour sélectionner le modèle
+
+Faut-il privilégier le modèle où $\alpha = 1$ ou $\alpha = 0.2$ ? Pour cela, 
+il convient d'effectuer une validation croisée afin de prendre le modèle pour
+lequel les variables qui passent la phase de sélection permettent de mieux 
+prédire le résultat Républicain.
+
+```{python}
+df3 = df2.select_dtypes(include=np.number)
+scaler = StandardScaler()
+yindex = df3.columns.get_loc("rep16_frac")
+df3 = scaler.fit(df3).transform(df3.fillna(0))
+# X_train, X_test , y_train, y_test = train_test_split(np.delete(data, yindex, axis = 1),data[:,yindex], test_size=0.2, random_state=0)
+
+lcv = LassoCV(alphas=my_alphas ,normalize=False,fit_intercept=False,random_state=0,cv=5).fit(np.delete(data, yindex, axis = 1), data[:,yindex])
+lcv.alpha_
+```
+
+```{python}
+lasso3,data,yindex = make_lasso(df2, alpha = lcv.alpha_)
+df2.select_dtypes(include=np.number).drop("rep16_frac", axis = 1).columns[np.abs(lasso3.coef_)>0]
+```
+
+
+```{python}
+nlasso = sum(np.abs(lasso3.coef_)>0)
+```
+
+ce qui correspond à un modèle avec `r py$nlasso`. C'est sans aucun doute trop peu parcimonieux : il faudrait revoir la phase de définition des variables pertinentes pour comprendre si des échelles différentes de certaines variables ne seraient pas plus appropriées (par exemple du `log`). 
