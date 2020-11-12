@@ -13,7 +13,7 @@ jupyter:
 title: "Clustering"
 date: 2020-10-15T13:00:00Z
 draft: false
-weight: 50
+weight: 60
 output: 
   html_document:
     keep_md: true
@@ -94,8 +94,10 @@ en fonction du label obtenu
 
 
 ```
-## <seaborn.axisgrid.FacetGrid object at 0x0000000006FDE850>
+## <seaborn.axisgrid.FacetGrid object at 0x000000000B1C4460>
 ```
+
+{{<figure src="unnamed-chunk-6-1.png" >}}
 
 
 ## Choisir le nombre de classes
@@ -142,8 +144,7 @@ visualizer.fit(df2[xvars])        # Fit the data to the visualizer
 ```
 
 ```
-## KElbowVisualizer(ax=<AxesSubplot:xlabel='rep16_frac', ylabel='Count'>, k=None,
-##                  model=None)
+## KElbowVisualizer(ax=<AxesSubplot:>, k=None, model=None)
 ## 
 ## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\sklearn\base.py:209: FutureWarning: From version 0.24, get_params will raise an AttributeError if a parameter cannot be retrieved as an instance attribute. Previously it would return None.
 ##   warnings.warn('From version 0.24, get_params will raise an '
@@ -155,6 +156,9 @@ visualizer.show()        # Finalize and render the figure
 
 {{<figure src="elbow-1.png" >}}
 {{<figure src="elbow-2.png" >}}
+
+`yellowbrick` permet également de représenter des silhouettes mais 
+l'interprétation en est moins aisée:
   
 
 
