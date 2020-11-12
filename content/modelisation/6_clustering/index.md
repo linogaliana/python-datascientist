@@ -18,7 +18,7 @@ output:
   html_document:
     keep_md: true
     self_contained: true
-slug: lasso
+slug: clustering
 ---
 
 
