@@ -105,7 +105,7 @@ variables
 1. A partir de quelques variables, par exemple, *"unemployment", "median_age", "asian", "black", "white_not_latino_population","latino_population", "gini_coefficient", "less_than_high_school", "adult_obesity", "median_earnings_2010_dollars"*, expliquer la variable `rep16_frac`. :warning: utiliser la variable `median_earnings_2010_dollars`
 en `log` sinon son échelle risque d'écraser tout effet.
 2. Afficher les valeurs des coefficients, constante comprise
-3. Evaluer la pertinence du modèle avec le R^2 et la qualité du fit avec le MSE
+3. Evaluer la pertinence du modèle avec le $R^2$ et la qualité du fit avec le MSE
 4. Représenter un nuage de point des valeurs observées
 et des erreurs de prédiction. Observez-vous
 un problème de spécification
@@ -125,13 +125,13 @@ un problème de spécification
 ```
 
 ```
-## 21.529665435871834 [-1.28768371e+02  3.67836166e-01 -9.49273221e-01 -2.01894406e-01
-##   3.77692350e-01  2.93314498e-02 -3.66691048e+01  8.75165180e-01
-##   6.35410981e+01 -8.29884257e-01]
+## 19.946649559275073 [-1.28869547e+02  3.43983009e-01 -1.21353543e+00 -1.98739059e-01
+##   3.69549853e-01  4.13501039e-02 -3.59661219e+01  8.76347009e-01
+##   6.32532377e+01 -5.28588328e-01]
 ```
 
 ```
-## Mean squared error: 9.92
+## Mean squared error: 10.31
 ```
 
 ```
@@ -171,8 +171,8 @@ en `log` sinon son échelle risque d'écraser tout effet.
 ## Dep. Variable:             rep16_frac   R-squared (uncentered):                   0.977
 ## Model:                            OLS   Adj. R-squared (uncentered):              0.976
 ## Method:                 Least Squares   F-statistic:                          1.291e+04
-## Date:                Mon, 02 Nov 2020   Prob (F-statistic):                        0.00
-## Time:                        09:26:18   Log-Likelihood:                         -11583.
+## Date:                Thu, 12 Nov 2020   Prob (F-statistic):                        0.00
+## Time:                        16:23:46   Log-Likelihood:                         -11583.
 ## No. Observations:                3110   AIC:                                  2.319e+04
 ## Df Residuals:                    3100   BIC:                                  2.325e+04
 ## Df Model:                          10                                                  
@@ -191,7 +191,7 @@ en `log` sinon son échelle risque d'écraser tout effet.
 ## adult_obesity                  65.7221      5.629     11.677      0.000      54.686      76.758
 ## log_income                      1.2057      0.413      2.918      0.004       0.395       2.016
 ## ==============================================================================
-## Omnibus:                       66.723   Durbin-Watson:                   2.068
+## Omnibus:                       66.723   Durbin-Watson:                   2.064
 ## Prob(Omnibus):                  0.000   Jarque-Bera (JB):               75.897
 ## Skew:                          -0.315   Prob(JB):                     3.31e-17
 ## Kurtosis:                       3.434   Cond. No.                     3.93e+03
@@ -212,8 +212,8 @@ en `log` sinon son échelle risque d'écraser tout effet.
 ## Dep. Variable:             rep16_frac   R-squared:                       0.114
 ## Model:                            OLS   Adj. R-squared:                  0.113
 ## Method:                 Least Squares   F-statistic:                     133.0
-## Date:                Mon, 02 Nov 2020   Prob (F-statistic):           4.84e-81
-## Time:                        09:26:18   Log-Likelihood:                -12773.
+## Date:                Thu, 12 Nov 2020   Prob (F-statistic):           4.84e-81
+## Time:                        16:23:46   Log-Likelihood:                -12773.
 ## No. Observations:                3110   AIC:                         2.555e+04
 ## Df Residuals:                    3106   BIC:                         2.558e+04
 ## Df Model:                           3                                         
@@ -226,7 +226,7 @@ en `log` sinon son échelle risque d'écraser tout effet.
 ## I(unemployment ** 2)                   293.1405    182.496      1.606      0.108     -64.684     650.965
 ## np.log(median_earnings_2010_dollars)   -15.8818      1.396    -11.379      0.000     -18.618     -13.145
 ## ==============================================================================
-## Omnibus:                      337.717   Durbin-Watson:                   1.986
+## Omnibus:                      337.717   Durbin-Watson:                   1.985
 ## Prob(Omnibus):                  0.000   Jarque-Bera (JB):              457.853
 ## Skew:                          -0.878   Prob(JB):                    3.79e-100
 ## Kurtosis:                       3.669   Cond. No.                     7.15e+03
@@ -237,6 +237,8 @@ en `log` sinon son échelle risque d'écraser tout effet.
 ## [2] The condition number is large, 7.15e+03. This might indicate that there are
 ## strong multicollinearity or other numerical problems.
 ```
+
+
 
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 Pour sortir une belle table pour un rapport sous $\LaTeX$, il est possible d'utiliser
@@ -298,7 +300,9 @@ Avec `scikit`, en utilisant échantillons d'apprentissage et d'estimation:
 
 1. Evaluer l'effet des variables déjà utilisées sur la probabilité des Républicains
 de gagner
-2. Faire varier le paramètre de régularisation. Quel effet sur les paramètres
+2. Faire varier le paramètre de régularisation. Quel effet sur les paramètres estimés?
+3. Classifier le fait que chaque comté soit ou non gagné par les Républicains en fonction du score prédit. En déduire une matrice de confusion et 
+une mesure de qualité du modèle
 {{% /panel %}}
 
 {{% panel status="exercise" title="Régression logistique [economists]" icon="fas fa-pencil-alt" %}}
@@ -306,8 +310,58 @@ En utilisant échantillons d'apprentissage et d'estimation:
 
 1. Evaluer l'effet des variables déjà utilisées sur la probabilité des Républicains
 de gagner
-2. Faire un test XXX
+2. Faire un test de ratio de vraisemblance concernant l'inclusion de la variable de (log)-revenu 
 {{% /panel %}}
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+La statistique du test est:
+$$
+LR = -2\log\bigg(\frac{\mathcal{L}_{\theta}}{\mathcal{L}_{\theta_0}}\bigg) = -2(\mathcal{l}_{\theta} - \mathcal{l}_{\theta_0})
+$$
+{{% /panel %}}
+
+
+```
+## <string>:1: SettingWithCopyWarning: 
+## A value is trying to be set on a copy of a slice from a DataFrame.
+## Try using .loc[row_indexer,col_indexer] = value instead
+## 
+## See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+```
+
+```
+## Optimization terminated successfully.
+##          Current function value: 0.467632
+##          Iterations 7
+```
+
+```
+##                            Logit Regression Results                           
+## ==============================================================================
+## Dep. Variable:                      y   No. Observations:                 3136
+## Model:                          Logit   Df Residuals:                     3132
+## Method:                           MLE   Df Model:                            3
+## Date:                Thu, 12 Nov 2020   Pseudo R-squ.:                 0.05089
+## Time:                        16:23:46   Log-Likelihood:                -1466.5
+## converged:                       True   LL-Null:                       -1545.1
+## Covariance Type:            nonrobust   LLR p-value:                 7.176e-34
+## ========================================================================================================
+##                                            coef    std err          z      P>|z|      [0.025      0.975]
+## --------------------------------------------------------------------------------------------------------
+## Intercept                               22.2487      2.623      8.483      0.000      17.108      27.389
+## unemployment                           -21.3369      6.419     -3.324      0.001     -33.917      -8.757
+## I(unemployment ** 2)                    10.5663     32.923      0.321      0.748     -53.961      75.094
+## np.log(median_earnings_2010_dollars)    -1.8915      0.254     -7.448      0.000      -2.389      -1.394
+## ========================================================================================================
+```
+
+```
+## Optimization terminated successfully.
+##          Current function value: 0.476741
+##          Iterations 7
+```
+
+
 
 ## Modèles linéaires généralisés
 
