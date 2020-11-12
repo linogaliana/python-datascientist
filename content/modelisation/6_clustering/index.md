@@ -91,9 +91,12 @@ en fonction du label obtenu
 
 
 
+
+
 ```
-## <seaborn.axisgrid.FacetGrid object at 0x000000000709B7F0>
+## <seaborn.axisgrid.FacetGrid object at 0x0000000006FDE850>
 ```
+
 
 ## Choisir le nombre de classes
 
@@ -155,4 +158,4 @@ visualizer.show()        # Finalize and render the figure
   
 
 
-{{<figure src="unnamed-chunk-6-1.png" >}}
+{{<figure src="unnamed-chunk-7-1.png" >}}
