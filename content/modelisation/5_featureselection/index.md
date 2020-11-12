@@ -26,7 +26,8 @@ slug: lasso
 
 
 
-Pour illustrer le travail de données nécessaire pour construire un modèle de Machine Learning, mais aussi nécessaire pour l'exploration de données avant de faire une régression linéaire, nous allons partir du jeu de données de [résultat des élections US 2016 au niveau des comtés](https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
+Pour illustrer le travail de données nécessaire pour faire de la sélection de variable,
+nous allons partir du jeu de données de [résultat des élections US 2016 au niveau des comtés](https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
 
 
 Jusqu'à présent, nous avons supposé que les variables permettant d'éclairer le
@@ -74,14 +75,14 @@ $$
 $$
 Ce programme se reformule grâce au Lagrangien est permet ainsi d'obtenir un programme de minimisation plus maniable: 
 $$
-\beta^{\text{LASSO}} = \arg \min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) + \lambda \sum_{j=1}^p |\beta_j| = \arg \min_{\beta} ||y-X\beta||_{2}^{2} + \lambda ||\beta||_1
+\beta^{\text{LASSO}} = \arg \min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) + \alpha \sum_{j=1}^p |\beta_j| = \arg \min_{\beta} ||y-X\beta||_{2}^{2} + \alpha ||\beta||_1
 $$
 où $\lambda$ est une réécriture de la régularisation précédente. 
 {{% /panel %}}
 
 warning: sélection de variables corrélées
 
-## Exemples
+## Première régression LASSO
 
 Avant de se lancer dans les exercices, on va éliminer quelques colonnes redondantes, celles qui terminent par `_frac2`:
 
@@ -153,6 +154,8 @@ présentent un intérêt pour la sélection.
 
 
 
+## Effet du paramètre de pénalisation sur la sélection de variables
+
 {{% panel status="exercise" title="Exercise 2: parcimonie et paramètre alpha" icon="fas fa-pencil-alt" %}}
 1. Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
 varie (parcourir $[0,1]$ pour les valeurs de $\alpha$)
@@ -162,7 +165,7 @@ varie (parcourir $[0,1]$ pour les valeurs de $\alpha$)
 
 
 ```
-## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\sklearn\linear_model\_coordinate_descent.py:525: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 133.78377876022307, tolerance: 0.36418455939726874
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\sklearn\linear_model\_coordinate_descent.py:525: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 133.78377875999269, tolerance: 0.3641845593972687
 ##   model = cd_fast.enet_coordinate_descent_gram(
 ```
 
@@ -174,6 +177,85 @@ varie (parcourir $[0,1]$ pour les valeurs de $\alpha$)
 
 
 
+
+Les variables sélectionnées, lorsque $\alpha = 0.2$, sont les suivantes:
+
+
 ```
-## Index(['white_not_latino_population', 'graduate_degree'], dtype='object')
+## Index(['asian', 'sexually_transmitted_infections',
+##        'white_not_latino_population', 'graduate_degree', 'summer_tmax', 'lat',
+##        'green16_frac'],
+##       dtype='object')
 ```
+
+On voit ici que le LASSO sélectionne des variables mais celles-ci peuvent en fait masquer d'autres variables omises. Par exemple, la variable `lat` est une approximation de la géographie du vote: les Etats du Sud votant majoritairement Républicain, les Etats du nord plutôt démocrate.
+
+## Validation croisée pour sélectionner le modèle
+
+Faut-il privilégier le modèle où $\alpha = 1$ ou $\alpha = 0.2$ ? Pour cela, 
+il convient d'effectuer une validation croisée afin de prendre le modèle pour
+lequel les variables qui passent la phase de sélection permettent de mieux 
+prédire le résultat Républicain.
+
+
+```
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\sklearn\linear_model\_coordinate_descent.py:525: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 119.61730421758679, tolerance: 0.2944938097303203
+##   model = cd_fast.enet_coordinate_descent_gram(
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\sklearn\linear_model\_coordinate_descent.py:525: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 111.44954361639327, tolerance: 0.2890033442847753
+##   model = cd_fast.enet_coordinate_descent_gram(
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\sklearn\linear_model\_coordinate_descent.py:525: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 119.02090913369085, tolerance: 0.2912967453299923
+##   model = cd_fast.enet_coordinate_descent_gram(
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\sklearn\linear_model\_coordinate_descent.py:525: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 103.23238773456268, tolerance: 0.28747735770517546
+##   model = cd_fast.enet_coordinate_descent_gram(
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\sklearn\linear_model\_coordinate_descent.py:525: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 116.27489769682421, tolerance: 0.29446698053881165
+##   model = cd_fast.enet_coordinate_descent_gram(
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\sklearn\linear_model\_coordinate_descent.py:529: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 141.1966276706751, tolerance: 0.3641845593972687
+##   model = cd_fast.enet_coordinate_descent(
+```
+
+```
+## 0.001
+```
+
+
+```
+## C:\Users\W3CRK9\AppData\Local\R-MINI~1\envs\R-RETI~1\lib\site-packages\sklearn\linear_model\_coordinate_descent.py:529: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 141.1966276706751, tolerance: 0.3641845593972687
+##   model = cd_fast.enet_coordinate_descent(
+```
+
+```
+## Index(['unemployment', 'median_age',
+##        'management_professional_and_related_occupations',
+##        'poor_mental_health_days', 'total_population',
+##        'sexually_transmitted_infections', 'black', 'autumn_tmin',
+##        'white_not_latino_population', 'elevation', 'graduate_degree',
+##        'annual_tmax', 'gini_coefficient', 'amerindian',
+##        'preschool_enrollment_ratio_enrolled_ages_3_and_4', 'summer_tmax',
+##        'spring_tavg', 'poor_physical_health_days',
+##        'at_least_bachelor_s_degree', 'meanalc', 'spring_tmax', 'spring_tmin',
+##        'summer_prcp', 's', 'farming_fishing_and_forestry_occupations',
+##        'less_than_high_school', 'population_some_other_race_or_races',
+##        'adult_obesity', 'ca', 'sire_homogeneity',
+##        'sales_and_office_occupations', 'service_occupations',
+##        'construction_extraction_maintenance_and_repair_occupations', 'lon',
+##        'summer_tavg', 'adults_65_and_older_living_in_poverty', 'white',
+##        'children_in_single_parent_households', 'violent_crime',
+##        'child_poverty_living_in_families_below_the_poverty_line',
+##        'median_earnings_2010_dollars', 'temp', 'at_least_high_school_diploma',
+##        'summer_tmin', 'maxalc', 'acfs',
+##        'poverty_rate_below_federal_poverty_threshold', 'nearest_county', 'mar',
+##        'lat', 'autumn_prcp', 'diabetes', 'spring_prcp', 'hispanic',
+##        'school_enrollment', 'autumn_tmax', 'uninsured', 'other08_frac',
+##        'other12', 'est_votes_remaining', 'low_birthweight', 'reporting',
+##        'green16_frac', 'votes16_johnsong', 'votes16_clintonh',
+##        'votes16_trumpd', 'other16_frac', 'precincts', 'other12_frac',
+##        'teen_births', 'votes16_steinj', 'homicide_rate', 'hiv_prevalence_rate',
+##        'votes16_castled', 'infant_mortality', 'votes16_de_la_fuenter',
+##        'votes16_mcmulline', 'votes16_hedgesj'],
+##       dtype='object')
+```
+
+
+
+
+ce qui correspond à un modèle avec 78 variables sélectionnées. C'est sans aucun doute trop peu parcimonieux : il faudrait revoir la phase de définition des variables pertinentes pour comprendre si des échelles différentes de certaines variables ne seraient pas plus appropriées (par exemple du `log`). 
