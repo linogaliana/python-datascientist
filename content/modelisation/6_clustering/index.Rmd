@@ -93,6 +93,10 @@ $$
 avec $\mu_i$ la moyenne des $x_i$ dans l'ensemble de points $S_i$
 {{% /panel %}}
 
+```{python}
+import matplotlib.pyplot as plt
+```
+
 
 
 {{% panel status="exercise" title="Exercise 1: principe du kmeans" icon="fas fa-pencil-alt" %}}
@@ -143,25 +147,67 @@ p
 sns.displot(data=df2, x="rep16_frac", hue="label", alpha = 0.4)
 ```
 
-Le package `yellowbrick` fournit une extension utile à `scikit`
+## Choisir le nombre de classes
 
+Le nombre de classes est fixé par hypothèse du modélisateur. Il y a un arbitrage
+entre biais et variance. Un grand nombre de classes implique une variance
+infra-classe très faible. Avec beaucoup de classes, on tend à sur-apprendre, ce
+qui est mauvais pour la prédiction (même s'il n'est jamais possible de déterminer
+le vrai type d'une observation puisqu'on est en apprentissage non supervisé). 
 
-```{python silhouette, include = FALSE}
-import matplotlib.pyplot as plt
+Si le nombre de classes à fixer est inconnu (il n'y a pas d'hypothèses de
+modélisation qui justifient plus ou moins de classes), il existe des méthodes
+statistiques:
 
+* Méthode du coude (*elbow method*): on prend le point d'inflexion de la courbe
+de performance du modèle. Cela représente le moment où ajouter une classe
+(complexité croissante du modèle) n'apporte que des gains modérer dans la 
+modélisation des données
+* Score de silhouette: mesure de similarité entre un point et les autres points
+du cluster par rapport aux autres clusters. Moins succinctement:
+
+> Silhouette value is a measure of how similar an object is to its own cluster
+> (cohesion) compared to other clusters (separation). The silhouette ranges
+> from −1 to +1, where a high value indicates that the object is
+> well matched to its own cluster and poorly matched to neighboring
+> clusters. If most objects have a high value, then the clustering
+> configuration is appropriate. If many points have a low or negative
+> value, then the clustering configuration may have too many or too few clusters
+> 
+> Source: [Wikipedia](https://en.wikipedia.org/wiki/Silhouette_(clustering))
+
+Le package `yellowbrick` fournit une extension utile à `scikit` pour représenter
+facilement la performance en *clustering*.
+
+Pour la méthode du coude, la courbe
+de performance du modèle marque un coude léger à $k=4$. Le modèle initial
+semblait donc approprié.
+
+```{python elbow, echo = TRUE}
+from yellowbrick.cluster import KElbowVisualizer
+visualizer = KElbowVisualizer(model, k=(2,12))
+visualizer.fit(df2[xvars])        # Fit the data to the visualizer
+visualizer.show()        # Finalize and render the figure
+```
+  
+```{python silhouette, include = FALSE, echo=TRUE}
 from yellowbrick.cluster import SilhouetteVisualizer
+
 fig, ax = plt.subplots(2, 2, figsize=(15,8))
-for i in [2, 3, 4, 5]:
+j=0
+for i in [3, 4, 6, 10]:
+    j += 1
     '''
     Create KMeans instance for different number of clusters
     '''
     km = KMeans(n_clusters=i, init='k-means++', n_init=10, max_iter=100, random_state=42)
-    q, mod = divmod(i, 2)
+    q, mod = divmod(j, 2)
     '''
     Create SilhouetteVisualizer instance with KMeans instance
     Fit the visualizer
     '''
     visualizer = SilhouetteVisualizer(km, colors='yellowbrick', ax=ax[q-1][mod])
+    ax[q-1][mod].set_title("k = " + str(i))
     visualizer.fit(df2[xvars])
 ```
 
