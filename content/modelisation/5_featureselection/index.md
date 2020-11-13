@@ -149,6 +149,44 @@ D'ailleurs, cette information est de loin la meilleure pour prédire le score
 des Républicains au point que si on tente de faire varier $\alpha$, un 
 hyperparamètre du LASSO, on continuera à ne sélectionner qu'une seule variable
 
+
+
+```python
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+print(smf.ols("rep16_frac ~ rep12_frac", data = df2).fit().summary())
+```
+
+```
+##                             OLS Regression Results                            
+## ==============================================================================
+## Dep. Variable:             rep16_frac   R-squared:                       0.873
+## Model:                            OLS   Adj. R-squared:                  0.873
+## Method:                 Least Squares   F-statistic:                 2.142e+04
+## Date:                Fri, 13 Nov 2020   Prob (F-statistic):               0.00
+## Time:                        11:49:59   Log-Likelihood:                -9751.5
+## No. Observations:                3111   AIC:                         1.951e+04
+## Df Residuals:                    3109   BIC:                         1.952e+04
+## Df Model:                           1                                         
+## Covariance Type:            nonrobust                                         
+## ==============================================================================
+##                  coef    std err          t      P>|t|      [0.025      0.975]
+## ------------------------------------------------------------------------------
+## Intercept      4.6048      0.415     11.088      0.000       3.791       5.419
+## rep12_frac     0.9888      0.007    146.359      0.000       0.976       1.002
+## ==============================================================================
+## Omnibus:                      699.498   Durbin-Watson:                   1.972
+## Prob(Omnibus):                  0.000   Jarque-Bera (JB):             3668.670
+## Skew:                          -0.970   Prob(JB):                         0.00
+## Kurtosis:                       7.954   Cond. No.                         256.
+## ==============================================================================
+## 
+## Notes:
+## [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+```
+
+La performance du modèle est déjà très bonne, avec une seule variable explicative.
+
 Pour la suite, on va ainsi se contenter de variables moins bonnes mais qui 
 présentent un intérêt pour la sélection.
 
