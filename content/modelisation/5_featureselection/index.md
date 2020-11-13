@@ -185,6 +185,8 @@ print(smf.ols("rep16_frac ~ rep12_frac", data = df2).fit().summary())
 ## [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
 ```
 
+La performance du modèle est déjà très bonne, avec une seule variable explicative.
+
 Pour la suite, on va ainsi se contenter de variables moins bonnes mais qui 
 présentent un intérêt pour la sélection.
 
