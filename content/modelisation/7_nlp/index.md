@@ -10,7 +10,7 @@ jupyter:
     display_name: Python 3
     language: python
     name: python3
-title: "*Natural Language Processing* (NLP): quelques éléments"
+title: "Natural Language Processing (NLP): quelques éléments"
 date: 2020-10-15T13:00:00Z
 draft: false
 weight: 70
@@ -25,6 +25,7 @@ slug: nlp
 {{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
 Le NLP est un domaine immense de recherche. Cette page est une introduction
 fort incomplète à la question. Il s'agit de montrer la logique, quelques exemples
-avec Python et s'amuser avec comme base d'exemple un livre :books: :
+avec `Python` <i class="fab fa-python"></i>
+et s'amuser avec comme base d'exemple un livre formidable :books: :
 *Le Comte de Monte Cristo*
 {{% /panel %}}
