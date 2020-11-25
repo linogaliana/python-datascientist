@@ -1,0 +1,30 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.6.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+title: "*Natural Language Processing* (NLP): quelques éléments"
+date: 2020-10-15T13:00:00Z
+draft: false
+weight: 70
+output: 
+  html_document:
+    keep_md: true
+    self_contained: true
+slug: nlp
+---
+
+
+{{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
+Le NLP est un domaine immense de recherche. Cette page est une introduction
+fort incomplète à la question. Il s'agit de montrer la logique, quelques exemples
+avec Python et s'amuser avec comme base d'exemple un livre :books: :
+*Le Comte de Monte Cristo*
+{{% /panel %}}
