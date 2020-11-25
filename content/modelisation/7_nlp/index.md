@@ -30,6 +30,8 @@ et s'amuser avec comme base d'exemple un livre formidable :books: :
 *Le Comte de Monte Cristo*
 {{% /panel %}}
 
+## Base d'exemple
+
 La base d'exemple est le *Comte de Monte Cristo* d'Alexandre Dumas.
 Il est disponible
 gratuitement sur le site
@@ -40,18 +42,61 @@ légèrement pour ne conserver que le corpus du livre.
 
 
 ```python
+#eval = FALSE}
 from urllib import request
 
 url = "https://www.gutenberg.org/ebooks/17989.txt.utf-8"
 response = request.urlopen(url)
 raw = response.read().decode('utf8')
 dumas = raw.split("Produced by Chuck Greif and www.ebooksgratuits.com")[1].split("End of the Project Gutenberg EBook")[0]
-raw[10000:10500]
+
+import re
+
+def clean_text(text):
+    text = text.lower() # mettre les mots en minuscule
+    text = " ".join(text.split())
+    return text
+
+dumas = clean_text(dumas)
+
+dumas[10000:10500]
 ```
 
 ```
-## " croit déjà capitaine, sur ma parole.\r\n\r\n--Et il l'est de fait, dit l'armateur.\r\n\r\n--Oui, sauf votre signature et celle de votre associé, monsieur Morrel.\r\n\r\n--Dame! pourquoi ne le laisserions-nous pas à ce poste? dit l'armateur.\r\nIl est jeune, je le sais bien, mais il me paraît tout à la chose, et\r\nfort expérimenté dans son état.»\r\n\r\nUn nuage passa sur le front de Danglars.\r\n\r\n«Pardon, monsieur Morrel, dit Dantès en s'approchant; maintenant que le\r\nnavire est mouillé, me voilà tout à vous: vous"
+## " mes yeux. --vous avez donc vu l'empereur aussi? --il est entré chez le maréchal pendant que j'y étais. --et vous lui avez parlé? --c'est-à-dire que c'est lui qui m'a parlé, monsieur, dit dantès en souriant. --et que vous a-t-il dit? --il m'a fait des questions sur le bâtiment, sur l'époque de son départ pour marseille, sur la route qu'il avait suivie et sur la cargaison qu'il portait. je crois que s'il eût été vide, et que j'en eusse été le maître, son intention eût été de l'acheter; mais je lu"
 ```
 
 
+## La particularité des données textuelles
+
+### Objectif
+
+Le *natural language processing* (NLP) ou
+*traitement automatisé de la langue* (TAL) en Français, vise à extraire de l'information de textes à partir d'une analyse statistique du contenu. 
+Cette définition permet d'inclure de nombreux champs d'applications au sein
+du NLP (traduction, analyse de sentiment, recommandation, surveillance, etc. ) ainsi que de méthodes. 
+
+Cette approche implique de transformer un texte, qui est une information compréhensible par un humain, en un nombre, information appropriée pour un ordinateur et une approche statistique ou algorithmique. 
+
+Transformer une information textuelle en valeurs numériques propres à une analyse statistique n'est pas une tâche évidente. Les données textuelles sont **non structurées** puisque l'information cherchée, qui est propre à chaque analyse, est perdue au milieu d'une grande masse d'information qui doit, de plus, être interprétée dans un certain contexte (un même mot ou une phrase n'ayant pas la même signification selon le contexte). 
+
+Si cette tâche n'était pas assez difficile comme ça, on peut ajouter d'autres difficultés propres à l'analyse textuelle car ces données sont:
+
+* bruitées: ortographe, fautes de frappe...
+* changeantes: la langue évolue avec de nouveaux mots, sens...
+* complexes: structures variables, accords...
+* ambigues: synonymie, polysémie, sens caché...
+* propres à chaque langue: il n'existe pas de règle de passage unique entre deux langues
+* grande dimension: des combinaisons infinies de séquences de mots
+
+### Méthode
+
+L’unité textuelle peut être le mot ou encore une séquence de *n*
+mots (un *n-gramme*) ou encore une chaîne de caractères (e.g. la
+ponctuation peut être signifiante). On parle de **token**. L’analyse textuelle vise à transformer le texte en données
+numériques manipulables. 
+
+On peut ensuite utiliser diverses techniques (clustering,
+classification supervisée) suivant l’objectif poursuivi pour exploiter
+l’information transformée. Mais les étapes de nettoyage de texte sont indispensables car sinon un algorithme sera incapable de détecter une information pertinente dans l'infini des possibles. 
 
