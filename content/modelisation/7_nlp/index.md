@@ -42,7 +42,6 @@ légèrement pour ne conserver que le corpus du livre.
 
 
 ```python
-#eval = FALSE}
 from urllib import request
 
 url = "https://www.gutenberg.org/ebooks/17989.txt.utf-8"
@@ -100,3 +99,137 @@ On peut ensuite utiliser diverses techniques (clustering,
 classification supervisée) suivant l’objectif poursuivi pour exploiter
 l’information transformée. Mais les étapes de nettoyage de texte sont indispensables car sinon un algorithme sera incapable de détecter une information pertinente dans l'infini des possibles. 
 
+
+
+
+## Nettoyer un texte
+
+Les *wordclouds* sont des représentations graphiques assez pratiques pour visualiser
+les mots les plus fréquents. Elles sont très simples à implémenter en `Python`
+avec le module `wordclou` qui permet même d'ajuster la forme du nuage à
+une image:
+
+
+```python
+import wordcloud
+import numpy as np
+import io
+import requests
+import PIL
+import matplotlib.pyplot as plt
+
+img = "https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/modelisation/7_nlp/book.png"
+book_mask = np.array(PIL.Image.open(io.BytesIO(requests.get(img).content)))
+
+wc = wordcloud.WordCloud(background_color="white", max_words=2000, mask=book_mask, contour_width=3, contour_color='steelblue')
+wc.generate(dumas)
+```
+
+```
+## <wordcloud.wordcloud.WordCloud object at 0x00000000264D8580>
+```
+
+```python
+plt.imshow(wc, interpolation='bilinear')
+plt.axis("off")
+```
+
+```
+## (-0.5, 1429.5, 783.5, -0.5)
+```
+
+```python
+plt.show()
+```
+
+![](index_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+
+Cela montre clairement qu'il est nécessaire de nettoyer notre texte. Le nom
+du personnage principal, Dantès, est ainsi masqué par un certain nombre
+d'article ou mots de liaison qui perturbent l'analyse. Ces mots sont des 
+*stop-words*. La librairie `NLTK` (*Natural Language ToolKit*), librairie
+de référence dans le domaine du NLP, permet de facilement retirer ces
+stopwords (cela pourrait également être fait avec 
+la librairie plus récente, `spaCy`). Avant cela, il est nécessaire
+de transformer notre texte en le découpant par unités fondamentales (les tokens)
+
+### Tokenisation
+
+La tokenisation consiste à découper un texte en morceaux. Ces morceaux
+pourraient être des phrases, des chapitres, des n-grammes ou des mots. C'est
+cette dernière option que l'on va choisir, plus simple pour retirer les 
+*stopwords* :
+
+
+```python
+import nltk 
+
+words = nltk.word_tokenize(dumas, language='french')
+words[1030:1050]
+```
+
+```
+## ['dame', '!', 'que', 'voulez-vous', ',', 'monsieur', 'edmond', ',', 'reprit', "l'armateur", 'qui', 'paraissait', 'se', 'consoler', 'de', 'plus', 'en', 'plus', ',', 'nous']
+```
+
+On remarque que les mots avec apostrophes sont liés en un seul, ce qui est
+peut-être faux sur le plan de la grammaire mais peu avoir un sens pour une 
+analyse statistique. Il reste des signes de ponctuation qu'on peut éliminer
+avec la méthode `isalpha`: 
+
+
+```python
+words = [word for word in words if word.isalpha()]
+words[1030:1050]
+```
+
+```
+## ['assez', 'sombre', 'obséquieux', 'envers', 'ses', 'supérieurs', 'insolent', 'envers', 'ses', 'subordonnés', 'aussi', 'outre', 'son', 'titre', 'comptable', 'qui', 'est', 'toujours', 'un', 'motif']
+```
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Lors de la première utilisation de `NLTK`, il est nécessaire de télécharger
+quelques éléments nécessaires à la tokenisation, notamment la ponctuation.
+Pour cela, 
+
+
+```python
+import nltk
+nltk.download('punkt')
+```
+
+{{% /panel %}}
+
+
+### Retirer les stopwords
+
+Le jeu de données est maintenant propre à se faire retirer les 
+*stop words*. 
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Lors de la première utilisation de `NLTK`, il est nécessaire de télécharger
+les stopwords. 
+
+
+```python
+import nltk
+nltk.download('stopwords')
+```
+
+{{% /panel %}}
+
+
+
+```python
+
+from nltk.corpus import stopwords
+print(stopwords.words("french"))
+```
+
+```
+## ['au', 'aux', 'avec', 'ce', 'ces', 'dans', 'de', 'des', 'du', 'elle', 'en', 'et', 'eux', 'il', 'ils', 'je', 'la', 'le', 'les', 'leur', 'lui', 'ma', 'mais', 'me', 'même', 'mes', 'moi', 'mon', 'ne', 'nos', 'notre', 'nous', 'on', 'ou', 'par', 'pas', 'pour', 'qu', 'que', 'qui', 'sa', 'se', 'ses', 'son', 'sur', 'ta', 'te', 'tes', 'toi', 'ton', 'tu', 'un', 'une', 'vos', 'votre', 'vous', 'c', 'd', 'j', 'l', 'à', 'm', 'n', 's', 't', 'y', 'été', 'étée', 'étées', 'étés', 'étant', 'étante', 'étants', 'étantes', 'suis', 'es', 'est', 'sommes', 'êtes', 'sont', 'serai', 'seras', 'sera', 'serons', 'serez', 'seront', 'serais', 'serait', 'serions', 'seriez', 'seraient', 'étais', 'était', 'étions', 'étiez', 'étaient', 'fus', 'fut', 'fûmes', 'fûtes', 'furent', 'sois', 'soit', 'soyons', 'soyez', 'soient', 'fusse', 'fusses', 'fût', 'fussions', 'fussiez', 'fussent', 'ayant', 'ayante', 'ayantes', 'ayants', 'eu', 'eue', 'eues', 'eus', 'ai', 'as', 'avons', 'avez', 'ont', 'aurai', 'auras', 'aura', 'aurons', 'aurez', 'auront', 'aurais', 'aurait', 'aurions', 'auriez', 'auraient', 'avais', 'avait', 'avions', 'aviez', 'avaient', 'eut', 'eûmes', 'eûtes', 'eurent', 'aie', 'aies', 'ait', 'ayons', 'ayez', 'aient', 'eusse', 'eusses', 'eût', 'eussions', 'eussiez', 'eussent']
+```
+
+```python
+stopWords = set(stopwords.words('french'))
+```
