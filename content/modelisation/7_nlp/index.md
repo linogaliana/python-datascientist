@@ -121,16 +121,12 @@ import matplotlib.pyplot as plt
 img = "https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/modelisation/7_nlp/book.png"
 book_mask = np.array(PIL.Image.open(io.BytesIO(requests.get(img).content)))
 
-wc = wordcloud.WordCloud(background_color="white", max_words=2000, mask=book_mask, contour_width=3, contour_color='steelblue')
-wc.generate(dumas)
-```
+def make_wordcloud(corpus):
+    wc = wordcloud.WordCloud(background_color="white", max_words=2000, mask=book_mask, contour_width=3, contour_color='steelblue')
+    wc.generate(corpus)
+    return wc
 
-```
-## <wordcloud.wordcloud.WordCloud object at 0x00000000264D8580>
-```
-
-```python
-plt.imshow(wc, interpolation='bilinear')
+plt.imshow(make_wordcloud(dumas), interpolation='bilinear')
 plt.axis("off")
 ```
 
@@ -192,12 +188,10 @@ Lors de la première utilisation de `NLTK`, il est nécessaire de télécharger
 quelques éléments nécessaires à la tokenisation, notamment la ponctuation.
 Pour cela, 
 
-
-```python
+~~~python
 import nltk
 nltk.download('punkt')
-```
-
+~~~
 {{% /panel %}}
 
 
@@ -231,5 +225,113 @@ print(stopwords.words("french"))
 ```
 
 ```python
-stopWords = set(stopwords.words('french'))
+stop_words = set(stopwords.words('french'))
+
+
+words = [w for w in words if not w in stop_words]
+print(words[1030:1050])
 ```
+
+```
+## ['celui', 'dantès', 'a', 'déposé', 'passant', 'comment', 'paquet', 'déposer', 'danglars', 'rougit', 'passais', 'devant', 'porte', 'capitaine', 'entrouverte', 'vu', 'remettre', 'paquet', 'cette', 'lettre']
+```
+
+Ces retraitements commencent à porter leurs fruits puisque des mots ayant plus
+de sens commencent à se dégager, notamment les noms des personnes
+(Fernand, Mercédès, Villefort, etc.)
+
+
+```python
+wc = make_wordcloud(' '.join(words))
+
+plt.imshow(wc, interpolation='bilinear')
+plt.axis("off")
+```
+
+```
+## (-0.5, 1429.5, 783.5, -0.5)
+```
+
+```python
+plt.show()
+```
+
+![](index_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+
+### *Stemming*
+
+Pour réduire la complexité d'un texte, on peut tirer partie de
+"classes d'équivalence" : on peut
+considérer que différentes formes d’un même mot (pluriel,
+singulier, conjugaison) sont équivalentes et les remplacer par une
+même forme dite canonique. Il existe deux approches dans le domaine:
+
+* la **lemmatisation** qui requiert la connaissance des statuts
+grammaticaux (exemple : chevaux devient cheval)
+* la **racinisation** (*stemming*) plus fruste mais plus rapide, notamment
+en présence de fautes d’orthographes. Dans ce cas, chevaux peut devenir chev
+mais être ainsi confondu avec chevet ou cheveux
+
+La racinisation est plus simple à mettre en oeuvre car elle peut s'appuyer sur
+des règles simples pour extraire la racine d'un mot. 
+
+
+Pour réduire un mot dans sa forme "racine", c'est-à-dire en s'abstrayant des
+conjugaisons ou variations comme les pluriels, on applique une méthode de
+*stemming*. Le but du *stemming* est de regrouper de
+nombreuses variantes d’un mot comme un seul et même mot.
+Par exemple, une fois que l’on applique un stemming, "chats" et "chat" 
+deviennent un même mot. 
+Cette approche a l'avantage de réduire la taille du vocabulaire à maîtriser
+pour l'ordinateur et le modélisateur. Il existe plusieurs algorithmes de 
+*stemming*, notamment le *Porter Stemming Algorithm* ou le
+*Snowball Stemming Algorithm*. Nous pouvons utiliser ce dernier en Français:
+
+
+```python
+from nltk.stem.snowball import SnowballStemmer
+stemmer = SnowballStemmer(language='french')
+
+stemmed = [stemmer.stem(word) for word in words]
+print(stemmed[1030:1050])
+```
+
+```
+## ['celui', 'dantes', 'a', 'dépos', 'pass', 'comment', 'paquet', 'dépos', 'danglar', 'roug', 'pass', 'dev', 'port', 'capitain', 'entrouvert', 'vu', 'remettr', 'paquet', 'cet', 'lettr']
+```
+
+A ce niveau, les mots commencent à être moins intelligibles par un humain. 
+La machine prendra le relais, on lui a préparé le travail
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+~~~python
+from nltk.stem.snowball import FrenchStemmer
+stemmer = FrenchStemmer()
+~~~
+{{% /panel %}}
+
+
+### Reconnaissance des entités nommées
+
+Cette étape n'est pas une étape de préparation mais illustre la capacité 
+des librairies `Python` a extraire du sens d'un texte. La librairie 
+`spaCy` permet de faire de la reconnaissance d'entités nommées, ce qui peut
+être pratique pour extraire rapidement certains personnages de notre oeuvre
+
+
+```python
+# from spacy import displacy
+# 
+# nlp = spacy.load("fr_core_news_sm")
+# doc = nlp(dumas)
+# displacy.render(doc, style="ent", jupyter=True)
+```
+
+
+## Représentation d'un texte sous forme vectorielle
+
+Une fois nettoyé, le texte est plus propice à une représentation vectorielle. En fait, implicitement, on a depuis le début adopté une démarche *bag of words*. Il s'agit d'une représentation, sans souci de contexte (ordre, utilisation), où chaque *token* représente un élément dans un vocabulaire de taille $|V|$. On peut ainsi avoir une représentation matricielle les occurrences de chaque *token* dans plusieurs documents (par exemple plusieurs livres, chapitres, etc.) pour, par exemple, en déduire une forme de similarité. 
+
+
+Afin de réduire la dimension de la matrice *bag of words*, on peut s'appuyer sur des pondérations. On élimine ainsi certains mots très fréquents ou au contraire très rares. La pondération la plus simple est basée sur la fréquence des mots dans le document. C'est l'objet de la métrique tf-idf (term frequency - inverse document frequency)
