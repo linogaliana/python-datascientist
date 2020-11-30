@@ -141,8 +141,9 @@ auteur, on va rechercher un unique mot, le mot *fear*.
 
 {{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
 1. Compter le nombre de phrases, pour chaque auteur, où apparaît le mot `fear`
-2. Utiliser `pywaffle` pour obtenir le graphique ci-dessous qui résume de manière synthétique le nombre d'occurrences du mot par auteur 
-3. 
+2. Utiliser `pywaffle` pour obtenir les graphiques ci-dessous qui résument
+de manière synthétique le nombre d'occurrences du mot *"fear"* par auteur
+3. Refaire l'analyse avec le mot *"horror"*
 {{% /panel %}}
 
 
@@ -152,6 +153,21 @@ auteur, on va rechercher un unique mot, le mot *fear*.
 {{<figure src="unnamed-chunk-9-1.png" >}}
 
 
-La peur est ainsi plus évoquée par Mary Shelley (sentiment assez naturel face à la créature du docteur Frankenstein) alors que Lovecraft n'a pas volé sa réputation d'écrivain de l'horreur
+La peur est ainsi plus évoquée par Mary Shelley
+(sentiment assez naturel face à la créature du docteur Frankenstein) alors
+que Lovecraft n'a pas volé sa réputation d'écrivain de l'horreur
 
 
+### Premier *wordcloud*
+
+Pour aller plus loin dans l'analyse du champ lexical de chaque auteur, on peut représenter un `wordcloud` qui permet d'afficher chaque mot avec une taille proportionnelle au nombre d'occurrence de celui-ci
+
+
+```
+## <matplotlib.image.AxesImage object at 0x0000000043B0A070>
+## (-0.5, 799.5, 499.5, -0.5)
+## <matplotlib.image.AxesImage object at 0x0000000044318F10>
+## (-0.5, 799.5, 499.5, -0.5)
+## <matplotlib.image.AxesImage object at 0x0000000044318E50>
+## (-0.5, 799.5, 499.5, -0.5)
+```
