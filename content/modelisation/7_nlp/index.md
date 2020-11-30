@@ -45,6 +45,26 @@ est de télécharger avec le module `urllib` le fichier texte et le retravailler
 légèrement pour ne conserver que le corpus du livre. 
 
 
+```python
+from urllib import request
+
+url = "https://www.gutenberg.org/ebooks/17989.txt.utf-8"
+response = request.urlopen(url)
+raw = response.read().decode('utf8')
+dumas = raw.split("Produced by Chuck Greif and www.ebooksgratuits.com")[1].split("End of the Project Gutenberg EBook")[0]
+
+import re
+
+def clean_text(text):
+    text = text.lower() # mettre les mots en minuscule
+    text = " ".join(text.split())
+    return text
+
+dumas = clean_text(dumas)
+
+dumas[10000:10500]
+```
+
 ```
 ## " mes yeux. --vous avez donc vu l'empereur aussi? --il est entré chez le maréchal pendant que j'y étais. --et vous lui avez parlé? --c'est-à-dire que c'est lui qui m'a parlé, monsieur, dit dantès en souriant. --et que vous a-t-il dit? --il m'a fait des questions sur le bâtiment, sur l'époque de son départ pour marseille, sur la route qu'il avait suivie et sur la cargaison qu'il portait. je crois que s'il eût été vide, et que j'en eusse été le maître, son intention eût été de l'acheter; mais je lu"
 ```
@@ -94,8 +114,32 @@ avec le module `wordclou` qui permet même d'ajuster la forme du nuage à
 une image:
 
 
+```python
+import wordcloud
+import numpy as np
+import io
+import requests
+import PIL
+import matplotlib.pyplot as plt
+
+img = "https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/modelisation/7_nlp/book.png"
+book_mask = np.array(PIL.Image.open(io.BytesIO(requests.get(img).content)))
+
+def make_wordcloud(corpus):
+    wc = wordcloud.WordCloud(background_color="white", max_words=2000, mask=book_mask, contour_width=3, contour_color='steelblue')
+    wc.generate(corpus)
+    return wc
+
+plt.imshow(make_wordcloud(dumas), interpolation='bilinear')
+plt.axis("off")
+```
+
 ```
 ## (-0.5, 1429.5, 783.5, -0.5)
+```
+
+```python
+plt.show()
 ```
 
 {{<figure src="unnamed-chunk-3-1.png" >}}
@@ -117,6 +161,13 @@ cette dernière option que l'on va choisir, plus simple pour retirer les
 *stopwords* :
 
 
+```python
+import nltk 
+
+words = nltk.word_tokenize(dumas, language='french')
+words[1030:1050]
+```
+
 ```
 ## ['dame', '!', 'que', 'voulez-vous', ',', 'monsieur', 'edmond', ',', 'reprit', "l'armateur", 'qui', 'paraissait', 'se', 'consoler', 'de', 'plus', 'en', 'plus', ',', 'nous']
 ```
@@ -126,6 +177,11 @@ peut-être faux sur le plan de la grammaire mais peu avoir un sens pour une
 analyse statistique. Il reste des signes de ponctuation qu'on peut éliminer
 avec la méthode `isalpha`: 
 
+
+```python
+words = [word for word in words if word.isalpha()]
+words[1030:1050]
+```
 
 ```
 ## ['assez', 'sombre', 'obséquieux', 'envers', 'ses', 'supérieurs', 'insolent', 'envers', 'ses', 'subordonnés', 'aussi', 'outre', 'son', 'titre', 'comptable', 'qui', 'est', 'toujours', 'un', 'motif']
@@ -153,13 +209,31 @@ Lors de la première utilisation de `NLTK`, il est nécessaire de télécharger
 les stopwords. 
 
 
+```python
+import nltk
+nltk.download('stopwords')
+```
 
 {{% /panel %}}
 
 
 
+```python
+
+from nltk.corpus import stopwords
+print(stopwords.words("french"))
+```
+
 ```
 ## ['au', 'aux', 'avec', 'ce', 'ces', 'dans', 'de', 'des', 'du', 'elle', 'en', 'et', 'eux', 'il', 'ils', 'je', 'la', 'le', 'les', 'leur', 'lui', 'ma', 'mais', 'me', 'même', 'mes', 'moi', 'mon', 'ne', 'nos', 'notre', 'nous', 'on', 'ou', 'par', 'pas', 'pour', 'qu', 'que', 'qui', 'sa', 'se', 'ses', 'son', 'sur', 'ta', 'te', 'tes', 'toi', 'ton', 'tu', 'un', 'une', 'vos', 'votre', 'vous', 'c', 'd', 'j', 'l', 'à', 'm', 'n', 's', 't', 'y', 'été', 'étée', 'étées', 'étés', 'étant', 'étante', 'étants', 'étantes', 'suis', 'es', 'est', 'sommes', 'êtes', 'sont', 'serai', 'seras', 'sera', 'serons', 'serez', 'seront', 'serais', 'serait', 'serions', 'seriez', 'seraient', 'étais', 'était', 'étions', 'étiez', 'étaient', 'fus', 'fut', 'fûmes', 'fûtes', 'furent', 'sois', 'soit', 'soyons', 'soyez', 'soient', 'fusse', 'fusses', 'fût', 'fussions', 'fussiez', 'fussent', 'ayant', 'ayante', 'ayantes', 'ayants', 'eu', 'eue', 'eues', 'eus', 'ai', 'as', 'avons', 'avez', 'ont', 'aurai', 'auras', 'aura', 'aurons', 'aurez', 'auront', 'aurais', 'aurait', 'aurions', 'auriez', 'auraient', 'avais', 'avait', 'avions', 'aviez', 'avaient', 'eut', 'eûmes', 'eûtes', 'eurent', 'aie', 'aies', 'ait', 'ayons', 'ayez', 'aient', 'eusse', 'eusses', 'eût', 'eussions', 'eussiez', 'eussent']
+```
+
+```python
+stop_words = set(stopwords.words('french'))
+
+
+words = [w for w in words if not w in stop_words]
+print(words[1030:1050])
 ```
 
 ```
@@ -171,8 +245,19 @@ de sens commencent à se dégager, notamment les noms des personnes
 (Fernand, Mercédès, Villefort, etc.)
 
 
+```python
+wc = make_wordcloud(' '.join(words))
+
+plt.imshow(wc, interpolation='bilinear')
+plt.axis("off")
+```
+
 ```
 ## (-0.5, 1429.5, 783.5, -0.5)
+```
+
+```python
+plt.show()
 ```
 
 {{<figure src="unnamed-chunk-8-1.png" >}}
@@ -208,6 +293,14 @@ pour l'ordinateur et le modélisateur. Il existe plusieurs algorithmes de
 *Snowball Stemming Algorithm*. Nous pouvons utiliser ce dernier en Français:
 
 
+```python
+from nltk.stem.snowball import SnowballStemmer
+stemmer = SnowballStemmer(language='french')
+
+stemmed = [stemmer.stem(word) for word in words]
+print(stemmed[1030:1050])
+```
+
 ```
 ## ['celui', 'dantes', 'a', 'dépos', 'pass', 'comment', 'paquet', 'dépos', 'danglar', 'roug', 'pass', 'dev', 'port', 'capitain', 'entrouvert', 'vu', 'remettr', 'paquet', 'cet', 'lettr']
 ```
@@ -231,6 +324,13 @@ des librairies `Python` a extraire du sens d'un texte. La librairie
 être pratique pour extraire rapidement certains personnages de notre oeuvre
 
 
+```python
+# from spacy import displacy
+# 
+# nlp = spacy.load("fr_core_news_sm")
+# doc = nlp(dumas)
+# displacy.render(doc, style="ent", jupyter=True)
+```
 
 
 ## Représentation d'un texte sous forme vectorielle
