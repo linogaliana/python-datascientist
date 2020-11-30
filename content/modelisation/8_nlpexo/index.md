@@ -125,4 +125,33 @@ On peut se rendre compte que les extraits des 3 auteurs ne sont pas forcément �
 
 ## Approche bag of words
 
-L'approche *bag of words* est présenté dans la [partie précédente](#nlp)
+L'approche *bag of words* est présentée de
+manière plus extensive dans le [chapitre précédent](#nlp).
+
+L'idée est d'étudier la fréquence des mots d'un document et la surreprésentation des mots par rapport à un document de référence (appelé *corpus*). Cette approche un peu simpliste mais très efficace : on peut calculer des scores permettant par exemple de faire de classification automatique de document par thème, de comparer la similarité de deux documents. Elle est souvent utilisée en première analyse, et elle reste la référence pour l'analyse de textes mal structurés (tweets, dialogue tchat, etc.). 
+
+Les analyses tf-idf (*term frequency-inverse document frequency*) ou les
+constructions d'indices de similarité cosine reposent sur ce type d'approche
+
+### Fréquence d'un mot
+
+Avant de s'adonner à une analyse systématique du champ lexical de chaque
+auteur, on va rechercher un unique mot, le mot *fear*. 
+
+
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+1. Compter le nombre de phrases, pour chaque auteur, où apparaît le mot `fear`
+2. Utiliser `pywaffle` pour obtenir le graphique ci-dessous qui résume de manière synthétique le nombre d'occurrences du mot par auteur 
+3. 
+{{% /panel %}}
+
+
+
+{{<figure src="unnamed-chunk-8-1.png" >}}
+
+{{<figure src="unnamed-chunk-9-1.png" >}}
+
+
+La peur est ainsi plus évoquée par Mary Shelley (sentiment assez naturel face à la créature du docteur Frankenstein) alors que Lovecraft n'a pas volé sa réputation d'écrivain de l'horreur
+
+
