@@ -164,10 +164,12 @@ Pour aller plus loin dans l'analyse du champ lexical de chaque auteur, on peut r
 
 
 ```
-## <matplotlib.image.AxesImage object at 0x0000000043B0A070>
+## <matplotlib.image.AxesImage object at 0x00000000439235B0>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x0000000044318F10>
+## <matplotlib.image.AxesImage object at 0x00000000444C7E50>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x0000000044318E50>
+## <matplotlib.image.AxesImage object at 0x00000000444D4820>
 ## (-0.5, 799.5, 499.5, -0.5)
 ```
+
+{{<figure src="unnamed-chunk-10-1.png" >}}
