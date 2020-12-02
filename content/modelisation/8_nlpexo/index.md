@@ -160,16 +160,31 @@ que Lovecraft n'a pas volé sa réputation d'écrivain de l'horreur
 
 ### Premier *wordcloud*
 
-Pour aller plus loin dans l'analyse du champ lexical de chaque auteur, on peut représenter un `wordcloud` qui permet d'afficher chaque mot avec une taille proportionnelle au nombre d'occurrence de celui-ci
+Pour aller plus loin dans l'analyse du champ lexical de chaque auteur,
+on peut représenter un `wordcloud` qui permet d'afficher chaque mot avec une
+taille proportionnelle au nombre d'occurrence de celui-ci
+
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+1. Faire un wordcloud pour représenter les mots les plus utilisés par chaque auteur
+2. Calculer les 25 mots plus communs pour chaque auteur et représenter l'histogramme du décompte
+{{% /panel %}}
 
 
 ```
-## <matplotlib.image.AxesImage object at 0x00000000439235B0>
+## <matplotlib.image.AxesImage object at 0x0000000043B2A250>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x00000000444C7E50>
+## <matplotlib.image.AxesImage object at 0x000000004434CF10>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x00000000444D4820>
+## <matplotlib.image.AxesImage object at 0x0000000043C55820>
 ## (-0.5, 799.5, 499.5, -0.5)
 ```
 
 {{<figure src="unnamed-chunk-10-1.png" >}}
+
+
+
+```
+## <seaborn.axisgrid.FacetGrid object at 0x0000000035E04190>
+```
+
+{{<figure src="unnamed-chunk-11-1.png" >}}
