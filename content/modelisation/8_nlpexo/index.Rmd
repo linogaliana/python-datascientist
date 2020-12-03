@@ -116,6 +116,8 @@ from wordcloud import WordCloud
 import base64
 import string
 import re
+import nltk
+
 from collections import Counter
 from time import time
 # from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS as stopwords
@@ -238,8 +240,8 @@ taille proportionnelle au nombre d'occurrence de celui-ci
 {{% /panel %}}
 
 ```{python}
-def graph_wordcloud(author, train_data):
-  txt = train_data[train_data['Author']==author]['Text']
+def graph_wordcloud(author, train_data, varname = "Text"):
+  txt = train_data[train_data['Author']==author][varname]
   all_text = ' '.join([text for text in txt])
   wordcloud = WordCloud(width=800, height=500,
                       random_state=21,
@@ -339,3 +341,80 @@ print(model.summary())
 TO BE COMPLETED
 
 {{% /panel %}}
+
+
+### Nettoyage d'un texte
+
+Les premières étapes dans le nettoyage d'un texte, qu'on a dévelopé au cours du [chapitre précédent](#nlp), sont:
+
+* suppression de la ponctuation
+* suppression des *stopwords*
+
+Cela passe par la tokenisation d'un texte, c'est-à-dire la décomposition
+de celui-ci en unités lexicales (les *tokens*). Ces unités lexicales peuvent être de différentes natures, selon l'analyse que l'on désire procéder. Ici, on va définir les tokens comme des mots.
+
+Plutôt que de faire soi-même ce travail de nettoyage, avec des fonctions mal optimisées, on peut utiliser la librairie `nltk` comme détaillé [précédemment](#nlp). 
+
+
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+Repartir de `train`, notre jeu de données d'entraînement. Pour rappel, `train` a la structure suivante:
+
+```{python}
+train.head(2)
+```
+
+1. Tokeniser chaque phrase avec `nltk`. Le `DataFrame` devrait maintenant avoir cet aspect:
+
+```{python}
+train_clean = (train
+    .groupby(["ID","Author"])
+    .apply(lambda s: nltk.word_tokenize(' '.join(s['Text'])))
+    .apply(lambda words: [word for word in words if word.isalpha()])
+)
+train_clean.head(2)
+```
+
+2. Retirer les stopwords avec `nltk`
+
+```{python}
+from nltk.corpus import stopwords  
+stop_words = set(stopwords.words('english'))
+
+train_clean = (train_clean
+    .apply(lambda words: [w for w in words if not w in stop_words])
+    .reset_index(name='tokenized')
+)
+
+train_clean.head(2)
+```
+
+{{% /panel %}}
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+La méthode `apply` est très pratique ici car nous avons une phrase par ligne. Plutôt que de faire un `DataFrame` par auteur, ce qui n'est pas très flexible comme approche, on peut directement appliquer la tokenisation
+sur notre `DataFrame` grâce à `apply`
+{{% /panel %}}
+
+Ce petit nettoyage permet d'arriver à un texte plus intéressant en termes d'analyse lexicale. Par exemple, si on reproduit l'analyse précédente,
+
+```{python}
+train_clean["Text"] = train_clean['tokenized'].apply(lambda s: " ".join(map(str, s)))
+
+n_topics = ["HPL","EAP","MWS"]
+
+fig = plt.figure(figsize=(15, 12))
+for i in range(len(n_topics)):
+    ax = fig.add_subplot(2,2,i+1)
+    wordcloud = graph_wordcloud(n_topics[i], train_clean)
+
+    ax.imshow(wordcloud)
+    ax.axis('off')
+
+plt.show()
+```
+
+### TF-IDF: camcim de fréquence
+
+
+
+

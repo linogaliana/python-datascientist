@@ -171,11 +171,11 @@ taille proportionnelle au nombre d'occurrence de celui-ci
 
 
 ```
-## <matplotlib.image.AxesImage object at 0x0000000043AEE2E0>
+## <matplotlib.image.AxesImage object at 0x0000000006BC5220>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x0000000043B45F70>
+## <matplotlib.image.AxesImage object at 0x0000000004D55FD0>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x0000000043B45E50>
+## <matplotlib.image.AxesImage object at 0x0000000004D55D90>
 ## (-0.5, 799.5, 499.5, -0.5)
 ```
 
@@ -184,7 +184,7 @@ taille proportionnelle au nombre d'occurrence de celui-ci
 
 
 ```
-## <seaborn.axisgrid.FacetGrid object at 0x00000000369524F0>
+## <seaborn.axisgrid.FacetGrid object at 0x0000000006B08460>
 ```
 
 {{<figure src="unnamed-chunk-11-1.png" >}}
@@ -208,7 +208,7 @@ Plus généralement, on peut dériver la loi de Zipf d'une distribution exponent
 On va estimer le modèle suivant par GLM via `statsmodels`:
 
 $$
-\mathbb{E}\bigg( f(n_i)|n_i \bigg) = \exp(\beta_0 + \beta_1 n_i)
+\mathbb{E}\bigg( f(n_i)|n_i \bigg) = \exp(\beta_0 + \beta_1 \log(n_i))
 $$
 
 Prenons les résultats de l'exercice précédent et enrichissons les du rang et de la fréquence d'occurrence d'un mot:
@@ -255,3 +255,70 @@ print(model.summary())
 TO BE COMPLETED
 
 {{% /panel %}}
+
+
+### Nettoyage d'un texte
+
+Les premières étapes dans le nettoyage d'un texte, qu'on a dévelopé au cours du [chapitre précédent](#nlp), sont:
+
+* suppression de la ponctuation
+* suppression des *stopwords*
+
+Cela passe par la tokenisation d'un texte, c'est-à-dire la décomposition
+de celui-ci en unités lexicales (les *tokens*). Ces unités lexicales peuvent être de différentes natures, selon l'analyse que l'on désire procéder. Ici, on va définir les tokens comme des mots.
+
+Plutôt que de faire soi-même ce travail de nettoyage, avec des fonctions mal optimisées, on peut utiliser la librairie `nltk` comme détaillé [précédemment](#nlp). 
+
+
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+Repartir de `train`, notre jeu de données d'entraînement. Pour rappel, `train` a la structure suivante:
+
+
+```
+##                                                       Text  ... wordtoplot
+## Id                                                          ...           
+## id26305  This process, however, afforded me no means of...  ...          0
+## id17569  It never once occurred to me that the fumbling...  ...          0
+## 
+## [2 rows x 4 columns]
+```
+
+1. Tokeniser chaque phrase avec `nltk`. Le `DataFrame` devrait maintenant avoir cet aspect:
+
+
+```
+## ID     Author
+## 00001  MWS       [Idris, was, well, content, with, this, resolv...
+## 00002  HPL       [I, was, faint, even, fainter, than, the, hate...
+## dtype: object
+```
+
+2. Retirer les stopwords avec `nltk`
+
+
+```
+##       ID Author                                          tokenized
+## 0  00001    MWS              [Idris, well, content, resolve, mine]
+## 1  00002    HPL  [I, faint, even, fainter, hateful, modernity, ...
+```
+
+{{% /panel %}}
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+La méthode `apply` est très pratique ici car nous avons une phrase par ligne. Plutôt que de faire un `DataFrame` par auteur, ce qui n'est pas très flexible comme approche, on peut directement appliquer la tokenisation
+sur notre `DataFrame` grâce à `apply`
+{{% /panel %}}
+
+Ce petit nettoyage permet d'arriver à un texte plus intéressant en termes d'analyse lexicale. Par exemple, si on reproduit l'analyse précédente,
+
+
+```
+## <matplotlib.image.AxesImage object at 0x0000000009BAAD60>
+## (-0.5, 799.5, 499.5, -0.5)
+## <matplotlib.image.AxesImage object at 0x0000000006EAF400>
+## (-0.5, 799.5, 499.5, -0.5)
+## <matplotlib.image.AxesImage object at 0x0000000006BAEBE0>
+## (-0.5, 799.5, 499.5, -0.5)
+```
+
+{{<figure src="unnamed-chunk-18-1.png" >}}
