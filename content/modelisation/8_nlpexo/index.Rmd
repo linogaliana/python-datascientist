@@ -295,12 +295,12 @@ Plus généralement, on peut dériver la loi de Zipf d'une distribution exponent
 On va estimer le modèle suivant par GLM via `statsmodels`:
 
 $$
-\mathbb{f(n_i)|n_i} = \exp(\beta_0 + \beta_1 n_i)
+\mathbb{E}\bigg( f(n_i)|n_i \bigg) = \exp(\beta_0 + \beta_1 \log(n_i))
 $$
 
 Prenons les résultats de l'exercice précédent et enrichissons les du rang et de la fréquence d'occurrence d'un mot:
 
-```{python, echo = TRUE}
+```{python, echo = TRUE, eval = FALSE}
 count_words = pd.DataFrame({'counter' : train
     .groupby('Author')
     .apply(lambda s: ' '.join(s['Text']).split())
@@ -309,13 +309,33 @@ count_words = pd.DataFrame({'counter' : train
     .explode()}
 )
 count_words[['word','count']] = pd.DataFrame(count_words['counter'].tolist(), index=count_words.index)
+count_words = count_words.reset_index()
 
-                            
 count_words = count_words.assign(
     freq = lambda x: x['count'] / (x.groupby("Author").transform('sum')['count']),
     rank = lambda x: x.groupby("Author").transform('rank', ascending = False)['count']
 )
 ```
 
+```{python, echo = TRUE, eval = FALSE}
+g = sns.lmplot(y = "freq", x = "rank", hue = 'Author', data = count_words, fit_reg = False)
+g.set(xscale="log", yscale="log")
+g
+```
+
+
+```{python, echo = TRUE, eval = FALSE}
+import statsmodels.api as sm
+
+
+exog = sm.add_constant(np.log(count_words['rank'].astype(float)))
+
+model = sm.GLM(count_words['freq'].astype(float), exog, family = sm.families.Poisson()).fit()
+
+# Display model results
+print(model.summary())
+```
+
+TO BE COMPLETED
 
 {{% /panel %}}

@@ -171,11 +171,11 @@ taille proportionnelle au nombre d'occurrence de celui-ci
 
 
 ```
-## <matplotlib.image.AxesImage object at 0x0000000043B2A250>
+## <matplotlib.image.AxesImage object at 0x0000000043AEE2E0>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x000000004434CF10>
+## <matplotlib.image.AxesImage object at 0x0000000043B45F70>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x0000000043C55820>
+## <matplotlib.image.AxesImage object at 0x0000000043B45E50>
 ## (-0.5, 799.5, 499.5, -0.5)
 ```
 
@@ -184,7 +184,74 @@ taille proportionnelle au nombre d'occurrence de celui-ci
 
 
 ```
-## <seaborn.axisgrid.FacetGrid object at 0x0000000035E04190>
+## <seaborn.axisgrid.FacetGrid object at 0x00000000369524F0>
 ```
 
 {{<figure src="unnamed-chunk-11-1.png" >}}
+
+Démonstration par l'exemple qu'il vaut mieux nettoyer le texte avant de 
+l'analyser.
+On voit ici que ce sont des mots communs, comme *"the"*, *"of"*, etc. sont très
+présents. Mais ils sont peu porteurs d'information, on peut donc les éliminer
+avant de faire une analyse syntaxique poussée (sauf si on est intéressé
+par la loi de Zipf). 
+
+{{% panel status="hint" title="La loi de Zipf" icon="fa fa-lightbulb" %}}
+Dans son sens strict, la loi de Zipf prévoit que
+dans un texte donné, la fréquence d'occurrence $f(n_i)$ d'un mot est
+liée à son rang $n_i$ dans l'ordre des fréquences par une loi de la forme
+$f(n_i) = c/n_i$ où $c$ est une constante. Zipf, dans les années 1930, se basait sur l'oeuvre 
+de Joyce, *Ulysse* pour cette affirmation. 
+
+Plus généralement, on peut dériver la loi de Zipf d'une distribution exponentielle des fréquences: $f(n_i) = cn_{i}^{-k}$. Cela permet d'utiliser la famille des modèles linéaire généralisés, notamment les régressions poissonniennes, pour mesurer les paramètres de la loi. Les modèles linéaire traditionnels en `log` souffrent en effet, dans ce contexte, de biais (la loi de Zipf est un cas particulier d'un modèle gravitaire, où appliquer des OLS est une mauvaise idée, cf. [Galiana et al. (2020)](https://linogaliana.netlify.app/publication/2020-segregation/) pour les limites).
+
+On va estimer le modèle suivant par GLM via `statsmodels`:
+
+$$
+\mathbb{E}\bigg( f(n_i)|n_i \bigg) = \exp(\beta_0 + \beta_1 n_i)
+$$
+
+Prenons les résultats de l'exercice précédent et enrichissons les du rang et de la fréquence d'occurrence d'un mot:
+
+
+```python
+count_words = pd.DataFrame({'counter' : train
+    .groupby('Author')
+    .apply(lambda s: ' '.join(s['Text']).split())
+    .apply(lambda s: Counter(s))
+    .apply(lambda s: s.most_common())
+    .explode()}
+)
+count_words[['word','count']] = pd.DataFrame(count_words['counter'].tolist(), index=count_words.index)
+count_words = count_words.reset_index()
+
+count_words = count_words.assign(
+    freq = lambda x: x['count'] / (x.groupby("Author").transform('sum')['count']),
+    rank = lambda x: x.groupby("Author").transform('rank', ascending = False)['count']
+)
+```
+
+
+```python
+g = sns.lmplot(y = "freq", x = "rank", hue = 'Author', data = count_words, fit_reg = False)
+g.set(xscale="log", yscale="log")
+g
+```
+
+
+
+```python
+import statsmodels.api as sm
+
+
+exog = sm.add_constant(np.log(count_words['rank'].astype(float)))
+
+model = sm.GLM(count_words['freq'].astype(float), exog, family = sm.families.Poisson()).fit()
+
+# Display model results
+print(model.summary())
+```
+
+TO BE COMPLETED
+
+{{% /panel %}}
