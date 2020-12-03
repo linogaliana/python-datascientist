@@ -413,8 +413,72 @@ for i in range(len(n_topics)):
 plt.show()
 ```
 
-### TF-IDF: camcim de fréquence
+### TF-IDF: calcul de fréquence
 
 
+Le calcul [tf-idf](https://fr.wikipedia.org/wiki/TF-IDF) (term frequency–inverse document frequency) permet de calculer un score de proximité entre un terme de recherche et un document (c'est ce que font les moteurs de recherche):
+
+* La partie `tf` calcule une fonction croissante de la fréquence du terme de recherche dans le document à l'étude;
+* La partie `idf` calcule une fonction inversement proportionnelle à la fréquence du terme dans l'ensemble des documents (ou corpus).
+
+Le score total, obtenu en multipliant les deux composantes, permet ainsi de donner un score d'autant plus élevé que le terme est surréprésenté dans un document (par rapport à l'ensemble des documents). Il existe plusieurs fonctions, qui pénalisent plus ou moins les documents longs, ou qui sont plus ou moins *smooth*.
+
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+Repartir de `train`. 
+
+1. Utiliser le vectoriseur TfIdF de `scikit-learn` pour transformer notre corpus en une matrice `document x terms`. Au passage, utiliser l'option `stop_words` pour ne pas provoquer une inflation de la taille de la matrice. Nommer le modèle `tfidf` et le jeu entraîné `tfs`
+
+```{python}
+from sklearn.feature_extraction.text import TfidfVectorizer
+tfidf = TfidfVectorizer(stop_words=stopwords.words("english"))
+tfs = tfidf.fit_transform(train['Text'])
+
+```
 
 
+2. Après avoir construit la matrice de documents x terms avec le code suivant
+
+```{python, echo = TRUE}
+feature_names = tfidf.get_feature_names()
+corpus_index = [n for n in list(tfidf.vocabulary_.keys())]
+import pandas as pd
+df = pd.DataFrame(tfs.todense(), columns=feature_names)
+
+df.head()
+```
+
+rechercher les lignes où les termes ayant la structure `abandon` sont non-nuls. Les lignes sont les suivantes:
+
+```{python}
+tempdf = df.loc[(df.filter(regex = "abandon")!=0).any(axis=1)]
+tempdf.index
+```
+
+```{python}
+tempdf.head(5)
+```
+
+3. Trouver les 50 extraits où le score TF-IDF est le plus élevé et l'auteur associé. Vous devriez obtenir le classement suivant:
+
+```{python}
+list_fear = df["fear"].sort_values(ascending =False).head(n=50).index.tolist()
+train.iloc[list_fear].groupby('Author').count()['Text'].sort_values(ascending = False)
+```
+
+et les 10 scores les plus élevés sont les suivants:
+
+```{python}
+print(train.iloc[list_fear[:9]]['Text'].values)
+```
+
+{{% /panel %}}
+
+On remarque que les scores les plus élévés sont soient des extraits courts où le mot apparait une seule fois, et des extraits plus longs où le mot fear apprait plusieurs fois.
+
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+La matrice `document x terms` est un exemple typique de matrice sparse puisque, dans des corpus volumineux, une grande diversité de vocabulaire peut être trouvée.  
+{{% /panel %}}
+
+
+## Approche contextuelle: les *n-gramms*

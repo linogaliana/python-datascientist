@@ -171,11 +171,11 @@ taille proportionnelle au nombre d'occurrence de celui-ci
 
 
 ```
-## <matplotlib.image.AxesImage object at 0x0000000006BC5220>
+## <matplotlib.image.AxesImage object at 0x0000000043B71FA0>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x0000000004D55FD0>
+## <matplotlib.image.AxesImage object at 0x0000000043BBED00>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x0000000004D55D90>
+## <matplotlib.image.AxesImage object at 0x0000000043BBED30>
 ## (-0.5, 799.5, 499.5, -0.5)
 ```
 
@@ -184,7 +184,7 @@ taille proportionnelle au nombre d'occurrence de celui-ci
 
 
 ```
-## <seaborn.axisgrid.FacetGrid object at 0x0000000006B08460>
+## <seaborn.axisgrid.FacetGrid object at 0x0000000035D5F100>
 ```
 
 {{<figure src="unnamed-chunk-11-1.png" >}}
@@ -313,12 +313,109 @@ Ce petit nettoyage permet d'arriver à un texte plus intéressant en termes d'an
 
 
 ```
-## <matplotlib.image.AxesImage object at 0x0000000009BAAD60>
+## <matplotlib.image.AxesImage object at 0x0000000043462100>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x0000000006EAF400>
+## <matplotlib.image.AxesImage object at 0x00000000471DA220>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x0000000006BAEBE0>
+## <matplotlib.image.AxesImage object at 0x00000000466F31C0>
 ## (-0.5, 799.5, 499.5, -0.5)
 ```
 
 {{<figure src="unnamed-chunk-18-1.png" >}}
+
+### TF-IDF: calcul de fréquence
+
+
+Le calcul [tf-idf](https://fr.wikipedia.org/wiki/TF-IDF) (term frequency–inverse document frequency) permet de calculer un score de proximité entre un terme de recherche et un document (c'est ce que font les moteurs de recherche):
+
+* La partie `tf` calcule une fonction croissante de la fréquence du terme de recherche dans le document à l'étude;
+* La partie `idf` calcule une fonction inversement proportionnelle à la fréquence du terme dans l'ensemble des documents (ou corpus).
+
+Le score total, obtenu en multipliant les deux composantes, permet ainsi de donner un score d'autant plus élevé que le terme est surréprésenté dans un document (par rapport à l'ensemble des documents). Il existe plusieurs fonctions, qui pénalisent plus ou moins les documents longs, ou qui sont plus ou moins *smooth*.
+
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+Repartir de `train`. 
+
+1. Utiliser le vectoriseur TfIdF de `scikit-learn` pour transformer notre corpus en une matrice `document x terms`. Au passage, utiliser l'option `stop_words` pour ne pas provoquer une inflation de la taille de la matrice. Nommer le modèle `tfidf` et le jeu entraîné `tfs`
+
+
+
+
+2. Après avoir construit la matrice de documents x terms avec le code suivant
+
+
+```python
+feature_names = tfidf.get_feature_names()
+corpus_index = [n for n in list(tfidf.vocabulary_.keys())]
+import pandas as pd
+df = pd.DataFrame(tfs.todense(), columns=feature_names)
+
+df.head()
+```
+
+```
+##    aaem   ab  aback  abaft  abandon  ...  zopyrus  zorry  zubmizzion  zuro   á¼
+## 0   0.0  0.0    0.0    0.0      0.0  ...      0.0    0.0         0.0   0.0  0.0
+## 1   0.0  0.0    0.0    0.0      0.0  ...      0.0    0.0         0.0   0.0  0.0
+## 2   0.0  0.0    0.0    0.0      0.0  ...      0.0    0.0         0.0   0.0  0.0
+## 3   0.0  0.0    0.0    0.0      0.0  ...      0.0    0.0         0.0   0.0  0.0
+## 4   0.0  0.0    0.0    0.0      0.0  ...      0.0    0.0         0.0   0.0  0.0
+## 
+## [5 rows x 24937 columns]
+```
+
+rechercher les lignes où les termes ayant la structure `abandon` sont non-nuls. Les lignes sont les suivantes:
+
+
+```
+## Int64Index([    4,   116,   215,   571,   839,  1042,  1052,  1069,  2247,
+##              2317,  2505,  3023,  3058,  3245,  3380,  3764,  3886,  4425,
+##              5289,  5576,  5694,  6812,  7500,  9013,  9021,  9077,  9560,
+##             11229, 11395, 11451, 11588, 11827, 11989, 11998, 12122, 12158,
+##             12189, 13666, 15259, 16516, 16524, 16759, 17547, 18019, 18072,
+##             18126, 18204, 18251],
+##            dtype='int64')
+```
+
+
+```
+##      aaem   ab  aback  abaft   abandon  ...  zopyrus  zorry  zubmizzion  zuro   á¼
+## 4     0.0  0.0    0.0    0.0  0.000000  ...      0.0    0.0         0.0   0.0  0.0
+## 116   0.0  0.0    0.0    0.0  0.000000  ...      0.0    0.0         0.0   0.0  0.0
+## 215   0.0  0.0    0.0    0.0  0.235817  ...      0.0    0.0         0.0   0.0  0.0
+## 571   0.0  0.0    0.0    0.0  0.000000  ...      0.0    0.0         0.0   0.0  0.0
+## 839   0.0  0.0    0.0    0.0  0.285886  ...      0.0    0.0         0.0   0.0  0.0
+## 
+## [5 rows x 24937 columns]
+```
+
+3. Trouver les 50 extraits où le score TF-IDF est le plus élevé et l'auteur associé. Vous devriez obtenir le classement suivant:
+
+
+```
+## Author
+## MWS    22
+## HPL    15
+## EAP    13
+## Name: Text, dtype: int64
+```
+
+et les 10 scores les plus élevés sont les suivants:
+
+
+```
+## ['We could not fear we did not.' '"And now I do not fear death.'
+##  'Be of heart and fear nothing.' 'I smiled, for what had I to fear?'
+##  'Indeed I had no fear on her account.'
+##  'I have not the slightest fear for the result.'
+##  'At length, in an abrupt manner she asked, "Where is he?" "O, fear not," she continued, "fear not that I should entertain hope Yet tell me, have you found him?'
+##  '"I fear you are right there," said the Prefect.'
+##  'I went down to open it with a light heart, for what had I now to fear?']
+```
+
+{{% /panel %}}
+
+On remarque que les scores les plus élévés sont soient des extraits courts où le mot apparait une seule fois, et des extraits plus longs où le mot fear apprait plusieurs fois.
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+La matrice `document x terms` est un exemple typique de matrice sparse puisque, dans des corpus volumineux, une grande diversité de vocabulaire peut être trouvée.  
+{{% /panel %}}
