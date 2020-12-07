@@ -482,3 +482,130 @@ La matrice `document x terms` est un exemple typique de matrice sparse puisque, 
 
 
 ## Approche contextuelle: les *n-gramms*
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+Pour être en mesure de mener cette analyse, il est nécessaire de télécharger un corpus supplémentaire:
+~~~python
+import nltk
+nltk.download('genesis')
+nltk.corpus.genesis.words('english-web.txt')
+~~~
+{{% /panel %}}
+
+Il s'agit maintenant de raffiner l'analyse. 
+
+On s'intéresse non seulement aux mots et à leur fréquence, mais aussi aux mots qui suivent. Cette approche est essentielle pour désambiguiser les homonymes. Elle permet aussi d'affiner les modèles "bag-of-words". Le calcul de n-grams (bigrams pour les co-occurences de mots deux-à-deux, tri-grams pour les co-occurences trois-à-trois, etc.) constitue la méthode la plus simple pour tenir compte du contexte.
+
+
+nltk offre des methodes pour tenir compte du contexte : pour ce faire, nous calculons les n-grams, c'est-à-dire l'ensemble des co-occurrences successives de mots deux-à-deux (bigrams), trois-à-trois (tri-grams), etc.
+
+En général, on se contente de bi-grams, au mieux de tri-grams :
+
+* les modèles de classification, analyse du sentiment, comparaison de documents, etc. qui comparent des n-grams avec n trop grands sont rapidement confrontés au problème de données sparse, cela réduit la capacité prédictive des modèles ;
+* les performances décroissent très rapidement en fonction de n, et les coûts de stockage des données augmentent rapidement (environ n fois plus élevé que la base de donnée initiale).
+
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+
+On va, rapidement, regarder dans quel contexte apparaît le mot `fear` dans
+l'oeuvre d'Edgar Allan Poe (EAP). Pour cela, on transforme d'abord
+le corpus EAP en tokens `NLTK`
+
+```{python, echo = TRUE}
+eap_clean = train_clean[train_clean["Author"] == "EAP"]
+eap_clean = ' '.join(eap_clean['Text'])
+#Tokenisation naïve sur les espaces entre les mots => on obtient une liste de mots
+tokens = eap_clean.split()
+text = nltk.Text(tokens)
+```
+
+1. Utiliser la méthode `concordance` pour afficher le contexte dans lequel apparaît le terme `fear`. La liste devrait ressembler à celle-ci:
+
+```{python, echo = FALSE}
+# Question 1
+print("Exemples d'occurences du terme 'fear' :")
+text.concordance("fear")
+print('\n')
+```
+
+Même si on peut facilement voir le mot avant et après, cette liste est assez difficile à interpréter car elle recoupe beaucoup d'information. 
+
+La `collocation` consiste à trouver les bi-grammes qui
+apparaissent le plus fréquemment ensemble. Parmi toutes les paires de deux mots observées, il s'agit de sélectionner, à partir d'un modèle statistique, les "meilleures". 
+
+2. Sélectionner et afficher les meilleures collocation, par exemple selon le critère du ratio de vraisemblance. 
+
+Une approche ingénue de la `collocation` amène ainsi à considérer les mots suivants: 
+
+```{python}
+# Question 2
+from nltk.collocations import BigramCollocationFinder
+from nltk.metrics import BigramAssocMeasures
+bcf = BigramCollocationFinder.from_words(text)
+bcf.nbest(BigramAssocMeasures.likelihood_ratio, 20)
+```
+
+Si ces mots sont très fortement associés, les expressions sont également peu fréquentes. Il est donc parfois nécessaire d'appliquer des filtres, par exemple ignorer les bigrammes qui apparaissent moins de 5 fois dans le corpus.
+
+3. Refaire la question précédente mais, avant cela, utiliser un modèle `BigramCollocationFinder` et la méthode `apply_freq_filter` pour ne conserver que les bigrammes présents au moins 5 fois. 
+
+```{python}
+finder = nltk.BigramCollocationFinder.from_words(text)
+
+finder.apply_freq_filter(5)
+
+bigram_measures = nltk.collocations.BigramAssocMeasures()
+
+collocations = finder.nbest(bigram_measures.jaccard, 15) 
+
+for collocation in collocations:
+    c = ' '.join(collocation)
+    print(c)
+```
+
+Cette liste a un peu plus de sens, on a des noms de personnages, de lieux mais aussi des termes fréquemment employés ensemble (*Chess Player* par exemple)
+
+3. Ne s'intéresser qu'aux *collocations* qui concernent le mot *fear*
+
+```{python}
+bigram_measures = nltk.collocations.BigramAssocMeasures()
+
+def collocations_word(word = "fear"):
+    # Ngrams with a specific name 
+    name_filter = lambda *w: word not in w
+    ## Bigrams
+    finder = BigramCollocationFinder.from_words(
+                nltk.corpus.genesis.words('english-web.txt'))
+    # only bigrams that contain 'fear'
+    finder.apply_ngram_filter(name_filter)
+    # return the 100 n-grams with the highest PMI
+    print(finder.nbest(bigram_measures.likelihood_ratio,100))
+    
+collocations_word("word")
+```
+
+
+{{% /panel %}}
+
+Si on mène la même analyse pour le terme *love*, on remarque que de manière logique, on retrouve bien des sujets généralement accolés au terme:
+
+```{python, echo = FALSE}
+collocations_word("love")
+```
+
+## Latent Dirichlet Allocation (LDA)
+
+Le modèle Latent Dirichlet Allocation (LDA) est un modèle probabiliste génératif qui permet
+de décrire des collections de documents de texte ou d’autres types de données discrètes. LDA fait
+partie d’une catégorie de modèles appelés “topic models”, qui cherchent à découvrir des structures
+thématiques cachées dans des vastes archives de documents.
+
+
+Ceci permet d’obtenir des méthodes
+efficaces pour le traitement et l’organisation des documents de ces archives: organisation automatique
+des documents par sujet, recherche, compréhension et analyse du texte, ou même résumer des
+textes. 
+
+Aujourd’hui, ce genre de méthodes s’utilisent fréquemment dans le web, par exemple pour
+analyser des ensemble d’articles d’actualité, les regrouper par sujet, faire de la recommendation
+d’articles, etc. 
+

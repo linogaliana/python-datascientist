@@ -171,11 +171,11 @@ taille proportionnelle au nombre d'occurrence de celui-ci
 
 
 ```
-## <matplotlib.image.AxesImage object at 0x0000000043B71FA0>
+## <matplotlib.image.AxesImage object at 0x0000000043C55400>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x0000000043BBED00>
+## <matplotlib.image.AxesImage object at 0x0000000043E11190>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x0000000043BBED30>
+## <matplotlib.image.AxesImage object at 0x0000000043E111C0>
 ## (-0.5, 799.5, 499.5, -0.5)
 ```
 
@@ -184,7 +184,7 @@ taille proportionnelle au nombre d'occurrence de celui-ci
 
 
 ```
-## <seaborn.axisgrid.FacetGrid object at 0x0000000035D5F100>
+## <seaborn.axisgrid.FacetGrid object at 0x0000000035EA7580>
 ```
 
 {{<figure src="unnamed-chunk-11-1.png" >}}
@@ -313,11 +313,11 @@ Ce petit nettoyage permet d'arriver à un texte plus intéressant en termes d'an
 
 
 ```
-## <matplotlib.image.AxesImage object at 0x0000000043462100>
+## <matplotlib.image.AxesImage object at 0x00000000467F8F40>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x00000000471DA220>
+## <matplotlib.image.AxesImage object at 0x0000000046296D00>
 ## (-0.5, 799.5, 499.5, -0.5)
-## <matplotlib.image.AxesImage object at 0x00000000466F31C0>
+## <matplotlib.image.AxesImage object at 0x00000000454B6D60>
 ## (-0.5, 799.5, 499.5, -0.5)
 ```
 
@@ -416,6 +416,176 @@ et les 10 scores les plus élevés sont les suivants:
 {{% /panel %}}
 
 On remarque que les scores les plus élévés sont soient des extraits courts où le mot apparait une seule fois, et des extraits plus longs où le mot fear apprait plusieurs fois.
+
+
 {{% panel status="note" title="Note" icon="fa fa-comment" %}}
 La matrice `document x terms` est un exemple typique de matrice sparse puisque, dans des corpus volumineux, une grande diversité de vocabulaire peut être trouvée.  
 {{% /panel %}}
+
+
+## Approche contextuelle: les *n-gramms*
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+Pour être en mesure de mener cette analyse, il est nécessaire de télécharger un corpus supplémentaire:
+~~~python
+nltk.download('genesis')
+nltk.corpus.genesis.words('english-web.txt')
+~~~
+{{% /panel %}}
+
+Il s'agit maintenant de raffiner l'analyse. 
+
+On s'intéresse non seulement aux mots et à leur fréquence, mais aussi aux mots qui suivent. Cette approche est essentielle pour désambiguiser les homonymes. Elle permet aussi d'affiner les modèles "bag-of-words". Le calcul de n-grams (bigrams pour les co-occurences de mots deux-à-deux, tri-grams pour les co-occurences trois-à-trois, etc.) constitue la méthode la plus simple pour tenir compte du contexte.
+
+
+nltk offre des methodes pour tenir compte du contexte : pour ce faire, nous calculons les n-grams, c'est-à-dire l'ensemble des co-occurrences successives de mots deux-à-deux (bigrams), trois-à-trois (tri-grams), etc.
+
+En général, on se contente de bi-grams, au mieux de tri-grams :
+
+* les modèles de classification, analyse du sentiment, comparaison de documents, etc. qui comparent des n-grams avec n trop grands sont rapidement confrontés au problème de données sparse, cela réduit la capacité prédictive des modèles ;
+* les performances décroissent très rapidement en fonction de n, et les coûts de stockage des données augmentent rapidement (environ n fois plus élevé que la base de donnée initiale).
+
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+
+On va, rapidement, regarder dans quel contexte apparaît le mot `fear` dans
+l'oeuvre d'Edgar Allan Poe (EAP). Pour cela, on transforme d'abord
+le corpus EAP en tokens `NLTK`
+
+
+```python
+import nltk
+nltk.download('genesis')
+```
+
+```
+## True
+## 
+## [nltk_data] Downloading package genesis to
+## [nltk_data]     C:\Users\W3CRK9\AppData\Roaming\nltk_data...
+## [nltk_data]   Unzipping corpora\genesis.zip.
+```
+
+```python
+nltk.corpus.genesis.words('english-web.txt')
+```
+
+```
+## ['In', 'the', 'beginning', 'God', 'created', 'the', ...]
+```
+
+```python
+eap_clean = train_clean[train_clean["Author"] == "EAP"]
+eap_clean = ' '.join(eap_clean['Text'])
+#Tokenisation naïve sur les espaces entre les mots => on obtient une liste de mots
+tokens = eap_clean.split()
+text = nltk.Text(tokens)
+```
+
+1. Utiliser la méthode `concordance` pour afficher le contexte dans lequel apparaît le terme `fear`. La liste devrait ressembler à celle-ci:
+
+
+```
+## Exemples d'occurences du terme 'fear' :
+```
+
+```
+## Displaying 24 of 24 matches:
+## lady seventy years age heard express fear never see Marie observation attracte
+## ingly well I went open light heart I fear The fact business simple indeed I ma
+##  Geneva seemed resolved give scruple fear wind No one spoken frequenting house
+## d propeller must entirely remodelled fear serious accident I mean steel rod va
+## ud rose amazing velocity I slightest fear result He proceeded observing analyz
+## His third contempt ambition Indeed I fear account The ceiling gloomy looking o
+## dverted blush extreme recency date I fear right said Prefect This could refast
+## loud quick unequal spoken apparently fear well anger three four quite right Sa
+## oughts Question Oinos freely without fear No path trodden vicinity reach happy
+## ick darkness shutters close fastened fear robbers I knew could see opening doo
+## ible game antagonist I even went far fear I occasioned much trouble might glad
+## dame could easily enter unobserved I fear mesmerized adding immediately afterw
+## here poodle Perhaps said I Legrand I fear artist In left hand little heavy Dut
+##  strong relish physical philosophy I fear tinctured mind common error age I me
+## ripods expired The replied entered I fear unusual horror thing The rudder ligh
+## rdiality In second place impressed I fear indeed impossible make comprehended 
+##  spades whole insisted upon carrying fear seemed trusting either implements wi
+## ind dreaded whip instantly converted fear This prison like rampart formed limi
+##  I started hourly dreams unutterable fear find hot breath thing upon face vast
+## ers deputed search premises Be heart fear nothing I removed bed examined corps
+##  looked stiff rolled eyes I smiled I fear My first idea mere surprise really r
+## g memory long time awaking slumber I fear I shall never see Marie But imagine 
+## et lonely I watched minutes somewhat fear wonder The one wrote Jeremiad usury 
+## d garments muddy clotted gore I much fear replied Monsieur Maillard becoming e
+```
+
+Même si on peut facilement voir le mot avant et après, cette liste est assez difficile à interpréter car elle recoupe beaucoup d'information. 
+
+La `collocation` consiste à trouver les bi-grammes qui
+apparaissent le plus fréquemment ensemble. Parmi toutes les paires de deux mots observées, il s'agit de sélectionner, à partir d'un modèle statistique, les "meilleures". 
+
+2. Sélectionner et afficher les meilleures collocation, par exemple selon le critère du ratio de vraisemblance. 
+
+Une approche ingénue de la `collocation` amène ainsi à considérer les mots suivants: 
+
+
+```
+## [('I', 'could'), ('I', 'felt'), ('main', 'compartment'), ('Chess', 'Player'), ('Let', 'us'), ('I', 'saw'), ('Madame', 'Lalande'), ('At', 'length'), ('New', 'York'), ('Ourang', 'Outang'), ('ha', 'ha'), ('three', 'four'), ('I', 'knew'), ('I', 'say'), ('du', 'Roule'), ('I', 'I'), ('General', 'John'), ('could', 'help'), ('In', 'meantime'), ('let', 'us')]
+```
+
+Si ces mots sont très fortement associés, les expressions sont également peu fréquentes. Il est donc parfois nécessaire d'appliquer des filtres, par exemple ignorer les bigrammes qui apparaissent moins de 5 fois dans le corpus.
+
+3. Refaire la question précédente mais, avant cela, utiliser un modèle `BigramCollocationFinder` et la méthode `apply_freq_filter` pour ne conserver que les bigrammes présents au moins 5 fois. 
+
+
+```
+## Chess Player
+## Ourang Outang
+## Brevet Brigadier
+## Hans Pfaall
+## Bas Bleu
+## du Roule
+## New York
+## ugh ugh
+## Tea Pot
+## gum elastic
+## hu hu
+## prodigies valor
+## Gad Fly
+## Massa Will
+## Von Kempelen
+```
+
+Cette liste a un peu plus de sens, on a des noms de personnages, de lieux mais aussi des termes fréquemment employés ensemble (*Chess Player* par exemple)
+
+3. Ne s'intéresser qu'aux *collocations* qui concernent le mot *fear*
+
+
+```
+## [('your', 'word'), ('the', 'word'), ('word', 'again'), ('word', 'of'), ('me', 'word'), ('a', 'word'), ('word', '."'), ('word', 'will'), ('word', 'that'), ('word', 'in')]
+```
+
+
+{{% /panel %}}
+
+Si on mène la même analyse pour le terme *love*, on remarque que de manière logique, on retrouve bien des sujets généralement accolés au terme:
+
+
+```
+## [('love', 'me'), ('love', 'he'), ('will', 'love'), ('I', 'love'), ('love', ','), ('you', 'love'), ('the', 'love')]
+```
+
+## Latent Dirichlet Allocation (LDA)
+
+Le modèle Latent Dirichlet Allocation (LDA) est un modèle probabiliste génératif qui permet
+de décrire des collections de documents de texte ou d’autres types de données discrètes. LDA fait
+partie d’une catégorie de modèles appelés “topic models”, qui cherchent à découvrir des structures
+thématiques cachées dans des vastes archives de documents.
+
+
+Ceci permet d’obtenir des méthodes
+efficaces pour le traitement et l’organisation des documents de ces archives: organisation automatique
+des documents par sujet, recherche, compréhension et analyse du texte, ou même résumer des
+textes. 
+
+Aujourd’hui, ce genre de méthodes s’utilisent fréquemment dans le web, par exemple pour
+analyser des ensemble d’articles d’actualité, les regrouper par sujet, faire de la recommendation
+d’articles, etc. 
+
