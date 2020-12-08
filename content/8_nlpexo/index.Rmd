@@ -413,6 +413,71 @@ for i in range(len(n_topics)):
 plt.show()
 ```
 
+Pour aller plus loin dans l'harmonisation d'un texte, il est possible de
+mettre en place les classes d'équivalence développées dans la 
+[partie précédente](#nlp) afin de remplacer différentes variations d'un même
+mot par une forme canonique :
+
+* la **lemmatisation** qui requiert la connaissance des statuts
+grammaticaux (exemple : chevaux devient cheval)
+* la **racinisation** (*stemming*) plus fruste mais plus rapide, notamment
+en présence de fautes d’orthographes. Dans ce cas, chevaux peut devenir chev
+mais être ainsi confondu avec chevet ou cheveux 
+
+La racinisation est généralement plus simple à mettre en oeuvre, quoique
+plus fruste. Elle est développée dans la [partie précédente](#nlp). 
+
+La lemmatisation est mise en oeuvre, comme toujours avec NLTK, à travers un
+modèle. En l'occurrence, un `WordNetLemmatizer`  (WordNet est une base
+lexicographique ouverte). Par exemple, les mots *"women"*, *"daughters"*
+et *"leaves"* seront ainsi lemmatisés de la manière suivante:
+
+```{python}
+from nltk.stem import WordNetLemmatizer
+lemm = WordNetLemmatizer()
+
+for word in ["women","daughters", "leaves"]:
+    print("The lemmatized form of %s is: {}".format(lemm.lemmatize(word)) % word)
+```
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+Pour disposer du corpus nécessaire à la lemmatisation, il faut, la première fois,
+télécharger celui-ci grâce aux commandes suivantes:
+~~~python
+import nltk
+nltk.download('wordnet')
+~~~
+{{% /panel %}}
+
+
+{{% panel status="exercise" title="Exercise: lemmatisation avec NLTK et spaCy" icon="fas fa-pencil-alt" %}}
+
+On va se restreindre au corpus d'Edgar Allan Poe et repartir de la base de données
+brute
+
+```{python, echo = TRUE}
+eap_clean = train[train["Author"] == "EAP"]
+eap_clean = ' '.join(eap_clean['Text'])
+#Tokenisation naïve sur les espaces entre les mots => on obtient une liste de mots
+#tokens = eap_clean.split()
+word_list = nltk.word_tokenize(eap_clean)
+```
+
+1. Utiliser un `WordNetLemmatizer` et observer le résultat
+
+```{python}
+lemmatizer = WordNetLemmatizer()
+lemmatized_output = ' '.join([lemmatizer.lemmatize(w) for w in word_list])
+
+print(" ".join(word_list[:43]))
+print("---------------------------")
+print(lemmatized_output[:209])
+```
+
+
+{{% /panel %}}
+
+
 ### TF-IDF: calcul de fréquence
 
 
@@ -609,3 +674,82 @@ Aujourd’hui, ce genre de méthodes s’utilisent fréquemment dans le web, par
 analyser des ensemble d’articles d’actualité, les regrouper par sujet, faire de la recommendation
 d’articles, etc. 
 
+
+```{python, eval = FALSE}
+lemm = WordNetLemmatizer()
+
+class LemmaCountVectorizer(CountVectorizer):
+    def build_analyzer(self):
+        analyzer = super(LemmaCountVectorizer, self).build_analyzer()
+        return lambda doc: (lemm.lemmatize(w) for w in analyzer(doc))
+      
+lda = LatentDirichletAllocation(n_components=11, max_iter=5,
+                                learning_method = 'online',
+                                learning_offset = 50.,
+                                random_state = 0)
+                                
+lda.fit(tf)
+```
+
+### Représentation des résultats
+
+```{python, eval = FALSE}
+def print_top_words(model, feature_names, n_top_words):
+    for topic_idx, topic in enumerate(model.components_):
+        print("Topic #%d:" % topic_idx)
+        print(" ".join([feature_names[i]
+                        for i in topic.argsort()[:-n_top_words - 1:-1]]))
+    print()
+    
+n_top_words = 40
+print("\nTopics in LDA model: ")
+tf_feature_names = tf_vectorizer.get_feature_names()
+print_top_words(lda, tf_feature_names, n_top_words)
+
+first_topic = lda.components_[0]
+second_topic = lda.components_[1]
+
+first_topic_words = [tf_feature_names[i] for i in first_topic.argsort()[:-50 - 1 :-1]]
+second_topic_words = [tf_feature_names[i] for i in second_topic.argsort()[:-50 - 1 :-1]]
+
+
+firstcloud = WordCloud(stopwords=stopwords,
+                       background_color='black',
+                       width=2500,
+                       height=1800
+                       ).generate(" ".join(first_topic_words))
+plt.imshow(firstcloud)
+plt.axis('off');
+
+second_topic_words = [tf_feature_names[i] for i in second_topic.argsort()[:-50 - 1 :-1]]
+
+
+second_cloud = WordCloud(
+                          stopwords=stopwords,
+                          background_color='black',
+                          width=2500,
+                          height=1800
+                         ).generate(" ".join(second_topic_words))
+plt.imshow(second_cloud)
+plt.axis('off');
+```
+
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+Le module `pyLDAvis` offre quelques visualisations bien pratiques lorsqu'on
+désire représenter de manière synthétique les résultats d'une LDA
+{{% /panel %}}
+
+
+## Prédiction - Modélisation en utilisant Word2vec et Keras
+
+Derniere partie du TD, prédire les auteurs à partir des textes
+qu'on aura dans la base de test.
+
+Pour cela, on utilise les modules `spacy`, `Word2vec` et `Keras`
+
+
+```{python, echo = TRUE}
+import spacy
+nlp = spacy.load('en_core_web_sm')
+```
