@@ -19,4 +19,6 @@ des exemples de :books: pour s'amuser.
 
 * Elle propose d'abord une introduction aux enjeux du nettoyage des données
 textuelles à travers l'analyse du *Comte de Monte Cristo* d'Alexandre Dumas
-* Elle évoque ensuite
+[ici](#nlpintro)
+* Elle propose une série d'exercice sur le nettoyage de textes à partir des
+oeuvres d'Edgar Allan Poe, Mary Shelley et H.P. Lovecraft. 
