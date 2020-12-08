@@ -14,6 +14,9 @@ et s'amuser avec comme base d'exemple un livre formidable :books: :
 *Le Comte de Monte Cristo*
 {{% /panel %}}
 
-Cette partie du cours est consacrée à l'analyse des données textuelles. 
+Cette partie du cours est consacrée à l'analyse des données textuelles avec
+des exemples de :books: pour s'amuser. 
 
-**TO BE COMPLETED**
+* Elle propose d'abord une introduction aux enjeux du nettoyage des données
+textuelles à travers l'analyse du *Comte de Monte Cristo* d'Alexandre Dumas
+* Elle évoque ensuite
