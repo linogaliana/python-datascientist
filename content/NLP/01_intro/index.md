@@ -10,15 +10,15 @@ jupyter:
     display_name: Python 3
     language: python
     name: python3
-title: "Natural Language Processing (NLP): quelques éléments"
+title: "Quelques éléments pour comprendre les enjeux"
 date: 2020-10-15T13:00:00Z
 draft: false
-weight: 70
+weight: 10
 output: 
   html_document:
     keep_md: true
     self_contained: true
-slug: nlp
+slug: nlpintro
 ---
 
 
