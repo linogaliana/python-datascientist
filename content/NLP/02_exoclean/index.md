@@ -21,40 +21,9 @@ output:
 slug: nlpexo
 ---
 
-```{r setup, include=FALSE}
-library(knitr)  
-library(reticulate)  
-knitr::knit_engines$set(python = reticulate::eng_python)
-knitr::opts_chunk$set(fig.path = "")
-knitr::opts_chunk$set(eval = TRUE, echo = FALSE, warning = FALSE, message = FALSE)
 
-# Hook from Maelle Salmon: https://ropensci.org/technotes/2020/04/23/rmd-learnings/
-knitr::knit_hooks$set(
-  plot = function(x, options) {
-    hugoopts <- options$hugoopts
-    paste0(
-      "{", "{<figure src=", # the original code is simpler
-      # but here I need to escape the shortcode!
-      '"', x, '" ',
-      if (!is.null(hugoopts)) {
-        glue::glue_collapse(
-          glue::glue('{names(hugoopts)}="{hugoopts}"'),
-          sep = " "
-        )
-      },
-      ">}}\n"
-    )
-  }
-)
 
-```
 
-```{python, include = FALSE}
-import os
-os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
-os.environ["PROJ_LIB"] = r'C:\Users\W3CRK9\AppData\Local\r-miniconda\pkgs\proj4-4.9.3-hfa6e2cd_9\Library\share'
-os.environ['GDAL_DATA'] = r"C:\Users\W3CRK9\AppData\Local\r-miniconda\envs\r-reticulate\Library\share\gdal"
-```
 
 
 
@@ -106,29 +75,7 @@ nltk.download('wordnet')
 
 La liste des modules à importer est assez longue, la voici:
 
-```{python}
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import seaborn as sns
-import matplotlib.pyplot as plt
-from wordcloud import WordCloud
-#from IPython.display import display
-import base64
-import string
-import re
-import nltk
 
-from collections import Counter
-from time import time
-# from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS as stopwords
-from sklearn.metrics import log_loss
-import matplotlib.pyplot as plt
-from pywaffle import Waffle
-
-from nltk.stem import WordNetLemmatizer
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from sklearn.decomposition import NMF, LatentDirichletAllocation
-```
 
 ## Données utilisées
 
@@ -141,7 +88,8 @@ from sklearn.decomposition import NMF, LatentDirichletAllocation
 
 Une fois n'est pas coutume, la correction de cet exercice ci-dessous:
 
-```{python, echo = TRUE}
+
+```python
 import pandas as pd
 
 url='https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv'
@@ -156,20 +104,23 @@ train = train.set_index('Id')
 
 Le jeu de données met ainsi en regard un auteur avec une phrase qu'il a écrite:
 
-```{python}
-train.head()
+
+```
+##                                                       Text Author     ID
+## Id                                                                      
+## id26305  This process, however, afforded me no means of...    EAP  26305
+## id17569  It never once occurred to me that the fumbling...    HPL  17569
+## id11008  In his left hand was a gold snuff box, from wh...    EAP  11008
+## id27763  How lovely is spring As we looked from Windsor...    MWS  27763
+## id12958  Finding nothing else, not even gold, the Super...    HPL  12958
 ```
 
-```{python, echo = FALSE}
-sampsize = train.shape[0]
-```
+
 
 
 On peut se rendre compte que les extraits des 3 auteurs ne sont pas forcément équilibrés dans le jeu de données. Il faudra en tenir compte dans la prédiction. 
 
-```{python}
-sns.barplot(x=['Edgar Allen Poe', 'Mary W. Shelley', 'H.P. Lovecraft'], y=train['Author'].value_counts())
-```
+{{<figure src="unnamed-chunk-6-1.png" >}}
 
 
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
@@ -203,32 +154,11 @@ de manière synthétique le nombre d'occurrences du mot *"fear"* par auteur
 3. Refaire l'analyse avec le mot *"horror"*
 {{% /panel %}}
 
-```{python}
-def graph_occurrence(word, train_data):
-    train_data['wordtoplot'] = train_data['Text'].str.contains(word).astype(int)
-    table = train.groupby('Author').sum()
-    data = table.to_dict()['wordtoplot']
-    
-    fig = plt.figure(
-        FigureClass=Waffle, 
-        rows=15, 
-        values=data, 
-        title={'label': 'Utilisation du mot "%s" par les auteurs' %word, 'loc': 'left'},
-        labels=["{0} ({1})".format(k, v) for k, v in data.items()]
-    )
-    return fig
 
-```
 
-```{python}
-fig = graph_occurrence("fear", train)
-plt.show()
-```
+{{<figure src="unnamed-chunk-8-1.png" >}}
 
-```{python}
-fig = graph_occurrence("horror", train)
-plt.show()
-```
+{{<figure src="unnamed-chunk-9-1.png" >}}
 
 
 La peur est ainsi plus évoquée par Mary Shelley
@@ -247,44 +177,25 @@ taille proportionnelle au nombre d'occurrence de celui-ci
 2. Calculer les 25 mots plus communs pour chaque auteur et représenter l'histogramme du décompte
 {{% /panel %}}
 
-```{python}
-def graph_wordcloud(author, train_data, varname = "Text"):
-  txt = train_data[train_data['Author']==author][varname]
-  all_text = ' '.join([text for text in txt])
-  wordcloud = WordCloud(width=800, height=500,
-                      random_state=21,
-                      max_words=2000).generate(all_text)
-  return wordcloud
 
-n_topics = ["HPL","EAP","MWS"]
-
-fig = plt.figure(figsize=(15, 12))
-for i in range(len(n_topics)):
-    ax = fig.add_subplot(2,2,i+1)
-    wordcloud = graph_wordcloud(n_topics[i], train)
-
-    ax.imshow(wordcloud)
-    ax.axis('off')
-
-plt.show()
+```
+## <matplotlib.image.AxesImage object at 0x0000000043C51460>
+## (-0.5, 799.5, 499.5, -0.5)
+## <matplotlib.image.AxesImage object at 0x0000000035D312B0>
+## (-0.5, 799.5, 499.5, -0.5)
+## <matplotlib.image.AxesImage object at 0x0000000035D310D0>
+## (-0.5, 799.5, 499.5, -0.5)
 ```
 
+{{<figure src="unnamed-chunk-10-1.png" >}}
 
-```{python}
-count_words = pd.DataFrame({'counter' : train
-    .groupby('Author')
-    .apply(lambda s: ' '.join(s['Text']).split())
-    .apply(lambda s: Counter(s))
-    .apply(lambda s: s.most_common(25))
-    .explode()}
-)
-count_words[['word','count']] = pd.DataFrame(count_words['counter'].tolist(), index=count_words.index)
-count_words = count_words.reset_index()
-g = sns.FacetGrid(count_words, row="Author")
-g.map_dataframe(sns.barplot, x="word", y="count")
 
-plt.show()
+
 ```
+## <seaborn.axisgrid.FacetGrid object at 0x00000000434073D0>
+```
+
+{{<figure src="unnamed-chunk-11-1.png" >}}
 
 Démonstration par l'exemple qu'il vaut mieux nettoyer le texte avant de 
 l'analyser.
@@ -312,7 +223,8 @@ $$
 
 Prenons les résultats de l'exercice précédent et enrichissons les du rang et de la fréquence d'occurrence d'un mot:
 
-```{python, echo = TRUE, eval = FALSE}
+
+```python
 count_words = pd.DataFrame({'counter' : train
     .groupby('Author')
     .apply(lambda s: ' '.join(s['Text']).split())
@@ -329,14 +241,16 @@ count_words = count_words.assign(
 )
 ```
 
-```{python, echo = TRUE, eval = FALSE}
+
+```python
 g = sns.lmplot(y = "freq", x = "rank", hue = 'Author', data = count_words, fit_reg = False)
 g.set(xscale="log", yscale="log")
 g
 ```
 
 
-```{python, echo = TRUE, eval = FALSE}
+
+```python
 import statsmodels.api as sm
 
 
@@ -370,33 +284,33 @@ Plutôt que de faire soi-même ce travail de nettoyage, avec des fonctions mal o
 {{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
 Repartir de `train`, notre jeu de données d'entraînement. Pour rappel, `train` a la structure suivante:
 
-```{python}
-train.head(2)
+
+```
+##                                                       Text  ... wordtoplot
+## Id                                                          ...           
+## id26305  This process, however, afforded me no means of...  ...          0
+## id17569  It never once occurred to me that the fumbling...  ...          0
+## 
+## [2 rows x 4 columns]
 ```
 
 1. Tokeniser chaque phrase avec `nltk`. Le `DataFrame` devrait maintenant avoir cet aspect:
 
-```{python}
-train_clean = (train
-    .groupby(["ID","Author"])
-    .apply(lambda s: nltk.word_tokenize(' '.join(s['Text'])))
-    .apply(lambda words: [word for word in words if word.isalpha()])
-)
-train_clean.head(2)
+
+```
+## ID     Author
+## 00001  MWS       [Idris, was, well, content, with, this, resolv...
+## 00002  HPL       [I, was, faint, even, fainter, than, the, hate...
+## dtype: object
 ```
 
 2. Retirer les stopwords avec `nltk`
 
-```{python}
-from nltk.corpus import stopwords  
-stop_words = set(stopwords.words('english'))
 
-train_clean = (train_clean
-    .apply(lambda words: [w for w in words if not w in stop_words])
-    .reset_index(name='tokenized')
-)
-
-train_clean.head(2)
+```
+##       ID Author                                          tokenized
+## 0  00001    MWS              [Idris, well, content, resolve, mine]
+## 1  00002    HPL  [I, faint, even, fainter, hateful, modernity, ...
 ```
 
 {{% /panel %}}
@@ -408,21 +322,17 @@ sur notre `DataFrame` grâce à `apply`
 
 Ce petit nettoyage permet d'arriver à un texte plus intéressant en termes d'analyse lexicale. Par exemple, si on reproduit l'analyse précédente,
 
-```{python}
-train_clean["Text"] = train_clean['tokenized'].apply(lambda s: " ".join(map(str, s)))
 
-n_topics = ["HPL","EAP","MWS"]
-
-fig = plt.figure(figsize=(15, 12))
-for i in range(len(n_topics)):
-    ax = fig.add_subplot(2,2,i+1)
-    wordcloud = graph_wordcloud(n_topics[i], train_clean)
-
-    ax.imshow(wordcloud)
-    ax.axis('off')
-
-plt.show()
 ```
+## <matplotlib.image.AxesImage object at 0x00000000466B5880>
+## (-0.5, 799.5, 499.5, -0.5)
+## <matplotlib.image.AxesImage object at 0x0000000043563FA0>
+## (-0.5, 799.5, 499.5, -0.5)
+## <matplotlib.image.AxesImage object at 0x0000000043C20D60>
+## (-0.5, 799.5, 499.5, -0.5)
+```
+
+{{<figure src="unnamed-chunk-18-1.png" >}}
 
 Pour aller plus loin dans l'harmonisation d'un texte, il est possible de
 mettre en place les classes d'équivalence développées dans la 
@@ -443,12 +353,11 @@ modèle. En l'occurrence, un `WordNetLemmatizer`  (WordNet est une base
 lexicographique ouverte). Par exemple, les mots *"women"*, *"daughters"*
 et *"leaves"* seront ainsi lemmatisés de la manière suivante:
 
-```{python}
-from nltk.stem import WordNetLemmatizer
-lemm = WordNetLemmatizer()
 
-for word in ["women","daughters", "leaves"]:
-    print("The lemmatized form of %s is: {}".format(lemm.lemmatize(word)) % word)
+```
+## The lemmatized form of women is: woman
+## The lemmatized form of daughters is: daughter
+## The lemmatized form of leaves is: leaf
 ```
 
 {{% panel status="note" title="Note" icon="fa fa-comment" %}}
@@ -466,7 +375,8 @@ nltk.download('wordnet')
 On va se restreindre au corpus d'Edgar Allan Poe et repartir de la base de données
 brute
 
-```{python, echo = TRUE}
+
+```python
 eap_clean = train[train["Author"] == "EAP"]
 eap_clean = ' '.join(eap_clean['Text'])
 #Tokenisation naïve sur les espaces entre les mots => on obtient une liste de mots
@@ -476,13 +386,17 @@ word_list = nltk.word_tokenize(eap_clean)
 
 1. Utiliser un `WordNetLemmatizer` et observer le résultat
 
-```{python}
-lemmatizer = WordNetLemmatizer()
-lemmatized_output = ' '.join([lemmatizer.lemmatize(w) for w in word_list])
 
-print(" ".join(word_list[:43]))
-print("---------------------------")
-print(lemmatized_output[:209])
+```
+## This process , however , afforded me no means of ascertaining the dimensions of my dungeon ; as I might make its circuit , and return to the point whence I set out , without being aware of the fact ; so perfectly
+```
+
+```
+## ---------------------------
+```
+
+```
+## This process , however , afforded me no mean of ascertaining the dimension of my dungeon ; a I might make it circuit , and return to the point whence I set out , without being aware of the fact ; so perfectly
 ```
 
 
@@ -504,17 +418,13 @@ Repartir de `train`.
 
 1. Utiliser le vectoriseur TfIdF de `scikit-learn` pour transformer notre corpus en une matrice `document x terms`. Au passage, utiliser l'option `stop_words` pour ne pas provoquer une inflation de la taille de la matrice. Nommer le modèle `tfidf` et le jeu entraîné `tfs`
 
-```{python}
-from sklearn.feature_extraction.text import TfidfVectorizer
-tfidf = TfidfVectorizer(stop_words=stopwords.words("english"))
-tfs = tfidf.fit_transform(train['Text'])
 
-```
 
 
 2. Après avoir construit la matrice de documents x terms avec le code suivant
 
-```{python, echo = TRUE}
+
+```python
 feature_names = tfidf.get_feature_names()
 corpus_index = [n for n in list(tfidf.vocabulary_.keys())]
 import pandas as pd
@@ -523,28 +433,64 @@ df = pd.DataFrame(tfs.todense(), columns=feature_names)
 df.head()
 ```
 
-rechercher les lignes où les termes ayant la structure `abandon` sont non-nuls. Les lignes sont les suivantes:
-
-```{python}
-tempdf = df.loc[(df.filter(regex = "abandon")!=0).any(axis=1)]
-tempdf.index
+```
+##    aaem   ab  aback  abaft  abandon  ...  zopyrus  zorry  zubmizzion  zuro   á¼
+## 0   0.0  0.0    0.0    0.0      0.0  ...      0.0    0.0         0.0   0.0  0.0
+## 1   0.0  0.0    0.0    0.0      0.0  ...      0.0    0.0         0.0   0.0  0.0
+## 2   0.0  0.0    0.0    0.0      0.0  ...      0.0    0.0         0.0   0.0  0.0
+## 3   0.0  0.0    0.0    0.0      0.0  ...      0.0    0.0         0.0   0.0  0.0
+## 4   0.0  0.0    0.0    0.0      0.0  ...      0.0    0.0         0.0   0.0  0.0
+## 
+## [5 rows x 24937 columns]
 ```
 
-```{python}
-tempdf.head(5)
+rechercher les lignes où les termes ayant la structure `abandon` sont non-nuls. Les lignes sont les suivantes:
+
+
+```
+## Int64Index([    4,   116,   215,   571,   839,  1042,  1052,  1069,  2247,
+##              2317,  2505,  3023,  3058,  3245,  3380,  3764,  3886,  4425,
+##              5289,  5576,  5694,  6812,  7500,  9013,  9021,  9077,  9560,
+##             11229, 11395, 11451, 11588, 11827, 11989, 11998, 12122, 12158,
+##             12189, 13666, 15259, 16516, 16524, 16759, 17547, 18019, 18072,
+##             18126, 18204, 18251],
+##            dtype='int64')
+```
+
+
+```
+##      aaem   ab  aback  abaft   abandon  ...  zopyrus  zorry  zubmizzion  zuro   á¼
+## 4     0.0  0.0    0.0    0.0  0.000000  ...      0.0    0.0         0.0   0.0  0.0
+## 116   0.0  0.0    0.0    0.0  0.000000  ...      0.0    0.0         0.0   0.0  0.0
+## 215   0.0  0.0    0.0    0.0  0.235817  ...      0.0    0.0         0.0   0.0  0.0
+## 571   0.0  0.0    0.0    0.0  0.000000  ...      0.0    0.0         0.0   0.0  0.0
+## 839   0.0  0.0    0.0    0.0  0.285886  ...      0.0    0.0         0.0   0.0  0.0
+## 
+## [5 rows x 24937 columns]
 ```
 
 3. Trouver les 50 extraits où le score TF-IDF est le plus élevé et l'auteur associé. Vous devriez obtenir le classement suivant:
 
-```{python}
-list_fear = df["fear"].sort_values(ascending =False).head(n=50).index.tolist()
-train.iloc[list_fear].groupby('Author').count()['Text'].sort_values(ascending = False)
+
+```
+## Author
+## MWS    22
+## HPL    15
+## EAP    13
+## Name: Text, dtype: int64
 ```
 
 et les 10 scores les plus élevés sont les suivants:
 
-```{python}
-print(train.iloc[list_fear[:9]]['Text'].values)
+
+```
+## ['We could not fear we did not.' '"And now I do not fear death.'
+##  'Be of heart and fear nothing.' 'I smiled, for what had I to fear?'
+##  'Indeed I had no fear on her account.'
+##  'I have not the slightest fear for the result.'
+##  'At length, in an abrupt manner she asked, "Where is he?" "O, fear not," she continued, "fear not that I should entertain hope Yet tell me, have you found him?'
+##  '"I fear you are right there," said the Prefect.'
+##  'I went down to open it with a light heart, for what had I now to fear?']
 ```
 
 {{% /panel %}}
@@ -586,7 +532,8 @@ On va, rapidement, regarder dans quel contexte apparaît le mot `fear` dans
 l'oeuvre d'Edgar Allan Poe (EAP). Pour cela, on transforme d'abord
 le corpus EAP en tokens `NLTK`
 
-```{python, echo = TRUE}
+
+```python
 eap_clean = train_clean[train_clean["Author"] == "EAP"]
 eap_clean = ' '.join(eap_clean['Text'])
 #Tokenisation naïve sur les espaces entre les mots => on obtient une liste de mots
@@ -596,11 +543,37 @@ text = nltk.Text(tokens)
 
 1. Utiliser la méthode `concordance` pour afficher le contexte dans lequel apparaît le terme `fear`. La liste devrait ressembler à celle-ci:
 
-```{python, echo = FALSE}
-# Question 1
-print("Exemples d'occurences du terme 'fear' :")
-text.concordance("fear")
-print('\n')
+
+```
+## Exemples d'occurences du terme 'fear' :
+```
+
+```
+## Displaying 24 of 24 matches:
+## lady seventy years age heard express fear never see Marie observation attracte
+## ingly well I went open light heart I fear The fact business simple indeed I ma
+##  Geneva seemed resolved give scruple fear wind No one spoken frequenting house
+## d propeller must entirely remodelled fear serious accident I mean steel rod va
+## ud rose amazing velocity I slightest fear result He proceeded observing analyz
+## His third contempt ambition Indeed I fear account The ceiling gloomy looking o
+## dverted blush extreme recency date I fear right said Prefect This could refast
+## loud quick unequal spoken apparently fear well anger three four quite right Sa
+## oughts Question Oinos freely without fear No path trodden vicinity reach happy
+## ick darkness shutters close fastened fear robbers I knew could see opening doo
+## ible game antagonist I even went far fear I occasioned much trouble might glad
+## dame could easily enter unobserved I fear mesmerized adding immediately afterw
+## here poodle Perhaps said I Legrand I fear artist In left hand little heavy Dut
+##  strong relish physical philosophy I fear tinctured mind common error age I me
+## ripods expired The replied entered I fear unusual horror thing The rudder ligh
+## rdiality In second place impressed I fear indeed impossible make comprehended 
+##  spades whole insisted upon carrying fear seemed trusting either implements wi
+## ind dreaded whip instantly converted fear This prison like rampart formed limi
+##  I started hourly dreams unutterable fear find hot breath thing upon face vast
+## ers deputed search premises Be heart fear nothing I removed bed examined corps
+##  looked stiff rolled eyes I smiled I fear My first idea mere surprise really r
+## g memory long time awaking slumber I fear I shall never see Marie But imagine 
+## et lonely I watched minutes somewhat fear wonder The one wrote Jeremiad usury 
+## d garments muddy clotted gore I much fear replied Monsieur Maillard becoming e
 ```
 
 Même si on peut facilement voir le mot avant et après, cette liste est assez difficile à interpréter car elle recoupe beaucoup d'information. 
@@ -612,51 +585,41 @@ apparaissent le plus fréquemment ensemble. Parmi toutes les paires de deux mots
 
 Une approche ingénue de la `collocation` amène ainsi à considérer les mots suivants: 
 
-```{python}
-# Question 2
-from nltk.collocations import BigramCollocationFinder
-from nltk.metrics import BigramAssocMeasures
-bcf = BigramCollocationFinder.from_words(text)
-bcf.nbest(BigramAssocMeasures.likelihood_ratio, 20)
+
+```
+## [('I', 'could'), ('I', 'felt'), ('main', 'compartment'), ('Chess', 'Player'), ('Let', 'us'), ('I', 'saw'), ('Madame', 'Lalande'), ('At', 'length'), ('New', 'York'), ('Ourang', 'Outang'), ('ha', 'ha'), ('three', 'four'), ('I', 'knew'), ('I', 'say'), ('du', 'Roule'), ('I', 'I'), ('General', 'John'), ('could', 'help'), ('In', 'meantime'), ('let', 'us')]
 ```
 
 Si ces mots sont très fortement associés, les expressions sont également peu fréquentes. Il est donc parfois nécessaire d'appliquer des filtres, par exemple ignorer les bigrammes qui apparaissent moins de 5 fois dans le corpus.
 
 3. Refaire la question précédente mais, avant cela, utiliser un modèle `BigramCollocationFinder` et la méthode `apply_freq_filter` pour ne conserver que les bigrammes présents au moins 5 fois. 
 
-```{python}
-finder = nltk.BigramCollocationFinder.from_words(text)
 
-finder.apply_freq_filter(5)
-
-bigram_measures = nltk.collocations.BigramAssocMeasures()
-
-collocations = finder.nbest(bigram_measures.jaccard, 15) 
-
-for collocation in collocations:
-    c = ' '.join(collocation)
-    print(c)
+```
+## Chess Player
+## Ourang Outang
+## Brevet Brigadier
+## Hans Pfaall
+## Bas Bleu
+## du Roule
+## New York
+## ugh ugh
+## Tea Pot
+## gum elastic
+## hu hu
+## prodigies valor
+## Gad Fly
+## Massa Will
+## Von Kempelen
 ```
 
 Cette liste a un peu plus de sens, on a des noms de personnages, de lieux mais aussi des termes fréquemment employés ensemble (*Chess Player* par exemple)
 
 3. Ne s'intéresser qu'aux *collocations* qui concernent le mot *fear*
 
-```{python}
-bigram_measures = nltk.collocations.BigramAssocMeasures()
 
-def collocations_word(word = "fear"):
-    # Ngrams with a specific name 
-    name_filter = lambda *w: word not in w
-    ## Bigrams
-    finder = BigramCollocationFinder.from_words(
-                nltk.corpus.genesis.words('english-web.txt'))
-    # only bigrams that contain 'fear'
-    finder.apply_ngram_filter(name_filter)
-    # return the 100 n-grams with the highest PMI
-    print(finder.nbest(bigram_measures.likelihood_ratio,100))
-    
-collocations_word("word")
+```
+## [('your', 'word'), ('the', 'word'), ('word', 'again'), ('word', 'of'), ('me', 'word'), ('a', 'word'), ('word', '."'), ('word', 'will'), ('word', 'that'), ('word', 'in')]
 ```
 
 
@@ -664,7 +627,8 @@ collocations_word("word")
 
 Si on mène la même analyse pour le terme *love*, on remarque que de manière logique, on retrouve bien des sujets généralement accolés au verbe:
 
-```{python, echo = FALSE}
-collocations_word("love")
+
+```
+## [('love', 'me'), ('love', 'he'), ('will', 'love'), ('I', 'love'), ('love', ','), ('you', 'love'), ('the', 'love')]
 ```
 
