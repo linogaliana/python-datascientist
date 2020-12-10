@@ -26,7 +26,7 @@ library(knitr)
 library(reticulate)  
 knitr::knit_engines$set(python = reticulate::eng_python)
 knitr::opts_chunk$set(fig.path = "")
-knitr::opts_chunk$set(eval = TRUE, echo = FALSE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(eval = TRUE, echo = TRUE, warning = FALSE, message = FALSE)
 
 # Hook from Maelle Salmon: https://ropensci.org/technotes/2020/04/23/rmd-learnings/
 knitr::knit_hooks$set(
@@ -154,8 +154,31 @@ Le jeu de données met ainsi en regard un auteur avec une phrase qu'il a écrite
 train.head()
 ```
 
+Les étapes de *preprocessing* sont expliquées au [chapitre précédent](#nlpexo). On applique les étapes suivantes:
 
-[Remettre vite fait les étapes de constitution de la base d'entraînement]
+1. Tokeniser
+2. Retirer la ponctuation et les stopwords
+3. Lemmatiser le texte
+
+```{python}
+lemma = WordNetLemmatizer()
+
+train_clean = (train
+    .groupby(["ID","Author"])
+    .apply(lambda s: nltk.word_tokenize(' '.join(s['Text'])))
+    .apply(lambda words: [word for word in words if word.isalpha()])
+)
+
+from nltk.corpus import stopwords  
+stop_words = set(stopwords.words('english'))
+
+train_clean = (train_clean
+    .apply(lambda words: [lemma.lemmatize(w) for w in words if not w in stop_words])
+    .reset_index(name='tokenized')
+)
+
+train_clean.head(2)
+```
 
 
 
@@ -176,70 +199,123 @@ Aujourd’hui, ce genre de méthodes s’utilisent fréquemment dans le web, par
 analyser des ensemble d’articles d’actualité, les regrouper par sujet, faire de la recommendation
 d’articles, etc. 
 
+LDA assumes documents are produced from a mixture of topics. Those topics then generate words based on their probability distribution. Given a dataset of documents, LDA backtracks and tries to figure out what topics would create those documents in the first place.
 
-```{python, eval = FALSE}
-lemm = WordNetLemmatizer()
+La LDA est une méthode qui considère les corpus comme des mélanges de sujets et
+de mots. Chaque document peut être représenté comme le résutlat d'un mélange
+de sujets et, au sein de ces sujets, d'un choix de mots. L’estimation des
+paramètres de la LDA passe par l’estimation des distributions des variables
+latentes à partir des données observées (*posterior inference*). 
+Mathématiquement, on peut se représenter la LDA comme une 
+technique de maximisation de log vraisemblance avec un algorithme EM
+dans un modèle de mélange.
 
-class LemmaCountVectorizer(CountVectorizer):
-    def build_analyzer(self):
-        analyzer = super(LemmaCountVectorizer, self).build_analyzer()
-        return lambda doc: (lemm.lemmatize(w) for w in analyzer(doc))
-      
+La matrice termes-documents qui sert de point de départ est la suivante:
+
+|     | word_1 | word_2 | word_3 | ... | word_J |
+|---- |--------|--------|--------|-----|--------|
+|doc_1| 3      | 0      | 1      | ... | 0      |
+| ... | ...    | ...    | ...    | ... | ...    |
+|doc_N| 1      | 0      | 0      | ... | 5      |
+
+La LDA consiste à transformer cette matrice *sparse*
+(creuse en Français) document-terme en deux matrices de moindre dimension:
+
+1. Une matrice document-sujet
+2. Une matrice sujet-mots
+
+En notant $K_i$ le sujet $i$. On obtient donc
+
+* Une matrice document-sujet ayant la structure suivante:
+
+|     | K_1 | K_2 | K_3 | ... | K_M |
+|---- |--------|--------|--------|-----|--------|
+|doc_1| 1      | 0      | 1      | ... | 0      |
+| ... | ...    | ...    | ...    | ... | ...    |
+|doc_N| 1      | 1      | 1      | ... | 0      |
+
+* Une matrice sujets-mots ayant la structure suivante:
+
+|     | word_1 | word_2 | word_3 | ... | word_J |
+|---- |--------|--------|--------|-----|--------|
+|K_1| 1      | 0      | 0      | ... | 0      |
+| ... | ...    | ...    | ...    | ... | ...    |
+|K_M| 1      | 1      | 1      | ... | 0      |
+
+Ces deux matrices ont l'interprétation suivante :
+
+* La première nous renseigne sur la présence d'un sujet dans un document
+* La seconde nous renseigne sur la présence d'un mot dans un sujet
+
+En fait, le principe de la LDA est de construire ces deux matrices à partir des fréquences d'apparition des mots dans le texte. 
+
+
+
+On va se concentrer sur Edgar Allan Poe. 
+
+**Détails à venir**
+
+
+```{python}
+corpus = train_clean[train_clean["Author"] == "EAP"]
+```
+
+
+```{python}
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+
+# Initialise the count vectorizer with the English stop words
+count_vectorizer = CountVectorizer(stop_words='english')# Fit and transform the processed titles
+count_data = count_vectorizer.fit_transform(corpus['tokenized'].apply(lambda s: ' '.join(s)))
+
+# Load the LDA model from sk-learn
+ 
+# Helper function
+def print_topics(model, count_vectorizer, n_top_words):
+    words = count_vectorizer.get_feature_names()
+    for topic_idx, topic in enumerate(model.components_):
+        print("\nTopic #%d:" % topic_idx)
+        print(" ".join([words[i]
+                        for i in topic.argsort()[:-n_top_words - 1:-1]]))
+        
+# Tweak the two parameters below
+number_topics = 5
+number_words = 10# Create and fit the LDA model
 lda = LatentDirichletAllocation(n_components=11, max_iter=5,
                                 learning_method = 'online',
                                 learning_offset = 50.,
                                 random_state = 0)
-                                
-lda.fit(tf)
+lda.fit(count_data)# Print the topics found by the LDA model
+print("Topics found via LDA:")
+print_topics(lda, count_vectorizer, number_words)
 ```
-
-### Représentation des résultats
 
 ```{python, eval = FALSE}
-def print_top_words(model, feature_names, n_top_words):
-    for topic_idx, topic in enumerate(model.components_):
-        print("Topic #%d:" % topic_idx)
-        print(" ".join([feature_names[i]
-                        for i in topic.argsort()[:-n_top_words - 1:-1]]))
-    print()
-    
-n_top_words = 40
-print("\nTopics in LDA model: ")
-tf_feature_names = tf_vectorizer.get_feature_names()
-print_top_words(lda, tf_feature_names, n_top_words)
+import pyLDAvis
+import pyLDAvis.sklearn
 
-first_topic = lda.components_[0]
-second_topic = lda.components_[1]
-
-first_topic_words = [tf_feature_names[i] for i in first_topic.argsort()[:-50 - 1 :-1]]
-second_topic_words = [tf_feature_names[i] for i in second_topic.argsort()[:-50 - 1 :-1]]
-
-
-firstcloud = WordCloud(stopwords=stopwords,
-                       background_color='black',
-                       width=2500,
-                       height=1800
-                       ).generate(" ".join(first_topic_words))
-plt.imshow(firstcloud)
-plt.axis('off');
-
-second_topic_words = [tf_feature_names[i] for i in second_topic.argsort()[:-50 - 1 :-1]]
-
-
-second_cloud = WordCloud(
-                          stopwords=stopwords,
-                          background_color='black',
-                          width=2500,
-                          height=1800
-                         ).generate(" ".join(second_topic_words))
-plt.imshow(second_cloud)
-plt.axis('off');
+# pyLDAvis.enable_notebook()
+pyLDAvis.prepared_data_to_html(
+  pyLDAvis.sklearn.prepare(lda, count_data, count_vectorizer)
+)
 ```
+
 
 
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 Le module `pyLDAvis` offre quelques visualisations bien pratiques lorsqu'on
 désire représenter de manière synthétique les résultats d'une LDA
+
+Dans un *notebook*
+
+~~~python
+import pyLDAvis.sklearn
+
+pyLDAvis.enable_notebook()
+~~~
+pyLDAvis.sklearn.prepare(lda, count_data, count_vectorizer)
+
 {{% /panel %}}
 
 
