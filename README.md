@@ -3,38 +3,33 @@
 [![Build Status](https://travis-ci.com/linogaliana/python-datascientist.svg?branch=master)](https://travis-ci.com/linogaliana/python-datascientist)
 [![pipeline status](https://gitlab.com/linogaliana/python-datascientist/badges/master/pipeline.svg)](https://gitlab.com/linogaliana/python-datascientist/-/commits/master)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
-[![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://datalab.sspcloud.fr/my-lab/catalogue/inseefrlab-helm-charts-datascience/jupyter/deploiement?kubernetes.role=admin)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/86ebd982-38e0-4e04-81f4-4819131eb800/deploy-status)](https://app.netlify.com/sites/linogaliana-teaching/deploys)
 
-:warning: :construction: **Ce site est en construction** :construction:
 
-Supports associés au site disponible à l'adresse <https://linogaliana-teaching.netlify.app/>. 
+Ce dépôt Github stocke les fichiers sources ayant permis de construire le site
+<https://linogaliana-teaching.netlify.app/> qui rend public le cours de 
+deuxième année (Master 1) de l'ENSAE:
+*Python pour les data-scientists et économistes* :snake:.
 
-Les `notebooks` d'exercice sont dans l'arborescence :folder: `content/**/notebooks/*.ipynb`
+Le syllabus est disponible [là](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/).
 
-
-Syllabus disponible [là](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/)
-
-
-
-# Contribuer
-
-Pour éditer des notebooks bien intégrés dans le site web, utiliser `jupytext`
-![](./static/pictures/intro/jupytext.png)
+Le site est construit de manière automatique grâce à [Hugo](https://gohugo.io/).
+La reproductibilité des exemples et des exercices est testée avec 
+Travis ([![Build Status](https://travis-ci.com/linogaliana/python-datascientist.svg?branch=master)](https://travis-ci.com/linogaliana/python-datascientist)) 
+et Gitlab
+([![pipeline status](https://gitlab.com/linogaliana/python-datascientist/badges/master/pipeline.svg)](https://gitlab.com/linogaliana/python-datascientist/-/commits/master)).
 
 
-Pour convertir un notebook jupyter en `.Rmd` (on n'utilise le `.md` que
-pour la transition avec hugo) :
+## Tester les codes Python
 
-```shell
-for i in $(find . -type f -name "*.ipynb"); do
-  jupytext --to md "$i"
-done
-```
+Il est possible d'utiliser une installation personnelle de `Python` ou 
+des serveurs partagés: 
 
-```shell
-jupytext --to Rmd ./content/01_data/02_pandas_tp.ipynb
-jupytext --to ipynb ./content/01_data/02_pandas_tp.Rmd
-```
+* Binder ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
+)
+* Google colab ([![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb))
+* Onyxia Datalab ([![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://datalab.sspcloud.fr/my-lab/catalogue/inseefrlab-helm-charts-datascience/jupyter/deploiement?kubernetes.role=admin)) pour les élèves de l'ENSAE et les agents du système statistique public
+
 
