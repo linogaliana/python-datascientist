@@ -1,4 +1,4 @@
-# python-datascientist
+# Python pour data-scientists et économistes
 
 [![Build Status](https://travis-ci.com/linogaliana/python-datascientist.svg?branch=master)](https://travis-ci.com/linogaliana/python-datascientist)
 [![pipeline status](https://gitlab.com/linogaliana/python-datascientist/badges/master/pipeline.svg)](https://gitlab.com/linogaliana/python-datascientist/-/commits/master)
@@ -9,7 +9,9 @@
 
 
 Ce dépôt Github stocke les fichiers sources ayant permis de construire le site
-<https://linogaliana-teaching.netlify.app/> qui rend public le cours de 
+<https://linogaliana-teaching.netlify.app/>. 
+
+Il rend public le cours de 
 deuxième année (Master 1) de l'ENSAE:
 *Python pour les data-scientists et économistes* :snake:.
 
