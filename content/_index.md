@@ -7,9 +7,12 @@ weight: 10
 
 :warning: :construction: **Ce site est en construction** :construction:
 
+# Structuration
+
 Ce site web rend public le contenu du cours de 
 deuxième année (Master 1) de l'ENSAE:
-*Python pour les data-scientists et économistes* :snake:. 
+[*Python pour les data-scientists et économistes*](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/)
+:snake:. 
 
 Le cours est structuré sous la forme du présent site web et de notebooks
 jupyter proposant des exercices plus approfondis. L'ensemble
@@ -39,12 +42,20 @@ Vous pouvez naviguer dans l'architecture du site via la table des matières
 ou par les liens vers le contenu antérieur ou postérieur à la fin de chaque
 page. 
 
-# Principes du cours
+# Objectif du cours
 
 Le but de ce cours est de rendre autonome sur l'utilisation de Python
-dans un contexte de travail d'un ENSAE, c'est-à-dire une utilisation intensive
-des données dans un cadre statistique rigoureux.
-Nous partirons de l'hypothèse que les notions de statistiques et d'économétrie pour lesquels nous verrons des applications informatiques, vous sont connues. 
+dans un contexte de travail de *data scientist* ou de
+*social scientist* (économie, sociologie, géographie...). Autrement dit, 
+il présuppose qu'on désire faire un usage intense
+de données dans un cadre statistique rigoureux.
+Nous partirons de l'hypothèse que les notions de statistiques et d'économétrie
+pour lesquels nous verrons des applications informatiques sont connues. 
+La facilité avec laquelle il est possible de construire des modèles complexes
+avec `Python` peut laisser apparaître que cet *a priori* est inutile. Il 
+s'agit d'une grave erreur: même si l'implémentation de modèles est aisée, il 
+est nécessaire de bien comprendre la structure des données et leur adéquation
+avec les hypothèses d'un modèle. 
 
 Les éléments relatifs à l'évaluation du cours sont disponibles dans la
 Section [Evaluation](evaluation)
