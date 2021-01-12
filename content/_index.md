@@ -7,14 +7,15 @@ weight: 10
 
 :warning: :construction: **Ce site est en construction** :construction:
 
-
-
-# Structuration du cours
+Ce site web rend public le contenu du cours de 
+deuxième année (Master 1) de l'ENSAE:
+*Python pour les data-scientists et économistes* :snake:. 
 
 Le cours est structuré sous la forme du présent site web et de notebooks
 jupyter proposant des exercices plus approfondis. L'ensemble
 des codes sources est stocké sous
 [github à cette adresse](https://github.com/linogaliana/python-datascientist).
+
 Sur l'ensemble du site web,
 il est possible de cliquer sur la petite icone
 <a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-github"></i></a>
@@ -26,6 +27,7 @@ parfois des liens
 qui utilisent
 [nbviewer](https://github.com/jupyter/nbviewer) une application de visualisation
 dédiée aux jupyter notebooks.
+
 Des environnements temporaires d'exécution des notebooks sont proposés
 avec les icones suivantes 
 [![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
@@ -36,6 +38,7 @@ avec les icones suivantes
 Vous pouvez naviguer dans l'architecture du site via la table des matières
 ou par les liens vers le contenu antérieur ou postérieur à la fin de chaque
 page. 
+
 
 # Introduction: pourquoi faire du python pour travailler sur des données ?
 
