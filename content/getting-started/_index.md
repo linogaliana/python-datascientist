@@ -52,12 +52,14 @@ ou économiste.
 Comme pour `R`, l'intérêt de Python est son rôle central dans un
 écosystème plus large autour d'outils puissants, flexibles et *open-source*. 
  
-L'intérêt de Python pour un *data scientist* ou *data economist* va au-delà du champ du *Machine Learning*. 
+L'intérêt de `Python` pour un *data scientist* ou *data economist* va au-delà du champ du *Machine Learning*. 
 Python concurrence très bien `R` dans son domaine de prédilection, à
 savoir l'analyse statistique sur des
-objets type *dataframes*. `python` est bien plus complet dans certains domaines
-car, outre le *Machine Learning*, `Python` est mieux adapté aux données volumineuses que `R`. `Python` est également meilleur que `R` pour faire
-du *webscraping*. Dans le domaine de l'économétrie, `python` offre
+objets type *dataframes*. `Python` est bien plus complet dans certains domaines
+car, outre le *Machine Learning*,
+`Python` est mieux adapté aux données volumineuses que
+`R`. `Python` est également meilleur que `R` pour faire
+du *webscraping*. Dans le domaine de l'économétrie, `Python` offre
 l'avantage de la simplicité avec un nombre restreint de packages (`scikit` et
 `statsmodels`) permettant d'avoir des modèles très généraux
 (les [generalized estimating equations](https://www.statsmodels.org/stable/gee.html)) alors qu'il faut
@@ -67,7 +69,8 @@ Au contraire, dans certains domaines, `R` reste meilleur. Par exemple,
 `R` est très bien intégré au langage de publication `Markdown` ce qui,
 dans certains cas, comme la construction de ce site *web* basée sur 
 `R Markdown`, est fort appréciable. 
-Un des avantages comparatifs de `Python` par rapport à d'autres langages (notamment `R` et `Julia`) est sa dynamique,
+Un des avantages comparatifs de `Python` par rapport à d'autres
+langages (notamment `R` et `Julia`) est sa dynamique,
 ce que montre [l'explosion du nombre de questions
 sur `Stack Overflow`](https://towardsdatascience.com/python-vs-r-for-data-science-6a83e4541000).
 
