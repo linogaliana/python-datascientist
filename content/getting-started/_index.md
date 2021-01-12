@@ -39,13 +39,14 @@ disposition
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master)
 
 
-# Introduction: pourquoi faire du python pour travailler sur des données ?
+## Pourquoi faire du python pour travailler sur des données ?
 
 [Python](https://www.python.org/), par sa grande flexibilité, est devenu un langage incontournable
 dans le domaine de la *data science*.
-Le succès de [Tensorflow](https://www.tensorflow.org/) dans la communauté
-de la *Data-Science* a beaucoup contribué à l'adoption de `python`. Cependant,
-réduire `python` à quelques librairies serait réducteur tant il s'agit 
+Le succès de [scikit-learn](https://scikit-learn.org/stable/) et
+de [Tensorflow](https://www.tensorflow.org/) dans la communauté
+de la *Data-Science* ont beaucoup contribué à l'adoption de `Python`. Cependant,
+résumer `Python` à quelques librairies serait réducteur tant il s'agit 
 d'un véritable couteau-suisse pour le *data-scientist*, *social scientist*
 ou économiste. 
 Comme pour `R`, l'intérêt de Python est son rôle central dans un
