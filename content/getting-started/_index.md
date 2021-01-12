@@ -84,3 +84,19 @@ langage à l'autre. A terme, les data-scientists et économistes utiliseront
 de manière presque indifférente, et en alternance, `python` et `R`. Ce cours
 présentera ainsi régulièrement des analogies avec `R`.
 
+
+## Structuration de cette partie
+
+Dans un premier temps, cette introduction présente un panorama général
+de l'environnement familier du *data scientist* en `Python`:
+
+* [Configurer Python](configuration)
+* [Rapide inventaire de l'écosystème de la *data science*](ecosystemeDS)
+* [Présentation des bonnes pratiques pour les projets de *data science* en `Python`](bonnespratiques)
+
+Ensuite, cette partie propose quelques rappels généraux sur les concepts de base
+du langage:
+
+* [Rappels sur les objets du langage de base](rappels2A)
+* [Rappels sur la programmation de fonctions](rappelsfonctions)
+* [Rappels sur les notions de classes, méthodes, etc.](rappelsclasses)
