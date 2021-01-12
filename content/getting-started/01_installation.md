@@ -19,7 +19,7 @@ de ce cours est d'adopter un environnement favorable à la reproductibilité
 des traitements.
 
 Pour cette raison, en supplément des notions relatives 
-à `Python`, ce cours montrera comment utiliser `git` avec `python` et 
+à `Python`, ce cours montrera comment utiliser `Git` avec `Python` et 
 évoquera un
 certain nombre de critères de qualité du code qui sont devenus
 des standards dans la communauté *open-source*, dans l'industrie et dans
@@ -27,7 +27,7 @@ l'administration. Ces compétences ne sont pas adhérentes à Python et seront
 utiles pour tout projet ultérieur.
  
 Le projet final devra impérativement
-être associé à un dépôt `git` (nous reviendrons dessus) et répondre à 
+être associé à un dépôt `Git` (nous reviendrons dessus) et répondre à 
 ces critères de qualité, qui serviront toute la vie.
 
 # Installer Python
@@ -61,12 +61,12 @@ scripts au format `.py` plutôt que des notebooks. L'éditeur le plus complet es
 [^1]: D'autres éditeurs sont très bien faits, notamment `Visual Studio`
 
 * nombreux *plugins* pour une pleine utilisation de l'écosystème `Python`: éditeur de `Markdown`, 
-interface `git`, etc. 
+interface `Git`, etc. 
 * fonctionalités classiques d'un éditeur dont manque `Jupyter`: autocomplétion, diagnostic du code, etc.
 * intégration avec les environnements `Conda`
 
 Au-delà de l'utilisation de Jupyter à des fins pédagogiques et à des fins de publicisation, je recommande
-de privilégier `PyCharm` pour la pratique quotidienne de `Python`
+de privilégier `PyCharm` ou `Visual Studio` pour la pratique quotidienne de `Python`
 
 ## Exécution dans un environnement temporaire sur un serveur distant
 
