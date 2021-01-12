@@ -65,8 +65,11 @@ interface `Git`, etc.
 * fonctionalités classiques d'un éditeur dont manque `Jupyter`: autocomplétion, diagnostic du code, etc.
 * intégration avec les environnements `Conda`
 
+
+{{% panel status="hint" title="Conseil" icon="fa fa-exclamation-triangle" %}}
 Au-delà de l'utilisation de Jupyter à des fins pédagogiques et à des fins de publicisation, je recommande
 de privilégier `PyCharm` ou `Visual Studio` pour la pratique quotidienne de `Python`
+{{% /panel %}}
 
 ## Exécution dans un environnement temporaire sur un serveur distant
 
@@ -107,13 +110,16 @@ le griffonnage.
 donne également la possibilité d'exécuter des notebooks,
 comme les solutions précédentes.
 
-
+{{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
 Attention, les performances de ces solutions peuvent être variables. Les serveurs publics mis à disposition
 ne sont pas forcément des foudres de guerre. Avec ceux-ci,
 on vérifie plutôt la reproductibilité des scripts avec des jeux d'exemples.
+
 Quand on est dans une entreprise ou administration, qui dispose de serveurs propres,
 on peut aller plus loin en utilisant ces outils 
 pour automatiser l'ensemble de la chaîne de traitement. 
+{{% /panel %}}
+
 
 **Attention: il n'y a pas de garantie de perennité de service** (notamment avec `binder` où
 10 minutes d'inactivité mènent à l'extinction du service). Il s'agit plus d'un service pour griffoner
