@@ -10,7 +10,7 @@ FROM $BASE_IMAGE AS install_packages
 # RUN tlmgr install `cat /tmp/build_image/_latex_requirements.txt | tr '\r\n' ' '`
 
 # R packages 
-RUN Rscript -e "install.packages('knitr','rmarkdown','blogdown','reticulate')"
+RUN Rscript -e "install.packages('knitr','rmarkdown','blogdown','reticulate', dependencies = TRUE)"
 
 # Second stage: use the installed packages directories
 FROM $BASE_IMAGE
