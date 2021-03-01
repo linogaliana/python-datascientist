@@ -1,6 +1,5 @@
 ARG BASE_IMAGE=rocker/geospatial:4.0.2
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ARG PATH="/root/miniconda3/bin:${PATH}"
+
 
 # Use a multi-stage build to install packages
 # First stage: install packages
@@ -35,5 +34,7 @@ RUN wget \
     && rm -f Miniconda3-latest-Linux-x86_64.sh 
 RUN conda --version
 
+
+ENV PATH="/root/miniconda3/bin:${PATH}"
 
 
