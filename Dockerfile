@@ -12,6 +12,8 @@ RUN wget \
     && mkdir /root/.conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b \
     && rm -f Miniconda3-latest-Linux-x86_64.sh 
+
+ENV PATH="/root/miniconda3/bin:${PATH}"
 RUN conda --version
 
 # Create the environment:
@@ -19,7 +21,6 @@ COPY environment.yml .
 RUN conda env create -f environment.yml -n test-environment
 
 
-ENV PATH="/root/miniconda3/bin:${PATH}"
 
 
 
