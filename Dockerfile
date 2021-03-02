@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=rocker/geospatial:4.0.2
+ARG BASE_IMAGE=rocker/verse:4.0.2
 # Use a multi-stage build to install packages
 # First stage: install packages
 FROM $BASE_IMAGE AS install_packages
@@ -22,7 +22,7 @@ RUN conda env create -f environment.yml -n test-environment
 
 
 # R packages 
-RUN Rscript -e "install.packages(c('knitr','rmarkdown','blogdown','reticulate'))"
+RUN Rscript -e "install.packages(c('knitr','rmarkdown','blogdown'))"
 
 # Second stage: use the installed packages directories
 FROM $BASE_IMAGE
@@ -30,7 +30,3 @@ FROM $BASE_IMAGE
 # COPY --from=install_packages /usr/local/texlive /usr/local/texlive
 COPY --from=install_packages /usr/local/lib/R/site-library /usr/local/lib/R/site-library
 
-
-RUN Rscript -e "print(reticulate::miniconda_path())"
-
-RUN echo "RETICULATE_MINICONDA_PATH = '~/.local/share/r-miniconda'" > .Renviron
