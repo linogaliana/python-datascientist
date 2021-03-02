@@ -21,9 +21,6 @@ COPY --from=install_packages /usr/local/lib/R/site-library /usr/local/lib/R/site
 RUN apt-get update
 RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
-# Create the environment:
-COPY environment.yml .
-RUN conda env create -f environment.yml -n test-environment
 
 RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
@@ -31,6 +28,10 @@ RUN wget \
     && bash Miniconda3-latest-Linux-x86_64.sh -b \
     && rm -f Miniconda3-latest-Linux-x86_64.sh 
 RUN conda --version
+
+# Create the environment:
+COPY environment.yml .
+RUN conda env create -f environment.yml -n test-environment
 
 
 ENV PATH="/root/miniconda3/bin:${PATH}"
