@@ -25,7 +25,7 @@ RUN conda env create -f environment.yml -n test-environment
 
 
 # R packages 
-RUN Rscript -e "install.packages('knitr','rmarkdown','blogdown','reticulate')"
+RUN Rscript -e "install.packages(c('knitr','rmarkdown','blogdown','reticulate'))"
 
 # Second stage: use the installed packages directories
 FROM $BASE_IMAGE
