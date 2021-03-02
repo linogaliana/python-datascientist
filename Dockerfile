@@ -36,3 +36,4 @@ COPY --from=install_packages /usr/local/lib/R/site-library /usr/local/lib/R/site
 
 RUN Rscript -e "print(reticulate::miniconda_path())"
 
+RUN echo "RETICULATE_MINICONDA_PATH = '~/.local/share/r-miniconda'" > .Renviron
