@@ -21,9 +21,6 @@ COPY environment.yml .
 RUN conda env create -f environment.yml -n test-environment
 
 
-
-
-
 # R packages 
 RUN Rscript -e "install.packages(c('knitr','rmarkdown','blogdown','reticulate'))"
 
