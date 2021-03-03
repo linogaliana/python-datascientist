@@ -93,5 +93,8 @@ Le projet doit être réalisé en groupe de deux, voire trois.
 
 | Projet | Auteurs | URL projet <a href="https://github.com" class="github"><i class="fab fa-github"></i></a> | Tags |
 |--------|---------|------------|------|
+<!---
+-----Suivre ce modèle------
 | Prédiction du prix des carottes | Bugs Bunny ; Daffy Duck | https://github.com/TheAlgorithms/Python | Prédiction ; Machine Learning ; Alimentation |
+----->
 
