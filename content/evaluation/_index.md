@@ -85,3 +85,13 @@ Un exemple de configuration d'intégration continue est disponible [ici](/gettin
 * Soutenance : 4 points
 
 Le projet doit être réalisé en groupe de deux, voire trois. 
+
+
+## Projets menés par les étudiants
+
+### 2020-2021
+
+| Projet | Auteurs | URL projet <a href="https://github.com" class="github"><i class="fab fa-github"></i></a> | Tags |
+|--------|---------|------------|------|
+| Prédiction du prix des carottes | Bugs Bunny ; Daffy Duck | https://github.com/TheAlgorithms/Python | Prédiction ; Machine Learning ; Alimentation |
+
