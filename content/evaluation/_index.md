@@ -97,4 +97,4 @@ Le projet doit être réalisé en groupe de deux, voire trois.
 -----Suivre ce modèle------
 | Prédiction du prix des carottes | Bugs Bunny ; Daffy Duck | https://github.com/TheAlgorithms/Python | Prédiction ; Machine Learning ; Alimentation |
 ----->
-
+| GPS vélo intégrant les bornes Vélib, les accidents, la congestion et la météo | Vinciane Desbois ; Imane Fares ; Romane Gajdos | https://github.com/ImaneFa/Projet_Python | Vélib ; Pistes cyclables ; Accidents ; Folium|
