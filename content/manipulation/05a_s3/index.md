@@ -68,7 +68,8 @@ intuitif.
 Par la suite, on va utiliser des alias pour les trois valeurs suivantes, qui servent
 à s'authentifier. 
 
-```{python, eval = FALSE}
+
+```python
 key_id = 'MY_KEY_ID'
 access_key = 'MY_ACCESS_KEY'
 token = "MY_TOKEN"
@@ -86,7 +87,8 @@ Avec `boto3`, on créé d'abord un client puis on exécute des requêtes dessus.
 Pour initialiser un client, il suffit, en supposant que l'url du dépôt S3 est
 `"https://minio.lab.sspcloud.fr"`, de faire:
 
-```{python, eval = FALSE}
+
+```python
 import boto3
 s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
 ```
@@ -98,7 +100,8 @@ des paramètres d'authentification erronés. Dans ce cas, il est plus fiable
 de les fournir à `boto3.client`
 
 
-```{python, eval = FALSE}
+
+```python
 import boto3
 s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr",
                   aws_access_key_id=key_id, 
@@ -124,7 +127,8 @@ tester l'accès aux bases `FILOSOFI` (données de revenu localisées disponibles
 sur <https://www.insee.fr>) au sein du bucket `donnees-insee`. Pour cela,
 la méthode `list_objects` offre toutes les options nécessaires:
 
-```{python, eval=FALSE}
+
+```python
 for key in s3.list_objects(Bucket='donnees-insee', Prefix='FILOSOFI')['Contents']:
     print(key['Key'])
 ```
@@ -136,7 +140,8 @@ La logique est identique avec `s3fs`.
 Si on a des jetons d'accès à jour et dans les variables d'environnement
 adéquates:
 
-```{python, eval=FALSE}
+
+```python
 import s3fs
 fs = s3fs.S3FileSystem(
   client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
@@ -144,7 +149,8 @@ fs = s3fs.S3FileSystem(
 
 Sinon, on ajoute les crédits d'authentification:
 
-```{python, eval=FALSE}
+
+```python
 import s3fs
 fs = s3fs.S3FileSystem(
   client_kwargs={'endpoint_url': 'http://'+'minio.lab.sspcloud.fr'},
@@ -155,7 +161,8 @@ fs = s3fs.S3FileSystem(
 Pour lister les fichiers, c'est la méthode `ls` (celle-ci ne liste pas par
 défaut les fichiers de manière récursive comme `boto3`):
 
-```{python, eval = FALSE}
+
+```python
 fs.ls("donnees-insee")
 ```
 
@@ -163,7 +170,8 @@ fs.ls("donnees-insee")
 
 ## boto3
 
-```{python, eval = FALSE}
+
+```python
 s3.download_file('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv", 'data.csv')
 ```
 
@@ -181,7 +189,8 @@ décrypte les données à la volée.
 
 ## boto3
 
-```{python, eval = FALSE}
+
+```python
 obj = s3.get_object(Bucket='donnees-insee', Key="FILOSOFI/2014/FILOSOFI_COM.csv")
 df = pd.read_csv(obj['Body'], sep = ";")
 df.head(2)
@@ -191,7 +200,8 @@ df.head(2)
 
 Le code suivant devrait permettre d'effectuer la même opération avec `s3fs`
 
-```{python, eval = FALSE}
+
+```python
 df = pd.read_csv(fs.open('{}/{}'.format('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv"),
                          mode='rb')
                  )
@@ -203,7 +213,8 @@ df.head(2)
 
 ### boto3
 
-```{python, eval = FALSE}
+
+```python
 s3_client.upload_file(file_name, bucket, object_name)
 ```
 
