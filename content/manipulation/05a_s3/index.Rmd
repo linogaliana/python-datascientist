@@ -91,7 +91,8 @@ import boto3
 s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
 ```
 
-Il se peut que la connexion à ce stade soit refusée. Cela peut provenir 
+Il se peut que la connexion à ce stade soit refusée (HTTP error 403).
+Cela peut provenir 
 d'une erreur dans l'URL utilisé. Cependant, cela reflète plus généralement
 des paramètres d'authentification erronés. Dans ce cas, il est plus fiable
 de les fournir à `boto3.client`
@@ -154,7 +155,58 @@ fs = s3fs.S3FileSystem(
 Pour lister les fichiers, c'est la méthode `ls` (celle-ci ne liste pas par
 défaut les fichiers de manière récursive comme `boto3`):
 
-```{python}
+```{python, eval = FALSE}
 fs.ls("donnees-insee")
 ```
 
+# Télécharger un fichier depuis s3 pour l'enregistrer en local
+
+## boto3
+
+```{python, eval = FALSE}
+s3.download_file('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv", 'data.csv')
+```
+
+## s3fs
+
+TO BE COMPLETED
+
+
+# Lire un fichier directement
+
+La méthode précédente n'est pas optimale. En effet, l'un des intérêts des API
+est qu'on peut traiter un fichier sur s3 comme s'il s'agissait d'un fichier
+sur son PC. Cela est d'ailleurs une manière plus sécurisée de procéder puisqu'on
+décrypte les données à la volée. 
+
+## boto3
+
+```{python, eval = FALSE}
+obj = s3.get_object(Bucket='donnees-insee', Key="FILOSOFI/2014/FILOSOFI_COM.csv")
+df = pd.read_csv(obj['Body'], sep = ";")
+df.head(2)
+```
+
+## s3fs
+
+Le code suivant devrait permettre d'effectuer la même opération avec `s3fs`
+
+```{python, eval = FALSE}
+df = pd.read_csv(fs.open('{}/{}'.format('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv"),
+                         mode='rb')
+                 )
+
+df.head(2)
+```
+
+# Uploader un fichier
+
+### boto3
+
+```{python, eval = FALSE}
+s3_client.upload_file(file_name, bucket, object_name)
+```
+
+### s3fs
+
+TO BE COMPLETED
