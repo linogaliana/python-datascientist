@@ -1,0 +1,195 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.6.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+title: "Exercices supplémentaires"
+date: 2021-04-09T13:00:00Z
+draft: false
+weight: 50
+output: 
+  html_document:
+    keep_md: true
+    self_contained: true
+slug: exosadditionnels
+---
+
+```{r setup, include=FALSE}
+library(knitr)  
+library(reticulate)  
+knitr::knit_engines$set(python = reticulate::eng_python)
+knitr::opts_chunk$set(fig.path = "")
+knitr::opts_chunk$set(eval = TRUE, echo = FALSE, warning = FALSE, message = FALSE)
+
+# Hook from Maelle Salmon: https://ropensci.org/technotes/2020/04/23/rmd-learnings/
+knitr::knit_hooks$set(
+  plot = function(x, options) {
+    hugoopts <- options$hugoopts
+    paste0(
+      "{", "{<figure src=", # the original code is simpler
+      # but here I need to escape the shortcode!
+      '"', x, '" ',
+      if (!is.null(hugoopts)) {
+        glue::glue_collapse(
+          glue::glue('{names(hugoopts)}="{hugoopts}"'),
+          sep = " "
+        )
+      },
+      ">}}\n"
+    )
+  }
+)
+
+```
+
+```{python, include = FALSE}
+import os
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
+os.environ["PROJ_LIB"] = r'C:\Users\W3CRK9\AppData\Local\r-miniconda\pkgs\proj4-4.9.3-hfa6e2cd_9\Library\share'
+os.environ['GDAL_DATA'] = r"C:\Users\W3CRK9\AppData\Local\r-miniconda\envs\r-reticulate\Library\share\gdal"
+```
+
+
+
+Cette page approfondit certains aspects présentés dans les autres tutoriels. Il s'agit d'une suite d'exercice, avec corrections, pour présenter d'autres aspects du NLP ou pratiquer sur des données différentes
+
+# Exploration des libellés
+
+Dans cet exercice:
+
+* tokenisation (`nltk`)
+* retrait des stop words (`nltk`)
+* nuage de mots (`wordcloud`)
+* reconnaissance du langage (`fasttext`)
+* reconnaissance d'entités nommées (`spacy`)
+
+le tout sur l'OpenFood Database
+
+1. Importer les données de l'openfood database à partir du code suivant
+
+```{python}
+import pandas as pd
+import urllib.request
+import tempfile
+
+temp_dir = tempfile.NamedTemporaryFile()
+temp_dir = temp_dir.name
+
+urllib.request.urlretrieve('https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv', "%s.openfood.csv" % temp_dir)
+df_openfood = pd.read_csv(temp_dir, delimiter="\t",
+                          usecols=['product_name'], encoding = 'utf-8', dtype = "str")
+
+df_openfood.head(2)
+```
+
+2. Importer le modèle de reconnaissance de langage qui sera utilisé par la suite
+
+```{python}
+import os
+os.system("wget -O {} https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin".format( "%s.model.bin" % temp_dir))
+```
+
+3. 
+
+```{python}
+import nltk
+
+def clean_labels_additional(data, yvar = 'product_name'):
+    outvar = 'tokenized'
+    data[outvar] = data[yvar].apply(lambda s: nltk.word_tokenize(s.lower()))
+    data[outvar] = data[outvar].apply(lambda words: [word for word in words if word.isalpha()])
+    data[outvar] = data[outvar].apply(lambda words: [w for w in words if not w in stop_words])
+    data[outvar] = data[outvar].apply(lambda s:  ' '.join(s))
+    return data
+  
+df_openfood = cleandata.clean_labels_additional(df_openfood)
+```
+
+4. 
+
+```{python}
+import wordcloud as wc
+
+def graph_wordcloud(data, by = None, valueby = None, yvar = "Text"):
+    if (by is not None) & (valueby is not None):        
+        txt = data[data[by]==valueby][yvar]
+    else:
+        txt = data[yvar]
+    all_text = ' '.join([text for text in txt])
+    wordcloud = wc.WordCloud(width=800, height=500,
+                          random_state=21,
+                      max_words=2000).generate(all_text)
+    return wordcloud
+
+def graph_wordcloud_by(data, by, yvar = "Text"):
+    n_topics = data[by].unique().tolist()
+    width=20
+    height=80
+    rows = len(n_topics)//2
+    cols = 2
+    fig=plt.figure(figsize=(width, height))
+    axes = []
+    for i in range(cols*rows):
+        b = graph_wordcloud(data, by = by, valueby = n_topics[i], yvar = yvar)
+        axes.append( fig.add_subplot(rows, cols, i+1) )
+        axes[-1].set_title("{}".format(n_topics[i]))  
+        plt.imshow(b)    
+    plt.axis('off')
+    plt.show()
+    
+def wordcount_words(data, yvar, by = None):
+    if by is None:
+        wordcloud = graph_wordcloud(data, yvar = yvar, by = by)
+        plt.figure( figsize=(15,15) )
+        plt.imshow(wordcloud)
+        plt.axis("off")
+    else:
+        graph_wordcloud_by(data, by = by, yvar = yvar)
+
+wordcount_words(df_openfood, yvar = "libel_clean", type = "wordcount")
+wordcount_words(df_openfood, "tokenized", type = "wordcount")
+```
+
+5. 
+
+```{python}
+import fasttext
+
+PRETRAINED_MODEL_PATH = '/tmp/lid.176.bin'
+model = fasttext.load_model(PRETRAINED_MODEL_PATH)
+newcols = ['language','score_language']
+df_openfood[newcols] = pd.DataFrame(df_openfood['product_name'].astype(str).apply(lambda s: list(model.predict(s))).apply(lambda l: [l[0][0],l[1][0]]).tolist(), columns = newcols)
+df_openfood['language'] = df_openfood['language'].str.replace("__label__","")
+df_openfood_french = df_openfood[df_openfood['language'] == "fr"].dropna(subset = ["energy_100g"])
+df_openfood_french.head(2)
+```
+
+
+6. 
+
+```{python}
+example = " \n ".join(df_openfood_french['product_name'].astype("str").sample(100))
+
+from spacy import displacy
+displacy.serve(nlp(example), style="ent")
+```
+
+7. 
+```{python}
+import spacy
+# python -m spacy download fr_core_news_sm
+nlp = spacy.load("fr_core_news_sm")
+
+x = []
+for doc in nlp.pipe(df_openfood_french['product_name'].astype("unicode"), disable=["tok2vec", "tagger", "parser", "attribute_ruler", "lemmatizer"]):
+    # Do something with the doc here
+    x.append([(ent.text, ent.label_) for ent in doc.ents])
+```
+
