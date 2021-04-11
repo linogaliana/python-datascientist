@@ -12,10 +12,12 @@ RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && mkdir /root/.conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh \
-    && chown -R miniconda:miniconda /opt/miniconda \
-    && chmod -R go-w /opt/miniconda \
-    && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
+    
+RUN chown -R miniconda:miniconda /opt/conda \
+    && chmod -R go-w /opt/conda
+    
+RUN ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
     
 ENV PATH="/opt/conda/bin:${PATH}"
 RUN conda --version
