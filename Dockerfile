@@ -1,4 +1,5 @@
 ARG BASE_IMAGE=rocker/verse:4.0.2
+
 # Use a multi-stage build to install packages
 # First stage: install packages
 FROM $BASE_IMAGE AS install_packages
@@ -23,6 +24,13 @@ RUN conda env create -f environment.yml -n test-environment
 
 # R packages 
 RUN Rscript -e "install.packages(c('knitr','rmarkdown','blogdown'))"
+RUN Rscript -e 'install.packages("reticulate")'
+
+# WRITE RETICULATE_PYTHON VARIABLE IN .Renviron
+RUN echo "RETICULATE_PYTHON = '/opt/miniconda/bin'" >> /usr/local/lib/R/etc/Renviron
+
+
+
 
 # Second stage: use the installed packages directories
 FROM $BASE_IMAGE
