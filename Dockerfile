@@ -30,7 +30,7 @@ RUN Rscript -e "install.packages(c('knitr','rmarkdown','blogdown'))"
 RUN Rscript -e 'install.packages("reticulate")'
 
 # WRITE RETICULATE_PYTHON VARIABLE IN .Renviron
-RUN echo "RETICULATE_PYTHON = '/opt/miniconda/bin'" >> /usr/local/lib/R/etc/Renviron
+RUN echo "RETICULATE_PYTHON = '/opt/conda/bin'" >> /usr/local/lib/R/etc/Renviron
 
 RUN echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
     echo "conda activate base" >> ~/.bashrc
