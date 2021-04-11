@@ -12,10 +12,11 @@ RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && mkdir /root/.conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh \
-    && useradd -s /bin/bash miniconda \
-    && chown -R miniconda:miniconda /opt/miniconda \
-    && chmod -R go-w /opt/miniconda \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
+
+RUN useradd -s /bin/bash miniconda
+RUN chown -R miniconda:miniconda /opt/miniconda
+RUN chmod -R go-w /opt/miniconda
 
 
 ENV PATH="/opt/miniconda:${PATH}"
