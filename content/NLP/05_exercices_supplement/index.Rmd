@@ -83,7 +83,7 @@ temp_dir = tempfile.NamedTemporaryFile()
 temp_dir = temp_dir.name
 
 urllib.request.urlretrieve('https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv', "%s.openfood.csv" % temp_dir)
-df_openfood = pd.read_csv(temp_dir, delimiter="\t",
+df_openfood = pd.read_csv("%s.openfood.csv" % temp_dir, delimiter="\t",
                           usecols=['product_name'], encoding = 'utf-8', dtype = "str")
 
 df_openfood.head(2)
@@ -100,28 +100,32 @@ os.system("wget -O {} https://dl.fbaipublicfiles.com/fasttext/supervised-models/
 
 ```{python}
 import nltk
+from nltk.corpus import stopwords
+
+stop_words = set(stopwords.words('french'))
 
 def clean_labels_additional(data, yvar = 'product_name'):
     outvar = 'tokenized'
-    data[outvar] = data[yvar].apply(lambda s: nltk.word_tokenize(s.lower()))
+    data[outvar] = data[yvar].astype(str).apply(lambda s: nltk.word_tokenize(s.lower()))
     data[outvar] = data[outvar].apply(lambda words: [word for word in words if word.isalpha()])
     data[outvar] = data[outvar].apply(lambda words: [w for w in words if not w in stop_words])
     data[outvar] = data[outvar].apply(lambda s:  ' '.join(s))
     return data
   
-df_openfood = cleandata.clean_labels_additional(df_openfood)
+df_openfood = clean_labels_additional(df_openfood)
 ```
 
 4. 
 
 ```{python}
 import wordcloud as wc
+import matplotlib.pyplot as plt
 
 def graph_wordcloud(data, by = None, valueby = None, yvar = "Text"):
     if (by is not None) & (valueby is not None):        
-        txt = data[data[by]==valueby][yvar]
+        txt = data[data[by]==valueby][yvar].astype(str)
     else:
-        txt = data[yvar]
+        txt = data[yvar].astype(str)
     all_text = ' '.join([text for text in txt])
     wordcloud = wc.WordCloud(width=800, height=500,
                           random_state=21,
@@ -167,7 +171,7 @@ model = fasttext.load_model(PRETRAINED_MODEL_PATH)
 newcols = ['language','score_language']
 df_openfood[newcols] = pd.DataFrame(df_openfood['product_name'].astype(str).apply(lambda s: list(model.predict(s))).apply(lambda l: [l[0][0],l[1][0]]).tolist(), columns = newcols)
 df_openfood['language'] = df_openfood['language'].str.replace("__label__","")
-df_openfood_french = df_openfood[df_openfood['language'] == "fr"].dropna(subset = ["energy_100g"])
+df_openfood_french = df_openfood[df_openfood['language'] == "fr"]
 df_openfood_french.head(2)
 ```
 
@@ -175,6 +179,9 @@ df_openfood_french.head(2)
 6. 
 
 ```{python}
+import spacy
+nlp = spacy.load("fr_core_news_sm")
+
 example = " \n ".join(df_openfood_french['product_name'].astype("str").sample(100))
 
 from spacy import displacy
