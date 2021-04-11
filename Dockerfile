@@ -11,14 +11,14 @@ RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && mkdir /root/.conda \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda \
     && rm -f Miniconda3-latest-Linux-x86_64.sh \
     && useradd -s /bin/bash miniconda \
     && chown -R miniconda:miniconda /opt/miniconda \
     && chmod -R go-w /opt/miniconda \
 
 
-ENV PATH="/root/miniconda3/bin:${PATH}"
+ENV PATH="/opt/miniconda:${PATH}"
 RUN conda --version
 
 # Create the environment:
