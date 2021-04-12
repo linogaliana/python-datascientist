@@ -19,12 +19,14 @@ RUN wget \
     
 RUN ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
     
-ENV PATH="/opt/conda/bin:${PATH}"
+ENV PATH /opt/conda/bin:$PATH
 RUN conda --version
 
+
 # Create the environment:
-COPY environment.yml .
-RUN conda env create -f environment.yml -n test-environment
+COPY environment_test.yml .
+# RUN conda env create -f environment.yml -n test-environment
+RUN conda env create -f environment_test.yml -n test-environment
 
 
 # R packages 
