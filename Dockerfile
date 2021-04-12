@@ -30,18 +30,18 @@ RUN conda --version
 # Create the environment:
 COPY environment_test.yml .
 # RUN conda env create -f environment.yml -n test-environment
-RUN conda env create -f environment_test.yml -n test-environment
+RUN conda env create -f environment_test.yml -n python-ENSAE
 
 
 # R packages 
 RUN Rscript -e "install.packages(c('knitr','rmarkdown','blogdown'))"
-RUN Rscript -e 'install.packages("reticulate")'
+RUN Rscript -e 'install.packages("reticulate", dependencies = TRUE)'
 
 # WRITE RETICULATE_PYTHON VARIABLE IN .Renviron
-RUN echo "RETICULATE_PYTHON = '/opt/conda/envs/test-environment/bin/python'" >> /usr/local/lib/R/etc/Renviron
+RUN echo "RETICULATE_PYTHON = '/opt/conda/envs/python-ENSAE/bin/python'" >> /usr/local/lib/R/etc/Renviron
 
 RUN echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-    echo "conda activate test-environment" >> ~/.bashrc
+    echo "conda activate python-ENSAE" >> ~/.bashrc
 
 
 
