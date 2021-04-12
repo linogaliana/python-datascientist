@@ -10,7 +10,7 @@ RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
 RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && mkdir /root/.conda \
+    && mkdir /opt/conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
     && rm -f Miniconda3-latest-Linux-x86_64.sh \
     && useradd -s /bin/bash miniconda
@@ -46,8 +46,8 @@ RUN echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
 
 
 # Second stage: use the installed packages directories
-FROM $BASE_IMAGE
+# FROM $BASE_IMAGE
 # COPY --from=install_packages /opt/texlive /opt/texlive
 # COPY --from=install_packages /usr/local/texlive /usr/local/texlive
-COPY --from=install_packages /usr/local/lib/R/site-library /usr/local/lib/R/site-library
+# COPY --from=install_packages /usr/local/lib/R/site-library /usr/local/lib/R/site-library
 
