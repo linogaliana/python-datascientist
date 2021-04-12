@@ -16,7 +16,7 @@ RUN wget \
     && useradd -s /bin/bash miniconda
     
 RUN chown -R miniconda:miniconda /opt/conda \
-    && chmod -R go-w /opt/conda \
+    && chmod -R go-w /opt/conda
     
 # RUN chown -R miniconda:miniconda /opt/conda \
 #     && chmod -R go-w /opt/conda
