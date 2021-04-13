@@ -41,7 +41,7 @@ reminder_badges <- function(notebook = ""){
     "[![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](",
     nbviewer_link,")"
   )
-  onyxia_link <- "[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)"
+  onyxia_link <- "[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://datalab.sspcloud.fr/my-lab/catalogue/inseefrlab-helm-charts-datascience/jupyter/deploiement?resources.requests.memory=4096Mi)"
   binder_link <- sprintf(
     "[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master%s)",
     binder_path

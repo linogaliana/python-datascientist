@@ -16,7 +16,7 @@ mairie de Paris.
 Seront principalement évoqués, dans la première partie, 
 <a href="https://github.com/linogaliana/python-datascientist/blob/master/content/visualisation/notebooks/tp5.ipynb" class="github"><i class="fab fa-github"></i></a>
 [![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/content/visualisation/notebooks/tp5.ipynb)
-[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://spyrales.sspcloud.fr/my-lab/catalogue/inseefrlab-datascience/jupyter/deploiement)
+[![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://datalab.sspcloud.fr/my-lab/catalogue/inseefrlab-helm-charts-datascience/jupyter/deploiement?resources.requests.memory=4096Mi)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master?filepath=content/visualisation/notebooks/tp5.ipynb)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/content/visualisation/notebooks/tp5.ipynb) :
 
