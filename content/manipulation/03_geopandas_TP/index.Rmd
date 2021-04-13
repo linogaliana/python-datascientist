@@ -239,3 +239,38 @@ def find_nearest(geometry1, geometry2 = temp, df_point2 = stations_transport):
 stations['Nearest'] = stations.apply(lambda row: find_nearest(row.geometry), axis=1)
 ```
 
+
+# Exercices supplémentaires
+
+## carte US election 2020
+
+```{python, eval = FALSE, include = FALSE}
+import geopandas as gpd
+import urllib.request
+import gzip
+
+url = "https://int.nyt.com/newsgraphics/elections/map-data/2020/national/precincts-with-results.geojson.gz"
+# urllib.request.urlretrieve(url, "votes.gz")
+
+url2 = "https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_state_20m.zip"
+urllib.request.urlretrieve(url2, "states.zip")
+
+import gzip
+import shutil
+with gzip.open('votes.gz', 'rb') as f_in:
+    with open('votes.geojson', 'wb') as f_out:
+        shutil.copyfileobj(f_in, f_out)
+        
+import zipfile
+with zipfile.ZipFile("states.zip", 'r') as zip_ref:
+    zip_ref.extractall("states.shp")
+
+votes = gpd.read_file('votes.geojson')
+states = gpd.read_file("states.shp")
+votes['states'] = votes['GEOID'].str[:2]
+
+# alternative (plus rapide)
+essai = pd.read_csv("https://github.com/MEDSL/2020-elections-official/raw/main/PRESIDENT/PRESIDENT_precinct_general.csv.zip")
+essai.dropna(subset = ["party_simplified"]).groupby(["county_fips",'party_simplified']).agg({"votes": "sum"})
+```
+
