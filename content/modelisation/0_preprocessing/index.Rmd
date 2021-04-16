@@ -95,8 +95,15 @@ recommandé d'utiliser la méthode `str.lstrip` pour les retirer
 import pandas as pd
 import geopandas as gpd
 
-shapefile_source = "https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_02_sldl_500k.zip"
+import os
+import zipfile
+    
+os.mkdir("data/")
+download_url("https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_02_sldl_500k.zip", "data/shapefile")
+with zipfile.ZipFile("data/shapefile", 'r') as zip_ref:
+    zip_ref.extractall("data/counties")
 
+shapefile_source = "https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_02_sldl_500k.zip"
 
 shp = gpd.read_file("counties/cb_2019_us_county_500k.shp")
 shp = shp[~shp["STATEFP"].isin(["02", "69", "66", "78", "60", "72", "15"])]
@@ -120,37 +127,61 @@ shp['FIPS'] = shp['GEOID'].astype(str).str.lstrip('0')
 shp2 = shp.merge(df_election, left_on = "FIPS", right_on = "county_fips")
 ```
 
+La carte suivante permet de visualiser rapidement 
 
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
 
+color_dict = {"republican": '#FF0000', 'democrats': '#0000FF'}
+votes["winner"] =  np.where(votes['votes_gop'] > votes['votes_dem'], 'republican', 'democrats') 
+#votes.plot(column = "winner", figsize = (12,12), c=votes['winner'].map(color_dict))
 
+fig, ax = plt.subplots(figsize = (12,12))
+grouped = votes.groupby('winner')
+for key, group in grouped:
+    group.plot(ax=ax, column='winner', label=key, color=color_dict[key])
+plt.axis('off')
+```
+
+land does not vote, people do:
+
+```{python}
+import plotly.express as px
+
+fig = px.scatter_geo(votes, size="CENSUS_2010_POP",
+                     color="winner")
+fig.show()
+```
+
+```{python}
+markersize = votes['CENSUS_2010_POP']/100000
+
+fig, ax = plt.subplots(figsize=(12,12))
+votes.plot(ax=ax, color="lightgray", edgecolor="grey", linewidth=0.4)
+grouped = votes.groupby('winner')
+for key, group in grouped:
+    group.plot(ax=ax, markersize=markersize, alpha=0.7, categorical=False, label=key, color=color_dict[key])
+#votes.plot(ax=ax,color="winner", markersize="CENSUS_2010_POP",alpha=0.7, categorical=False, legend=True )
+ax.axis("off")
+plt.axis("equal")
+plt.show()
+```
 
 ## Explorer la structure des données
 
 La première étape nécessaire à suivre avant de modéliser est de déterminer les variables à inclure dans le modèle. Les fonctionalités de `pandas` sont, à ce niveau, suffisantes pour explorer des structures simples. Néanmoins, lorsqu'on est face à un jeu de données présentant de nombreuses variables explicatives (*features* en machine learning, *covariates* en économétrie), il est souvent judicieux d'avoir une première étape de sélection de variable, ce que nous verrons par la suite [**LIEN**]  
 
-{{% panel status="exercise" title="Exercise 1: importer les données" icon="fas fa-pencil-alt" %}}
-1. Importer les données (l'appeler `df`) des élections américaines et regarder les informations dont on dispose
-2. Créer une variable `republican_winner` égale à `red`  quand la variable `rep16_frac` est supérieure à `dep16_frac` (`blue` sinon)
-3. (optionnel) Représenter une carte des résultats avec en rouge les comtés où les républicains ont gagné et en bleu ceux où se sont
-les démocrates
-{{% /panel %}}
+Avant d'être en mesure de sélectionner le meilleur ensemble de variables explicatives, nous allons prendre un nombre restreint et arbitraire de variables. La première tâche est de représenter les relations entre les données, notamment leur relation à la variable que l'on va chercher à expliquer (le score du parti républicain) ainsi que les relations entre les variables ayant vocation à expliquer la variable dépendante. 
 
-```{python}
-import numpy as np
-import pandas as pd
-import geopandas as gpd
-import seaborn as sns
-import matplotlib.pyplot as plt
-df = gpd.read_file("https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
-df['winner'] = np.where(df['rep16_frac'] > df['dem16_frac'], '#FF0000', '#0000FF') 
-# df.plot('winner', color = df['winner'], figsize = (20,20))
-```
 
-Avant d'être en mesure de sélectionner le meilleur ensemble de variables explicatives, nous allons prendre un nombre restreint et arbitraire de variables. La première tâche est de représenter les relations entre les données, notamment leur relation à la variable que l'on va chercher à expliquer (le score du parti républicain aux élections 2016) ainsi que les relations entre les variables ayant vocation à expliquer la variable dépendante. 
+votes[["winner", 'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]]
+
+
 
 {{% panel status="exercise" title="Exercise 2: regarder la corrélation entre les variables" icon="fas fa-pencil-alt" %}}
 
-Créer un DataFrame plus petit avec les variables `rep16_frac` et `unemployment`, `median_age`, `asian`, `black`, `white_not_latino_population`,`latino_population`, `gini_coefficient`, `less_than_high_school`, `adult_obesity`, `median_earnings_2010_dollars` et ensuite :
+Créer un DataFrame plus petit avec les variables `winner` et `unemployment`, `median_age`, `asian`, `black`, `white_not_latino_population`,`latino_population`, `gini_coefficient`, `less_than_high_school`, `adult_obesity`, `median_earnings_2010_dollars` et ensuite :
 
 1. Représenter une matrice de corrélation graphique
 1. Choisir quelques variables (pas plus de 4 ou 5) dont `rep16_frac` et représenter une matrice de nuages de points
@@ -160,8 +191,9 @@ Créer un DataFrame plus petit avec les variables `rep16_frac` et `unemployment`
 La matrice de corrélation donne, avec les fonctionalités de `pandas`:
 
 ```{python}
-df2 = df[["rep16_frac", "unemployment", "median_age", "asian", "black", "white_not_latino_population","latino_population", "gini_coefficient", "less_than_high_school", "adult_obesity", "median_earnings_2010_dollars"]]
-df2.corr()#.style.background_gradient(cmap='coolwarm').set_precision(2)
+df2 = votes.set_index("GEOID")[["votes_gop", 'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]]
+
+df2.corr().style.background_gradient(cmap='coolwarm').set_precision(2)
 plt.show()
 ```
 
@@ -175,7 +207,7 @@ sns.heatmap(df2.corr(), cmap='coolwarm', annot=True, fmt=".2f")
 La matrice de nuage de point aura, par exemple, l'aspect suivant:
 
 ```{python}
-ax = pd.plotting.scatter_matrix(df2[["rep16_frac", "unemployment", "median_age", "asian", "black"]], figsize = (15,15))
+ax = pd.plotting.scatter_matrix(df2, figsize = (15,15))
 ax
 plt.show()
 ```
@@ -184,7 +216,7 @@ plt.show()
 ```{python, include = FALSE}
 import plotly
 import plotly.express as px
-htmlsnip2 = px.scatter_matrix(df2[["rep16_frac", "unemployment", "median_age", "asian", "black"]])
+htmlsnip2 = px.scatter_matrix(df2)
 htmlsnip2.update_traces(diagonal_visible=False)
 # Pour inclusion dans le site web
 htmlsnip2 = plotly.io.to_html(htmlsnip2, include_plotlyjs=False)
