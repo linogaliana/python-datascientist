@@ -56,10 +56,73 @@ os.environ["PROJ_LIB"] = r'C:\Users\W3CRK9\AppData\Local\r-miniconda\pkgs\proj4-
 os.environ['GDAL_DATA'] = r"C:\Users\W3CRK9\AppData\Local\r-miniconda\envs\r-reticulate\Library\share\gdal"
 ```
 
-Pour illustrer le travail de données nécessaire pour construire un modèle de Machine Learning, mais aussi nécessaire pour l'exploration de données avant de faire une régression linéaire, nous allons partir du jeu de données de [résultat des élections US 2016 au niveau des comtés](https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
+Pour illustrer le travail de données nécessaire pour construire un modèle de Machine Learning, mais aussi nécessaire pour l'exploration de données avant de faire une régression linéaire, nous allons partir d'un exemple électoral
+en analysant les résultats des élections présidentielles américaines
+en relation avec quelques variables socio-économiques. 
 
 Le guide utilisateur de `scikit` est une référence précieuse, à consulter régulièrement. La partie sur le *preprocessing* est
 disponible [ici](https://scikit-learn.org/stable/modules/preprocessing.html).
+
+Cet exemple est inspiré d'éléments qu'on peut trouver sur `Github`, notamment
+[@tonmcg](https://github.com/tonmcg/US_County_Level_Election_Results_08-20)
+Les données sont issues de plusieurs sources: 
+
+* Les limites administratives viennent du Census Bureau. Le shapefile source
+est disponible à [cette adresse](https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_02_sldl_500k.zip)
+* Les données socioéconomiques (population, données de revenu et de pauvreté, 
+taux de chômage, variables d'éducation) proviennent de l'USDA ([source](https://www.ers.usda.gov/data-products/county-level-data-sets/))
+* Les données électorales sont une reconstruction à partir des données du MIT election lab
+proposées sur `Github` par [@tonmcg](https://github.com/tonmcg/US_County_Level_Election_Results_08-20)
+
+
+Les sources étant éclatées, le code pour construire une base combinant toutes ces
+sources est directement fourni. Vous pouvez essayer de le faire en exercice sans 
+regarder la solution  :
+
+{{% panel status="exercise" title="Importer les données" icon="fas fa-pencil-alt" %}}
+1. Télécharger et importer le shapefile [depuis ce lien](https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_02_sldl_500k.zip)
+2. Exclure les Etats suivants: "02", "69", "66", "78", "60", "72", "15"
+3. Importer les résultats des élections depuis [ce lien](https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-20/master/2020_US_County_Level_Presidential_Results.csv)
+4. Importer les bases disponibles sur le site de l'USDA en faisant attention à renommer les variables de code FIPS de manière identique
+dans les 4 bases
+5. *Merger* ces 4 bases dans une base unique de caractéristiques socio-économiques
+6. *Merger* aux données électorales à partir du code FIPS
+7. *Merger* au shapefile à partir du code FIPS. Faire attention aux 0 à gauche dans certains codes. Il est
+recommandé d'utiliser la méthode `str.lstrip` pour les retirer
+{{% /panel %}}
+
+```{python}
+import pandas as pd
+import geopandas as gpd
+
+shapefile_source = "https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_02_sldl_500k.zip"
+
+
+shp = gpd.read_file("counties/cb_2019_us_county_500k.shp")
+shp = shp[~shp["STATEFP"].isin(["02", "69", "66", "78", "60", "72", "15"])]
+shp
+
+df_election = pd.read_csv("https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-20/master/2020_US_County_Level_Presidential_Results.csv")
+df_election.head(2)
+
+population = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PopulationEstimates.xls?v=290.4", header = 2).rename(columns = {"FIPStxt": "FIPS"})
+education = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Education.xls?v=290.4", header = 4).rename(columns = {"FIPS Code": "FIPS", "Area name": "Area_Name"})
+unemployment = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Unemployment.xls?v=290.4", header = 4).rename(columns = {"fips_txt": "FIPS", "area_name": "Area_Name", "Stabr": "State"})
+income = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=290.4", header = 4).rename(columns = {"FIPStxt": "FIPS", "Stabr": "State", "Area_name": "Area_Name"})
+
+dfs = [df.set_index(['FIPS', 'State']) for df in [population, education, unemployment, income]]
+data_county = pd.concat(dfs, axis=1)
+df_election = df_election.merge(data_county.reset_index(), left_on = "county_fips", right_on = "FIPS")
+
+df_election['county_fips'] = df_election['county_fips'].astype(str).str.lstrip('0')
+shp['FIPS'] = shp['GEOID'].astype(str).str.lstrip('0')
+
+shp2 = shp.merge(df_election, left_on = "FIPS", right_on = "county_fips")
+```
+
+
+
+
 
 ## Explorer la structure des données
 
