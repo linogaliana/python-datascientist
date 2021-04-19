@@ -61,6 +61,46 @@ Machine Learning, mais aussi nécessaire pour l'exploration de données avant de
 faire une régression linéaire, nous allons partir du même jeu de données que précédemment,
 c'est à dire les
 [résultats des élections US 2016 au niveau des comtés](#preprocessing)
+Pour importer les données:
+
+```{python}
+import pandas as pd
+import geopandas as gpd
+import os
+import zipfile
+import urllib.request
+
+def download_url(url, save_path):
+    with urllib.request.urlopen(url) as dl_file:
+        with open(save_path, 'wb') as out_file:
+            out_file.write(dl_file.read())
+    
+from pathlib import Path
+Path("/data").mkdir(parents=True, exist_ok=True)
+
+
+download_url("https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_us_county_20m.zip", "data/shapefile")
+with zipfile.ZipFile("data/shapefile", 'r') as zip_ref:
+    zip_ref.extractall("data/counties")
+
+shp = gpd.read_file("data/counties/cb_2019_us_county_20m.shp")
+shp = shp[~shp["STATEFP"].isin(["02", "69", "66", "78", "60", "72", "15"])]
+
+df_election = pd.read_csv("https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-20/master/2020_US_County_Level_Presidential_Results.csv")
+population = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PopulationEstimates.xls?v=290.4", header = 2).rename(columns = {"FIPStxt": "FIPS"})
+education = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Education.xls?v=290.4", header = 4).rename(columns = {"FIPS Code": "FIPS", "Area name": "Area_Name"})
+unemployment = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Unemployment.xls?v=290.4", header = 4).rename(columns = {"fips_txt": "FIPS", "area_name": "Area_Name", "Stabr": "State"})
+income = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=290.4", header = 4).rename(columns = {"FIPStxt": "FIPS", "Stabr": "State", "Area_name": "Area_Name"})
+
+
+dfs = [df.set_index(['FIPS', 'State']) for df in [population, education, unemployment, income]]
+data_county = pd.concat(dfs, axis=1)
+df_election = df_election.merge(data_county.reset_index(), left_on = "county_fips", right_on = "FIPS")
+df_election['county_fips'] = df_election['county_fips'].astype(str).str.lstrip('0')
+shp['FIPS'] = shp['GEOID'].astype(str).str.lstrip('0')
+votes = shp.merge(df_election, left_on = "FIPS", right_on = "county_fips")
+```
+
 
 ## Découper l'échantillon
 
