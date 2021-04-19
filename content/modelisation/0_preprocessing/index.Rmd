@@ -94,37 +94,41 @@ recommandé d'utiliser la méthode `str.lstrip` pour les retirer
 ```{python}
 import pandas as pd
 import geopandas as gpd
-
 import os
 import zipfile
+import urllib.request
+
+def download_url(url, save_path):
+    with urllib.request.urlopen(url) as dl_file:
+        with open(save_path, 'wb') as out_file:
+            out_file.write(dl_file.read())
     
-os.mkdir("data/")
-download_url("https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_02_sldl_500k.zip", "data/shapefile")
+from pathlib import Path
+Path("/data").mkdir(parents=True, exist_ok=True)
+
+
+download_url("https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_us_county_20m.zip", "data/shapefile")
 with zipfile.ZipFile("data/shapefile", 'r') as zip_ref:
     zip_ref.extractall("data/counties")
 
-shapefile_source = "https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_02_sldl_500k.zip"
-
-shp = gpd.read_file("counties/cb_2019_us_county_500k.shp")
+shp = gpd.read_file("data/counties/cb_2019_us_county_20m.shp")
 shp = shp[~shp["STATEFP"].isin(["02", "69", "66", "78", "60", "72", "15"])]
 shp
 
 df_election = pd.read_csv("https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-20/master/2020_US_County_Level_Presidential_Results.csv")
 df_election.head(2)
-
 population = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PopulationEstimates.xls?v=290.4", header = 2).rename(columns = {"FIPStxt": "FIPS"})
 education = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Education.xls?v=290.4", header = 4).rename(columns = {"FIPS Code": "FIPS", "Area name": "Area_Name"})
 unemployment = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Unemployment.xls?v=290.4", header = 4).rename(columns = {"fips_txt": "FIPS", "area_name": "Area_Name", "Stabr": "State"})
 income = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=290.4", header = 4).rename(columns = {"FIPStxt": "FIPS", "Stabr": "State", "Area_name": "Area_Name"})
 
+
 dfs = [df.set_index(['FIPS', 'State']) for df in [population, education, unemployment, income]]
 data_county = pd.concat(dfs, axis=1)
 df_election = df_election.merge(data_county.reset_index(), left_on = "county_fips", right_on = "FIPS")
-
 df_election['county_fips'] = df_election['county_fips'].astype(str).str.lstrip('0')
 shp['FIPS'] = shp['GEOID'].astype(str).str.lstrip('0')
-
-shp2 = shp.merge(df_election, left_on = "FIPS", right_on = "county_fips")
+votes = shp.merge(df_election, left_on = "FIPS", right_on = "county_fips")
 ```
 
 La carte suivante permet de visualiser rapidement 
@@ -147,26 +151,59 @@ plt.axis('off')
 land does not vote, people do:
 
 ```{python}
-import plotly.express as px
+import plotly.graph_objects as go
 
-fig = px.scatter_geo(votes, size="CENSUS_2010_POP",
-                     color="winner")
+centroids = votes.copy()
+centroids.geometry = centroids.centroid
+centroids['size'] = centroids['CENSUS_2010_POP'] / 10000  # to get reasonable plotable number
+
+color_dict = {"republican": '#FF0000', 'democrats': '#0000FF'}
+centroids["winner"] =  np.where(centroids['votes_gop'] > centroids['votes_dem'], 'republican', 'democrats') 
+
+
+centroids['lon'] = centroids['geometry'].x
+centroids['lat'] = centroids['geometry'].y
+centroids = pd.DataFrame(centroids[["county_name",'lon','lat','winner', 'CENSUS_2010_POP']])
+groups = centroids.groupby('winner')
+
+df = centroids.copy()
+
+df['text'] = df["county_name"] + '<br>Population ' + (df['CENSUS_2010_POP']/1e3).astype(str)+' thousands'
+limits = ["republican","democrats"]
+colors = ['#FF0000', '#0000FF']
+
+fig = go.Figure()
+
+
+for i in range(2):
+    df2 = df[df['winner'].astype(str) == limits[i]]
+    fig.add_trace(go.Scattergeo(
+            locationmode = 'USA-states',
+            lon = df2['lon'],
+            lat = df2['lat'],
+            text = df2['text'],
+            name = 'Winner: {}'.format(limits[i]),
+            marker = dict(
+            size = df2['CENSUS_2010_POP']/6000,
+            color = colors[i],
+            opacity=0.5,
+            line_color='rgb(40,40,40)',
+            line_width=0.5,
+            sizemode = 'area'
+            )))
+
+fig.update_layout(
+        title_text = "Reproduction of the \"Acres don't vote, people do\" map (Click legend to toggle traces)",
+        showlegend = True,
+        geo = dict(
+            scope = 'usa',
+            landcolor = 'rgb(217, 217, 217)',
+        )
+    )
+
 fig.show()
 ```
 
-```{python}
-markersize = votes['CENSUS_2010_POP']/100000
-
-fig, ax = plt.subplots(figsize=(12,12))
-votes.plot(ax=ax, color="lightgray", edgecolor="grey", linewidth=0.4)
-grouped = votes.groupby('winner')
-for key, group in grouped:
-    group.plot(ax=ax, markersize=markersize, alpha=0.7, categorical=False, label=key, color=color_dict[key])
-#votes.plot(ax=ax,color="winner", markersize="CENSUS_2010_POP",alpha=0.7, categorical=False, legend=True )
-ax.axis("off")
-plt.axis("equal")
-plt.show()
-```
 
 ## Explorer la structure des données
 
@@ -174,9 +211,9 @@ La première étape nécessaire à suivre avant de modéliser est de déterminer
 
 Avant d'être en mesure de sélectionner le meilleur ensemble de variables explicatives, nous allons prendre un nombre restreint et arbitraire de variables. La première tâche est de représenter les relations entre les données, notamment leur relation à la variable que l'on va chercher à expliquer (le score du parti républicain) ainsi que les relations entre les variables ayant vocation à expliquer la variable dépendante. 
 
-
-votes[["winner", 'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]]
-
+```{python}
+df2 = votes.set_index("GEOID")[["winner", "votes_gop", 'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]]
+```
 
 
 {{% panel status="exercise" title="Exercise 2: regarder la corrélation entre les variables" icon="fas fa-pencil-alt" %}}
@@ -184,23 +221,21 @@ votes[["winner", 'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Perc
 Créer un DataFrame plus petit avec les variables `winner` et `unemployment`, `median_age`, `asian`, `black`, `white_not_latino_population`,`latino_population`, `gini_coefficient`, `less_than_high_school`, `adult_obesity`, `median_earnings_2010_dollars` et ensuite :
 
 1. Représenter une matrice de corrélation graphique
-1. Choisir quelques variables (pas plus de 4 ou 5) dont `rep16_frac` et représenter une matrice de nuages de points
+1. Choisir quelques variables (pas plus de 4 ou 5) et représenter une matrice de nuages de points
 2. (optionnel) Refaire ces figures avec `plotly`
 {{% /panel %}}
 
 La matrice de corrélation donne, avec les fonctionalités de `pandas`:
 
 ```{python}
-df2 = votes.set_index("GEOID")[["votes_gop", 'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]]
-
-df2.corr().style.background_gradient(cmap='coolwarm').set_precision(2)
+df2.drop("winner", axis = 1).corr().style.background_gradient(cmap='coolwarm').set_precision(2)
 plt.show()
 ```
 
 Alors que celle construite avec `seaborn` aura l'aspect suivant:
 
 ```{python}
-sns.heatmap(df2.corr(), cmap='coolwarm', annot=True, fmt=".2f")
+sns.heatmap(df2.drop("winner", axis = 1).corr(), cmap='coolwarm', annot=True, fmt=".2f")
 ```
 
 
@@ -256,9 +291,9 @@ La **normalisation** consiste à modifier les données de manière à avoir une 
 
 
 {{% panel status="exercise" title="Exercice: standardisation" icon="fas fa-pencil-alt" %}}
-1. Standardiser la variable `median_earnings_2010_dollars` (ne pas écraser les valeurs !) et regarder l'histogramme avant/après normalisation
+1. Standardiser la variable `Median_Household_Income_2019` (ne pas écraser les valeurs !) et regarder l'histogramme avant/après normalisation
 2. Créer `scaler`, un `Transformer` que vous construisez sur les 1000 premières lignes de votre DataFrame. Vérifier la moyenne et l'écart-type de chaque colonne sur ces mêmes observations.
-3. Appliquer `scaler` sur les autres lignes du DataFrame et comparer les distributions obtenues de la variable `median_earnings_2010_dollars`.
+3. Appliquer `scaler` sur les autres lignes du DataFrame et comparer les distributions obtenues de la variable `Median_Household_Income_2019`.
 {{% /panel %}}
 
 La standardisation permet d'obtenir la modification suivante de la distribution:
@@ -266,15 +301,16 @@ La standardisation permet d'obtenir la modification suivante de la distribution:
 ```{python, message = FALSE, warning = FALSE}
 # Question 1
 from sklearn import preprocessing
-df2['y_standard'] = preprocessing.scale(df2['median_earnings_2010_dollars'])
+df2['y_standard'] = preprocessing.scale(df2['Median_Household_Income_2019'])
 f, axes = plt.subplots(2, figsize=(10, 10))
-sns.distplot(df2["median_earnings_2010_dollars"] , color="skyblue", ax=axes[0])
+sns.distplot(df2["Median_Household_Income_2019"] , color="skyblue", ax=axes[0])
 sns.distplot(df2["y_standard"] , color="olive", ax=axes[1])
 ```
 
 On obtient bien une distribution centrée à zéro et on pourrait vérifier que la variance empirique soit bien égale à 1. On pourrait aussi vérifier que ceci est vrai également quand on transforme plusieurs colonnes à la fois
 
 ```{python}
+df2 = df2.drop("winner", axis = 1)
 # Question 2
 scaler = preprocessing.StandardScaler().fit(df2.head(1000))
 scaler.transform(df2.head(1000))
@@ -297,7 +333,7 @@ Une fois appliqués à un autre `DataFrame`, on peut remarquer que la distributi
 # Question 3
 X1 = scaler.transform(df2.head(1000))
 X2 = scaler.transform(df2[1000:])
-col_pos = df2.columns.get_loc("median_earnings_2010_dollars")
+col_pos = df2.columns.get_loc("Median_Household_Income_2019")
 # X2.mean(axis = 0)
 # X2.std(axis = 0)
 f, axes = plt.subplots(2, figsize=(10, 10))
@@ -320,7 +356,7 @@ scaler = preprocessing.Normalizer().fit(df2.dropna(how = "any").head(1000))
 X1 = scaler.transform(df2.dropna(how = "any").head(1000))
 
 f, axes = plt.subplots(2, figsize=(10, 10))
-sns.distplot(df2["median_earnings_2010_dollars"] , color="skyblue", ax=axes[0])
+sns.distplot(df2["Median_Household_Income_2019"] , color="skyblue", ax=axes[0])
 sns.distplot(X1[:,col_pos] , color="olive", ax=axes[1])
 
 # Question 2
@@ -346,46 +382,48 @@ Les données catégorielles doivent être recodées sous forme de valeurs numér
 
 
 {{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
-Prendra les variables `state` et `county` dans `df`
-1. Appliquer à `state` un `LabelEncoder`
-2. Regarder la *dummy expansion* de `state`
-3. Appliquer un `OrdinalEncoder` à `df[['state', 'county']]` ainsi qu'un `OneHotEncoder`
+Prendra les variables `state_name` et `county_name` dans `votes`
+1. Appliquer à `state_name` un `LabelEncoder`
+2. Regarder la *dummy expansion* de `state_name`
+3. Appliquer un `OrdinalEncoder` à `df[['state_name', 'county_name']]` ainsi qu'un `OneHotEncoder`
 {{% /panel %}}
 
 Le résultat du *label encoding* est relativement intuitif, notamment quand on le met en relation avec le vecteur initial
 
 ```{python}
+# df = votes[["state_name",'county_name']]
+
 # Question 1
-label_enc = preprocessing.LabelEncoder().fit(df['state'])
-np.column_stack((label_enc.transform(df['state']),df['state']))
+label_enc = preprocessing.LabelEncoder().fit(df['state_name'])
+np.column_stack((label_enc.transform(df['state_name']),df['state_name']))
 ```
 
 L'expansion par variables dichotomiques également:
 
 ```{python}
 # Question 2
-pd.get_dummies(df['state'])
+pd.get_dummies(df['state_name'])
 ```
 
 Le résultat du *ordinal encoding* est cohérent avec celui du *label encoding*:
 
 ```{python}
-ord_enc = preprocessing.OrdinalEncoder().fit(df[['state', 'county']])
+ord_enc = preprocessing.OrdinalEncoder().fit(df)
 # ord_enc.transform(df[['state', 'county']])
 ```
 
 ```{python}
-ord_enc.transform(df[['state', 'county']])[:,0]
+ord_enc.transform(df)[:,0]
 ```
 
 Enfin, on peut noter que `scikit` optimise l'objet nécessaire pour stocker le résultat d'un modèle de transformation. Par exemple, le résultat de l'encoding *One Hot* est un objet très volumineux. Dans ce cas, scikit utilise une matrice *Sparse*:
 
 ```{python}
-onehot_enc = preprocessing.OneHotEncoder().fit(df[['state', 'county']])
+onehot_enc = preprocessing.OneHotEncoder().fit(df)
 ```
 
 ```{python}
-onehot_enc.transform(df[['state', 'county']])
+onehot_enc.transform(df)
 ```
 
 
