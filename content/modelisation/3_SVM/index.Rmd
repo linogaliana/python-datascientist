@@ -100,6 +100,21 @@ df_election = df_election.merge(data_county.reset_index(), left_on = "county_fip
 df_election['county_fips'] = df_election['county_fips'].astype(str).str.lstrip('0')
 shp['FIPS'] = shp['GEOID'].astype(str).str.lstrip('0')
 votes = shp.merge(df_election, left_on = "FIPS", right_on = "county_fips")
+
+
+df_historical = pd.read_csv('https://dataverse.harvard.edu/api/access/datafile/3641280?gbrecs=false', sep = "\t")
+df_historical = df_historical.dropna(subset = ["FIPS"])
+df_historical["FIPS"] = df_historical["FIPS"].astype(int)
+df_historical['share'] = df_historical['candidatevotes']/df_historical['totalvotes']
+df_historical = df_historical[["year", "FIPS", "party", "candidatevotes", "share"]]
+df_historical['party'] = df_historical['party'].fillna("other")
+
+df_historical_wide = df_historical.pivot_table(index = "FIPS", values=['candidatevotes',"share"], columns = ["year","party"])
+df_historical_wide.columns = ["_".join(map(str, s)) for s in df_historical_wide.columns.values]
+df_historical_wide = df_historical_wide.reset_index()
+df_historical_wide['FIPS'] = df_historical_wide['FIPS'].astype(str).str.lstrip('0')
+votes['FIPS'] = votes['GEOID'].astype(str).str.lstrip('0')
+votes = votes.merge(df_historical_wide, on = "FIPS")
 ```
 
 
@@ -157,7 +172,7 @@ La généralisation au cas non linéaire implique d'introduire des noyaux transf
 
 4. Refaire les questions précédentes avec des variables normalisées. Le résultat est-il différent ?
 
-5. Changer de variables *x*. Prendre uniquement `dem12_frac` et `median_earnings_2010_dollars`. Regarder les résultats, notamment la matrice de confusion
+5. Changer de variables *x*. Prendre uniquement `share_2016_republican` et `Median_Household_Income_2019`. Regarder les résultats, notamment la matrice de confusion
 
 6. Faire une 5-fold validation croisée pour déterminer le paramètre *C* idéal. 
 {{% /panel %}}
@@ -172,7 +187,7 @@ xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of a
 
 votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
 df = votes[["y"] + xvars]
-tempdf = df[['less_than_high_school', 'adult_obesity', 'median_earnings_2010_dollars','y']].dropna(how = "any")
+tempdf = df.dropna(how = "any")
 
 X_train, X_test, y_train, y_test = train_test_split(
     df[xvars],
@@ -225,12 +240,14 @@ plt.show()
 ```
 
 Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables.
-C'est pour cette raison que l'étape de sélection de variable est cruciale. En utilisant uniquement le résultat passé du vote démocrate et le revenu (`dem12_frac` et `median_earnings_2010_dollars`), on obtient un résultat beaucoup plus cohérent:
+C'est pour cette raison que l'étape de sélection de variable est cruciale. En utilisant uniquement le résultat passé du vote démocrate et le revenu (`share_2016_republican` et `Median_Household_Income_2019`), on obtient un résultat beaucoup plus cohérent:
 
 ```{python, message = FALSE, warning = FALSE}
-df['y'] = (df['rep16_frac']>50).astype(int)
-tempdf = df[['dem12_frac', 'median_earnings_2010_dollars','y']].dropna(how = "any")
-X = tempdf[['dem12_frac', 'median_earnings_2010_dollars']]
+votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
+df = votes[["y", "share_2016_republican", 'Median_Household_Income_2019']]
+tempdf = df.dropna(how = "any")
+
+X = votes[['share_2016_republican', 'Median_Household_Income_2019']]
 y = tempdf[['y']]
 scaler = preprocessing.StandardScaler().fit(X)
 X = scaler.transform(X)
@@ -250,6 +267,7 @@ sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
 
 sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
 plt.show()
+
 ```
 
 | Métrique | Score |
