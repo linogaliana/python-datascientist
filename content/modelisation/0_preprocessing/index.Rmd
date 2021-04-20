@@ -73,11 +73,14 @@ est disponible à [cette adresse](https://www2.census.gov/geo/tiger/GENZ2019/shp
 taux de chômage, variables d'éducation) proviennent de l'USDA ([source](https://www.ers.usda.gov/data-products/county-level-data-sets/))
 * Les données électorales sont une reconstruction à partir des données du MIT election lab
 proposées sur `Github` par [@tonmcg](https://github.com/tonmcg/US_County_Level_Election_Results_08-20)
+ou directement disponibles sur le site du [MIT Election Lab](https://electionlab.mit.edu/data)
 
+# Construction de la base de données
 
 Les sources étant éclatées, le code pour construire une base combinant toutes ces
-sources est directement fourni. Vous pouvez essayer de le faire en exercice sans 
-regarder la solution  :
+sources est directement fourni. Le travail de construction d'une base unique
+est un peu fastidieux mais il s'agit d'un bon exercice, que vous pouvez tenter,
+pour [réviser `pandas`](#pandas)   :
 
 {{% panel status="exercise" title="Importer les données" icon="fas fa-pencil-alt" %}}
 1. Télécharger et importer le shapefile [depuis ce lien](https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_02_sldl_500k.zip)
@@ -89,6 +92,14 @@ dans les 4 bases
 6. *Merger* aux données électorales à partir du code FIPS
 7. *Merger* au shapefile à partir du code FIPS. Faire attention aux 0 à gauche dans certains codes. Il est
 recommandé d'utiliser la méthode `str.lstrip` pour les retirer
+8. Importer les données des élections 2000 à 2016 à partir du [MIT Election Lab](https://electionlab.mit.edu/data)?
+Les données peuvent être directement requêtées depuis l'url
+<https://dataverse.harvard.edu/api/access/datafile/3641280?gbrecs=false>
+9. Créer une variable `share` comptabilisant la part des votes pour chaque candidat. 
+Ne garder que les colonnes `"year", "FIPS", "party", "candidatevotes", "share"`
+10. Faire une conversion `long` to `wide` avec la méthode `pivot_table` pour garder une ligne
+par comté x année avec en colonnes les résultats de chaque candidat dans cet état.
+11. Merger à partir du code FIPS au reste de la base. 
 {{% /panel %}}
 
 ```{python}
@@ -104,7 +115,7 @@ def download_url(url, save_path):
             out_file.write(dl_file.read())
     
 from pathlib import Path
-Path("/data").mkdir(parents=True, exist_ok=True)
+Path("data").mkdir(parents=True, exist_ok=True)
 
 
 download_url("https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_us_county_20m.zip", "data/shapefile")
@@ -129,7 +140,17 @@ df_election = df_election.merge(data_county.reset_index(), left_on = "county_fip
 df_election['county_fips'] = df_election['county_fips'].astype(str).str.lstrip('0')
 shp['FIPS'] = shp['GEOID'].astype(str).str.lstrip('0')
 votes = shp.merge(df_election, left_on = "FIPS", right_on = "county_fips")
+
+
+df_historical = pd.read_csv('https://dataverse.harvard.edu/api/access/datafile/3641280?gbrecs=false', sep = "\t")
+df_historical = df_historical.dropna(subset = ["FIPS"])
+df_historical["FIPS"] = df_historical["FIPS"].astype(int)
+df_historical['share'] = df_historical['candidatevotes']/df_historical['totalvotes']
+df_historical = df_historical[["year", "FIPS", "party", "candidatevotes", "share"]]
+df_historical['party'] = df_historical['party'].fillna("other")
 ```
+
+Enfin, 
 
 La carte suivante permet de visualiser rapidement 
 

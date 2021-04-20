@@ -59,24 +59,49 @@ os.environ['GDAL_DATA'] = r"C:\Users\W3CRK9\AppData\Local\r-miniconda\envs\r-ret
 Pour illustrer le travail de données nécessaire pour construire un modèle de Machine Learning, mais aussi nécessaire pour l'exploration de données avant de faire une régression linéaire, nous allons partir du jeu de données déja
 présenté sur le [résultat des élections US 2016 au niveau des comtés](#preprocessing)
 
-
-{{% panel status="exercise" title="Exercise 1: importer les données" icon="fas fa-pencil-alt" %}}
-1. Importer les données (l'appeler `df`) des élections américaines et regarder les informations dont on dispose
-2. Créer une variable `republican_winner` égale à `red`  quand la variable `rep16_frac` est supérieure à `dep16_frac` (`blue` sinon)
-3. Représenter une carte des résultats avec en rouge les comtés où les républicains ont gagné et en bleu ceux où se sont
-les démocrates
-{{% /panel %}}
+Le code pour construire une base unique, à partir des différentes sources,
+est le suivant:
 
 ```{python}
-import numpy as np
 import pandas as pd
 import geopandas as gpd
-import seaborn as sns
-import matplotlib.pyplot as plt
-df = gpd.read_file("https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
-df['winner'] = np.where(df['rep16_frac'] > df['dem16_frac'], '#FF0000', '#0000FF') 
-# df.plot('winner', color = df['winner'], figsize = (20,20))
+import os
+import zipfile
+import urllib.request
+
+def download_url(url, save_path):
+    with urllib.request.urlopen(url) as dl_file:
+        with open(save_path, 'wb') as out_file:
+            out_file.write(dl_file.read())
+    
+from pathlib import Path
+Path("data").mkdir(parents=True, exist_ok=True)
+
+
+download_url("https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_us_county_20m.zip", "data/shapefile")
+with zipfile.ZipFile("data/shapefile", 'r') as zip_ref:
+    zip_ref.extractall("data/counties")
+
+shp = gpd.read_file("data/counties/cb_2019_us_county_20m.shp")
+shp = shp[~shp["STATEFP"].isin(["02", "69", "66", "78", "60", "72", "15"])]
+shp
+
+df_election = pd.read_csv("https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-20/master/2020_US_County_Level_Presidential_Results.csv")
+df_election.head(2)
+population = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PopulationEstimates.xls?v=290.4", header = 2).rename(columns = {"FIPStxt": "FIPS"})
+education = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Education.xls?v=290.4", header = 4).rename(columns = {"FIPS Code": "FIPS", "Area name": "Area_Name"})
+unemployment = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Unemployment.xls?v=290.4", header = 4).rename(columns = {"fips_txt": "FIPS", "area_name": "Area_Name", "Stabr": "State"})
+income = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=290.4", header = 4).rename(columns = {"FIPStxt": "FIPS", "Stabr": "State", "Area_name": "Area_Name"})
+
+
+dfs = [df.set_index(['FIPS', 'State']) for df in [population, education, unemployment, income]]
+data_county = pd.concat(dfs, axis=1)
+df_election = df_election.merge(data_county.reset_index(), left_on = "county_fips", right_on = "FIPS")
+df_election['county_fips'] = df_election['county_fips'].astype(str).str.lstrip('0')
+shp['FIPS'] = shp['GEOID'].astype(str).str.lstrip('0')
+votes = shp.merge(df_election, left_on = "FIPS", right_on = "county_fips")
 ```
+
 
 
 ## La méthode des SVM (Support Vector Machines)
@@ -122,7 +147,7 @@ La généralisation au cas non linéaire implique d'introduire des noyaux transf
 
 {{% panel status="exercise" title="Premier algorithme de classification" icon="fas fa-pencil-alt" %}}
 1. Créer une variable *dummy* `y` dont la valeur vaut 1 quand les républicains l'emportent
-2. Créer des échantillons de test (20% des observations) et d'estimation avec comme *features*: `'less_than_high_school',	'adult_obesity', 'median_earnings_2010_dollars'` et comme *label* la variable `y`. Pour éviter le *warning* 
+2. Créer des échantillons de test (20% des observations) et d'estimation avec comme *features*: `'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"` et comme *label* la variable `y`. Pour éviter le *warning* 
 
 > A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel()
 
@@ -143,12 +168,15 @@ import sklearn.metrics
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 
-df['y'] = (df['rep16_frac']>50).astype(int)
+xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
+
+votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
+df = votes[["y"] + xvars]
 tempdf = df[['less_than_high_school', 'adult_obesity', 'median_earnings_2010_dollars','y']].dropna(how = "any")
 
 X_train, X_test, y_train, y_test = train_test_split(
-    tempdf[['less_than_high_school', 'adult_obesity', 'median_earnings_2010_dollars']],
-    tempdf[['y']].values.ravel(), test_size=0.2, random_state=0
+    df[xvars],
+    df[['y']].values.ravel(), test_size=0.2, random_state=0
 )
      
 clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
@@ -180,7 +208,7 @@ Notre classifieur manque totalement les *labels* 0, qui sont minoritaires. Une r
 ```{python}
 import sklearn.preprocessing as preprocessing
 
-X = tempdf[['less_than_high_school', 'adult_obesity', 'median_earnings_2010_dollars']]
+X = tempdf[xvars]
 y = tempdf[['y']]
 scaler = preprocessing.StandardScaler().fit(X)
 X = scaler.transform(X)
@@ -196,7 +224,8 @@ sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
 plt.show()
 ```
 
-Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables. C'est pour cette raison que l'étape de sélection de variable est cruciale. En utilisant uniquement le résultat passé du vote démocrate et le revenu (`dem12_frac` et `median_earnings_2010_dollars`), on obtient un résultat beaucoup plus cohérent:
+Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables.
+C'est pour cette raison que l'étape de sélection de variable est cruciale. En utilisant uniquement le résultat passé du vote démocrate et le revenu (`dem12_frac` et `median_earnings_2010_dollars`), on obtient un résultat beaucoup plus cohérent:
 
 ```{python, message = FALSE, warning = FALSE}
 df['y'] = (df['rep16_frac']>50).astype(int)
