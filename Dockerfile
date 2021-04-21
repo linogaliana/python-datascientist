@@ -35,6 +35,7 @@ RUN conda env create -f environment.yml -n python-ENSAE
 # R packages 
 RUN Rscript -e "install.packages(c('knitr','rmarkdown','blogdown'))"
 RUN Rscript -e 'install.packages("reticulate", dependencies = TRUE)'
+RUN Rscript -e 'devtools::install_github("linogaliana/tablelight", dependencies = TRUE)'
 
 # WRITE RETICULATE_PYTHON VARIABLE IN .Renviron
 RUN echo "RETICULATE_PYTHON = '/opt/conda/envs/python-ENSAE/bin/python'" >> /usr/local/lib/R/etc/Renviron
