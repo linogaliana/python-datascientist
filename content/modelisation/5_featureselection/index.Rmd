@@ -90,19 +90,70 @@ Contrairement à la régression linéaire classique, elles fonctionnent égaleme
 dans un cadre où $p>N$, c'est à dire où le nombre de régresseur est supérieur
 au nombre d'observations.
 
-Le lien pour importer le fichier en csv est [là](https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
+# Données utilisées
+
+On continue à utiliser les données de vote US. 
 
 ```{python}
-import numpy as np
 import pandas as pd
 import geopandas as gpd
+import os
+import zipfile
+import urllib.request
 
-df = gpd.read_file("https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
+def download_url(url, save_path):
+    with urllib.request.urlopen(url) as dl_file:
+        with open(save_path, 'wb') as out_file:
+            out_file.write(dl_file.read())
+    
+from pathlib import Path
+Path("data").mkdir(parents=True, exist_ok=True)
+
+
+download_url("https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_us_county_20m.zip", "data/shapefile")
+with zipfile.ZipFile("data/shapefile", 'r') as zip_ref:
+    zip_ref.extractall("data/counties")
+
+shp = gpd.read_file("data/counties/cb_2019_us_county_20m.shp")
+shp = shp[~shp["STATEFP"].isin(["02", "69", "66", "78", "60", "72", "15"])]
+shp
+
+df_election = pd.read_csv("https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-20/master/2020_US_County_Level_Presidential_Results.csv")
+df_election.head(2)
+population = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PopulationEstimates.xls?v=290.4", header = 2).rename(columns = {"FIPStxt": "FIPS"})
+education = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Education.xls?v=290.4", header = 4).rename(columns = {"FIPS Code": "FIPS", "Area name": "Area_Name"})
+unemployment = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Unemployment.xls?v=290.4", header = 4).rename(columns = {"fips_txt": "FIPS", "area_name": "Area_Name", "Stabr": "State"})
+income = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=290.4", header = 4).rename(columns = {"FIPStxt": "FIPS", "Stabr": "State", "Area_name": "Area_Name"})
+
+
+dfs = [df.set_index(['FIPS', 'State']) for df in [population, education, unemployment, income]]
+data_county = pd.concat(dfs, axis=1)
+df_election = df_election.merge(data_county.reset_index(), left_on = "county_fips", right_on = "FIPS")
+df_election['county_fips'] = df_election['county_fips'].astype(str).str.lstrip('0')
+shp['FIPS'] = shp['GEOID'].astype(str).str.lstrip('0')
+votes = shp.merge(df_election, left_on = "FIPS", right_on = "county_fips")
+
+
+df_historical = pd.read_csv('https://dataverse.harvard.edu/api/access/datafile/3641280?gbrecs=false', sep = "\t")
+df_historical = df_historical.dropna(subset = ["FIPS"])
+df_historical["FIPS"] = df_historical["FIPS"].astype(int)
+df_historical['share'] = df_historical['candidatevotes']/df_historical['totalvotes']
+df_historical = df_historical[["year", "FIPS", "party", "candidatevotes", "share"]]
+df_historical['party'] = df_historical['party'].fillna("other")
+
+df_historical_wide = df_historical.pivot_table(index = "FIPS", values=['candidatevotes',"share"], columns = ["year","party"])
+df_historical_wide.columns = ["_".join(map(str, s)) for s in df_historical_wide.columns.values]
+df_historical_wide = df_historical_wide.reset_index()
+df_historical_wide['FIPS'] = df_historical_wide['FIPS'].astype(str).str.lstrip('0')
+votes['FIPS'] = votes['GEOID'].astype(str).str.lstrip('0')
+votes = votes.merge(df_historical_wide, on = "FIPS")
 ```
 
-## Principe
+# Principe du LASSO
 
-En adoptant le principe d'une fonction objectif pénalisée, le LASSO permet de fixer un certain nombre de coefficients à 0. Les variables dont la norme est non nulle passent ainsi le test de sélection. 
+En adoptant le principe d'une fonction objectif pénalisée,
+le LASSO permet de fixer un certain nombre de coefficients à 0.
+Les variables dont la norme est non nulle passent ainsi le test de sélection. 
 
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 Le LASSO est un programme d'optimisation sous contrainte. On cherche à trouver l'estimateur $\beta$ qui minimise l'erreur quadratique (régression linéaire) sous une contrainte additionnelle régularisant les paramètres:
@@ -121,20 +172,21 @@ warning: sélection de variables corrélées
 
 ## Première régression LASSO
 
-Avant de se lancer dans les exercices, on va éliminer quelques colonnes redondantes, celles qui terminent par `_frac2`:
+Avant de se lancer dans les exercices, on va éliminer quelques colonnes redondantes, 
+celles qui concernent les votes des parties concurrents (forcément très
+corrélés au vote Républicain...)  :
 
 ```{python, echo = TRUE}
-df2 = df.loc[:,~df.columns.str.endswith('frac2')]
+df2 = votes.loc[:,~votes.columns.str.endswith(('_democrat','_green','_other'))]
 ```
 
 
 {{% panel status="exercise" title="Exercise 1: premier LASSO" icon="fas fa-pencil-alt" %}}
-1. Importer les données (l'appeler `df`)
-2. Standardiser les variables. :warning: Avant ça,
+1. Standardiser les variables. :warning: Avant ça,
 ne garder que les colonnes numériques (idéalement on transformerait
 les variables non numériques en numériques)
-3. Estimer un modèle LASSO. Afficher les valeurs des coefficients: qu'en déduire sur le modèle idéal ? Quelle variable a une valeur non nulle ?
-4. Faire une régression linéaire avec le modèle parcimonieux et comparer la
+2. Estimer un modèle LASSO. Afficher les valeurs des coefficients: qu'en déduire sur le modèle idéal ? Quelle variable a une valeur non nulle ?
+3. Faire une régression linéaire avec le modèle parcimonieux et comparer la
 performance à un modèle avec plus de variables
 {{% /panel %}}
 
@@ -149,12 +201,12 @@ def make_lasso(dataframe, alpha = 1):
   df2 = dataframe.select_dtypes(include=np.number)
   scaler = StandardScaler()
   data = scaler.fit(df2).transform(df2.fillna(0))
-  yindex = df2.columns.get_loc("rep16_frac")
+  yindex = df2.columns.get_loc("per_gop")
   lasso1 = Lasso(fit_intercept=False,normalize=False, alpha = alpha)
   lasso1.fit(np.delete(data, yindex, axis = 1),data[:,yindex])
   return lasso1, data, yindex
 
-lasso1,_,_ = make_lasso(df2)
+lasso1,_,_ = make_lasso(df2.dropna(subset = ["per_gop"]))
 ```
 
 Les coefficients estimés sont ainsi les suivants:
