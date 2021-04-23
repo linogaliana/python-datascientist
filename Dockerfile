@@ -4,6 +4,10 @@ ARG BASE_IMAGE=rocker/verse:4.0.2
 # First stage: install packages
 FROM $BASE_IMAGE AS install_packages
 
+RUN Rscript -e "remotes::install_github('yihui/xfun')" \
+    && Rscript -e "remotes::install_github('rstudio/blogdown')"
+
+
 RUN apt-get update
 RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
