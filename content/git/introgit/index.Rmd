@@ -115,7 +115,7 @@ Il existe plusieurs manières d'utiliser le contrôle de version :
 * avec une interface graphique spécialisée, par exemple [tortoise git](https://tortoisegit.org/) ou [GitHub Desktop](https://desktop.github.com/) ;
 * avec un logiciel de développement : la plupart des logiciels de développement ([RStudio](https://rstudio.com/) pour `R`, [PyCharm](https://www.jetbrains.com/fr-fr/pycharm/) ou [jupyter](https://jupyter.org/) pour `python`, [atom](https://atom.io/), etc.) proposent tous des modules graphiques facilitant l'usage de `git` dont les fonctionnalités sont très proches.
 
-
+```{=html}
 {{% panel status="tip" title="Tip" icon="fa fa-lightbulb" %}}
 `Git` a été conçu, initialement pour la ligne de commande. Il existe
 néanmoins des interfaces graphiques performantes
@@ -124,7 +124,7 @@ fichier côte à côte. Ces interfaces graphiques couvrent la majorité des
 besoins quotidiens. Néanmoins, pour certaines tâches, il faut nécessairement
 passer par la ligne de commande.
 {{% /panel %}}
-
+```
 
 ## Git: le B.A-BA
 
