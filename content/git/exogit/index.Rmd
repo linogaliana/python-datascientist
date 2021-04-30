@@ -21,12 +21,14 @@ https://github.com/simplonco/cadavre-request
 
 Les deux premières étapes se font sur `Github`
 
-{{% panel status="exercise" title="Exercise 1: créer un compte Github" icon="fab fa-github" %}}
+```{=html}
+{{% panel "exercise" "Exercise 1: créer un compte Github" "fab fa-github" %}}
 
 1. Si vous n'en avez pas déjà un, créer un compte sur `github.com`
 2. Créer un dépôt vide. Ce dépôt sera personnel, vous pouvez le rendre public
 ou non, comme vous le souhaitez.
 {{% /panel %}}
+```
 
 Pour ces exercices, je propose d'utiliser `Github` dont les fonctionalités
 nous suffiront amplement. Si, 
@@ -48,6 +50,7 @@ du dépôt source <a href="https://github.com/linogaliana/python-datascientist" 
 Maintenant, en local. Il faut ouvrir une invite de commande `git bash` (ou une
 interface graphique connectée à `git bash`)
 
+```{=html}
 {{% panel status="exercise" title="Exercise 2: découvrir l'invite de commande" icon="fas fa-pencil-alt" %}}
 
 1. Sur les postes ENSAE. Aller dans `Scientific Apps/Git`. Vous devriez voir
@@ -68,12 +71,14 @@ git init
 ~~~
 
 {{% /panel %}}
+```
 
 Pour le moment, on a uniquement initialisé le contrôle de version avec `Git`. 
 On n'a encore ajouté aucun fichier à `Git`. D'ailleurs, la première 
 chose à faire est d'exclure un certain nombre de fichiers, afin de ne pas
 faire une erreur pénible à réparer.
 
+```{=html}
 {{% panel status="exercise" title="Exercise 3: le fichier .gitignore" icon="fas fa-pencil-alt" %}}
 
 Lorsqu'on utilise `Git`, il y a des fichiers qu'on ne veut pas partager
@@ -96,12 +101,13 @@ suivre. Pour cela, ajouter au début du fichier `.gitignore`, les extensions:
 
 
 {{% /panel %}}
-
+```
 
 On a créé un fichier `.gitignore` mais on n'a encore rien fait jusqu'à présent.
 Il faut dire à `Git` de contrôler les évolutions de chaque fichier 
 (passage dans l'index). On appelle cette étape `git add`. ****
 
+```{=html}
 {{% panel status="exercise" title="Exercise 4: pratique de git. Enfin..." icon="fas fa-pencil-alt" %}}
 
 1. De temps en temps, il est bon de vérifier l'état d'un dépôt. Pour cela, faire
@@ -125,6 +131,7 @@ git commit -m "Initial commit"
 ~~~
 
 {{% /panel %}}
+```
 
 L'option `m` permet de créer un message, qui sera disponible à l'ensemble
 des contributeurs du projet. Avec la ligne de commande, ce n'est pas toujours
@@ -138,7 +145,7 @@ n'êtes pas obligé de suivre cette convention si elle ne vous plaît pas.
 
 ### Premières interactions avec `Github`
 
-
+```{=html}
 {{% panel status="exercise" title="Exercise 5: interagir avec Github" icon="fas fa-pencil-alt" %}}
 
 1. Maintenant, créer un fichier nommé `README.md` (:warning: ne pas changer
@@ -176,11 +183,12 @@ caractères comporte votre mot de passe)
 
 
 {{% /panel %}}
-
+```
 
 Retournez voir le dépôt sur `Github`, vous devriez maintenant voir le fichier
 `.gitignore` et le `README` devrait s'afficher en page d'accueil. 
 
+```{=html}
 {{% panel status="exercise" title="Exercise 6: rapatrier des modifs en local" icon="fas fa-pencil-alt" %}}
 
 Pour le moment, vous êtes tout seul sur le dépôt. Il n'y a donc pas de 
@@ -217,12 +225,14 @@ git pull origin master
 
 
 {{% /panel %}}
+```
 
-
+```{=html}
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 `:XXXXXX:` permet, dans des systèmes qui reposent sur `Markdown`, d'afficher
 des emojis. Vous pouvez [trouver une liste ici](https://gist.github.com/rxaviers/7360908)
 {{% /panel %}}
+```
 
 L'opération `pull` permet: 
 
@@ -250,6 +260,7 @@ Au moindre doute, créez une branche. Les branches sont utilisées pour des trav
 - vous travaillez sur une fonctionnalité nouvelle et vous souhaiterez recueillir l'avis de vos collègues avant de modifier `master`;
 - vous n'êtes pas certain de réussir vos modifications du premier coup et préférez faire des tests en parallèle.
 
+```{=html}
 {{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
 Les branches ne sont pas personnelles : **Toutes les branches sont publiées, le `rebase` est interdit. Le push force est également interdit.**
 
@@ -260,8 +271,9 @@ Il faut **absolument** bannir les usages de `push force` qui peuvent déstabilis
 **Tous les merges dans `master` doivent se faire par l'intermédiaire d'une merge request dans `GitLab`**. En effet, il est très mal vu de merger une branche dans master localement.
 
 {{% /panel %}}
+```
 
-
+```{=html}
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 Comment nommer les branches ? Là encore, il y a énormément de conventions différentes. Une fréquemment observée est :
 
@@ -270,9 +282,9 @@ Comment nommer les branches ? Là encore, il y a énormément de conventions dif
 
 N'hésitez pas à aller encore plus loin dans la normalisation  !
 {{% /panel %}}
+```
 
-
-
+```{=html}
 {{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
 1. Ouvrir une *issue* sur `Github`. Signaler qu'il serait bien d'ajouter un emoji chat dans le README. Dans la partie de droite, cliquer sur la petite roue à côté de `Label` et cliquer sur `Edit Labels`. Créer un label `Markdown`. Retourner sur la page de l'*issue* et ajouter ce label
 2. Sur votre dépôt local, créer une branche `issue-1` en faisant 
@@ -310,20 +322,23 @@ L'objectif est maintenant de ramener les modifications faites dans `issue-1` dan
 Faire la fusion et regarder le résultat dans la page d'accueil de `Github` (le `README`) et dans le graphique. 
 
 {{% /panel %}}
+```
 
-
+```{=html}
 {{% panel status="note" title="Note" icon="fa fa-comment" %}}
 La commande `checkout` est un couteau-suisse de la gestion de branche en `Git`. Elle permet en effet de basculer d'une branche à l'autre, mais aussi d'en créer, etc. 
 {{% /panel %}}
+```
 
+```{=html}
 {{% panel status="note" title="Note" icon="fa fa-comment" %}}
 L'option de fusion *Squash and Merge* permet de regrouper tous les commits d'une branche (potentiellement très nombreux) en un seul dans la branche de destination. Cela évite, sur les gros projets, des branches avec des milliers de *commits*.
 {{% /panel %}}
-
+```
 
 ## Cadavre exquis: découvrir le travail collaboratif
 
-
+```{=html}
 {{% panel status="exercise" title="Exercice: interactions avec le dépôt distant" icon="fas fa-pencil-alt" %}}
 Cet exercice se fait par groupe de trois. Il y aura deux rôles dans ce scénario: un mainteneur et deux développeurs. 
 
@@ -369,9 +384,10 @@ git pull origin master
 
 Le dernier doit refaire, à nouveau, les étapes 6 à 8
 {{% /panel %}}
+```
 
 
-
+```{=html}
 {{% panel status="warning" title="Warning à nouveau: ne JAMAIS FAIRE git push force" icon="fa fa-exclamation-triangle" %}}
 Quand on fait face à un rejet du `push`, on est tenté de faire passer en force le `push` malgré la mise en garde précédente.
 
@@ -419,12 +435,13 @@ Remplacer XXX par votre nom. La balise `&&` permet d'enchaîner, en une seule li
 8. Faire un push. Pour la dernière personnes, refaire les opérations 4 à 8
 
 {{% /panel %}}
+```
 
 `Git` permet donc de travailler, en même temps, sur le même fichier et de limiter le nombre de gestes manuels nécessaires pour faire la fusion. Lorsqu'on travaille sur des bouts différents du même fichier, on n'a même pas besoin de faire de modification manuelle, la fusion peut être automatique.
 
 `Git` est un outil très puissant. Mais, il ne remplace pas une bonne organisation du travail. Vous l'avez vu, ce mode de travail uniquement sur `master` peut être pénible. Les branches prennent tout leur sens dans ce cas. 
 
-
+```{=html}
 {{% panel status="exercise" title="Exercice: gestion des branches" icon="fas fa-pencil-alt" %}}
 1. Le mainteneur va contribuer directement dans `master` et ne crée pas de branche. Chaque développeur crée une branche, en local nommée `contrib-XXXXX` où `XXXXX` est le prénom: 
 
@@ -460,7 +477,9 @@ Régler le conflit et valider (`add` et `commit`). Pousser le résultat. Le main
 
 
 {{% /panel %}}
+```
 
+```{=html}
 {{% panel status="note" title="Note" icon="fa fa-comment" %}}
 Les merges vers `master` doivent impérativement passer par `Github` (ou `Gitlab`). Cela permet de garder une trace explicite de ceux-ci (par exemple [ici](https://github.com/linogaliana/python-datascientist/pulls?q=is%3Apr+is%3Aclosed)), sans avoir à chercher dans l'arborescence, parfois complexe, d'un projet. La bonne pratique veut qu'on faire un `squash commit` pour éviter une inflation du nombre de commits dans `master`: les branches ont vocation à proposer une multitude de petits commits, les modifications dans `master` doivent être simple à tracer d'où le fait de modifier des petits. 
 
@@ -476,3 +495,4 @@ La méthode de travail la plus simple est le *Github flow* qu'on vous a proposé
 
 Pour des projets plus complexes dans des équipes développant des applications, on pourra utiliser d'autres méthodes de travail, notamment le `Git flow`. Il n'existe pas de règles universelles pour déterminer la méthode de travail ; l'important c'est, avant tout, de se mettre d'accord sur des règles communes de travail.
 {{% /panel %}}
+```

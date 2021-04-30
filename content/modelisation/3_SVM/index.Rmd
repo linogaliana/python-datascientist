@@ -49,34 +49,29 @@ knitr::knit_hooks$set(
 
 ```
 
-```{python, include = FALSE}
+```{python, eval = FALSE, include = FALSE}
 import os
 os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
 os.environ["PROJ_LIB"] = r'C:\Users\W3CRK9\AppData\Local\r-miniconda\pkgs\proj4-4.9.3-hfa6e2cd_9\Library\share'
 os.environ['GDAL_DATA'] = r"C:\Users\W3CRK9\AppData\Local\r-miniconda\envs\r-reticulate\Library\share\gdal"
 ```
 
-Pour illustrer le travail de données nécessaire pour construire un modèle de Machine Learning, mais aussi nécessaire pour l'exploration de données avant de faire une régression linéaire, nous allons partir du jeu de données de [résultat des élections US 2016 au niveau des comtés](https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
+Pour illustrer le travail de données nécessaire pour construire un modèle de Machine Learning, mais aussi nécessaire pour l'exploration de données avant de faire une régression linéaire, nous allons partir du même jeu de données que précédemment,
+c'est-à-dire les résultats des élections US 2020 présentés dans l'[introduction
+de cette partie](https://linogaliana-teaching.netlify.app/modelisation/): les données de vote aux élections présidentielles US
+croisées à des variables socio-démographiques.
+Le code 
+est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/modelisation/get_data.py)
 
 
-{{% panel status="exercise" title="Exercise 1: importer les données" icon="fas fa-pencil-alt" %}}
-1. Importer les données (l'appeler `df`) des élections américaines et regarder les informations dont on dispose
-2. Créer une variable `republican_winner` égale à `red`  quand la variable `rep16_frac` est supérieure à `dep16_frac` (`blue` sinon)
-3. Représenter une carte des résultats avec en rouge les comtés où les républicains ont gagné et en bleu ceux où se sont
-les démocrates
-{{% /panel %}}
 
-```{python}
-import numpy as np
-import pandas as pd
-import geopandas as gpd
-import seaborn as sns
-import matplotlib.pyplot as plt
-df = gpd.read_file("https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
-df['winner'] = np.where(df['rep16_frac'] > df['dem16_frac'], '#FF0000', '#0000FF') 
-# df.plot('winner', color = df['winner'], figsize = (20,20))
+```{python, echo = FALSE, include = FALSE}
+exec(open('../get_data.py').read())
 ```
 
+```{python}
+import matplotlib.pyplot as plt
+```
 
 ## La méthode des SVM (Support Vector Machines)
 
@@ -121,7 +116,7 @@ La généralisation au cas non linéaire implique d'introduire des noyaux transf
 
 {{% panel status="exercise" title="Premier algorithme de classification" icon="fas fa-pencil-alt" %}}
 1. Créer une variable *dummy* `y` dont la valeur vaut 1 quand les républicains l'emportent
-2. Créer des échantillons de test (20% des observations) et d'estimation avec comme *features*: `'less_than_high_school',	'adult_obesity', 'median_earnings_2010_dollars'` et comme *label* la variable `y`. Pour éviter le *warning* 
+2. Créer des échantillons de test (20% des observations) et d'estimation avec comme *features*: `'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"` et comme *label* la variable `y`. Pour éviter le *warning* 
 
 > A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel()
 
@@ -131,7 +126,7 @@ La généralisation au cas non linéaire implique d'introduire des noyaux transf
 
 4. Refaire les questions précédentes avec des variables normalisées. Le résultat est-il différent ?
 
-5. Changer de variables *x*. Prendre uniquement `dem12_frac` et `median_earnings_2010_dollars`. Regarder les résultats, notamment la matrice de confusion
+5. Changer de variables *x*. Prendre uniquement `votes_gop` et `Median_Household_Income_2019`. Regarder les résultats, notamment la matrice de confusion
 
 6. Faire une 5-fold validation croisée pour déterminer le paramètre *C* idéal. 
 {{% /panel %}}
@@ -142,12 +137,15 @@ import sklearn.metrics
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 
-df['y'] = (df['rep16_frac']>50).astype(int)
-tempdf = df[['less_than_high_school', 'adult_obesity', 'median_earnings_2010_dollars','y']].dropna(how = "any")
+xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
+
+votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
+df = votes[["y"] + xvars]
+tempdf = df.dropna(how = "any")
 
 X_train, X_test, y_train, y_test = train_test_split(
-    tempdf[['less_than_high_school', 'adult_obesity', 'median_earnings_2010_dollars']],
-    tempdf[['y']].values.ravel(), test_size=0.2, random_state=0
+    df[xvars],
+    df[['y']].values.ravel(), test_size=0.2, random_state=0
 )
      
 clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
@@ -169,17 +167,21 @@ Le classifieur avec `C = 1` devrait avoir les performances suivantes:
 | Precision | `r py$sc_precision` |
 | F1 | `r py$sc_f1` |
 
-```{python, message = FALSE, warning = FALSE}
+```{python confusion_matrix, message = FALSE, warning = FALSE, include = FALSE}
 sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
-plt.show()
+plt.savefig("confusion_matrix.png")
+```
+
+```{r}
+knitr::include_graphics("confusion_matrix.png")
 ```
 
 Notre classifieur manque totalement les *labels* 0, qui sont minoritaires. Une raison possible ? L'échelle des variables: le revenu a une distribution qui peut écraser celle des autres variables, dans un modèle linéaire. Il faut donc, a minima, standardiser les variables. Néanmoins, ici cela n'apporte pas de gain:
 
-```{python}
+```{python confusion_matrix2}
 import sklearn.preprocessing as preprocessing
 
-X = tempdf[['less_than_high_school', 'adult_obesity', 'median_earnings_2010_dollars']]
+X = tempdf[xvars]
 y = tempdf[['y']]
 scaler = preprocessing.StandardScaler().fit(X)
 X = scaler.transform(X)
@@ -192,15 +194,23 @@ X_train, X_test, y_train, y_test = train_test_split(
 clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
-plt.show()
+plt.savefig("confusion_matrix2.png")
 ```
 
-Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables. C'est pour cette raison que l'étape de sélection de variable est cruciale. En utilisant uniquement le résultat passé du vote démocrate et le revenu (`dem12_frac` et `median_earnings_2010_dollars`), on obtient un résultat beaucoup plus cohérent:
+```{r}
+knitr::include_graphics("confusion_matrix2.png")
+```
 
-```{python, message = FALSE, warning = FALSE}
-df['y'] = (df['rep16_frac']>50).astype(int)
-tempdf = df[['dem12_frac', 'median_earnings_2010_dollars','y']].dropna(how = "any")
-X = tempdf[['dem12_frac', 'median_earnings_2010_dollars']]
+
+Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables.
+C'est pour cette raison que l'étape de sélection de variable est cruciale. En utilisant uniquement le résultat passé du vote démocrate et le revenu (`votes_gop` et `Median_Household_Income_2019`), on obtient un résultat beaucoup plus cohérent:
+
+```{python confusion_matrix3, message = FALSE, warning = FALSE}
+votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
+df = votes[["y", "share_2016_republican", 'Median_Household_Income_2019']]
+tempdf = df.dropna(how = "any")
+
+X = votes[['share_2016_republican', 'Median_Household_Income_2019']]
 y = tempdf[['y']]
 scaler = preprocessing.StandardScaler().fit(X)
 X = scaler.transform(X)
@@ -219,7 +229,11 @@ sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
 sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
 
 sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
-plt.show()
+plt.savefig("confusion_matrix3.png")
+```
+
+```{r}
+knitr::include_graphics("confusion_matrix3.png")
 ```
 
 | Métrique | Score |

@@ -49,37 +49,35 @@ knitr::knit_hooks$set(
 
 ```
 
-```{python, include = FALSE}
+```{python, eval = FALSE, include = FALSE}
 import os
 os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
 os.environ["PROJ_LIB"] = r'C:\Users\W3CRK9\AppData\Local\r-miniconda\pkgs\proj4-4.9.3-hfa6e2cd_9\Library\share'
 os.environ['GDAL_DATA'] = r"C:\Users\W3CRK9\AppData\Local\r-miniconda\envs\r-reticulate\Library\share\gdal"
 ```
 
-Pour illustrer le travail de données nécessaire pour construire un modèle de Machine Learning, mais aussi nécessaire pour l'exploration de données avant de faire une régression linéaire, nous allons partir du jeu de données de [résultat des élections US 2016 au niveau des comtés](https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
+Le précédent chapitre visait à proposer un premier modèle pour comprendre
+les comtés où le parti Républicain l'emporte. La variable d'intérêt étant
+bimodale (victoire ou défaite), on était dans le cadre d'un modèle de 
+classification.
 
+Maintenant, sur les mêmes données, on va proposer un modèle de régression
+pour expliquer le score du parti Républicain. La variable est donc continue.
+Nous ignorerons le fait que ses bornes se trouvent entre 0 et 100 et donc 
+qu'il faudrait, pour être rigoureux, transformer l'échelle afin d'avoir 
+des données dans $\mathbb{R}$. 
 
-{{% panel status="exercise" title="Exercise 1: importer les données" icon="fas fa-pencil-alt" %}}
-1. Importer les données (l'appeler `df`) des élections américaines et regarder les informations dont on dispose
-2. Créer une variable `republican_winner` égale à `red`  quand la variable `rep16_frac` est supérieure à `dep16_frac` (`blue` sinon)
-3. Représenter une carte des résultats avec en rouge les comtés où les républicains ont gagné et en bleu ceux où se sont
-les démocrates
-{{% /panel %}}
+Ce chapitre utilise toujours le même jeu de données, présenté dans l'[introduction
+de cette partie](https://linogaliana-teaching.netlify.app/modelisation/): les données de vote aux élections présidentielles US
+croisées à des variables socio-démographiques.
+Le code 
+est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/modelisation/get_data.py)
 
-```{python}
-import numpy as np
-import pandas as pd
-import geopandas as gpd
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-import sklearn
-
-
-df = gpd.read_file("https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
-df['winner'] = np.where(df['rep16_frac'] > df['dem16_frac'], '#FF0000', '#0000FF') 
-# df.plot('winner', color = df['winner'], figsize = (20,20))
+```{python, echo = FALSE, include = FALSE}
+exec(open('../get_data.py').read())
 ```
+
+# Principe général
 
 Le principe général de la régression consiste à trouver une loi $h_\theta(X)$
 telle que
@@ -112,10 +110,11 @@ de l'estimer à partir des données observées $y$. La méthode des moindres
 carrés consiste à minimiser l'erreur quadratique entre la prédiction et 
 les données observées (ce qui explique qu'on puisse voir la régression comme
 un problème de *Machine Learning*). En toute généralité, la méthode des
-moindres carrés consiste à minimiser la g
+moindres carrés consiste à trouver l'ensemble de paramètres $\theta$ 
+tel que
 
 $$
-\min_{\theta} \mathbb{E}\bigg[ \left( y - h_\theta(X) \right)^2 \bigg]
+\theta = \arg \min_{\theta \in \Theta} \mathbb{E}\bigg[ \left( y - h_\theta(X) \right)^2 \bigg]
 $$
 
 Ce qui, dans le cadre de la régression linéaire, s'exprime de la manière suivante:
@@ -138,7 +137,7 @@ est équivalent à celui du Maximum de Vraisemblance dont la théorie asymptotiq
 nous assure l'absence de biais, la variance minimale (borne de Cramer-Rao).
 
 {{% panel status="exercise" title="Exercise: régression linéaire avec scikit [parcours data-science]" icon="fas fa-pencil-alt" %}}
-Cet exercice vise à illustrer la manière d'effectuer une régression linéaire avec scikit. Dans ce domaine,
+Cet exercice vise à illustrer la manière d'effectuer une régression linéaire avec `scikit`. Dans ce domaine,
 `statsmodels` est néanmoins plus complet, ce que montrera l'exercice suivant. L'intérêt de faire 
 des régressions avec `scikit` est de pouvoir comparer les résultats d'une régression linéaire
 avec d'autres modèles de régression.
@@ -146,7 +145,7 @@ avec d'autres modèles de régression.
 L'objectif est d'expliquer le score des Républicains en fonction de quelques
 variables
 
-1. A partir de quelques variables, par exemple, *"unemployment", "median_age", "asian", "black", "white_not_latino_population","latino_population", "gini_coefficient", "less_than_high_school", "adult_obesity", "median_earnings_2010_dollars"*, expliquer la variable `rep16_frac`. :warning: utiliser la variable `median_earnings_2010_dollars`
+1. A partir de quelques variables, par exemple, *'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"*, expliquer la variable `per_gop`. :warning: utiliser la variable `Median_Household_Income_2019`
 en `log` sinon son échelle risque d'écraser tout effet.
 2. Afficher les valeurs des coefficients, constante comprise
 3. Evaluer la pertinence du modèle avec le $R^2$ et la qualité du fit avec le MSE
@@ -157,19 +156,22 @@ un problème de spécification
 {{% /panel %}}
 
 
-```{python}
+```{python, warning = FALSE}
+import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 import sklearn.metrics
 
-df2 = df[["rep16_frac", "unemployment", "median_age", "asian", "black", "white_not_latino_population","latino_population", "gini_coefficient", "less_than_high_school", "adult_obesity", "median_earnings_2010_dollars"]]
-df2['log_income'] = np.log(df["median_earnings_2010_dollars"])
+xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
+
+df2 = votes[["per_gop"] + xvars]
+df2['log_income'] = np.log(df2["Median_Household_Income_2019"])
 indices_to_keep = ~df2.isin([np.nan, np.inf, -np.inf]).any(1)
 df2 = df2[indices_to_keep].astype(np.float64)
 
 X_train, X_test, y_train, y_test = train_test_split(
-    df2.drop(["median_earnings_2010_dollars","rep16_frac"], axis = 1),
-    df2[['rep16_frac']].values.ravel(), test_size=0.2, random_state=0
+    df2.drop(["Median_Household_Income_2019","per_gop"], axis = 1),
+    100*df2[['per_gop']].values.ravel(), test_size=0.2, random_state=0
 )
 
 ols = LinearRegression().fit(X_train, y_train)
@@ -186,8 +188,28 @@ print('Mean squared error: %.2f'
 # The coefficient of determination: 1 is perfect prediction
 print('Coefficient of determination: %.2f'
       % rsq)
-      
 ```
+
+```{python errorplot, include = FALSE}
+# question 4
+import seaborn as sns
+
+tempdf = pd.DataFrame({"prediction": y_pred, "observed": y_test,
+                       "error": y_test - y_pred})
+
+fig = plt.figure()
+g = sns.scatterplot(data = tempdf, x = "observed", y = "error")
+g.axhline(0, color = "red")
+g.figure.savefig("errorplot.png")
+```
+
+```{r}
+knitr::include_graphics("errorplot.png")
+```
+
+La répartition des erreurs n'est clairement pas aléatoire en fonction de $X$.
+Le modèle souffre
+donc d'un problème de spécification. 
 
 {{% panel status="exercise" title="Exercise: régression linéaire avec scikit [parcours économie]" icon="fas fa-pencil-alt" %}}
 Cet exercice vise à illustrer la manière d'effectuer une régression linéaire avec `statsmodels` qui offre une interface proche de celle de `R`
@@ -195,23 +217,28 @@ Cet exercice vise à illustrer la manière d'effectuer une régression linéaire
 L'objectif est d'expliquer le score des Républicains en fonction de quelques
 variables
 
-1. A partir de quelques variables, par exemple, *"unemployment", "median_age", "asian", "black", "white_not_latino_population","latino_population", "gini_coefficient", "less_than_high_school", "adult_obesity", "median_earnings_2010_dollars"*, expliquer la variable `rep16_frac`. :warning: utiliser la variable `median_earnings_2010_dollars`
+1. A partir de quelques variables, par exemple, *'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"*, expliquer la variable `per_gop`. :warning: utiliser la variable `Median_Household_Income_2019`
 en `log` sinon son échelle risque d'écraser tout effet.
 2. Afficher un tableau de régression
 3. Evaluer la pertinence du modèle avec le R^2
-4. Utiliser l'API `formula` pour régresser le score des républicains en fonction de la variable `unemployment`, de `unemployment` au carré et du log de 
-`median_earnings_2010_dollars`
+4. Utiliser l'API `formula` pour régresser le score des républicains en fonction de la variable `Unemployment_rate_2019`, de `Unemployment_rate_2019` au carré et du log de 
+`Median_Household_Income_2019`
 {{% /panel %}}
 
 
 ```{python}
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-df2 = df[["rep16_frac", "unemployment", "median_age", "asian", "black", "white_not_latino_population","latino_population", "gini_coefficient", "less_than_high_school", "adult_obesity", "median_earnings_2010_dollars"]]
-df2['log_income'] = np.log(df["median_earnings_2010_dollars"])
+
+xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
+
+df2 = votes[["per_gop"] + xvars]
+df2['log_income'] = np.log(df2["Median_Household_Income_2019"])
 indices_to_keep = ~df2.isin([np.nan, np.inf, -np.inf]).any(1)
 df2 = df2[indices_to_keep].astype(np.float64)
-results = sm.OLS(df2[['rep16_frac']], df2.drop(["median_earnings_2010_dollars","rep16_frac"], axis = 1)).fit()
+
+X = sm.add_constant(df2.drop(["Median_Household_Income_2019","per_gop"], axis = 1))
+results = sm.OLS(df2[['per_gop']], X).fit()
 ```
 
 ```{python}
@@ -221,10 +248,9 @@ print(results.summary())
 
 
 ```{python}
-results = smf.ols('rep16_frac ~ unemployment + I(unemployment**2) + np.log(median_earnings_2010_dollars)', data=df2).fit()
+results = smf.ols('per_gop ~ Unemployment_rate_2019 + I(Unemployment_rate_2019**2) + np.log(Median_Household_Income_2019)', data=df2).fit()
 print(results.summary())
 ```
-
 
 
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
@@ -267,12 +293,13 @@ manières différente:
 
 * En économétrie, on s'intéresse au modèle latent qui détermine le choix de
 l'outcome. Par exemple, si on observe les choix de participer ou non au marché
-du travail, on va modéliser les facteurs déterminant ce choix
+du travail, on va modéliser les facteurs déterminant ce choix ;
 * En *Machine Learning*, le modèle latent n'est nécessaire que pour classifier
 dans la bonne catégorie les observations
 
 L'estimation des paramètres $\beta$ peut se faire par maximum de vraisemblance
-ou par régression, les deux solutions sont équivalentes. 
+ou par régression, les deux solutions sont équivalentes sous certaines
+hypothèses. 
 
 
 {{% panel status="note" title="Note" icon="fa fa-comment" %}}
@@ -292,6 +319,8 @@ de gagner
 une mesure de qualité du modèle
 {{% /panel %}}
 
+<!--- Exercice à corriger ---->
+
 {{% panel status="exercise" title="Régression logistique [economists]" icon="fas fa-pencil-alt" %}}
 En utilisant échantillons d'apprentissage et d'estimation:
 
@@ -307,32 +336,44 @@ LR = -2\log\bigg(\frac{\mathcal{L}_{\theta}}{\mathcal{L}_{\theta_0}}\bigg) = -2(
 $$
 {{% /panel %}}
 
-```{python}
+```{python, warning = FALSE}
 from scipy import stats
 
-df2 = df[["rep16_frac", "unemployment", "median_age", "asian", "black", "white_not_latino_population","latino_population", "gini_coefficient", "less_than_high_school", "adult_obesity", "median_earnings_2010_dollars"]]
-df2['y'] = (df2['rep16_frac']>50).astype(int)
-mylogit = smf.logit(formula = 'y ~ unemployment + I(unemployment**2) + np.log(median_earnings_2010_dollars)', data=df2[df2['median_earnings_2010_dollars']>0]).fit()
+
+xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
+
+df2 = votes[["per_gop"] + xvars]
+df2['log_income'] = np.log(df2["Median_Household_Income_2019"])
+indices_to_keep = ~df2.isin([np.nan, np.inf, -np.inf]).any(1)
+df2 = df2[indices_to_keep].astype(np.float64)
+
+df2['y'] = (df2['per_gop']>0.5).astype(int)
+
+mylogit = smf.logit(formula = 'y ~ Unemployment_rate_2019 + I(Unemployment_rate_2019**2) + np.log(Median_Household_Income_2019)', data=df2[df2['Median_Household_Income_2019']>0]).fit()
 print(mylogit.summary())
 
-logit_h0 = smf.logit(formula = 'y ~ unemployment + I(unemployment**2)', data=df2[df2['median_earnings_2010_dollars']>0]).fit()
+logit_h0 = smf.logit(formula = 'y ~ Unemployment_rate_2019 + I(Unemployment_rate_2019**2)', data=df2[df2['Median_Household_Income_2019']>0]).fit()
 # print(logit_h0.summary())
 
 lr = -2*(mylogit.llf - logit_h0.llf)
 lrdf = (logit_h0.df_resid - mylogit.df_resid)
 
 lr_pvalue = stats.chi2.sf(lr, df=lrdf)
-# lr_pvalue
-# pvalue de 1: ajout de la variable log ajoute à coup sur de l'info
 ```
+
+La pvalue du test de maximum de ratio de vraisemblance étant proche de 
+1, cela signifie que la variable log revenu ajoute, presque à coup sûr,
+de l'information au modèle. 
 
 
 
 ## Modèles linéaires généralisés
 
+TO BE COMPLETED
+
 ## Autres modèles de Machine Learning
 
-
+TO BE COMPLETED
 
 ## Tests d'hypothèses
 
