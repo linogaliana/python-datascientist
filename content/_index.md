@@ -5,8 +5,6 @@ draft: false
 weight: 10
 ---
 
-:warning: :construction: **Ce site est en construction** :construction:
-
 ## Structuration du site
 
 Ce site web rend public le contenu du cours de 
@@ -59,7 +57,5 @@ avec les hypothèses d'un modèle.
 
 Les éléments relatifs à l'évaluation du cours sont disponibles dans la
 Section [Evaluation](evaluation)
-
-
 
 
