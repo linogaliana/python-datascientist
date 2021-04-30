@@ -207,7 +207,7 @@ varie (parcourir $[0,1]$ pour les valeurs de $\alpha$)
 {{% /panel %}}
 
 
-```{python lassoplot}
+```{python lassoplot, include = FALSE}
 # Graphe emprunté à http://tutoriels-data-mining.blogspot.com/2018/05/regression-lasso-sous-python.html
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
@@ -219,7 +219,9 @@ lasso2,data,yindex = make_lasso(df2)
 my_alphas = np.array([0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0])
 alpha_for_path, coefs_lasso, _ = lasso_path(np.delete(data, yindex, axis = 1),data[:,yindex],alphas=my_alphas)
 nb_non_zero = np.apply_along_axis(func1d=np.count_nonzero,arr=coefs_lasso,axis=0)
+```
 
+```{python lassoplot2}
 sns.set_style("whitegrid")
 p = sns.lineplot(y=nb_non_zero, x=alpha_for_path).set(title = r"Number variables and regularization parameter ($\alpha$)", xlabel=r'$\alpha$', ylabel='Nb. de variables')
 p
@@ -249,12 +251,18 @@ d'éducation par exemple ;
 nettoyage des données serait nécessaire ;
 * On sélectionne des variables très corrélées
 
-```{python, echo = FALSE}
+```{python, include = FALSE}
 corr = df2[
     df2.select_dtypes(include=np.number).drop("per_gop", axis = 1).columns[np.abs(lasso2.coef_)>0]
 ].corr()
 
-corr.style.background_gradient(cmap='coolwarm', axis=None).set_precision(2)
+p = corr.style.background_gradient(cmap='coolwarm', axis=None).set_precision(2)
+p
+plt.savefig("correlationvar.png")
+```
+
+```{r}
+knitr::include_graphics("correlationvar.png")
 ```
 
 
@@ -265,7 +273,7 @@ il convient d'effectuer une validation croisée afin de prendre le modèle pour
 lequel les variables qui passent la phase de sélection permettent de mieux 
 prédire le résultat Républicain.
 
-```{python}
+```{python, include = FALSE}
 from sklearn.linear_model import LassoCV
 
 df3 = df2.select_dtypes(include=np.number)
@@ -277,10 +285,13 @@ df3_scale = scaler.fit(df3).transform(df3)
 # X_train, X_test , y_train, y_test = train_test_split(np.delete(data, yindex, axis = 1),data[:,yindex], test_size=0.2, random_state=0)
 
 lcv = LassoCV(alphas=my_alphas ,normalize=False,fit_intercept=False,random_state=0,cv=5).fit(np.delete(df3_scale, yindex, axis = 1), df3_scale[:,yindex])
+```
+
+```{python lcv}
 lcv.alpha_
 ```
 
-```{python}
+```{python, warning = FALSE}
 lasso3,data,yindex = make_lasso(df2, alpha = lcv.alpha_)
 df2.select_dtypes(include=np.number).drop("per_gop", axis = 1).columns[np.abs(lasso3.coef_)>0]
 ```
