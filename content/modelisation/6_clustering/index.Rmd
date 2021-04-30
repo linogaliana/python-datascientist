@@ -50,18 +50,24 @@ knitr::knit_hooks$set(
 
 ```
 
-```{python, include = FALSE}
+```{python, eval = FALSE, include = FALSE}
 import os
 os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/W3CRK9/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms'
 os.environ["PROJ_LIB"] = r'C:\Users\W3CRK9\AppData\Local\r-miniconda\pkgs\proj4-4.9.3-hfa6e2cd_9\Library\share'
 os.environ['GDAL_DATA'] = r"C:\Users\W3CRK9\AppData\Local\r-miniconda\envs\r-reticulate\Library\share\gdal"
 ```
 
-Nous allons partir du jeu de données de [résultat des élections US 2016 au niveau des comtés](https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
+Nous allons continuer avec le jeu de données de [résultat des élections US 2020 au niveau des comtés](#preprocessing)
 
-Jusqu'à présent, nous avons fait de l'apprentissage supervisé puisque nous connaissions la variable à expliquer/prédire. Ce n'est plus le cas avec l'apprentissage non supervisé.
+Jusqu'à présent, nous avons fait de l'apprentissage supervisé puisque nous
+connaissions la variable à expliquer/prédire. Ce n'est plus le cas avec
+l'apprentissage non supervisé.
 
-Le *clustering* est un champ d'application de l'apprentissage non-supervisé. Il s'agit d'exploiter l'information disponible pour regrouper des observations à la structure commune ensemble. L'objectif est de créer des classes d'observations pour lesquelles:
+Le *clustering* est un champ d'application de l'apprentissage non-supervisé.
+Il s'agit d'exploiter l'information disponible pour regrouper des observations
+à la structure commune ensemble.
+
+L'objectif est de créer des classes d'observations pour lesquelles:
 
 * au sein de chaque classe, les observations sont homogènes (variance infra-classe minimale)
 * les classes ont des profils hétérogènes, c'est-à-dire qu'elles se distinguent l'une de l'autre (variance inter-classes maximale)
@@ -78,6 +84,12 @@ utilise par exemple cette approche.
 
 Les méthodes de *clustering* sont nombreuses.
 Nous allons exclusivement nous pencher sur la plus intuitive: les k-means. 
+
+# Données
+
+```{python, echo = FALSE, include = FALSE}
+exec(open('../get_data.py').read())
+```
 
 ## Principe
 
@@ -100,7 +112,7 @@ import matplotlib.pyplot as plt
 
 
 {{% panel status="exercise" title="Exercise 1: principe du kmeans" icon="fas fa-pencil-alt" %}}
-1. Importer les données (l'appeler `df`) et de restreindre aux variables `'unemployment', 'median_age', 'total_population', 'black', 'asian', 'white_not_latino_population', 'median_earnings_2010_dollars'` et bien-sûr  `'rep16_frac'`
+1. Importer les données (l'appeler `df`) et de restreindre aux variables `'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"` et bien-sûr  `'per_gop'`
 2. Faire un kmeans avec $k=4$
 3. Créer une variable supplémentaire stockant le résultat de la typologie
 4. Choisir deux variables et représenter le nuage de point en colorant différemment
@@ -114,11 +126,9 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 
-df = gpd.read_file("https://public.opendatasoft.com/explore/dataset/usa-2016-presidential-election-by-county/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
-xvars = ['unemployment', 'median_age', 'total_population', 'black', 'asian', 'white_not_latino_population', 'median_earnings_2010_dollars'] 
+xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
 
-df2 = df[xvars + ['rep16_frac']]
-df2 = df2.dropna()
+df2 = votes[xvars + ["per_gop"]].dropna()
 ```
 
 
@@ -127,31 +137,45 @@ from sklearn.cluster import KMeans
 model = KMeans(n_clusters=4)
 model.fit(df2[xvars])
 
-df2['label'] = model.labels_
+votes['label'] = model.labels_
+```
+
+Sur une carte cela donne:
+
+```{python mapkmeans}
+votes.plot(column = "label", cmap = "inferno")
+```
+
+```{python, include = FALSE}
+import seaborn as sns
+plt.figure()
+p = sns.scatterplot(data=votes, x="Median_Household_Income_2019", y="Unemployment_rate_2019", hue = "label", palette="deep", alpha = 0.4)
+p.set(xscale="log")
+```
+
+```{python scatter, include = FALSE}
+p
+p.figure.savefig("scatter.png")
+```
+
+```{r}
+knitr::include_graphics("scatter.png")
 ```
 
 
 ```{python, include = FALSE}
-import seaborn as sns
-
-p = sns.scatterplot(data=df2, x="median_earnings_2010_dollars", y="white_not_latino_population", hue = "label", palette="deep", alpha = 0.4)
-p.set(xscale="log")
+plt.figure()
+p2 = sns.displot(data=votes, x="label", hue="label", alpha = 0.4)
 ```
 
-```{python}
-p
-```
-
-
-```{python}
-p2 = sns.displot(data=df2, x="rep16_frac", hue="label", alpha = 0.4)
-```
-
-```{python}
+```{python displot}
 p2
-plt.show()
+p2.fig.savefig("displot.png")
 ```
 
+```{r}
+knitr::include_graphics("displot.png")
+```
 
 ## Choisir le nombre de classes
 
@@ -189,17 +213,26 @@ Pour la méthode du coude, la courbe
 de performance du modèle marque un coude léger à $k=4$. Le modèle initial
 semblait donc approprié.
 
-```{python elbow, echo = TRUE}
+```{python elbow, echo = TRUE, error = TRUE, warning = FALSE, include = FALSE}
+from sklearn.cluster import KMeans
 from yellowbrick.cluster import KElbowVisualizer
+
 visualizer = KElbowVisualizer(model, k=(2,12))
 visualizer.fit(df2[xvars])        # Fit the data to the visualizer
-visualizer.show()        # Finalize and render the figure
+```
+
+```{python yellowbrick viz, include = FALSE}
+visualizer.show(outpath="elbow-yellowbrick.png")        # Finalize and render the figure
+```
+
+```{r}
+knitr::include_graphics("elbow-yellowbrick.png")
 ```
 
 `yellowbrick` permet également de représenter des silhouettes mais 
 l'interprétation en est moins aisée:
   
-```{python silhouette, include = FALSE, echo=TRUE}
+```{python silhouette, include = FALSE, echo=TRUE, error = TRUE}
 from yellowbrick.cluster import SilhouetteVisualizer
 
 fig, ax = plt.subplots(2, 2, figsize=(15,8))
@@ -220,6 +253,10 @@ for i in [3, 4, 6, 10]:
     visualizer.fit(df2[xvars])
 ```
 
-```{python}
-fig
+```{python, include = FALSE}
+fig.savefig("silhouette-yellowbrick.png")
+```
+
+```{r}
+knitr::include_graphics("silhouette-yellowbrick.png")
 ```
