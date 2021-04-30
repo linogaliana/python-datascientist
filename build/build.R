@@ -16,3 +16,9 @@ file.remove(
     ".Rmd",".html", list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
   )
 )
+
+# file.remove(
+#   gsub(
+#     ".Rmd",".md", list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
+#   )
+# )
