@@ -62,59 +62,8 @@ présenté sur le [résultat des élections US 2016 au niveau des comtés](#prep
 Le code pour construire une base unique, à partir des différentes sources,
 est le suivant:
 
-```{python}
-import pandas as pd
-import geopandas as gpd
-import os
-import zipfile
-import urllib.request
-
-def download_url(url, save_path):
-    with urllib.request.urlopen(url) as dl_file:
-        with open(save_path, 'wb') as out_file:
-            out_file.write(dl_file.read())
-    
-from pathlib import Path
-Path("data").mkdir(parents=True, exist_ok=True)
-
-
-download_url("https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_us_county_20m.zip", "data/shapefile")
-with zipfile.ZipFile("data/shapefile", 'r') as zip_ref:
-    zip_ref.extractall("data/counties")
-
-shp = gpd.read_file("data/counties/cb_2019_us_county_20m.shp")
-shp = shp[~shp["STATEFP"].isin(["02", "69", "66", "78", "60", "72", "15"])]
-shp
-
-df_election = pd.read_csv("https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-20/master/2020_US_County_Level_Presidential_Results.csv")
-df_election.head(2)
-population = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PopulationEstimates.xls?v=290.4", header = 2).rename(columns = {"FIPStxt": "FIPS"})
-education = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Education.xls?v=290.4", header = 4).rename(columns = {"FIPS Code": "FIPS", "Area name": "Area_Name"})
-unemployment = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/Unemployment.xls?v=290.4", header = 4).rename(columns = {"fips_txt": "FIPS", "area_name": "Area_Name", "Stabr": "State"})
-income = pd.read_excel("https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=290.4", header = 4).rename(columns = {"FIPStxt": "FIPS", "Stabr": "State", "Area_name": "Area_Name"})
-
-
-dfs = [df.set_index(['FIPS', 'State']) for df in [population, education, unemployment, income]]
-data_county = pd.concat(dfs, axis=1)
-df_election = df_election.merge(data_county.reset_index(), left_on = "county_fips", right_on = "FIPS")
-df_election['county_fips'] = df_election['county_fips'].astype(str).str.lstrip('0')
-shp['FIPS'] = shp['GEOID'].astype(str).str.lstrip('0')
-votes = shp.merge(df_election, left_on = "FIPS", right_on = "county_fips")
-
-
-df_historical = pd.read_csv('https://dataverse.harvard.edu/api/access/datafile/3641280?gbrecs=false', sep = "\t")
-df_historical = df_historical.dropna(subset = ["FIPS"])
-df_historical["FIPS"] = df_historical["FIPS"].astype(int)
-df_historical['share'] = df_historical['candidatevotes']/df_historical['totalvotes']
-df_historical = df_historical[["year", "FIPS", "party", "candidatevotes", "share"]]
-df_historical['party'] = df_historical['party'].fillna("other")
-
-df_historical_wide = df_historical.pivot_table(index = "FIPS", values=['candidatevotes',"share"], columns = ["year","party"])
-df_historical_wide.columns = ["_".join(map(str, s)) for s in df_historical_wide.columns.values]
-df_historical_wide = df_historical_wide.reset_index()
-df_historical_wide['FIPS'] = df_historical_wide['FIPS'].astype(str).str.lstrip('0')
-votes['FIPS'] = votes['GEOID'].astype(str).str.lstrip('0')
-votes = votes.merge(df_historical_wide, on = "FIPS")
+```{python, echo = FALSE, include = FALSE}
+exec(open('../get_data.py').read())
 ```
 
 ```{python}
@@ -215,14 +164,18 @@ Le classifieur avec `C = 1` devrait avoir les performances suivantes:
 | Precision | `r py$sc_precision` |
 | F1 | `r py$sc_f1` |
 
-```{python, message = FALSE, warning = FALSE}
+```{python confusion_matrix, message = FALSE, warning = FALSE, include = FALSE}
 sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
-plt.show()
+plt.savefig("confusion_matrix.png")
+```
+
+```{r}
+knitr::include_graphics("confusion_matrix.png")
 ```
 
 Notre classifieur manque totalement les *labels* 0, qui sont minoritaires. Une raison possible ? L'échelle des variables: le revenu a une distribution qui peut écraser celle des autres variables, dans un modèle linéaire. Il faut donc, a minima, standardiser les variables. Néanmoins, ici cela n'apporte pas de gain:
 
-```{python}
+```{python confusion_matrix2}
 import sklearn.preprocessing as preprocessing
 
 X = tempdf[xvars]
@@ -238,13 +191,18 @@ X_train, X_test, y_train, y_test = train_test_split(
 clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
-plt.show()
+plt.savefig("confusion_matrix2.png")
 ```
+
+```{r}
+knitr::include_graphics("confusion_matrix2.png")
+```
+
 
 Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables.
 C'est pour cette raison que l'étape de sélection de variable est cruciale. En utilisant uniquement le résultat passé du vote démocrate et le revenu (`votes_gop` et `Median_Household_Income_2019`), on obtient un résultat beaucoup plus cohérent:
 
-```{python, message = FALSE, warning = FALSE}
+```{python confusion_matrix3, message = FALSE, warning = FALSE}
 votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
 df = votes[["y", "share_2016_republican", 'Median_Household_Income_2019']]
 tempdf = df.dropna(how = "any")
@@ -268,8 +226,11 @@ sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
 sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
 
 sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
-plt.show()
+plt.savefig("confusion_matrix3.png")
+```
 
+```{r}
+knitr::include_graphics("confusion_matrix3.png")
 ```
 
 | Métrique | Score |
