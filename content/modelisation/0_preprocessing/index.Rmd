@@ -99,7 +99,7 @@ exec(open('../get_data.py').read())
 La carte choropleth suivante permet de visualiser rapidement les résultats
 (l'Alaska et Hawaï ont été exclus). 
 
-```{python, warning = FALSE, message = FALSE}
+```{python, warning = FALSE, message = FALSE, include = FALSE}
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -112,7 +112,12 @@ for key, group in grouped:
     group.plot(ax=ax, column='winner', label=key, color=color_dict[key])
 plt.axis('off')
 
-plt.show()
+# plt.show()
+plt.savefig('map_vote.png', bbox_inches='tight')
+```
+
+```{r}
+knitr::include_graphics("map_vote.png")
 ```
 
 Les cartes choropleth peuvent donner une impression fallacieuse ayant servi 
@@ -187,8 +192,8 @@ from pathlib import Path
 
 Path(r.path_plot).mkdir(parents=True, exist_ok=True)
 
-fig.write_json(r.path_plot + "/test.json")
-fig.write_image(r.path_plot + "/people_vote.png")
+# fig.write_json(r.path_plot + "/test.json")
+fig.write_image("people_vote.png")
 ```
 
 <!------
@@ -197,7 +202,7 @@ fig.write_image(r.path_plot + "/people_vote.png")
 ------>
 
 ```{r}
-knitr::include_graphics(sprintf("%s/people_vote.png",path_plot))
+knitr::include_graphics("people_vote.png")
 ```
 
 ## Explorer la structure des données
@@ -219,51 +224,50 @@ Créer un DataFrame plus petit avec les variables `winner` et `unemployment`, `m
 2. (optionnel) Refaire ces figures avec `plotly`
 {{% /panel %}}
 
-La matrice de corrélation donne, avec les fonctionalités de `pandas`:
+La matrice de corrélation construite avec `seaborn` aura l'aspect suivant:
 
-```{python}
-fig = df2.drop("winner", axis = 1).corr().style.background_gradient(cmap='coolwarm').set_precision(2)
-fig
-plt.show()
-```
-
-Alors que celle construite avec `seaborn` aura l'aspect suivant:
-
-```{python}
+```{python heatmap seaborn, include = FALSE}
 sns.heatmap(df2.drop("winner", axis = 1).corr(), cmap='coolwarm', annot=True, fmt=".2f")
-plt.show()
+plt.savefig('correlation_matrix2.png', bbox_inches='tight')
 ```
 
+Il serait également possible de la construire directement à partir de `pandas`
+donne, avec les fonctionalités de `pandas`.
+
+```{python heatmap pandas, include = FALSE}
+df2.drop("winner", axis = 1).corr().style.background_gradient(cmap='coolwarm').set_precision(2)
+```
 
 La matrice de nuage de point aura, par exemple, l'aspect suivant:
 
-```{python, warning = FALSE, message = FALSE}
+```{python scatter_matrix, warning = FALSE, message = FALSE}
 ax = pd.plotting.scatter_matrix(df2, figsize = (15,15))
 ax
-plt.show()
+plt.savefig('scatter_matrix.png', bbox_inches='tight')
 ```
 
+```{r}
+knitr::include_graphics("scatter_matrix.png")
+```
 
-```{python, include = FALSE}
+`plotly` offre également la possibilité de faire une matrice de corrélation. 
+Cela donnera un résultat proche de celui-ci:
+
+```{python scatter_matrix_plotly, include = FALSE}
 import plotly
 import plotly.express as px
 htmlsnip2 = px.scatter_matrix(df2)
 htmlsnip2.update_traces(diagonal_visible=False)
 # Pour inclusion dans le site web
-htmlsnip2 = plotly.io.to_html(htmlsnip2, include_plotlyjs=False)
-```
+htmlsnip2.write_image("scatter_plotly.png")
 
+```
 
 Avec `plotly`, le résultat devrait ressembler au graphique suivant:
 
-
-
-{{< rawhtml >}}
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script> 
-```{python, result = 'asis'}
-htmlsnip2
+```{r}
+knitr::include_graphics("scatter_plotly.png")
 ```
-{{< /rawhtml >}}
 
 
 
@@ -296,13 +300,18 @@ La **normalisation** consiste à modifier les données de manière à avoir une 
 
 La standardisation permet d'obtenir la modification suivante de la distribution:
 
-```{python, message = FALSE, warning = FALSE}
+```{python standardisation, message = FALSE, warning = FALSE, include = FALSE}
 # Question 1
 from sklearn import preprocessing
 df2['y_standard'] = preprocessing.scale(df2['Median_Household_Income_2019'])
 f, axes = plt.subplots(2, figsize=(10, 10))
 sns.distplot(df2["Median_Household_Income_2019"] , color="skyblue", ax=axes[0])
 sns.distplot(df2["y_standard"] , color="olive", ax=axes[1])
+plt.savefig('standardisation.png', bbox_inches='tight')
+```
+
+```{r}
+knitr::include_graphics("standardisation.png")
 ```
 
 On obtient bien une distribution centrée à zéro et on pourrait vérifier que la variance empirique soit bien égale à 1. On pourrait aussi vérifier que ceci est vrai également quand on transforme plusieurs colonnes à la fois
@@ -318,16 +327,22 @@ print("Ecart-type de chaque variable sur 1000 premières observations")
 scaler.transform(df2.head(1000)).std(axis=0)
 ```
 
-Les paramètres qui seront utilisés pour une standardisation ultérieure de la manière suivante sont stockés dans les attributs `.mean_` et `.scale_`
+Les paramètres qui seront utilisés pour une standardisation ultérieure
+sont stockés dans les attributs `.mean_` et `.scale_`
 
 ```{python, echo = TRUE}
 scaler.mean_
 scaler.scale_
 ```
 
-Une fois appliqués à un autre `DataFrame`, on peut remarquer que la distribution n'est pas exactement centrée-réduite dans le `DataFrame` sur lequel les paramètres n'ont pas été estimés. C'est normal, l'échantillon initial n'était pas aléatoire, les moyennes et variances de cet échantillon n'ont pas de raison de coïncider avec les moments de l'échantillon complet. 
+Une fois appliqués à un autre `DataFrame`, on peut remarquer que la distribution
+n'est pas exactement centrée-réduite dans le `DataFrame` sur lequel les
+paramètres n'ont pas été estimés.
+C'est normal, l'échantillon initial n'était pas aléatoire,
+les moyennes et variances de cet échantillon n'ont pas de raison de
+coïncider avec les moments de l'échantillon complet. 
 
-```{python}
+```{python, include = FALSE}
 # Question 3
 X1 = scaler.transform(df2.head(1000))
 X2 = scaler.transform(df2[1000:])
@@ -337,7 +352,13 @@ col_pos = df2.columns.get_loc("Median_Household_Income_2019")
 f, axes = plt.subplots(2, figsize=(10, 10))
 sns.distplot(X1[:,col_pos] , color="skyblue", ax=axes[0])
 sns.distplot(X2[:,col_pos] , color="olive", ax=axes[1])
+plt.savefig('standardisation2.png', bbox_inches='tight')
 ```
+
+```{r}
+knitr::include_graphics("standardisation2.png")
+```
+
 
 
 ### Normalisation
@@ -349,7 +370,7 @@ La **normalisation** est l'action de transformer les données de manière à obt
 2. Vérifier que la norme $\mathcal{l}_2$ est bien égale à 1.
 {{% /panel %}}
 
-```{python}
+```{python normalisation, include = FALSE}
 scaler = preprocessing.Normalizer().fit(df2.dropna(how = "any").head(1000))
 X1 = scaler.transform(df2.dropna(how = "any").head(1000))
 
@@ -359,7 +380,13 @@ sns.distplot(X1[:,col_pos] , color="olive", ax=axes[1])
 
 # Question 2
 # np.sqrt(np.sum(X1**2, axis=1))[:5] # L2-norm
+plt.savefig('normalisation.png', bbox_inches='tight')
 ```
+
+```{r}
+knitr::include_graphics("normalisation.png")
+```
+
 
 {{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
 ` preprocessing.Normalizer` n'accepte pas les valeurs manquantes, alors que `preprocessing.StandardScaler()` s'en accomode (dans la version `0.22` de scikit). Pour pouvoir aisément appliquer le *normalizer*, il faut
