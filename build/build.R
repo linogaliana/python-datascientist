@@ -22,3 +22,11 @@ file.remove(
 #     ".Rmd",".md", list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
 #   )
 # )
+
+# file.remove(
+#   gsub(
+#     ".Rmd",".ipynb", list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
+#   )
+# )
+
+# blogdown::hugo_build(local = TRUE, args = ("--minify"))
