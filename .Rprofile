@@ -3,7 +3,8 @@ if (file.exists("~/.Rprofile")) {
 }
 
 options(blogdown.new_bundle = TRUE)
-options(blogdown.hugo.version = "0.64.1")
+options(blogdown.hugo.version = "0.83.0")
+options(blogdown.method = 'markdown')
 
 
 reminder_jupyter <- function(file = "./content/getting-started/06_rappels_classes.Rmd",
