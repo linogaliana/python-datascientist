@@ -1,8 +1,15 @@
 ---
-title: "Introduction"
-date: 2020-07-16T13:00:00Z
-draft: false
-weight: 10
+date: "2018-09-09T00:00:00Z"
+icon: book
+icon_pack: fas
+linktitle: Chapter 1
+summary: Ce chapitre propose quelques éléments de 
+  révision des concepts de base en Python et 
+  présente l'écosystème Python que nous allons
+  découvrir tout au long de ce cours
+title: Introduction
+type: book
+weight: 1
 ---
 
 Avant de plonger dans les arcanes de la *data science*, cette partie
