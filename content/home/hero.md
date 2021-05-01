@@ -24,7 +24,7 @@ cta_note:
     </span>
 ---
 
-## Structuration du site
+<!--## Structuration du site--->
 
 Ce site web rend public le contenu du cours de 
 deuxième année (Master 1) de l'ENSAE:
@@ -59,7 +59,7 @@ Vous pouvez naviguer dans l'architecture du site via la table des matières
 ou par les liens vers le contenu antérieur ou postérieur à la fin de chaque
 page. 
 
-## Objectif du cours
+<!--## Objectif du cours--->
 
 Le but de ce cours est de rendre autonome sur l'utilisation de Python
 dans un contexte de travail de *data scientist* ou de
