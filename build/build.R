@@ -6,9 +6,9 @@ file.remove(
 )
 
 lapply(
-  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE), function(i){
+  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)[1:3], function(i){
     print(sprintf("Rendering %s", i))
-    rmarkdown::render(i, envir = new.env())
+    knitr::knit(i, envir = new.env(), output = gsub(".Rmd", ".md", i))
   })
 
 file.remove(
@@ -16,6 +16,17 @@ file.remove(
     ".Rmd",".html", list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
   )
 )
+
+
+Sys.setenv(HUGO_RELATIVEURLS = "true",
+           BLOGDOWN_POST_RELREF = "true")
+
+cmd = blogdown::find_hugo()
+
+cmd_args = c("--themesDir themes", "-t github.com")
+system2(cmd, cmd_args)
+
+
 
 # file.remove(
 #   gsub(
@@ -29,4 +40,7 @@ file.remove(
 #   )
 # )
 
-# blogdown::hugo_build(local = TRUE, args = ("--minify"))
+
+
+
+
