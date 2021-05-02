@@ -21,7 +21,7 @@ file.remove(
 Sys.setenv(HUGO_RELATIVEURLS = "true",
            BLOGDOWN_POST_RELREF = "true")
 
-cmd = blogdown::find_hugo()
+cmd = blogdown:::find_hugo()
 
 cmd_args = c("--themesDir themes", "-t github.com")
 system2(cmd, cmd_args)
