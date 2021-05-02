@@ -6,7 +6,7 @@ file.remove(
 )
 
 lapply(
-  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)[1:3], function(i){
+  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE), function(i){
     print(sprintf("Rendering %s", i))
     knitr::knit(i, envir = new.env(), output = gsub(".Rmd", ".md", i))
   })
