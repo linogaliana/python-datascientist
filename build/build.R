@@ -1,19 +1,20 @@
+content_rmd <-  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
 
 file.remove(
   gsub(
-    ".Rmd",".html", list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
+    ".Rmd",".html", content_rmd
   )
 )
 
 lapply(
-  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE), function(i){
+  content_rmd, function(i){
     print(sprintf("Rendering %s", i))
     knitr::knit(i, envir = new.env(), output = gsub(".Rmd", ".md", i))
   })
 
 file.remove(
   gsub(
-    ".Rmd",".html", list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
+    ".Rmd",".html", content_rmd
   )
 )
 
