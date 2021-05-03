@@ -1,4 +1,4 @@
-content_rmd <-  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
+content_rmd <-  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)[1:14]
 
 file.remove(
   gsub(
@@ -19,12 +19,12 @@ file.remove(
 )
 
 
-Sys.setenv(HUGO_RELATIVEURLS = "true",
+Sys.setenv(#HUGO_RELATIVEURLS = "true",
            BLOGDOWN_POST_RELREF = "true")
 
 cmd = blogdown:::find_hugo()
 
-cmd_args = c("--themesDir themes", "-t github.com")
+cmd_args = c("--themesDir themes", "-t github.com", "--gc", "-b /")#, "--minify")
 system2(cmd, cmd_args)
 
 
