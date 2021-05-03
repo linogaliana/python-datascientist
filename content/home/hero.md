@@ -10,16 +10,16 @@ design:
     gradient_end: '#2b94c3'
     text_color_light: true
 cta:
-  url: docs/
+  url: course/
   label: Get Started
   icon_pack: fas
   icon: download
 cta_alt:
-  url: docs/
+  url: course/
   label: View Documentation
 cta_note:
   label: >-
-    <span class="js-github-release" data-repo="wowchemy/wowchemy-hugo-modules">
+    <span class="js-github-release" data-repo="linogaliana/python-datascientist">
       Show your product version here:<!-- Automatically filled based on data-repo value -->
     </span>
 ---

@@ -1,9 +1,11 @@
 ---
 title: "Partie 1: manipuler des données"
-date: 2020-07-16T13:00:00Z
+date: 2020-07-16
 draft: false
-weight: 20
-slug: "manipulation"
+weight: 10
+#linktitle: manipulation
+type: book
+summary: Blah, blah, blah...
 ---
 
 Le *dataframe* est l'outil central du logiciel `R` mais il s'agit d'un objet qui, en `Python`, ne s'est
@@ -50,6 +52,8 @@ et [pratique de geopandas](geopandastp)
 * [Pratique du nettoyage de données textuelles](regex)
 * [Pratique du requêtage par les API](api)
 
+{{< list_children >}}
+
 
 Les notebooks d'exercices sont listés [ici](listetp), visualisables 
 via 
@@ -61,6 +65,8 @@ disposition
 [![Onyxia](https://img.shields.io/badge/launch-onyxia-brightgreen)](https://datalab.sspcloud.fr/my-lab/catalogue/inseefrlab-helm-charts-datascience/jupyter/deploiement?resources.requests.memory=4096Mi)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master)
+
+
 
 
 
