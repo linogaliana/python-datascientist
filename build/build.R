@@ -28,17 +28,17 @@ Sys.setenv(HUGO_IGNOREERRORS = "error-remote-getjson",
            BLOGDOWN_SERVING_DIR = here::here())
 
 
-Sys.setenv(HUGO_RELATIVEURLS = "true",
-           BLOGDOWN_POST_RELREF = "true")
+# Sys.setenv(HUGO_RELATIVEURLS = "true",
+#            BLOGDOWN_POST_RELREF = "true")
 
 cmd = blogdown:::find_hugo()
 
-blogdown:::create_shortcode('postref.html', 'blogdown/postref', TRUE)
+#blogdown:::create_shortcode('postref.html', 'blogdown/postref', TRUE)
 
 cmd_args = c("--themesDir themes", "-t github.com")#, "--gc")#, "--minify")
 system2(cmd, cmd_args)
 
-blogdowntest::serve_site()
+#blogdowntest::serve_site()
 
 # file.remove(
 #   gsub(
