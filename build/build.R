@@ -29,8 +29,8 @@ options(blogdown.method = "custom")
 #            BLOGDOWN_SERVING_DIR = here::here())
 
 
-blogdown::serve_site()
-blogdown::stop_server()
+blogdown::build_site(local = FALSE, run_hugo = TRUE)
+#blogdown::stop_server()
 
 
 # Sys.setenv(HUGO_RELATIVEURLS = "true",
