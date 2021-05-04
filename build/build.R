@@ -18,7 +18,7 @@ file.remove(
   )
 )
 
-options(blogdown.method = "custom")
+
 
 
 # Sys.setenv(HUGO_IGNOREERRORS = "error-remote-getjson",
@@ -30,6 +30,7 @@ options(blogdown.method = "custom")
 
 
 blogdown::build_site(local = FALSE, run_hugo = TRUE)
+
 #blogdown::stop_server()
 
 
