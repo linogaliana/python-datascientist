@@ -18,6 +18,7 @@ file.remove(
   )
 )
 
+options(blogdown.method = "custom")
 
 
 # Sys.setenv(HUGO_IGNOREERRORS = "error-remote-getjson",
