@@ -29,7 +29,6 @@ file.remove(
 #            BLOGDOWN_SERVING_DIR = here::here())
 
 
-blogdown::build_site(local = FALSE, run_hugo = TRUE)
 
 #blogdown::stop_server()
 
