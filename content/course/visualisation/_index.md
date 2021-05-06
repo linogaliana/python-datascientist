@@ -5,16 +5,15 @@ draft: false
 weight: 30
 icon: chart-line
 icon_pack: fas
-linktitle: Partie 2: visualisation
+#linktitle: Partie 2: visualisation
 summary: |
   Cette partie présente les outils pour visualiser des
   données avec Python, qu'il s'agisse de graphiques
   figés (matplotlib, seaborn, geoplot...) ou de
   visualisation réactives (plotly, folium, etc.)
-title: Partie 2: visualisation
 slug: visualisation
 type: book
-weight: 1
+weight: 30
 ---
 
 
