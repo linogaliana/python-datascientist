@@ -33,3 +33,8 @@ textuelles à travers l'analyse du *Comte de Monte Cristo* d'Alexandre Dumas
 [ici](#nlpintro)
 * Elle propose une série d'exercice sur le nettoyage de textes à partir des
 oeuvres d'Edgar Allan Poe, Mary Shelley et H.P. Lovecraft. 
+
+
+## Contenu de la partie
+
+{{< list_children >}}
