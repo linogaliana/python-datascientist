@@ -1,13 +1,15 @@
 ---
 date: "2018-09-09T00:00:00Z"
-icon: book
-icon_pack: fas
-linktitle: Chapter 1
-summary: Ce chapitre propose quelques éléments de 
+icon: python
+icon_pack: fab
+linktitle: Introduction: quelques rappels
+summary: |
+  Cette introduction propose quelques éléments de 
   révision des concepts de base en Python et 
   présente l'écosystème Python que nous allons
   découvrir tout au long de ce cours
 title: Introduction
+slug: introduction
 type: book
 weight: 1
 ---
@@ -15,24 +17,6 @@ weight: 1
 Avant de plonger dans les arcanes de la *data science*, cette partie
 d'introduction propose des éléments de configuration et des
 révisions pour mettre le pied à l'étrier.
-
-En premier lieu, des notions générales sur lesquelles il ne fait pas de mal
-de revenir de temps en temps:
-
-* [Les éléments de configuration](configuration) pour avoir un environnement
-propice à l'utilisation de l'écosystème python
-* [Une présentation de l'écosystème de la data-science](ecosystemeDS) dont
-on explorera de nombreux aspects dans ce cours
-* [Les règles de bonnes pratiques](bonnespratiques) pour améliorer la qualité
-d'un travail s'appuyant sur `python`
-
-Ensuite, des rappels sur les objets structurants le langage `python`,
-nécessaires pour être autonome en `python`
-
-* [Des rappels généraux sur les objets en python](rappels2A)
-* [Des rappels sur les fonctions en python](rappelsfonctions)
-* [Un TD (optionnel) sur les classes en python](rappelsclasses)
-
 
 Les notebooks d'exercices sont listés [ici](listetp), visualisables 
 via 
@@ -94,16 +78,6 @@ présentera ainsi régulièrement des analogies avec `R`.
 
 ## Structuration de cette partie
 
-Dans un premier temps, cette introduction présente un panorama général
-de l'environnement familier du *data scientist* en `Python`:
+{{< list_children >}}
 
-* [Configurer Python](configuration)
-* [Rapide inventaire de l'écosystème de la *data science*](ecosystemeDS)
-* [Présentation des bonnes pratiques pour les projets de *data science* en `Python`](bonnespratiques)
 
-Ensuite, cette partie propose quelques rappels généraux sur les concepts de base
-du langage:
-
-* [Rappels sur les objets du langage de base](rappels2A)
-* [Rappels sur la programmation de fonctions](rappelsfonctions)
-* [Rappels sur les notions de classes, méthodes, etc.](rappelsclasses)

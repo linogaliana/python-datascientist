@@ -4,6 +4,9 @@ date: 2020-07-16T13:00:00Z
 draft: false
 weight: 20
 slug: "configuration"
+type: book
+summary: |
+  Quelques conseils pour avoir un environnement Python fonctionnel.
 ---
 
 Les exercices sont présentés sous la

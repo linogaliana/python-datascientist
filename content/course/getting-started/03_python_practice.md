@@ -4,6 +4,9 @@ date: 2020-07-22T12:00:00Z
 draft: false
 weight: 40
 slug: bonnespratiques
+type: book
+summary: |
+  Un guide des bonnes pratiques pour Python
 ---
 
 Une référence utile à lire est le

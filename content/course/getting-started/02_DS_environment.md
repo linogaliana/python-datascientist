@@ -4,6 +4,9 @@ date: 2020-07-22T12:00:00Z
 draft: false
 weight: 30
 slug: "ecosystemeDS"
+type: book
+summary: |
+  Tour d'horizon de l'éco-système python de la *data science*
 ---
 
 ## Les packages python essentiels pour le cours et la vie d'un ENSAE
