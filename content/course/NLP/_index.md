@@ -4,6 +4,17 @@ date: 2020-10-14T13:00:00Z
 draft: false
 weight: 39
 slug: "nlp"
+icon: book
+icon_pack: fas
+#linktitle: "Partie 4: Natural Language Processing (NLP)"
+summary: |
+  L'un des grands avantages comparatifs de Python par rapport aux
+  langages concurrents (R notamment) est dans
+  la richesse des librairies de Traitement du Langage Naturel (mieux
+  connu sous son acronyme anglais: NLP pour natural langage processing).
+  Cette partie vise à illustrer la richesse de cet écosystème à partir
+  de quelques exemples littéraires: Dumas, Poe, Shelley, Lovecraft.
+type: book
 ---
 
 {{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
