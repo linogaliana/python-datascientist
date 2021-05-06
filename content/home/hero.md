@@ -2,7 +2,7 @@
 widget: hero
 headless: true
 weight: 10
-title: Book Template
+title: Python pour les data-scientists et économistes
 hero_media: book.svg
 design:
   background:

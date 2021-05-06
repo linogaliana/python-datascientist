@@ -47,3 +47,6 @@ avec les hypothèses d'un modèle.
 Les éléments relatifs à l'évaluation du cours sont disponibles dans la
 Section [Evaluation](evaluation)
 
+## Contenu général
+
+{{< list_children >}}

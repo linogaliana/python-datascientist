@@ -5,7 +5,19 @@ draft: false
 weight: 10
 #linktitle: manipulation
 type: book
-summary: Blah, blah, blah...
+summary: |
+  Python s'est imposé comme une alternative très crédible à R dans
+  la manipulation de données. L'écosystème pandas a permis de démocratiser
+  l'utilisation des DataFrames dans Python et faciliter la manipulation
+  de données structurées grâce à la philosophie SQL. Python reste également
+  le langage le plus pratique pour récupérer et manipuler
+  des données moins structurées (webscraping, API). Python tend à devenir,
+  grâce au développement d'API vers d'autres langages (C, Spark, Postgres,
+  ElasticSearch...),
+  le langage *"one to rule them all"*
+slug: manipulation
+icon: database
+icon_pack: fas
 ---
 
 Le *dataframe* est l'outil central du logiciel `R` mais il s'agit d'un objet qui, en `Python`, ne s'est
@@ -36,24 +48,10 @@ de nettoyage de données, notamment des chaînes de caractère.
 
 ## Structure de la partie
 
-Dans un premier temps, l'apprentissage des principes de la manipulation
-des données se fera de la manière suivante:
-
-* [Une introduction à numpy](numpy) pour découvrir et pratiquer
-la manipulation de données avec python ;
-* [Des éléments sur pandas](pandascours) et
-[un exercice complet pour pratiquer pandas](pandastp).
-
-Ensuite, nous approfondirons différents aspects de la manipulation de données:
-
-* [Présentation du traitement des données spatiales](geopandas) 
-et [pratique de geopandas](geopandastp)
-* [Pratique du webscraping](webscraping)
-* [Pratique du nettoyage de données textuelles](regex)
-* [Pratique du requêtage par les API](api)
 
 {{< list_children >}}
 
+## Exercices
 
 Les notebooks d'exercices sont listés [ici](listetp), visualisables 
 via 
