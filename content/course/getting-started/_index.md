@@ -11,7 +11,7 @@ summary: |
 title: Introduction
 slug: introduction
 type: book
-weight: 1
+weight: 10
 ---
 
 Avant de plonger dans les arcanes de la *data science*, cette partie

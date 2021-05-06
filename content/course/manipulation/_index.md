@@ -2,7 +2,7 @@
 title: "Partie 1: manipuler des données"
 date: 2020-07-16
 draft: false
-weight: 10
+weight: 20
 #linktitle: manipulation
 type: book
 summary: |

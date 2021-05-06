@@ -3,8 +3,21 @@ title: "Partie 2: visualiser les données"
 date: 2020-09-16T13:00:00Z
 draft: false
 weight: 30
-slug: "visualisation"
+icon: chart-line
+icon_pack: fas
+linktitle: Partie 2: visualisation
+summary: |
+  Cette partie présente les outils pour visualiser des
+  données avec Python, qu'il s'agisse de graphiques
+  figés (matplotlib, seaborn, geoplot...) ou de
+  visualisation réactives (plotly, folium, etc.)
+title: Partie 2: visualisation
+slug: visualisation
+type: book
+weight: 1
 ---
+
+
 
 L'écosystème Python de visualisation de données est très riche. Il est
 possible de consacrer des livres entiers à celui-ci. 
