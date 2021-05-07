@@ -4,6 +4,12 @@ date: 2020-09-07T13:00:00Z
 draft: false
 weight: 90
 slug: evaluation
+icon: user-graduate
+icon_pack: fas
+#linktitle: "Partie 4: Natural Language Processing (NLP)"
+summary: |
+  Résumé des attentes pour les projets de fin d'année
+type: book
 ---
 
 Résumé : 

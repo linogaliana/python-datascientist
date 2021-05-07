@@ -3,6 +3,12 @@ title: "Travaux dirigés"
 date: 2020-09-10T13:00:00Z
 draft: false
 weight: 80
+icon: pencil-alt
+icon_pack: fas
+#linktitle: "Partie 4: Natural Language Processing (NLP)"
+summary: |
+  Une liste des TD sous format notebook
+type: book
 ---
 
 La liste des travaux dirigés, sous forme d'exercices approfondis, peut être
