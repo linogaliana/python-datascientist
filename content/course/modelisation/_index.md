@@ -7,10 +7,9 @@ slug: "modelisation"
 type: book
 summary: |
   La facilité à modéliser des processus très diverses a grandement 
-  participé du succès de Python. La librairie scikit offre une
+  participé au succès de Python. La librairie scikit offre une
   grande variété de modèles et permet ainsi d'avoir un code
   fonctionnel en très peu de temps.
-slug: manipulation
 icon: square-root-alt
 icon_pack: fas
 ---
@@ -88,7 +87,7 @@ Le code pour construire une base unique à partir de ces sources diverses
 est disponible ci-dessous : 
 
 
-```{.python}
+```{python, eval = FALSE}
 import os
 import zipfile
 import urllib.request
@@ -148,6 +147,7 @@ color_dict = {"republican": '#FF0000', 'democrats': '#0000FF'}
 votes["winner"] =  np.where(votes['votes_gop'] > votes['votes_dem'], 'republican', 'democrats') 
 ```
 
+{{< list_children >}}
 
 
 ## Références
