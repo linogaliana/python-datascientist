@@ -1,10 +1,12 @@
 ---
-title: An example
+title: Python pour les data scientists et économistes
 type: book  # Do not modify.
 toc: true
 # Title for the menu link if you wish to use a shorter link title, otherwise remove this option.
-linktitle: course
+linktitle: Homepage
 ---
+
+## Architecture du site web
 
 Sur l'ensemble du site web,
 il est possible de cliquer sur la petite icone
