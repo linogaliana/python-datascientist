@@ -26,7 +26,9 @@ cta_alt:
 
 <!--## Structuration du site--->
 
-<a class="github-button" href="https://github.com/linogaliana/python-datascientist" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star this website on Github">Star this website on Github</a><br>
+<a class="github-button" href="https://github.com/linogaliana/python-datascientist" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star this website on Github">Star this website on Github</a><script async defer src="https://buttons.github.io/buttons.js"></script>
+
+<br>
 
 Ce site web rend public le contenu du cours de 
 deuxième année (Master 1) de l'ENSAE:
