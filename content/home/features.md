@@ -2,19 +2,20 @@
 widget: featurette
 headless: true
 weight: 20
-title: Features
-subtitle: Document _anything_ ✨
+title: 
+subtitle: Un contenu riche, entièrement ouvert ✨
 feature:
-  - icon: book-open
-    icon_pack: fas
-    name: Project Documentation
-    description: For users
-  - icon: question
-    icon_pack: fas
-    name: Knowledge Base
-    description: For teams
-  - icon: list-alt
-    icon_pack: fas
-    name: Personal Notebook
-    description: For yourself
+  - icon: python
+    icon_pack: fab
+    name: Documentation
+    description: Une documentation complète sur Python
+  - icon: github
+    icon_pack: fab
+    name: Open-source
+    description: Tout est disponible sur Github
+  - icon: docker
+    icon_pack: fab
+    name: Entièrement reproductible
+    description: Un dépôt reposant sur les dernières innovations de la conteneurisation pour assurer un contenu reproductible
 ---
+
