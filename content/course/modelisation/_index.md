@@ -49,25 +49,6 @@ d'apprentissage, sur les *y* (on utilisera parfois le terme *label*) :
 à sélectionner la structure de données la plus plausible. 
 
 
-## Contenu de la partie:
-
-Plan prévisionnel:
-
-* Préparation des données: Feature extraction, normalization, constitution d'échantillons,
-Model selection and evaluation
-https://scikit-learn.org/stable/modules/preprocessing.html#preprocessing
-* Régression: régression linéaire, logistique, lasso/ridge/elasticnet
-https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
-* Classification: logit, SVM, arbres de décision
-https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
-* Réduction dimension: PCA
-* Clustering: kmeans, hiearchical clustering
-
-Autres champs:
-* maximum vraisemblance
-* stats bayésiennes
-* semi et non paramétrique: méthodes noyaux, GAM
-
 ## Données
 
 La plupart des exemples de cette partie s'appuient sur les résultats des
@@ -147,7 +128,14 @@ color_dict = {"republican": '#FF0000', 'democrats': '#0000FF'}
 votes["winner"] =  np.where(votes['votes_gop'] > votes['votes_dem'], 'republican', 'democrats') 
 ```
 
+## Plan de la partie
+
 {{< list_children >}}
+
+Autres champs:
+* maximum vraisemblance
+* stats bayésiennes
+* semi et non paramétrique: méthodes noyaux, GAM
 
 
 ## Références
