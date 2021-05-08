@@ -3,7 +3,7 @@ widget: hero
 headless: true
 weight: 10
 title: Python pour les data-scientists et économistes
-hero_media: book.svg
+hero_media: python.svg
 design:
   background:
     gradient_start: '#4bb4e3'
