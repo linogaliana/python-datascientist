@@ -40,5 +40,9 @@ jupyter proposant des exercices plus approfondis. L'ensemble
 des codes sources est stocké sur [Github](https://github.com/linogaliana/python-datascientist)
 <a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-github"></i></a>
 
+<!----
+Pour citer:
 
+{{< cite page="/pythonDS" view="4" >}}
+----->
 
