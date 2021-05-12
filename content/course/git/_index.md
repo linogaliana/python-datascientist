@@ -18,3 +18,6 @@ Cette partie du site présente un élément qui n'est pas propre à
 `Python` mais qui est néanmoins indispensable: la pratique de `Git`
 
 TO DO
+
+
+{{< list_children >}}
