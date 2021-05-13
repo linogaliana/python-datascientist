@@ -11,34 +11,30 @@ jobs:
   blogdown:
     name: Render-Blog
     runs-on: ubuntu-latest
-#    container: linogaliana/python-datascientist:latest
+    container: linogaliana/python-datascientist:latest
     steps:
       - uses: actions/checkout@v1
         with:
           submodules: true
-      - uses: r-lib/actions/setup-r@v1
-      - uses: r-lib/actions/setup-pandoc@v1
       - name: Install rmarkdown
-        run: Rscript -e 'install.packages(c("rmarkdown","blogdown"))'
+        env:
+          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
+        run: |
+          Rscript -e 'install.packages(c("rmarkdown"))'
       - name: install hugo
-        run: Rscript -e 'blogdown::install_hugo()'
+        run: Rscript -e 'blogdown::install_hugo("0.83.0", force = TRUE)'
       - name: Install Python
         run: |
+          Rscript -e 'print(blogdown:::hugo_version())'
           Rscript -e "install.packages(c('remotes', 'reticulate'))"
-#          Rscript -e "remotes::install_github('rstudio/reticulate')"
-#          Rscript -e "reticulate::install_miniconda()"
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          activate-environment: test
-          environment-file: environment.yml
-          python-version: 3.7
-          auto-activate-base: false
+          Rscript -e "install.packages(c('here'))"
       - shell: bash -l {0}
         run: |
           conda info
           conda list
       - name: Render blog
-        run: Rscript -e 'blogdown::build_site()'
+        run: |
+          Rscript -e 'source("./build/build.R")'
       - name: Install npm
         if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: actions/setup-node@v2          
@@ -50,11 +46,12 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           npm init -y
           npm install --unsafe-perm=true netlify-cli -g
           netlify init
-          netlify deploy --alias=${CI_COMMIT_REF_NAME} --dir="public" --message "Deploy from ${GITHUB_REF}"
+          netlify deploy --alias=${BRANCHE_REF} --dir="public" --message "Preview deploy from ${BRANCHE_REF}"
       - uses: actions/upload-artifact@v1
         with:
           name: public

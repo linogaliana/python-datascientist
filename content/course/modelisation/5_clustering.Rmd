@@ -1,0 +1,368 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.6.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+title: "Clustering"
+date: 2020-10-20T13:00:00Z
+draft: false
+weight: 60
+slug: clustering
+type: book
+tags:
+  - scikit
+  - machine learning
+  - US elections
+  - clustering
+  - Kmeans
+categories:
+  - Exercice
+summary: |
+  Le clustering consiste à répartir des observations dans des groupes,
+  généralement non observés,
+  en fonction de caractéristiques observables. Il s'agit d'une
+  application classique des méthodes non supervisées. Les applications
+  au monde réel sont nombreuses, notamment dans le domaine de la
+  segmentation tarifaire.
+---
+
+
+```{r setup, include=FALSE}
+dir_path <- gsub(here::here(), "..", here::here("course","modelisation"))
+
+library(knitr)
+library(reticulate)
+knitr::knit_engines$set(python = reticulate::eng_python)
+knitr::opts_chunk$set(fig.path = "")
+knitr::opts_chunk$set(eval = TRUE, echo = FALSE, warning = FALSE, message = FALSE)
+
+# Hook from Maelle Salmon: https://ropensci.org/technotes/2020/04/23/rmd-learnings/
+knitr::knit_hooks$set(
+  plot = function(x, options) {
+    hugoopts <- options$hugoopts
+    paste0(
+      "{", "{<figure src=", # the original code is simpler
+      # but here I need to escape the shortcode!
+      '"', paste0(dir_path,"/",x), '" ',
+      if (!is.null(hugoopts)) {
+        glue::glue_collapse(
+          glue::glue('{names(hugoopts)}="{hugoopts}"'),
+          sep = " "
+        )
+      },
+      ">}}\n"
+    )
+  }
+)
+
+```
+
+
+Nous allons continuer avec le jeu de données de [résultat des élections US 2020 au niveau des comtés](#preprocessing)
+
+Jusqu'à présent, nous avons fait de l'apprentissage supervisé puisque nous
+connaissions la variable à expliquer/prédire. Ce n'est plus le cas avec
+l'apprentissage non supervisé.
+
+Le *clustering* est un champ d'application de l'apprentissage non-supervisé.
+Il s'agit d'exploiter l'information disponible pour regrouper des observations
+à la structure commune ensemble.
+
+L'objectif est de créer des clusters d'observations pour lesquelles:
+
+* au sein de chaque cluster, les observations sont homogènes (variance intra-cluster minimale)
+* les clusters ont des profils hétérogènes, c'est-à-dire qu'ils se distinguent l'une de l'autre (variance inter-clusters maximale)
+
+En Machine Learning, les méthodes de clustering sont très utilisées pour
+faire de la recommandation. En faisant, par exemple, des classes homogènes de
+consommateur, il est plus facile d'identifier et cibler des comportements
+propres à chaque classe de consommateurs.
+
+Ces méthodes ont également un intérêt en économie et sciences sociales parce qu'elles permettent
+de regrouper des observations sans *a priori* et ainsi interpréter une variable
+d'intérêt à l'aune de ces résultats. Ce [travail (très) récent](https://www.insee.fr/fr/statistiques/4925200)
+utilise par exemple cette approche.
+
+Les méthodes clustering peuvent aussi intervenir en amont d'un problème de classification (dans des
+problèmes d'apprentissage semi-supervisés).
+Par exemple, le manuel *Hands-on machine learning with scikit-learn, Keras et TensorFlow* présente dans le
+chapitre dédié à l'apprentissage non supervisé quelques exemples.
+Dans certaines bases de données, on peut se retrouver avec quelques exemples labellisés mais la plupart
+non labellisés. Les labels ont par exemple été faits manuellement par des experts.
+Par exemple, supposons que dans la [base MNIST des chiffres manuscrits](https://fr.wikipedia.org/wiki/Base_de_donn%C3%A9es_MNIST), les chiffres ne soient pas labellisés
+et que l'on se demande quelle est la meilleure stratégie pour labelliser cette base.
+On pourrait regarder des images de chiffres manuscrits au hasard de la base et les labelliser.
+Les auteurs du livre montrent qu'il existe toutefois une meilleure stratégie.
+Il vaut mieux appliquer un algorithme de clustering en amont pour regrouper les images ensemble et avoir une
+image représentative par groupe, et labelliser ces images représentatives au lieu de labelliser au hasard.
+
+
+Les méthodes de *clustering* sont nombreuses.
+Premièrement, nous pencher sur la plus intuitive: les k-means.
+
+# Données
+
+```{python, echo = FALSE, include = FALSE}
+exec(open('./get_data.py').read())
+```
+
+## Principe
+
+L'objectif des kmeans est de partitioner l'espace d'observations en trouvant des points (*centroids*) qui permettent de
+créer des centres de gravité pour lesquels les observations proches peuvent être regroupées dans une classe homogène.
+L'algorithme Kmeans fonctionne par itération, en initialisant les centroids puis en les mettant à jour à chaque
+itération, jusqu'à ce que les centroids se stabilisent :
+
+![](https://scikit-learn.org/stable/_images/sphx_glr_plot_kmeans_assumptions_001.png)
+
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+L'objectif des *kmeans* est de trouver une partition des données $S=\{S_1,...,S_K\}$ telle que
+$$
+\arg\min_{S} \sum_{i=1}^K \sum_{x \in S_i} ||x - \mu_i||^2
+$$
+avec $\mu_i$ la moyenne des $x_i$ dans l'ensemble de points $S_i$
+{{% /panel %}}
+
+```{python}
+import matplotlib.pyplot as plt
+```
+
+
+
+{{% panel status="exercise" title="Exercise 1: principe du kmeans" icon="fas fa-pencil-alt" %}}
+1. Importer les données (l'appeler `df`) et de restreindre aux variables `'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"` et bien-sûr  `'per_gop'`
+2. Faire un kmeans avec $k=4$
+3. Créer une variable supplémentaire stockant le résultat de la typologie
+4. Choisir deux variables et représenter le nuage de points en colorant différemment
+en fonction du label obtenu
+5. Représenter la distribution du vote pour chaque *cluster*
+
+{{% /panel %}}
+
+```{python importdata}
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+
+xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
+
+df2 = votes[xvars + ["per_gop"]].dropna()
+```
+
+
+```{python kmeans}
+from sklearn.cluster import KMeans
+model = KMeans(n_clusters=4)
+model.fit(df2[xvars])
+
+votes['label'] = model.labels_
+```
+
+Sur une carte cela donne:
+
+```{python mapkmeans}
+votes.plot(column = "label", cmap = "inferno")
+```
+
+```{python, include = FALSE}
+import seaborn as sns
+plt.figure()
+p = sns.scatterplot(data=votes, x="Median_Household_Income_2019", y="Unemployment_rate_2019", hue = "label", palette="deep", alpha = 0.4)
+p.set(xscale="log")
+```
+
+```{python scatter, include = FALSE}
+p
+p.figure.savefig("scatter.png")
+```
+
+```{r}
+knitr::include_graphics("scatter.png")
+```
+
+
+```{python, include = FALSE}
+plt.figure()
+p2 = sns.displot(data=votes, x="label", hue="label", alpha = 0.4)
+```
+
+```{python displot}
+p2
+p2.fig.savefig("displot.png")
+```
+
+```{r}
+knitr::include_graphics("displot.png")
+```
+
+Il faut noter plusieurs points sur l'algorithme implémenté par défaut par scikit learn, que l'on peut lire dans
+la documentation:
+- l'algorithme implémenté par défaut est kmeans ++, cela est géré par le paramètre `init`, cela signifie que
+l'initialisation des centroids est faite de manière intelligente pour que les centroids initiaux soient choisis
+afin de ne pas être trop proches
+- l'algorithme va être démarré avec `n_init` différents centroids et le modèle va choisir la meilleure initialisation
+en fonction de l'**inertia** du modèle, par défaut égal à 10
+
+Le modèle va renvoyer les `cluster_centers_`, les labels `labels_`, l'inertia `inertia_` et le nombre d'itérations
+`n_iter_`
+
+## Choisir le nombre de clusters
+
+Le nombre de clusters est fixé par le modélisateur.
+Il existe plusieurs façons de fixer ce nombre: connaissance a priori du problème,
+analyse d'une métrique spécifique pour définir le nombre de clusters à choisir, etc.
+
+Il y a un arbitrage
+entre biais et variance. Un grand nombre de clusters implique une variance
+intra-cluster très faible. Avec beaucoup de clusters, on tend à sur-apprendre, ce
+qui est mauvais pour la prédiction (même s'il n'est jamais possible de déterminer
+le vrai type d'une observation puisqu'on est en apprentissage non supervisé).
+
+Sans connaissance a priori du nombre de clusters, on peut recourir à deux types de méthode:
+
+* Plus empirique, la méthode du coude (*elbow method*): on prend le point d'inflexion de la courbe
+de performance du modèle. Cela représente le moment où ajouter un cluster
+(complexité croissante du modèle) n'apporte que des gains modérés dans la
+modélisation des données
+
+* Score de silhouette: mesure de similarité entre un point et les autres points
+du cluster par rapport aux autres clusters. Plus spécifiquement:
+
+> Silhouette value is a measure of how similar an object is to its own cluster
+> (cohesion) compared to other clusters (separation). The silhouette ranges
+> from −1 to +1, where a high value indicates that the object is
+> well matched to its own cluster and poorly matched to neighboring
+> clusters. If most objects have a high value, then the clustering
+> configuration is appropriate. If many points have a low or negative
+> value, then the clustering configuration may have too many or too few clusters
+>
+> Source: [Wikipedia](https://en.wikipedia.org/wiki/Silhouette_(clustering))
+
+Le score de silhouette d'une observation est donc égal à
+`(m_nearest_cluster - m_intra_cluster)/max( m_nearest_cluster,m_intra_cluster)`
+où `m_intra_cluster` est la moyenne des distances de l'observation aux observations du même cluster
+et `m_nearest_cluster` est la moyenne des distances de l'observation aux observations du cluster le plus proche.
+
+
+Le package `yellowbrick` fournit une extension utile à `scikit` pour représenter
+facilement la performance en *clustering*.
+
+Pour la méthode du coude, la courbe
+de performance du modèle marque un coude léger à $k=4$. Le modèle initial
+semblait donc approprié.
+
+```{python elbow, echo = TRUE, error = TRUE, warning = FALSE, include = FALSE}
+from sklearn.cluster import KMeans
+from yellowbrick.cluster import KElbowVisualizer
+
+visualizer = KElbowVisualizer(model, k=(2,12))
+visualizer.fit(df2[xvars])        # Fit the data to the visualizer
+```
+
+```{python yellowbrick viz, include = FALSE}
+visualizer.show(outpath="elbow-yellowbrick.png")        # Finalize and render the figure
+```
+
+```{r}
+knitr::include_graphics("elbow-yellowbrick.png")
+```
+
+`yellowbrick` permet également de représenter des silhouettes mais
+l'interprétation en est moins aisée et le coût computationnel plus élevé:
+
+```{python silhouette, include = FALSE, echo=TRUE, error = TRUE}
+from yellowbrick.cluster import SilhouetteVisualizer
+
+fig, ax = plt.subplots(2, 2, figsize=(15,8))
+j=0
+for i in [3, 4, 6, 10]:
+    j += 1
+    '''
+    Create KMeans instance for different number of clusters
+    '''
+    km = KMeans(n_clusters=i, init='k-means++', n_init=10, max_iter=100, random_state=42)
+    q, mod = divmod(j, 2)
+    '''
+    Create SilhouetteVisualizer instance with KMeans instance
+    Fit the visualizer
+    '''
+    visualizer = SilhouetteVisualizer(km, colors='yellowbrick', ax=ax[q-1][mod])
+    ax[q-1][mod].set_title("k = " + str(i))
+    visualizer.fit(df2[xvars])
+```
+
+```{python, include = FALSE}
+fig.savefig("silhouette-yellowbrick.png")
+```
+
+```{r}
+knitr::include_graphics("silhouette-yellowbrick.png")
+```
+
+Le score de silhouette offre une représentation plus riche que la courbe coudée.
+Sur ce graphique, les barres verticales en rouge et en pointillé représentent le score de silhouette
+global pour chaque `k` choisi. On voit par exemple que pour tous les `k` représentés ici, le
+score de silhouette se situe entre 0.5 et 0.6 et varie peu.
+Ensuite, pour un `k` donné, on va avoir la représentation des scores de silhouette de chaque
+observation, regroupées par cluster.
+Par exemple, pour `k=4`, ici, on voit bien quatre couleurs différentes qui sont les 4 clusters modélisés.
+Les ordonnées sont toutes les observations clusterisées et en abscisses on a le score de silhouette de
+chaque observation. Si au sein d'un cluster, les observations ont un score de silhouette plus faible que le
+score de silhouette global (ligne verticale en rouge), cela signifie que les observations du clusters sont
+trop proches des autres clusters.
+
+Grâce à cette représentation on peut aussi se rendre compte de la taille relative des clusters. Par exemple,
+avec `k=3`, on voit qu'on a deux clusters conséquents et un plus "petit" cluster relativement aux deux autres.
+Cela peut nous permettre de choisir des clusters de taille homogène ou non.
+
+Enfin, quand le score de silhouette est négatif, cela signifie que la moyenne des distances de l'observation
+aux observations du cluster le plus proche est inférieure à la moyenne des distances de l'observation aux
+observations de son cluster. Cela signifie que l'observation est mal classée.
+
+
+
+## Autres méthodes de clustering
+
+Il existe de nombreuses autres méthodes de clustering. Parmi les plus connues, on peut citer deux exemples en particulier:
+
+- DBSCAN
+- les mélanges de Gaussiennes
+
+### DBSCAN
+
+L'algorithme DBSCAN est implémenté dans `sklearn.cluster`. Il peut être utilisé pour faire de la détection d'anomalie
+notamment.
+En effet, cette méthode repose sur le clustering en régions où la densité
+des observations est continue, grâce à la notion de voisinage selon une certaine distance epsilon.
+Pour chaque observation, on va regarder si dans son voisinage selon une distance epsilon, il y a des voisins. S'il y a au
+moins `min_samples` voisins, alors l'observation sera une *core instance*.
+
+Les observations qui ne sont pas des *core instances* et qui n'en ont pas dans leur voisinage selon une distance espilon
+vont être détectées comme des anomalies.
+
+
+### Les mélanges de gaussiennes
+
+En ce qui concerne la théorie, voir le cours [Probabilités numériques et statistiques computationnelles, M1 Jussieu, V.Lemaire et T.Rebafka](http://www.proba.jussieu.fr/pageperso/rebafka/#enseignement)
+Se référer notamment aux notebooks pour l'algorithme EM pour mélange gaussien.
+
+Dans `sklearn`, les mélanges gaussiens sont implémentés dans `sklearn.mixture` comme `GaussianMixture`.
+Les paramètres importants sont alors le nombre de gaussiennes `n_components` et le nombre d'initiatisation `n_init`.
+Il est possible de faire de la détection d'anomalie avec les mélanges de gaussiennes.
+
+
+{{% panel status="hint" title="Pour aller plus loin" icon="fas fa-glasses" %}}
+
+Il existe de nombreuses autres méthodes de clustering:
+- Local outlier factor
+- bayesian gaussian mixture models
+- différentes méthodes de clustering hiérarchique
+- etc.
+{{% /panel %}}

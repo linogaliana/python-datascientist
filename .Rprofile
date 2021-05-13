@@ -3,7 +3,8 @@ if (file.exists("~/.Rprofile")) {
 }
 
 options(blogdown.new_bundle = TRUE)
-
+options(blogdown.hugo.version = "0.83.0")
+options(blogdown.method = 'markdown')
 
 
 reminder_jupyter <- function(file = "./content/getting-started/06_rappels_classes.Rmd",
@@ -95,3 +96,6 @@ reminder_box <- function(boxtype = "warning", type = c("html","markdown")){
 
 
 message("For local preview when the pages are built: blogdown::hugo_build(local = TRUE)")
+
+
+
