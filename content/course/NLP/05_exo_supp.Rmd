@@ -86,7 +86,7 @@ urllib.request.urlretrieve('https://static.openfoodfacts.org/data/en.openfoodfac
 df_openfood = pd.read_csv("%s.openfood.csv" % temp_dir, delimiter="\t",
                           usecols=['product_name'], encoding = 'utf-8', dtype = "str")
 
-df_openfood.head(2)
+#df_openfood.head(2)
 ```
 
 2. Importer le modèle de reconnaissance de langage qui sera utilisé par la suite
@@ -94,12 +94,15 @@ df_openfood.head(2)
 ```{python}
 import os
 os.system("wget -O {} https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin".format( "%s.model.bin" % temp_dir))
+os.system("python spacy download fr_core_news_sm")
 ```
 
 3. 
 
 ```{python}
 import nltk
+nltk.download('stopwords')
+nltk.download('punkt')
 from nltk.corpus import stopwords
 
 stop_words = set(stopwords.words('french'))
@@ -120,6 +123,7 @@ df_openfood = clean_labels_additional(df_openfood)
 ```{python}
 import wordcloud as wc
 import matplotlib.pyplot as plt
+
 
 def graph_wordcloud(data, by = None, valueby = None, yvar = "Text"):
     if (by is not None) & (valueby is not None):        
@@ -157,7 +161,7 @@ def wordcount_words(data, yvar, by = None):
     else:
         graph_wordcloud_by(data, by = by, yvar = yvar)
 
-wordcount_words(df_openfood, yvar = "libel_clean")
+wordcount_words(df_openfood, yvar = "product_name")
 wordcount_words(df_openfood, "tokenized")
 ```
 
@@ -166,7 +170,7 @@ wordcount_words(df_openfood, "tokenized")
 ```{python}
 import fasttext
 
-PRETRAINED_MODEL_PATH = '/tmp/lid.176.bin'
+PRETRAINED_MODEL_PATH = '%s/lid.176.bin' % temp_dir
 model = fasttext.load_model(PRETRAINED_MODEL_PATH)
 newcols = ['language','score_language']
 df_openfood[newcols] = pd.DataFrame(df_openfood['product_name'].astype(str).apply(lambda s: list(model.predict(s))).apply(lambda l: [l[0][0],l[1][0]]).tolist(), columns = newcols)
