@@ -77,7 +77,18 @@ Dans cet exercice:
 
 le tout sur l'OpenFood Database
 
-1. Importer les données de l'openfood database à partir du code suivant
+1. Importer le modèle de reconnaissance de langage qui sera utilisé par la suite
+ainsi que le corpus Français utilisé par `spacy`
+
+```{python, echo = TRUE}
+import os
+os.system("wget -O {} https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin".format( "%s.model.bin" % temp_dir))
+os.system("python spacy download fr_core_news_sm")
+```
+
+Dans un notebook jupyter, il se peut qu'il soit nécessaire de relancer le kernel
+
+2. Importer les données de l'openfood database à partir du code suivant
 
 ```{python}
 import pandas as pd
@@ -91,18 +102,24 @@ urllib.request.urlretrieve('https://static.openfoodfacts.org/data/en.openfoodfac
 df_openfood = pd.read_csv("%s.openfood.csv" % temp_dir, delimiter="\t",
                           usecols=['product_name'], encoding = 'utf-8', dtype = "str")
 
-#df_openfood.head(2)
 ```
 
-2. Importer le modèle de reconnaissance de langage qui sera utilisé par la suite
+Ces données devraient avoir l'aspect suivant:
+
 
 ```{python}
-import os
-os.system("wget -O {} https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin".format( "%s.model.bin" % temp_dir))
-os.system("python spacy download fr_core_news_sm")
+df_openfood.iloc[:2, :5]
 ```
 
-3. 
+
+3. Créer une fonction de nettoyage des noms de produits effectuant les 
+étapes suivantes:
+
+* tokeniser le texte en question
+* retirer la ponctuation et les _stopwords_
+
+Appliquer cette fonction à l'ensemble des noms de produits (variable
+`product_name`)
 
 ```{python}
 import nltk
@@ -123,7 +140,8 @@ def clean_labels_additional(data, yvar = 'product_name'):
 df_openfood = clean_labels_additional(df_openfood)
 ```
 
-4. 
+4. Effectuer un nuage de mot sur les libellés avant et après nettoyage
+pour comprendre la structure du corpus en question
 
 ```{python}
 import wordcloud as wc
@@ -170,7 +188,11 @@ wordcount_words(df_openfood, yvar = "product_name")
 wordcount_words(df_openfood, "tokenized")
 ```
 
-5. 
+5. Utiliser la librairie `fasttext` pour extraire les noms de produits
+français
+
+1. Appliquer le modèle téléchargé précedemment pour déterminer le langage
+2. Ne récupérer que les libellés français
 
 ```{python}
 import fasttext
@@ -185,7 +207,8 @@ df_openfood_french.head(2)
 ```
 
 
-6. 
+6. Visualiser avec `spacy.displacy` le résultat d'une reconnaissance
+d'entités nommées. Cela vous semble-t-il satisfaisant ?
 
 ```{python}
 import spacy
@@ -203,7 +226,8 @@ html = displacy.render(nlp(example), style='ent', page=True)
 cat(py$html)
 ```
 
-7. 
+7. Récupérer dans un vecteur les entités nommées reconnues par `spacy`
+
 ```{python}
 x = []
 for doc in nlp.pipe(df_openfood_french.head(20)['product_name'].astype("unicode"), disable=["tok2vec", "tagger", "parser", "attribute_ruler", "lemmatizer"]):
