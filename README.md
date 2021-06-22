@@ -2,7 +2,7 @@
 [![build-doc Actions Status](https://github.com/linogaliana/python-datascientist/actions/workflows/prod.yml/badge.svg)](https://github.com/linogaliana/python-datascientist/actions)
 [![Docker Pulls](https://img.shields.io/docker/pulls/linogaliana/python-datascientist)](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
-[![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://datalab.sspcloud.fr/my-lab/catalogue/inseefrlab-helm-charts-datascience/jupyter/deploiement?kubernetes.role=admin)
+[![Onyxia](https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&color=yellow?logo=Python)](https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter?onyxia.friendlyName=%C2%ABpython-datascientist%C2%BB&resources.requests.memory=%C2%AB4Gi%C2%BB)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/86ebd982-38e0-4e04-81f4-4819131eb800/deploy-status)](https://app.netlify.com/sites/linogaliana-teaching/deploys)
 
