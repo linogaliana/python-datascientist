@@ -19,6 +19,13 @@ reminder_jupyter <- function(file = "./content/getting-started/06_rappels_classe
 }
 
 
+badge <- function(type = "onyxia"){
+  if (type == "onyxia"){
+    "[![Onyxia](https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&color=yellow?logo=Python)](https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter?onyxia.friendlyName=%C2%ABpython-datascientist%C2%BB&resources.requests.memory=%C2%AB4Gi%C2%BB)"
+  }
+}
+
+
 reminder_badges <- function(notebook = ""){
   
   if (notebook != ""){
