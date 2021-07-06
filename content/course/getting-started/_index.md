@@ -4,10 +4,10 @@ icon: python
 icon_pack: fab
 linktitle: "Introduction: quelques rappels"
 summary: |
-  Cette introduction propose quelques éléments de 
-  révision des concepts de base en Python et 
+  Cette introduction propose quelques éléments de
+  révision des concepts de base en Python et
   présente l'écosystème Python que nous allons
-  découvrir tout au long de ce cours
+  découvrir tout au long de ce cours.
 title: Introduction
 slug: introduction
 type: book
@@ -18,8 +18,8 @@ Avant de plonger dans les arcanes de la *data science*, cette partie
 d'introduction propose des éléments de configuration et des
 révisions pour mettre le pied à l'étrier.
 
-Les notebooks d'exercices sont listés [ici](listetp), visualisables 
-via 
+Les notebooks d'exercices sont listés [ici](/course/listetp), visualisables
+via
 <a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-github"></i></a>
 ou
 [![nbviewer](https://img.shields.io/badge/visualize-nbviewer-blue)](https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/tree/master)
@@ -37,13 +37,13 @@ dans le domaine de la *data science*.
 Le succès de [scikit-learn](https://scikit-learn.org/stable/) et
 de [Tensorflow](https://www.tensorflow.org/) dans la communauté
 de la *Data-Science* ont beaucoup contribué à l'adoption de `Python`. Cependant,
-résumer `Python` à quelques librairies serait réducteur tant il s'agit 
+résumer `Python` à quelques librairies serait réducteur tant il s'agit
 d'un véritable couteau-suisse pour le *data-scientist*, *social scientist*
-ou économiste. 
+ou économiste.
 Comme pour `R`, l'intérêt de Python est son rôle central dans un
-écosystème plus large autour d'outils puissants, flexibles et *open-source*. 
- 
-L'intérêt de `Python` pour un *data scientist* ou *data economist* va au-delà du champ du *Machine Learning*. 
+écosystème plus large autour d'outils puissants, flexibles et *open-source*.
+
+L'intérêt de `Python` pour un *data scientist* ou *data economist* va au-delà du champ du *Machine Learning*.
 Python concurrence très bien `R` dans son domaine de prédilection, à
 savoir l'analyse statistique sur des
 objets type *dataframes*. `Python` est bien plus complet dans certains domaines
@@ -55,11 +55,11 @@ l'avantage de la simplicité avec un nombre restreint de packages (`scikit` et
 `statsmodels`) permettant d'avoir des modèles très généraux
 (les [generalized estimating equations](https://www.statsmodels.org/stable/gee.html)) alors qu'il faut
 choisir parmi une grande variété de packages en `R` pour obtenir les
-modèles équivalents. 
+modèles équivalents.
 Au contraire, dans certains domaines, `R` reste meilleur. Par exemple,
 `R` est très bien intégré au langage de publication `Markdown` ce qui,
-dans certains cas, comme la construction de ce site *web* basée sur 
-`R Markdown`, est fort appréciable. 
+dans certains cas, comme la construction de ce site *web* basée sur
+`R Markdown`, est fort appréciable.
 Un des avantages comparatifs de `Python` par rapport à d'autres
 langages (notamment `R` et `Julia`) est sa dynamique,
 ce que montre [l'explosion du nombre de questions
@@ -68,7 +68,7 @@ sur `Stack Overflow`](https://towardsdatascience.com/python-vs-r-for-data-scienc
 Cependant, il ne s'agit pas bêtement d'enterrer `R` ; au contraire, outre leur logique très proche,
 les deux langages sont dans une phase de convergence avec des initiatives comme
 [`reticulate`](https://rstudio.github.io/reticulate/). Ce dernier package
-permet d'exécuter des commandes python dans un document `R Markdown` mais
+permet d'exécuter des commandes `python` dans un document `R Markdown` mais
 crée également une correspondance entre les objets `python` et `R`. Les bonnes
 pratiques peuvent être transposées de manière presque transparente d'un
 langage à l'autre. A terme, les data-scientists et économistes utiliseront
@@ -79,5 +79,3 @@ présentera ainsi régulièrement des analogies avec `R`.
 ## Structuration de cette partie
 
 {{< list_children >}}
-
-
