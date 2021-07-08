@@ -2,6 +2,7 @@ import os
 import glob
 import re
 
+
 def cleanblog():
     # LIST (R)MARKDOWN FILES ----------------
     root_dir = os.getcwd()
@@ -19,6 +20,8 @@ def cleanblog():
         cleanyaml(i, root_dir)
 
 
+
+
 def cleanyaml(filename, root_dir):
     # READ MARKDOWN --------------
     with open(filename, 'r', encoding='utf-8') as f:
@@ -29,7 +32,7 @@ def cleanyaml(filename, root_dir):
     # REMOVE R CHUNKS ------
     s = re.sub(r'(?s)(```\{r)(.*?)(```)', "", s)
     # EXTRACT AND CLEAN HEADER ----------
-    yaml, text = new_text.split('---\n', 2)[1:]
+    yaml, text = s.split('---\n', 2)[1:]
     yaml_jupytext, yaml_rmd = yaml.split('title:')
     yaml_rmd_title, yaml_rmd_other = yaml_rmd.split('date:')
     new_md = "---\n" + yaml_jupytext.rstrip() + "\n---\n" + \
@@ -59,3 +62,29 @@ def remove_chunk( s, first, last ):
 
 cleanblog()
 
+
+filename = 'course/NLP/02_exoclean.Rmd'
+
+    with open(filename, 'r', encoding='utf-8') as f:
+        text = f.readlines()
+        new_text = "".join([line for line in text])
+
+
+# TATONNEMENT ------
+
+cleanyaml('course/NLP/02_exoclean.Rmd', root_dir)
+
+
+shortcode = '{{% panel status="exercise" title="Exercise (pour ceux ayant envie de tester leurs connaissances en pandas)" icon="fas fa-pencil-alt" %}}'
+
+
+def inject_shortcode(status, title, icon, inner):    
+    x = '<div class="panel panel-{}">'.format(status)
+    x += '<div class="panel-header-{}">'.format(status)
+    x += '<h3><i class="{}"></i>{}</h3>'.format(icon, title)
+    x += '</div><div class="panel-body-{}">'.format(status)
+    x += '<p>{}</p>'.format(inner)
+    x += '</div></div>'
+    return x
+
+essai = inject_shortcode("exercise","Exercise (pour ceux ayant envie de tester leurs connaissances en pandas)", "fas fa-pencil-alt", "grere" )
