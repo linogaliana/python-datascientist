@@ -9,7 +9,7 @@ options(blogdown.method = 'markdown')
 
 
 # Hook from Maelle Salmon: https://ropensci.org/technotes/2020/04/23/rmd-learnings/
-plug_hugo_plot <- function(x, options) {
+plug_hugo_plot <- function(x, options, dir_path) {
   hugoopts <- options$hugoopts
   paste0(
     "{", "{<figure src=", # the original code is simpler
