@@ -7,6 +7,27 @@ options(blogdown.hugo.version = "0.83.0")
 options(blogdown.method = 'markdown')
 
 
+
+# Hook from Maelle Salmon: https://ropensci.org/technotes/2020/04/23/rmd-learnings/
+plug_hugo_plot <- function(x, options) {
+  hugoopts <- options$hugoopts
+  paste0(
+    "{", "{<figure src=", # the original code is simpler
+    # but here I need to escape the shortcode!
+    '"', paste0(dir_path,"/",x), '" ',
+    if (!is.null(hugoopts)) {
+      glue::glue_collapse(
+        glue::glue('{names(hugoopts)}="{hugoopts}"'),
+        sep = " "
+      )
+    },
+    ">}}\n"
+  )
+}
+
+
+
+
 reminder_jupyter <- function(file = "./content/getting-started/06_rappels_classes.Rmd",
                              out = "ipynb"){
   
