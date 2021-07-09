@@ -7,28 +7,31 @@ def cleanblog():
     # LIST (R)MARKDOWN FILES ----------------
     root_dir = os.getcwd()
     os.chdir("./content")
-    types = ('**/*.Rmd', '**/*.md')  # the tuple of file types
+    types = ('course/**/*.Rmd', 'course/**/*.md')  # the tuple of file types
     files_grabbed = []
     for files in types:
         files_grabbed.extend(glob.glob(files, recursive=True))
     list_files = []
     for i in files_grabbed:
-        if "_index.md" not in i:
-            list_files = list_files + [i]
+        if (i.endswith(("_index.md", "_index.Rmd"))) is False :
+            list_files += [i]
     # APPLY cleanyaml
     for i in list_files:
-        cleanyaml(i, root_dir)
+        cleanfile(i, root_dir)
+    #back to initial working directory
+    os.chdir(root_dir)
 
 
 
-
-def cleanyaml(filename, root_dir):
+def cleanfile(filename, root_dir):
+    print("Processing {}".format(filename))
     # READ MARKDOWN --------------
     with open(filename, 'r', encoding='utf-8') as f:
         text = f.readlines()
         new_text = "".join([line for line in text])
     # REMOVE HUGO SHORTCODES
-    s = re.sub(r"(\{\{[^}]+}\})", "", new_text) 
+    # s = re.sub(r"(\{\{[^}]+}\})", "", new_text)
+    s = keep_text_within_shortword(new_text)
     # REMOVE R CHUNKS ------
     s = re.sub(r'(?s)(```\{r)(.*?)(```)', "", s)
     # EXTRACT AND CLEAN HEADER ----------
@@ -58,25 +61,24 @@ def remove_chunk( s, first, last ):
     except ValueError:
         return s
 
+def keep_text_within_shortword(shortcode):
+    return re.sub(re.compile("(\{\{).*(\}\}\\n)|(\\n\{\{).*(\}\})"),"",shortcode)
+
 
 
 cleanblog()
 
-
-filename = 'course/NLP/02_exoclean.Rmd'
-
-    with open(filename, 'r', encoding='utf-8') as f:
-        text = f.readlines()
-        new_text = "".join([line for line in text])
+# shell
+#cd "temp/course/NLP"
+#jupytext --to ipynb "02_exoclean.Rmd"
 
 
 # TATONNEMENT ------
 
-cleanyaml('course/NLP/02_exoclean.Rmd', root_dir)
+#cleanfile('course/NLP/02_exoclean.Rmd', root_dir)
 
 
-shortcode = '{{% panel status="exercise" title="Exercise (pour ceux ayant envie de tester leurs connaissances en pandas)" icon="fas fa-pencil-alt" %}}'
-
+#shortcode = '{{% panel status="exercise" title="Exercise (pour ceux ayant envie de tester leurs connaissances en pandas)" icon="fas fa-pencil-alt" %}}{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}\nL\'approche *bag of words* est présentée de\nmanière plus extensive dans le [chapitre précédent](#nlp).\n\nL\'idée est d\'étudier la fréquence des mots d\'un document et la\nsurreprésentation des mots par rapport à un document de\nréférence (appelé *corpus*). Cette approche un peu simpliste mais très\nefficace : on peut calculer des scores permettant par exemple de faire\nde classification automatique de document par thème, de comparer la\nsimilarité de deux documents. Elle est souvent utilisée en première analyse,\net elle reste la référence pour l\'analyse de textes mal\nstructurés (tweets, dialogue tchat, etc.). \n\nLes analyses tf-idf (*term frequency-inverse document frequency*) ou les\nconstructions d\'indices de similarité cosine reposent sur ce type d\'approche\n{{% /panel %}}'
 
 def inject_shortcode(status, title, icon, inner):    
     x = '<div class="panel panel-{}">'.format(status)
@@ -87,4 +89,6 @@ def inject_shortcode(status, title, icon, inner):
     x += '</div></div>'
     return x
 
-essai = inject_shortcode("exercise","Exercise (pour ceux ayant envie de tester leurs connaissances en pandas)", "fas fa-pencil-alt", "grere" )
+#def identify_replace_shortcode(shortcode):
+    # groups = re.findall(r'(status=|title=|icon=)"(.+?)"', shortcode)
+    # essai = inject_shortcode("exercise","Exercise (pour ceux ayant envie de tester leurs connaissances en pandas)", "fas fa-pencil-alt", "grere" )
