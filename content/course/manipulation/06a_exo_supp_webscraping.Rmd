@@ -16,7 +16,8 @@ summary: |
   Un exercice supplémentaire de webscraping, où l'on construit de manière automatique sa liste de courses à partir des données de Marmiton.
 ---
 
-```{r setup, include=FALSE}
+```r
+%%R
 dir_path <- gsub(here::here(), "..", here::here("course", "manipulation"))
 
 library(knitr)  
@@ -63,7 +64,7 @@ from bs4 import BeautifulSoup
 
 
 ```python
-PLAT = "tzatziki"
+PLAT = "pates carbonara"
 BASE_URL = "https://www.marmiton.org"
 URL_SEARCH = BASE_URL + "/recettes/recherche.aspx?aqt=" + PLAT
 ```
@@ -136,7 +137,10 @@ Convaincu ? Sinon, ne pas hésiter à changer de recette au début, on ne va qua
 
 La recette est choisie, objectif : liste de courses. Mais les choses se compliquent : pour quantifier les ingrédients selon le nombre de convives et afficher la liste au format courses sur Marmiton, on va devoir cliquer sur des boutons qui exécutent du `JavaScript`. `requests`/`BeautifulSoup` atteignent là leurs limites, mais pas de panique : `Selenium` est fait pour ça. Il va nous permettre d'ouvrir un navigateur "fantôme", contrôlé via Python, avec lequel on va pouvoir effectuer des actions sur la page.
 
-Autre subtilité : jusqu'à maintenant, on a repéré les éléments html par type et nom de classe. Cette méthode fonctionne, mais elle pose également des problèmes : parfois les noms de classes changent sans raison (c'est d'ailleurs pour ça qu'on a utilisé des regex précédemment, pour faire du matching partiel), et il est moins pratique d'interagir avec les éléments d'une page de cette manière. En revanche, la structure d'un site est un élément (généralement) plus stable, on va donc dans cette deuxième partie utiliser les [sélécteurs XPath](https://fr.wikipedia.org/wiki/XPath), qui permettent de sélectionner les éléments selon leur position dans l'arborescence html de la page.
+Autre subtilité : jusqu'à maintenant, on a repéré les éléments html par type et nom de classe. Cette méthode fonctionne, mais elle pose également des problèmes : parfois les noms de classes changent sans raison (c'est d'ailleurs pour ça qu'on a utilisé des regex précédemment, pour faire du matching partiel), et il est moins pratique d'interagir avec les éléments d'une page de cette manière. Parfois, il est
+pertinent d'utiliser les [sélécteurs XPath](https://fr.wikipedia.org/wiki/XPath), qui permettent de sélectionner les éléments selon leur position dans l'arborescence html de la page. On utilisera une combinaison des deux méthodes dans cette partie selon les cas.
+
+On le voit, le webscraping reste une pratique assez instable, dans la mesure où les sites web évoluent en permanence. Il y a ainsi toutes les chances qu'au moment où vous effectuerez ce TP, le code proposé en solution ne fonctionne plus, car les balises auront changé. Il vous faudra alors revenir à l'exploration du code source html de la page, repérer les balises permanentes, et les substituer dans le code de solution.
 
 5. Ouvrir la page de la recette choisie à l'aide d'un navigateur fantôme. Problème : la classique fenêtre de politique des cookies s'ouvre, nous empêchant de naviguer sur la page. Utiliser Selenium pour cliquer sur le bouton permettant d'accepter tous les cookies.
 
@@ -146,6 +150,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
 ```
 
 
@@ -156,24 +161,33 @@ driver.get(url_chosen_recipe)
 
 
 ```python
-xpath_accept_cookies = "/html/body/div[1]/div/div/div/div/div/div[3]/button[3]"
-WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, xpath_accept_cookies))).click()
+WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "didomi-notice-agree-button"))).click()
 ```
 
 6. Choisir pour combien de personnes on va cuisiner. Comparer ce nombre au nombre utilisé par défaut sur Marmiton, et construire une boucle qui va clicker automatiquement le bon nombre de fois, sur + ou - selon que le nombre de convives choisi est supérieur ou inférieur au nombre par défaut.
 
 
 ```python
+try:
+    counter = driver.find_element_by_class_name("quantity-counter")
+except NoSuchElementException:
+    raise Exception("La structure de cette page est particulière, il va falloir trouver les bonnes balises à la main.")
+else:
+    xpath_current_count = './/input'
+    current_count = int(counter.find_element_by_xpath('.//div[2]/input').get_attribute("value"))
+    xpath_minus = './/div[@class="quantity-counter__action minus"]'
+    xpath_plus = './/div[@class="quantity-counter__action plus"]'
+```
+
+
+```python
 NB_PERSONNES = 8
 
-xpath_current_nb_persons = "/html/body/div[2]/div[3]/main/div/div/div[1]/div[1]/div[7]/div[2]/div[1]/div[1]/div/span[1]"
-current_nb_persons = int(driver.find_element_by_xpath(xpath_current_nb_persons).text)
-
-nb_clicks = NB_PERSONNES - current_nb_persons
+nb_clicks = NB_PERSONNES - current_count
 if nb_clicks > 0:
-    xpath_button_nb_persons = "/html/body/div[2]/div[3]/main/div/div/div[1]/div[1]/div[7]/div[2]/div[1]/div[1]/button[2]"
+    xpath_button_nb_persons = xpath_plus
 elif nb_clicks < 0:
-    xpath_button_nb_persons = "/html/body/div[2]/div[3]/main/div/div/div[1]/div[1]/div[7]/div[2]/div[1]/div[1]/button[1]"
+    xpath_button_nb_persons = xpath_minus
 for i in range(abs(nb_clicks)):
     driver.find_element_by_xpath(xpath_button_nb_persons).click()
 ```
@@ -182,26 +196,34 @@ for i in range(abs(nb_clicks)):
 
 
 ```python
-xpath_button_list = "/html/body/div[2]/div[3]/main/div/div/div[1]/div[1]/div[7]/div[2]/div[1]/div[2]/button[2]"
-driver.find_element_by_xpath(xpath_button_list).click()
+display_options = driver.find_element_by_class_name("ingredient-list__display-options")
+display_options.find_element_by_xpath(".//i[2]").click()
 ```
 
 8. Selon les cas, il peut être nécessaire de cliquer ensuite sur un autre bouton permettant de développer la liste. Effectuer cette action (si nécessaire !). Cela permettra d'être sûr que l'on récupère bien tous les ingrédients pour construire notre liste de courses.
 
 
 ```python
-xpath_expand_list = "/html/body/div[2]/div[3]/main/div/div/div[1]/div[1]/div[7]/div[2]/div[3]/button"
-driver.find_element_by_xpath(xpath_expand_list).click()
+# xpath_expand_list = "/html/body/div[2]/div[3]/main/div/div/div[1]/div[1]/div[7]/div[2]/div[3]"
+# try:
+#     driver.find_element_by_xpath(xpath_expand_list).click()
+# except ElementClickInterceptedException:
+#     pass
+
+# driver.implicitly_wait(2)  # Make sure that the elements are displayed after pressing button
 ```
 
-9. Récupérer la liste des ingrrédients ainsi que des quantités nécessaires. Stocker les éléments dans une liste.
+9. Récupérer la liste des ingrédients ainsi que des quantités nécessaires. Stocker les éléments dans une liste.
 
 
 ```python
-xpath_list_ings = "/html/body/div[2]/div[3]/main/div/div/div[1]/div[1]/div[7]/div[2]/div[2]/div/div/div/div/ul/li"
-list_ings = driver.find_elements_by_xpath(xpath_list_ings)
-list_ings = [x.text for x in list_ings]
+list_ings_div = driver.find_element_by_class_name("ingredient-list__ingredient-group")
+list_ings = [x.text for x in list_ings_div.find_elements_by_tag_name("li")]
+print(list_ings)
 ```
+
+    ['500 g de lardons', 'poivre', '2 pincées de sel', '1 kg de pâtes', '1 l de crème fraîche', "6 jaunes d'oeuf", '2 oignons']
+
 
 10. Exporter la liste dans un fichier texte sur votre ordinateur.
 
@@ -216,8 +238,7 @@ with open("shopping_list.txt", "w") as f:
 
 
 ```python
-xpath_recipe = "/html/body/div[2]/div[3]/main/div/div/div[1]/div[1]/ul"
-recipe = driver.find_element_by_xpath(xpath_recipe).text
+recipe = driver.find_element_by_class_name("recipe-step-list").text
 
 with open(f"recipe_{PLAT}.txt", "w") as f:
     f.write(recipe)
