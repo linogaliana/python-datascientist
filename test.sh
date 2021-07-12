@@ -11,13 +11,16 @@ python cleanmd.py
 cd "./temp"
 
 
-test=${args[0]}
-extension=${args[1]}
-echo "Test: $test"
+
+#correction=${args[0]}
+#extension=${args[1]}
+correction=false
+extension="Rmd"
+echo "Correction: $test"
 echo "extension: $extension"
 
 
-if [ "$test" = true ] ; then
+if [ "$correction" = true ] ; then
   # CONVERT INTO NOTEBOOKS AND EXECUTE
   for i in $(find . -type f \( -iname "*.md" -o -iname "*.Rmd" \)); do
     echo "Executing $i"
@@ -27,11 +30,11 @@ else
   # Ici :
   #   * $extension = "md"  -> enonces
   #   * $extension = "Rmd" -> corrections
-  for i in $(find . -type f -iname "*.$extension"); do
+  for i in $(find . -type f \( -iname "*.md" -o -iname "*.Rmd" \)); do
     echo "Converting $i"
     # jupytext --to py --execute "$i"
     jupytext --to ipynb "$i"
-    jupyter nbconvert --to notebook --execute --inplace ${i/$extension/ipynb}
+    #jupyter nbconvert --to notebook --execute --inplace ${i/$extension/ipynb}
   done
 fi
 

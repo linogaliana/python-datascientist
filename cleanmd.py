@@ -23,7 +23,9 @@ def cleanblog():
 
 
 
-def cleanfile(filename, root_dir):
+def cleanfile(filename, root_dir = None, show_code = False):
+    if root_dir is None:
+        root_dir = os.getcwd()
     print("Processing {}".format(filename))
     # READ MARKDOWN --------------
     with open(filename, 'r', encoding='utf-8') as f:
@@ -34,6 +36,9 @@ def cleanfile(filename, root_dir):
     s = keep_text_within_shortword(new_text)
     # REMOVE R CHUNKS ------
     s = re.sub(r'(?s)(```\{r)(.*?)(```)', "", s)
+    # PRINT ALL PYTHON CODE FOR CORRECTIONS
+    if show_code is True:
+        s = override_echo_FALSE(s)
     # EXTRACT AND CLEAN HEADER ----------
     yaml, text = s.split('---\n', 2)[1:]
     yaml_jupytext, yaml_rmd = yaml.split('title:')
@@ -65,19 +70,33 @@ def keep_text_within_shortword(shortcode):
     return re.sub(re.compile("(\{\{).*(\}\}\\n)|(\\n\{\{).*(\}\})"),"",shortcode)
 
 
+def override_echo_FALSE(text):
+    text = re.sub(r'echo = FALSE', 'echo = TRUE', text)
+    text = re.sub(r'echo=FALSE', 'echo=TRUE', text)
+    return text
 
-cleanblog()
+def override_include_FALSE(text):
+    text = re.sub(r'include = FALSE', 'include = TRUE', text)
+    text = re.sub(r'include=FALSE', 'include=TRUE', text)
+    return text
+
+def override_eval_FALSE(text):
+    text = re.sub(r'eval = FALSE', 'eval = TRUE', text)
+    text = re.sub(r'eval=FALSE', 'eval=TRUE', text)
+    return text
 
 # shell
 #cd "temp/course/NLP"
 #jupytext --to ipynb "02_exoclean.Rmd"
-
+#jupytext --to ipynb "02_exoclean.Rmd" --execute
 
 # TATONNEMENT ------
 
-#cleanfile('course/NLP/02_exoclean.Rmd', root_dir)
 
+#os.chdir("./temp/content")
+#cleanfile('course/NLP/02_exoclean.Rmd', None, True)
 
+cleanblog()
 #shortcode = '{{% panel status="exercise" title="Exercise (pour ceux ayant envie de tester leurs connaissances en pandas)" icon="fas fa-pencil-alt" %}}{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}\nL\'approche *bag of words* est présentée de\nmanière plus extensive dans le [chapitre précédent](#nlp).\n\nL\'idée est d\'étudier la fréquence des mots d\'un document et la\nsurreprésentation des mots par rapport à un document de\nréférence (appelé *corpus*). Cette approche un peu simpliste mais très\nefficace : on peut calculer des scores permettant par exemple de faire\nde classification automatique de document par thème, de comparer la\nsimilarité de deux documents. Elle est souvent utilisée en première analyse,\net elle reste la référence pour l\'analyse de textes mal\nstructurés (tweets, dialogue tchat, etc.). \n\nLes analyses tf-idf (*term frequency-inverse document frequency*) ou les\nconstructions d\'indices de similarité cosine reposent sur ce type d\'approche\n{{% /panel %}}'
 
 def inject_shortcode(status, title, icon, inner):    
@@ -92,3 +111,4 @@ def inject_shortcode(status, title, icon, inner):
 #def identify_replace_shortcode(shortcode):
     # groups = re.findall(r'(status=|title=|icon=)"(.+?)"', shortcode)
     # essai = inject_shortcode("exercise","Exercise (pour ceux ayant envie de tester leurs connaissances en pandas)", "fas fa-pencil-alt", "grere" )
+
