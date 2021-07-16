@@ -1,4 +1,4 @@
-content_rmd <-  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)[15]
+content_rmd <-  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)[6]
 
 file.remove(
   gsub(
