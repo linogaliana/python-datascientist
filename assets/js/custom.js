@@ -1,40 +1,65 @@
 // Copy to clipboard -----------------------------------------------------------
 // see https://github.com/maelle/bookdown/blob/f37a91af07ad5c815809b7ce8dd5dfb5af3a0cdb/inst/resources/bs4_book/bs4_book.js
 
-function changeTooltipMessage(element, msg) {
-  var tooltipOriginalTitle=element.getAttribute('data-original-title');
-  element.setAttribute('data-original-title', msg);
-  $(element).tooltip('show');
-  element.setAttribute('data-original-title', tooltipOriginalTitle);
+document.querySelectorAll('pre > code').forEach(function (codeBlock) {
+    var button = document.createElement('button');
+    button.className = 'copy-code-button';
+    button.type = 'button';
+    button.innerText = 'Copy';
+
+    var pre = codeBlock.parentNode;
+    if (pre.parentNode.classList.contains('highlight')) {
+        var highlight = pre.parentNode;
+        highlight.parentNode.insertBefore(button, highlight);
+    } else {
+        pre.parentNode.insertBefore(button, pre);
+    }
+});
+
+
+function addCopyButtons(clipboard) {
+    document.querySelectorAll('pre > code').forEach(function (codeBlock) {
+        var button = document.createElement('button');
+        button.className = 'copy-code-button';
+        button.type = 'button';
+        button.innerText = 'Copy';
+
+        button.addEventListener('click', function () {
+            clipboard.writeText(codeBlock.innerText).then(function () {
+                /* Chrome doesn't seem to blur automatically,
+                   leaving the button in a focused state. */
+                button.blur();
+
+                button.innerText = 'Copied!';
+
+                setTimeout(function () {
+                    button.innerText = 'Copy';
+                }, 2000);
+            }, function (error) {
+                button.innerText = 'Error';
+            });
+        });
+
+        var pre = codeBlock.parentNode;
+        if (pre.parentNode.classList.contains('highlight')) {
+            var highlight = pre.parentNode;
+            highlight.parentNode.insertBefore(button, highlight);
+        } else {
+            pre.parentNode.insertBefore(button, pre);
+        }
+    });
 }
 
-$(document).ready(function() {
-  if(ClipboardJS.isSupported()) {
-    // Insert copy buttons
-    var copyButton = "<div class='copy'><button type='button' class='btn btn-copy' title='Copy to clipboard' aria-label='Copy to clipboard' data-toggle='popover' data-placement='top' data-trigger='hover'><i class='bi'></i></button></div>";
-    $(copyButton).prependTo("pre.code");
-    // Initialize tooltips:
-    $('.btn-copy').tooltip({container: 'body', boundary: 'window'});
+if (navigator && navigator.clipboard) {
+    addCopyButtons(navigator.clipboard);
+} else {
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/clipboard-polyfill/2.7.0/clipboard-polyfill.promise.js';
+    script.integrity = 'sha256-waClS2re9NUbXRsryKoof+F9qc1gjjIhc2eT7ZbIv94=';
+    script.crossOrigin = 'anonymous';
+    script.onload = function() {
+        addCopyButtons(clipboard);
+    };
 
-    // Initialize clipboard:
-    var clipboard = new ClipboardJS('.btn-copy', {
-      text: function(trigger) {
-        return trigger.parentNode.nextSibling.textContent;
-      }
-    });
-
-    clipboard.on('success', function(e) {
-      const btn = e.trigger;
-      changeTooltipMessage(btn, 'Copied!');
-      btn.classList.add('btn-copy-checked');
-      setTimeout(function() {
-        btn.classList.remove('btn-copy-checked');
-      }, 2000);
-      e.clearSelection();
-    });
-
-    clipboard.on('error', function() {
-      changeTooltipMessage(e.trigger,'Press Ctrl+C or Command+C to copy');
-    });
-  };
-});
+    document.body.appendChild(script);
+}
