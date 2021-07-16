@@ -2,7 +2,7 @@
 // see https://github.com/maelle/bookdown/blob/f37a91af07ad5c815809b7ce8dd5dfb5af3a0cdb/inst/resources/bs4_book/bs4_book.js
 
 function addCopyButtons(clipboard) {
-    document.querySelectorAll('pre > code').forEach(function (codeBlock) {
+    document.querySelectorAll('pre > code.language-python').forEach(function (codeBlock) {
         var button = document.createElement('button');
         button.className = 'copy-code-button';
         button.type = 'button';
