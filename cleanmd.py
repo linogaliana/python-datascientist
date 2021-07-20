@@ -23,7 +23,7 @@ def cleanblog():
 
 
 
-def cleanfile(filename, root_dir = None, show_code = False):
+def cleanfile(filename, root_dir = None, show_code = False, hide_all_code = True):
     if root_dir is None:
         root_dir = os.getcwd()
     print("Processing {}".format(filename))
@@ -39,6 +39,8 @@ def cleanfile(filename, root_dir = None, show_code = False):
     # PRINT ALL PYTHON CODE FOR CORRECTIONS
     if show_code is True:
         s = override_echo_FALSE(s)
+    if hide_all_code:
+        s = re.sub(r'(?s)(```\{python)(.*?)(```)', "", s)
     # EXTRACT AND CLEAN HEADER ----------
     yaml, text = s.split('---\n', 2)[1:]
     yaml_jupytext, yaml_rmd = yaml.split('title:')
