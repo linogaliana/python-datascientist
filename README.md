@@ -16,6 +16,7 @@ deuxième année (Master 1) de l'ENSAE.
 
 Le syllabus est disponible [là](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/).
 
+Les notebook de TP sont disponibles XXX
 
 ## Construction du site web
 
