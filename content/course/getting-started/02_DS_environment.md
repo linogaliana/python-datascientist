@@ -1,4 +1,15 @@
 ---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .md
+      format_name: markdown
+      format_version: '1.2'
+      jupytext_version: 1.6.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
 title: "L'environnement du data-scientist en python"
 date: 2020-07-22T12:00:00Z
 draft: false
