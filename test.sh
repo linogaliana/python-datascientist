@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 # Test automatique des notebooks
 
-args=("$@")
+#args=("$@")
 
-#rm -rf "./temp"
-#mkdir -p temp
+rm -rf "./temp"
+mkdir -p temp
 
 python cleanmd.py
 
