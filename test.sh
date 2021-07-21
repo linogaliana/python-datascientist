@@ -3,8 +3,8 @@
 
 args=("$@")
 
-rm -rf "./temp"
-mkdir -p temp
+#rm -rf "./temp"
+#mkdir -p temp
 
 python cleanmd.py
 
