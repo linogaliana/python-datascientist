@@ -4,6 +4,7 @@
 args=("$@")
 
 rm -rf "./temp"
+mkdir -p temp
 
 python cleanmd.py
 
@@ -16,7 +17,7 @@ cd "./temp"
 #extension=${args[1]}
 correction=false
 extension="Rmd"
-echo "Correction: $test"
+echo "Correction: $correction"
 echo "extension: $extension"
 
 
