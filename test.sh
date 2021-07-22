@@ -3,17 +3,6 @@
 
 #args=("$@")
 
-echo "Creating folder -------------"
-
-rm -rf "./temp"
-mkdir -p temp
-
-echo "Running python snippets to clean markdown -----------"
-
-
-python cleanmd.py
-
-
 cd "./temp"
 
 echo "Jupytext ------------------"
