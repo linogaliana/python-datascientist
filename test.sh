@@ -3,14 +3,22 @@
 
 #args=("$@")
 
+echo "Creating folder -------------"
+
 rm -rf "./temp"
 mkdir -p temp
+
+echo "Running python snippets to clean markdown -----------"
+
+
+chmod 755 ./cleanmd.py
 
 python cleanmd.py
 
 
 cd "./temp"
 
+echo "Jupytext ------------------"
 
 
 #correction=${args[0]}
