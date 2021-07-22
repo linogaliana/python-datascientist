@@ -59,4 +59,40 @@ jobs:
         with:
           name: public
           path: public/
-
+  jupyter:
+    name: Automatic creation of jupyter notebooks
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    needs: blogdown
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+          ref: ${{ github.head_ref }}
+      - name: Test it
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
+        run: |
+         rm -rf "./temp"
+         mkdir -p temp
+         python cleanmd.py
+         pip install jupytext
+         cd ./temp
+         for i in $(find . -type f \( -iname "*.Rmd" \)); do \
+            j=$"${i%.Rmd}.md" ;
+            if [ -e $j ]
+            then
+              echo "Converting $j"; \
+              #jupytext --to py --execute "$i"
+              jupytext --to ipynb "$j" ;
+              #rm "$i" ; \
+            fi            
+         done
+      - uses: actions/upload-artifact@v1
+        with:
+          name: Notebooks
+          path: temp/
+          retention-days: 5
+          
+    
