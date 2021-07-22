@@ -11,8 +11,6 @@ mkdir -p temp
 echo "Running python snippets to clean markdown -----------"
 
 
-sudo chmod 755 ./cleanmd.py
-
 python cleanmd.py
 
 
