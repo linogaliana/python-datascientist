@@ -64,26 +64,16 @@ jobs:
         with:
           name: content
           path: content/
-      - name: Test it
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        env:
-          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
-          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
+      - name: Clean files with Python function
         run: |
-         git config --local user.name "${{ github.actor }}"
-         git config --local user.email "${{ github.actor }}@users.noreply.github.com"
-         # git config user.name github-actions
-         # git config user.email github-actions@github.com
-         git remote set-url origin https://${{ github.actor }}:${GITHUB_PAT}@github.com/${{ github.repository }}    
-         git checkout ${BRANCHE_REF}
-         ls ./content/course/manipulation
          rm -rf "./temp"
          mkdir -p temp
          mkdir -p notebooks
          python cleanmd.py
+      - name: Convert in ipynb with Jupytext
+        run: |
          pip install jupytext
          cd ./temp
-         ls -R
          for i in $(find . -type f \( -iname "*.Rmd" \)); do \
             j="${i%.Rmd}.md" ;
             echo "$j" ;
@@ -95,15 +85,29 @@ jobs:
               k="${j%.md}.ipynb" ;
             fi            
          done
+      - name: Put in notebooks directory
+        run: |
          mkdir -p ../notebooks
          cp -R . ../notebooks
-         cd ..
-         git status;
-         git add notebooks/**/*.ipynb;
-         git commit -m "Automated changes";
       - uses: actions/upload-artifact@v2
         with:
           name: Notebooks
           path: temp/
+      - name: Commit new notebooks
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
+          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+         cd ..
+         git config --local user.name "${{ github.actor }}"
+         git config --local user.email "${{ github.actor }}@users.noreply.github.com"
+         # git config user.name github-actions
+         # git config user.email github-actions@github.com
+         git remote set-url origin https://${{ github.actor }}:${GITHUB_PAT}@github.com/${{ github.repository }}    
+         git checkout ${BRANCHE_REF}
+         git status;
+         git add notebooks/**/*.ipynb;
+         git commit -m "Automated changes";
           
     
