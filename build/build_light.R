@@ -1,4 +1,5 @@
-content_rmd <-  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)[6]
+content_rmd <-  list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
+content_rmd <- content_rmd[!grepl("/git/", content_rmd)]
 
 file.remove(
   gsub(
