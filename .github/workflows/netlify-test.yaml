@@ -1,14 +1,11 @@
-name: Build and deploy to Netlify
+name: Deploy website to Netlify and build notebooks
 
 on:
   pull_request:
     branches:
       - main
       - master
-
-# example borrowed from https://pythonpackaging.info/06-Continuous-Integration.html
-# and https://docs.github.com/en/free-pro-team@latest/actions/guides/building-and-testing-python
-# and https://autobencoder.com/2020-08-24-conda-actions/
+      - dev
 
 jobs:
   blogdown:
@@ -16,9 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           submodules: true
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
       - name: Install rmarkdown
         env:
           GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
@@ -57,6 +56,47 @@ jobs:
           netlify deploy --alias=${BRANCHE_REF} --dir="public" --message "Preview deploy from ${BRANCHE_REF}"
       - uses: actions/upload-artifact@v1
         with:
-          name: public
-          path: public/
-
+          name: content
+          path: content/
+      - name: Clean files with Python function
+        run: |
+         rm -rf "./temp"
+         mkdir -p temp
+         mkdir -p notebooks
+         python cleanmd.py
+      - name: Convert in ipynb with Jupytext
+        run: |
+         pip install jupytext
+         cd ./temp
+         for i in $(find . -type f \( -iname "*.Rmd" \)); do \
+            j="${i%.Rmd}.md" ;
+            echo "$j" ;
+            if [ -e $j ]
+            then
+              echo "Converting $j"; \
+              #jupytext --to py --execute "$i"
+              jupytext --to ipynb "$j" ;
+              k="${j%.md}.ipynb" ;
+            fi            
+         done
+         mkdir -p ../notebooks
+         cp -R . ../notebooks
+         cd ..
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Notebooks
+          path: temp/
+      - name: Commit new notebooks
+        env:
+          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+         git config user.name 'github-actions[bot]'
+         git config user.email 'github-actions[bot]@users.noreply.github.com'
+         # git config user.email github-actions@github.com
+         #git checkout ${BRANCHE_REF}
+         git status
+         git add notebooks/**/*.ipynb;
+         git commit -m "Automated changes";
+         git push
+          
+    
