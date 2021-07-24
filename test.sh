@@ -1,22 +1,18 @@
 #!/bin/bash
 # Test automatique des notebooks
 
-args=("$@")
-
-rm -rf "./temp"
-
-python cleanmd.py
-
+#args=("$@")
 
 cd "./temp"
 
+echo "Jupytext ------------------"
 
 
 #correction=${args[0]}
 #extension=${args[1]}
 correction=false
 extension="Rmd"
-echo "Correction: $test"
+echo "Correction: $correction"
 echo "extension: $extension"
 
 
