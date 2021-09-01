@@ -26,9 +26,13 @@ badge <- function(type = "onyxia"){
 }
 
 
+
 reminder_badges <- function(notebook = ""){
   
   if (notebook != ""){
+    if (!endsWith(notebook, ".ipynb")){
+      notebook <- paste0(notebook, ".ipynb")
+    }
     github_link <- 'https://github.com/linogaliana/python-datascientist/blob/master'
     binder_path <- paste0("?filepath=",notebook)
     notebook <- paste0('/', notebook)
@@ -73,6 +77,12 @@ reminder_badges <- function(notebook = ""){
 }
 
 
+print_badges <- function(){
+  fpath <- knitr::current_input(dir = TRUE)
+  fpath <- gsub(paste0(here::here(),"/./"), "", fpath)
+  fpath <- gsub("Rmd", "ipynb", fpath)
+  reminder_badges(fpath)
+}
 
 
 reminder_box <- function(boxtype = "warning", type = c("html","markdown")){
