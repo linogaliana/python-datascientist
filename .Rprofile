@@ -81,6 +81,7 @@ print_badges <- function(){
   fpath <- knitr::current_input(dir = TRUE)
   fpath <- gsub(paste0(here::here(),"/./"), "", fpath)
   fpath <- gsub("Rmd", "ipynb", fpath)
+  fpath <- gsub("content","notebooks",fpath)
   reminder_badges(fpath)
 }
 
