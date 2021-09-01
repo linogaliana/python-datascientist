@@ -19,8 +19,8 @@ Résumé :
     - Un jeu de données (de préférence collecté par le groupe ou a minima enrichi)
     - De la visualisation
     - De la modélisation
-* La __date du rendu__ est fixée au : **mardi 15 décembre 23h59**
-* Le **18 décembre 2020**, auront lieu des __soutenances__
+* La __date du rendu__ est fixée au : **jeudi 6 janvier 2022 23h59**
+* Le **XX janvier 2022**, auront lieu des __soutenances__
 * __Le projet doit utiliser `Git` et être disponible sous
 [github](https://github.com/) <a href="https://github.com" class="github"><i class="fab fa-github"></i></a> ou [gitlab](https://gitlab.com/)__ <a href="https://gitlab.com" class="gitlab"><i class="fab fa-gitlab"></i></a>
 (dépôt public ou dépôt privé à partager avec le chargé de TD)
