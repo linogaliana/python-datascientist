@@ -5,6 +5,7 @@
 [![Onyxia](https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&color=yellow?logo=Python)](https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter?onyxia.friendlyName=%C2%ABpython-datascientist%C2%BB&resources.requests.memory=%C2%AB4Gi%C2%BB)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/86ebd982-38e0-4e04-81f4-4819131eb800/deploy-status)](https://app.netlify.com/sites/linogaliana-teaching/deploys)
+[![DOI](https://zenodo.org/badge/280161677.svg)](https://zenodo.org/badge/latestdoi/280161677)
 
 
 Ce dépôt Github stocke les fichiers sources ayant permis de construire le site
@@ -14,13 +15,16 @@ Il s'agit de l'ensemble du cours *Python pour les data-scientists et économiste
 que je donne en  
 deuxième année (Master 1) de l'ENSAE.
 
-
 Le syllabus est disponible [là](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/).
+
+Les notebook de TP sont disponibles XXX
+
+## Construction du site web
 
 Le site est construit de manière automatique grâce à [Hugo](https://gohugo.io/)
 à partir d'un environnement conteneurisée [Docker](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general) 
 La reproductibilité des exemples et des exercices est testée avec 
-Github Actions ([![build-doc Actions Status](https://github.com/InseeFrLab/utilitR/workflows/Docker%20Build%20and%20Website%20Deploy/badge.svg)](https://github.com/linogaliana/python-datascientist/actions)).
+Github Actions ([![build-doc Actions Status](https://github.com/linogaliana/python-datascientist/actions/workflows/prod.yml/badge.svg)](https://github.com/linogaliana/python-datascientist/actions)).
 
 L'environnement `conda` nécessaire pour faire tourner l'ensemble du
 cours est disponible dans le fichier [environment.yml](environment.yml). 
@@ -36,7 +40,7 @@ des serveurs partagés:
 * Binder ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/linogaliana/python-datascientist/master)
 )
 * Google colab ([![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb))
-* Onyxia Datalab ([![Onyxia](https://img.shields.io/badge/launch-onyxia-blue)](https://datalab.sspcloud.fr/my-lab/catalogue/inseefrlab-helm-charts-datascience/jupyter/deploiement?kubernetes.role=admin)) pour les élèves de l'ENSAE et
+* Onyxia Datalab ([![Onyxia](https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&color=yellow?logo=Python)](https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter?onyxia.friendlyName=%C2%ABpython-datascientist%C2%BB&resources.requests.memory=%C2%AB4Gi%C2%BB)) pour les élèves de l'ENSAE et
 les agents du système statistique public
 
 ## Utilisation de l'image Docker [![Docker Pulls](https://img.shields.io/docker/pulls/linogaliana/python-datascientist)](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general)

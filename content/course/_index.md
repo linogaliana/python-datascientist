@@ -10,7 +10,7 @@ linktitle: Homepage
 
 Sur l'ensemble du site web,
 il est possible de cliquer sur la petite icone
-<a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-github"></i></a>
+{{< githubrepo >}}
 pour être redirigé vers le dépôt. Pour visualiser sous une forme plus
 ergonomique les notebooks (fichiers `.ipynb`)
 que ne le permet ce site *web*, vous trouverez
