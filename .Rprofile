@@ -77,12 +77,24 @@ reminder_badges <- function(notebook = ""){
 }
 
 
-print_badges <- function(){
-  fpath <- knitr::current_input(dir = TRUE)
+print_badges <- function(fpath = NULL){
+  if (is.null(fpath)){
+    fpath <- knitr::current_input(dir = TRUE)
+  }
   fpath <- gsub(paste0(here::here(),"/./"), "", fpath)
   fpath <- gsub("Rmd", "ipynb", fpath)
   fpath <- gsub("content","notebooks",fpath)
   reminder_badges(fpath)
+}
+
+github_link <- function(fpath = NULL){
+  if (is.null(fpath)){
+    fpath <- knitr::current_input(dir = TRUE)
+  }
+  fpath <- gsub(paste0(here::here(),"/./"), "", fpath)
+  fpath <- gsub("Rmd", "ipynb", fpath)
+  fpath <- gsub("content","notebooks",fpath)
+  return(fpath)
 }
 
 
