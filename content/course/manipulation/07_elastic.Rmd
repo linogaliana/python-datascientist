@@ -63,9 +63,18 @@ Pour essayer les exemples présents dans ce tutoriel :
 print_badges(onyxia_only = TRUE)
 ```
 
+# Introduction
+
+## Réplication de ce chapitre
+
+Ce chapitre est plus exigeant en termes d'infrastructures que les précédents.
+Il nécessite un serveur Elastic. Les utilisateurs du
+[SSP Cloud](datalab.sspcloud.fr/) pourront répliquer les exemples de ce cours
+car cette technologie est disponible (que ce soit pour indexer une base ou
+pour requêter une base existante).
 
 
-# Cas d'usage
+## Cas d'usage
 
 
 Ce notebook recense et propose d'appréhender quelques outils utilisés
@@ -115,19 +124,54 @@ les concepts [vus précedemment](#webscraping)
 libelles = ticket + ingredients
 ```
 
-On part avec cette liste, tout en sachant que nous souhaitons passer à l'échelle: automatiser les traitements, effectuer des recherches efficaces, garder une certaine généralité. 
+On part avec cette liste dans notre supermarché virtuel. L'objectif sera de trouver
+une méthode permettant passer à l'échelle:
+automatiser les traitements, effectuer des recherches efficaces, garder une certaine généralité et flexibilité. 
+
+Ce chapitre montrera par l'exemple l'intérêt d'`Elastic` par rapport à une solution 
+qui n'utiliserait que du Python
+
+# Données utilisées
 
 
-# Les bases offrant des informations nutritionnelles 
+## Les bases offrant des informations nutritionnelles 
 
-* OpenFoodFacts https://fr.openfoodfacts.org/ (projet collaboratif) la composition des produits alimentaires, alimentée par des contributeurs bénévoles 
-* Table de composition nutritionnelle Ciqual https://ciqual.anses.fr (ANSES) la composition nutritionnelle _moyenne_ des aliments les plus consommés en France
+Pour un nombre restreint de produits, on pourrait bien-sûr chercher à
+la main les caractéristiques des produits en utilisant les 
+fonctionalités d'un moteur de recherche:
+
+```{r}
+knitr::include_graphics("fraise.png")
+```
+
+Cependant, cette approche serait très fastidieuse et 
+nécessiterait de récuperer, à la main, chaque caractéristique
+pour chaque produit. Ce n'est donc pas envisageable.
+
+Les données disponibles sur Google viennent de l'[USDA](https://fdc.nal.usda.gov/),
+l'équivalent américain de notre Ministère de l'Agriculture. 
+Cependant, pour des recettes comportant des noms de produits français, ainsi que 
+des produits potentiellement transformés, ce n'est pas très pratique d'utiliser
+une base de données de produits agricoles en Français. Pour cette raison,
+nous proposons d'utiliser les deux bases suivantes, qui servent de base au travail de
+Galiana et al. (à venir)
+
+
+* L'[OpenFoodFacts database](https://fr.openfoodfacts.org/) qui est une base française, 
+collaborative de produits alimentaires. Issue d'un projet [Data4Good](https://dataforgood.fr/), il s'agit d'une 
+alternative opensource et opendata à la base de données de l'application [Yuka](https://yuka.io/). 
+* La table de composition nutritionnelle [Ciqual](https://ciqual.anses.fr) produite par l'Anses. Celle-ci
+propose la composition nutritionnelle _moyenne_ des aliments les plus consommés en France. Il s'agit d'une base de données
+enrichie par rapport à celle de l'USDA puisqu'elle ne se cantonne pas aux produits agricoles non transformés. 
+Avec cette base, il ne s'agit pas de trouver un produit exact mais essayer de trouver un produit type proche du produit
+dont on désire connaître les caractéristiques. 
 
 
 ```{r}
 knitr::include_graphics("openfood.png")
 ```
 
+## Import 
 
 Quelques fonctions utiles sont regroupées dans le script `utils.py` et importées dans le notebook. La base OpenFood peut être récupérée en ligne (opération qui peut prendre un peu de temps, on passe ici par le stockage interne de la plateforme en spécifiant `from_latest=False`). La base ciqual, plus légère, est récupérée elle directement en ligne.
 
@@ -144,6 +188,10 @@ openfood.head()
 ```python
 ciqual.head()
 ```
+
+# Elastic ? Mais ce n'est pas du Python ?!
+
+
 
 # Les produits proches au sens de la distance de Levenstein
 
