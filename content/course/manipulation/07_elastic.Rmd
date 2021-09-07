@@ -230,73 +230,72 @@ au serveur, récupérer les résultats directement dans une session `Python`...
 # Limites de la distance de Levenshtein
 
 
-On appelle distance de Levenshtein entre deux chaînes de caractères le coût minimal (en nombre d'opérations) pour transformer la première en la seconde par
+On appelle distance de Levenshtein entre deux chaînes de caractères le coût minimal (en nombre d'opérations)
+pour transformer la première en la seconde par
+
 * substitution
 * insertion
 * suppression
 
-```python
+La distance de Levenshtein est une mesure très utilisée pour comparer la similarité entre deux
+chaînes de caractères. Il existe plusieurs packages pour calculer cette dernière. 
+`fuzzywuzzy` est le plus connu mais ce dernier est assez lent (implémentation en pur `Python`).
+Le package `rapidfuzz`, présenté ici, propose les mêmes fonctionalités mais est plus rapide car implémenté
+en C++ qui est plus efficace. 
+
+```{python}
 import rapidfuzz # "Rapid fuzzy string matching in Python and C++ using the Levenshtein Distance" soit l'équivalent plus rapide de la librarie fuzzywuzzy
 [rapidfuzz.string_metric.levenshtein('salut','slut', weights =(1,1,1)), # Suppression 
  rapidfuzz.string_metric.levenshtein('salut','saalut', weights =(1,1,1)), # Addition 
  rapidfuzz.string_metric.levenshtein('salut','selut', weights =(1,1,1))] # Substitution
 ```
 
-## On va chercher les produits ciqual les plus proches de nos libellés en terme de distance textuelle classique
+## Produits Ciqual les plus similaires aux produits de la recette
+
+On pourrait écrire une fonction qui prend en argument une liste de libellés d'intérêt et une liste de candidat au *match* et
+renvoie le libellé le plus proche. Cependant, le risque est que cet algorithme soit relativement lent s'il n'est pas codé
+parfaitement. Il est, à mon avis, plus simple, quand
+on est habitué à la logique `pandas`, de faire un produit cartésien pour obtenir un vecteur mettant en miroir
+chaque produit de notre recette avec l'ensembles des produits Ciqual et ensuite comparer les deux vecteurs pour prendre,
+pour chaque produit, le meilleur *match*. Les bases étant de taille limitée, le produit cartésien n'est pas problématique.
+Avec des bases plus conséquentes une stratégie plus parcimonieuse en mémoire devrait être envisagée. 
 
 
-On écrit une fonction qui prend en argument une liste de libellés d'intérêt et une liste de candidat au match et renvoie le libellé le plus proche
-
-```python
+```{python}
 import time
+import pandas as pd
 
-def matchLevenstein(libelles, candidates):
-    matches = dict()
-    
-    start_time = time.time()
+start_time = time.time()
 
-    for l in libelles:
-        # Calcul de la distance de levenstein entre le libellé l et tous les candidats à l'appariemment ! 
-        # Initialisation avec le premier candidat, le plus proche jusqu'à preuve du contraire
-        closest = candidates[0]
-        levmin = rapidfuzz.string_metric.levenshtein(l, closest)  
-        for candidate in candidates[1:]:
-            if rapidfuzz.string_metric.levenshtein(l, candidate) < levmin:
-                # Si un candidat se trouve être plus proche, il prend la place 
-                closest = candidate
-                levmin = rapidfuzz.string_metric.levenshtein(l, candidate)
-                # (rmq: les cas d'égalité sont ici fréquents.. on favorise les derniers de la liste)
-        print(l, '-', closest)
-        matches[l]=closest
-    
-    print(80*'-')
-    print(f"Temps d'exécution total : {(time.time() - start_time):.2f} secondes ---")
-    
-    return matches
+df = pd.DataFrame(libelles, columns = ["produit"]).merge(ciqual, how='cross')
+
+
+out = [rapidfuzz.process.extract(c, ciqual["alim_nom_fr"].tolist(), scorer=rapidfuzz.fuzz.token_sort_ratio, limit = 1) for c in libelles]
+out = [item for sublist in out for item in sublist]
+dist_leven = pd.DataFrame([c for c in out], columns = ['best_match', 'distance', 'index_ciqual'])
+dist_leven['produit'] = libelles
+
+dist_leven
+
+print(f"Temps d'exécution total : {(time.time() - start_time):.2f} secondes ---")
     
 ```
 
-Quid du match dans nos bases de données?
+Cette première étape naïve est décevante à plusieurs égards: 
 
-```python
-matches = dict()
-matches['ciqual_raw'] = matchLevenstein(libelles,list(ciqual['alim_nom_fr']))
-```
+* Certes, on a des matches cohérent (par exemple "Oignon rouge, cru" et "1 oignon")
+mais on a plus de couples incohérents ;
+* Le temps de calcul peut apparaître faible mais le passage à l'échelle risque d'être compliqué ;
+* Les besoins mémoires sont potentiellement importants lors de l'appel à 
+`rapidfuzz.process.extract` ce qui peut bloquer le passage à l'échelle
+* La distance textuelle n'est pas nécessairement la plus pertinente. 
 
-```python
-matches['openfood_raw'] = matchLevenstein(libelles,list(openfood['product_name']))
-```
+On a négligé une étape importante: la normalisation (ou nettoyage des textes) présentée dans la 
+partie [NLP](#nlp), notamment: 
 
-Cette première étape naïve est décevante ! 
-
-
-**On a négligé une étape importante: la normalisation (ou nettoyage des textes)**
 * harmonisation de la casse, suppression des accents...
 * suppressions des mots outils (e.g. ici on va d'abord négliger les quantités pour trouver la nature de l'aliment, en particulier pour Ciqual)
     
-**Le temps de calcul n'est pas forcément acceptable**
-
-**La distance textuelle choisie** n'est pas toujours pertinente
 
 
 On nettoie les libellés en mobilisant des expressions régulières et un dictionnaire de mots outils. On peut adapter le nettoyage à la base, par exemple dans ciqual, la cuisson est souvent renseignée et bruite les appariemments. Plus de détails dans la formation python ["Analyse textuelle: introduction"](https://datalab.sspcloud.fr/my-lab/catalogue/inseefrlab-helm-charts-datascience/jupyter/deploiement?init.personnalInit=https://git.lab.sspcloud.fr/g6ginq/formation_text_mining_public/-/raw/master/installPy.sh&onyxia.friendlyName=Text_Mining_Python) disponible sur le datalab.
