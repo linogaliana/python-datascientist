@@ -359,20 +359,44 @@ Finalement, l'idéal serait de disposer d'un **moteur de recherche** adapté à 
 (par exemple, on pourrait vouloir signaler qu'un echo nous intéresse seulement si la donnée calorique n'est pas manquante).
 On pourrait même vouloir qu'il effectue pour nous des prétraitements sur les données. 
 
-**Important pour la suite !**: 
+C'est exactement ce que fait Elastic
 
-* Lancer un service Elastic en parallèle sur le datalab via ce lien: https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/elastic 
-En pratique, une fois lancé, pas besoin d'ouvrir ce service Elastic pour continuer à suivre. 
+# Indexer une base 
 
-_NB pour aller plus loin: Le lancement du service a créé dans votre `NAMESPACE Kubernetes` (l'ensemble de tout vos services) un cluster elastic (vous n'avez droit qu'à un cluster par namespace/compte d'utilisateur). Votre service jupyter est associé au même namespace. Pas besoin de tout saisir pour la suite, seulement que cette architecture permet à tout ce beau monde de dialoguer._
+A partir de maintenant, commence, à proprement parler, la démonstration Elastic. Cette 
+partie développe les éléments les plus techniques, à savoir l'indexation d'une base. 
+Tous les utilisateurs d'Elastic n'ont pas nécessairement à passer par là, ils peuvent 
+trouver une base déjà indexée, idéalement par un *data engineer* qui aura optimisé
+les traitements. 
 
-Le service Elastic doit apparaître, au même titre que ce service de formation jupyter, dans vos services sur le datalab. Vous pouvez aussi vérifier que votre Jupyter sait dialoguer avec votre Elastic, qui est prêt à vous écouter:
+Les utilisateurs du [SSP Cloud](https://datalab.sspcloud.fr/accueil), architecture qui
+repose sur la technologie [Kubernetes](https://kubernetes.io/) peuvent 
+répliquer les éléments de la suite du document. 
 
-```python
-! kubectl get statefulset
+
+## Créer un cluster Elastic sur le DataLab
+
+Pour lancer un service Elastic, il faut cliquer sur [ce lien](https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/elastic). 
+
+Une fois créé, vous pouvez explorer l'interface graphique Kibana. Cependant, grâce à l'API Elastic
+de Python, on se passera de celle-ci. Donc, en pratique,
+une fois lancé, pas besoin d'ouvrir ce service Elastic pour continuer à suivre[^1].
+
+[^1]: Le lancement du service a créé dans votre `NAMESPACE Kubernetes` (l'ensemble de tout vos services) un cluster Elastic.
+Vous n'avez droit qu'à un cluster par namespace (ou compte d'utilisateur).
+Votre service Jupyter, VSCode, RStudio, etc. est associé au même namespace.
+De même qu'il n'est pas nécessaire de comprendre comment fonctionne le moteur d'une voiture pour conduire, 
+il n'est pas nécessaire de comprendre la manière dont tout ce beau monde dialogue pour pouvoir utiliser le `SSP Cloud`. 
+
+Dans un terminal, vous pouvez aussi vérifier que vous êtes en mesure de dialoguer avec votre cluster Elastic, qui est prêt à vous écouter:
+
+```shell
+kubectl get statefulset
 ```
 
-Nous allons utiliser la librairie `python` `elasticsearch` pour dialoguer avec notre moteur de recherche elastic. Les instructions ci dessous indiquent comment établir la connection.
+Passer par la ligne de commande serait peu commode. 
+Nous allons utiliser la librairie `python` `elasticsearch` pour dialoguer avec notre moteur de recherche Elastic.
+Les instructions ci-dessous indiquent comment établir la connection.
 
 ```python
 from elasticsearch import Elasticsearch
@@ -386,85 +410,147 @@ def elastic():
 es = elastic()
 ```
 
+```
+<Elasticsearch([{'host': 'elasticsearch-master', 'port': 9200}])>
+```
+
+
 Maintenant que la connection est établie, deux étapes nous attendent:
 
 1. **Indexation** Envoyer les documents parmi lesquels on veut chercher des echos pertinents dans notre elastic. Un index est une collection de document. Nous pourrions en créer deux: un pour les produits ciqual, un pour les produits openfood
 2. **Requête** Chercher les documents les plus pertinents suivant une recherche textuelle flexible. Nous allons rechercher les libellés de notre recette et de notre liste de course.
 
+## Première indexation
 
 On crée donc nos deux index:
 
-```python
+~~~python
 if not es.indices.exists('openfood'):
     es.indices.create('openfood')
 if not es.indices.exists('ciqual'):
     es.indices.create('ciqual')
-```
+~~~
 
 Pour l'instant, nos index sont vides! Ils contiennent 0 documents.
 
-```python
+~~~python
 es.count(index = 'openfood')
+~~~
+
+```
+{'count': 0, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}}
 ```
 
 Nous allons en rajouter quelques uns ! 
 
-```python
+~~~python
 es.create(index = 'openfood',  id = 1, body = {'product_name': 'Tarte noix de coco', 'product_name_clean': 'TARTE NOIX COCO'})
 es.create(index = 'openfood',  id = 2, body = {'product_name': 'Noix de coco', 'product_name_clean': 'NOIX COCO'})
 es.create(index = 'openfood',  id = 3, body = {'product_name': 'Beurre doux', 'product_name_clean': 'BEURRE DOUX'})
+~~~
+
+~~~python
+es.count(index = 'openfood')
+~~~
+
+```
+{'count': 3, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}}
 ```
 
-```python
-es.count(index = 'openfood')
-```
+## Première recherche
 
 Faisons notre première recherche: cherchons des noix de pécan! 
 
-```python
+~~~python
 es.search(index = 'openfood', q = 'noix de pécan')
+~~~
+
+```
+{'took': 3102, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 2, 'relation': 'eq'}, 'max_score': 0.9400072, 'hits': [{'_index': 'openfood', '_type': '_doc', '_id': '2', '_score': 0.9400072, '_source': {'product_name': 'Noix de coco', 'product_name_clean': 'NOIX COCO'}}, {'_index': 'openfood', '_type': '_doc', '_id': '1', '_score': 0.8272065, '_source': {'product_name': 'Tarte noix de coco', 'product_name_clean': 'TARTE NOIX COCO'}}]}}
 ```
 
-Intéressons nous aux `hits` (résultats pertinents, ou echos) : nous en avons 2, le score maximal parmi les hits est mentionné dans `max_score` et correspond à celui du deuxième document indexé. Elastic nous fournit ici un **score de pertinence** dans notre recherche d'information, et classe ainsi les documents renvoyés.
 
-Ici nous utilisons la configuration par défaut. Mais comment est calculé ce score?? Demandons à Elastic de nous expliquer le score du document `2` dans la requête `"noix de pécan"`.
+Intéressons nous aux `hits` (résultats pertinents, ou echos) : nous en avons 2. 
+Le score maximal parmi les hits est mentionné dans `max_score` et correspond à celui du deuxième document indexé.
 
-```python
+Elastic nous fournit ici un **score de pertinence** dans notre recherche d'information, et classe ainsi les documents renvoyés.
+
+Ici nous utilisons la configuration par défaut. Mais comment est calculé ce score? Demandons à Elastic de nous expliquer le score du document `2` dans la requête `"noix de pécan"`.
+
+~~~python
 es.explain(index = 'openfood', id = 2, q = 'noix de pécan')
+~~~
+
+```
+{'_index': 'openfood', '_type': '_doc', '_id': '2', 'matched': True, 'explanation': {'value': 0.9400072, 'description': 'max of:', 'details': [{'value': 0.49917626, 'description': 'sum of:', 'details': [{'value': 0.49917626, 'description': 'weight(product_name_clean:noix in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.49917626, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.48275858, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 2.0, 'description': 'dl, length of field', 'details': []}, {'value': 2.3333333, 'description': 'avgdl, average length of field', 'details': []}]}]}]}]}, {'value': 0.9400072, 'description': 'sum of:', 'details': [{'value': 0.4700036, 'description': 'weight(product_name:noix in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.4700036, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.45454544, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 3.0, 'description': 'dl, length of field', 'details': []}, {'value': 3.0, 'description': 'avgdl, average length of field', 'details': []}]}]}]}, {'value': 0.4700036, 'description': 'weight(product_name:de in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.4700036, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.45454544, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 3.0, 'description': 'dl, length of field', 'details': []}, {'value': 3.0, 'description': 'avgdl, average length of field', 'details': []}]}]}]}]}]}}
 ```
 
-## En déduire ici comment est calculée la pertinence
 
-Elastic nous explique donc que le score 0.9400072 est le maximum entre deux sous-scores, 0.4991 et 0.9400072. Pour chacun de ces sous scores, le détail de son calcul est donné. Le premier sous-score n'a accordé un score que par rapport au premier mot (noix), tandis que le second a accordé un score sur la base des deux mots déjà connu dans les documents ("noix" et "de"). Il a ignoré pécan! Jusqu'à présent, ce terme n'est pas connu dans l'index. 
+Elastic nous explique donc que le score `0.9400072` est le maximum entre deux sous-scores, `0.4991` et `0.9400072`.
 
-La pertinence d'un mot pour notre recherche est construite sur une variante de la TF-IDF, considérant qu'un terme est pertinent s'il est souvent présent dans le document (Term Frequency) alors qu'il est peu fréquent dans les autres document (inverse document frequency). Ici les notations des documents 1 et 2 sont très proches, la différence est du à des IDF plus faibles dans le document 1, qui est pénalisé pour être légérement plus long. 
+Pour chacun de ces sous-scores, le détail de son calcul est donné.
+Le premier sous-score n'a accordé un score que par rapport au premier mot (noix), tandis que le second a accordé un score sur la base des deux mots déjà connu dans les documents ("noix" et "de"). Il a ignoré pécan! Jusqu'à présent, ce terme n'est pas connu dans l'index. 
+
+La pertinence d'un mot pour notre recherche est construite sur une variante de la TF-IDF,
+considérant qu'un terme est pertinent s'il est souvent présent dans le document (Term Frequency)
+alors qu'il est peu fréquent dans les autres document (inverse document frequency).
+Ici les notations des documents 1 et 2 sont très proches, la différence est dûe à des IDF plus faibles dans le document 1,
+qui est pénalisé pour être légérement plus long. 
 
 Bref, tout ça est un peu lourd, mais assez efficace, en tout cas moins rudimentaire que les distances caractères à caractères pour ramener des echos pertinents.
 
 
-## Par contre pour l'instant, Elastic n'a pas l'air de gérer les fautes de frappes!
+## Limite de cette première indexation
 
-
+Pour l'instant, Elastic n'a pas l'air de gérer les fautes de frappes!
 Pas le droit à l'erreur dans la requête:
 
-```python
+~~~python
 es.search(index = 'openfood',q = 'TART NOI')
+~~~
+
+```
+{'took': 35, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 0, 'relation': 'eq'}, 'max_score': None, 'hits': []}}
 ```
 
-Cela s'explique par la représentation des champs ('product_name' par exemple) qu'Elastic a inferré, puisque nous n'avons rien spécifié, représentations qui conditionnent la façon dont les champs sont analysés pour calculer la pertinence. Par exemple, regardons la représentation du champ `product_name`
 
-```python
+Cela s'explique par la représentation des champs (*'product_name'* par exemple) qu'Elastic a inféré, puisque nous n'avons rien spécifié.
+La représentation d'une variable conditionne la façon dont les champs sont analysés pour calculer la pertinence.
+Par exemple, regardons la représentation du champ `product_name`
+
+~~~python
 es.indices.get_field_mapping(index = 'openfood', fields = 'product_name')
+~~~
+
+```
+{'openfood': {'mappings': {'product_name': {'full_name': 'product_name', 'mapping': {'product_name': {'type': 'text'}}}}}}
 ```
 
-Elastic a compris qu'il s'agissait d'un champ textuel, par contre, le type est `keyword` n'autorisant donc pas des analyses approximatives. Pour qu'un echo remonte, un des termes doit matcher exactement. Dommage ! Mais c'est parcequ'on a utilisé le mapping par défaut. En réalité, il est assez simple de préciser un mapping plus riche, autorisant une analyse "fuzzy" ou "flou".
+Elastic a compris qu'il s'agissait d'un champ textuel. En revanche, le type est `keyword` n'autorise pas des analyses approximatives donc 
+ne permet pas de tenir compte de fautes de frappes.
+Pour qu'un echo remonte, un des termes doit matcher exactement. Dommage !
+Mais c'est parce qu'on a utilisé le *mapping* par défaut.
+En réalité, il est assez simple de préciser un *mapping* plus riche, autorisant une analyse *"fuzzy"* ou *"flou"*.
+
+# Améliorer l'indexation
 
 
-# Une meilleure spécification du mapping, ou de comment vont être compris et analysé nos champs textuels lors des recherches
+On peut spécifier la façon dont l'on souhaite analyser le texte.
+Par exemple, on peut préciser que l'on souhaite enlever des *stopwords*, raciniser, analyser les termes via des *n-grammes*
+pour rendre la recherche plus robuste aux fautes de frappes...
+
+Ces concepts sont présentés dans la partie [NLP](#nlp).
+Pour une présentation plus complète, voir
+[la documentation officielle d'Elastic](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html)
+
+On propose les analyseurs stockés dans un fichier [schema.json](#schema.json)
 
 
-**On peut spécifier la façon dont l'on souhaite analyser le texte.** Par exemple, on peut préciser que l'on souhaite enlever des stopwords, raciniser, analyser les termes via des n-grammes pour rendre la recherche plus robuste aux fautes de frappes... Pour une présentation plus complète, voir https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html   
-**L'important à retenir à ce stade est la flexibilité de l'outil.** On fournit dans la suite un fichier `settings_OpenFood.json` qui permet de préciser que nous souhaitons par exemple que les matchs sur n-grammes participent au score. Les n-grammes sont des séquences de n caractères ou plus généralement n éléments qui s'enchaînent séquentiellement. Par exemple, NOI et OIX sont des tri-grammes de caractères dans NOIX. Comparer les n-grammes composant des libellés peut permettre d'avoir dans des comparaisons à fautes de frappe/abbréviations près. Cela fait aussi plus de comparaisons à opérer ! D'où également, l'intérêt d'Elastic, qui intégre facilement et efficacement ces comparaisons. 
+Les *n-grammes* sont des séquences de *n* caractères ou plus généralement *n* éléments qui s'enchaînent séquentiellement.
+Par exemple, NOI et OIX sont des tri-grammes de caractères dans NOIX. 
+
+Comparer les n-grammes composant des libellés peut permettre d'avoir dans des comparaisons à fautes de frappe/abbréviations près.
+Cela fait aussi plus de comparaisons à opérer ! D'où également, l'intérêt d'Elastic, qui intégre facilement et efficacement ces comparaisons. 
 
 
 On va préciser un peu le schéma de données qu'on souhaite _indexer_, et aussi préciser comment les différents champs seront _analysés_.
@@ -472,53 +558,71 @@ On va préciser un peu le schéma de données qu'on souhaite _indexer_, et aussi
 
 ### Une indexation plus adaptée
 
-```python
+~~~python
 import json
 
 if es.indices.exists('openfood'):
     es.indices.delete('openfood')
 
-with open('settings_OpenFood.json') as f:
+with open('schema.json') as f:
     mapping = json.load(f)
     
 es.indices.create(index = "openfood", body = mapping)    
-```
+~~~
 
-Maintenant, les champs textuels "product_name" et "product_name_clean" vont pouvoir être analysé aussi via leur n-grammes et après racinisation (et l'un n'exclut pas l'autre!)
+Maintenant, les champs textuels *"product_name"* et *"product_name_clean"*
+vont pouvoir être analysé aussi via leur n-grammes et après racinisation (et l'un n'exclut pas l'autre!)
 
-```python
+~~~python
 es.indices.get_field_mapping(index = 'openfood', fields = 'product_name')
+~~~
+
+```
+{'openfood': {'mappings': {'product_name': {'full_name': 'product_name', 'mapping': {'product_name': {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}, 'ngr': {'type': 'text', 'analyzer': 'ngram_analyzer'}, 'stem': {'type': 'text', 'analyzer': 'stem_analyzer'}}}}}}}}
 ```
 
-La fonction suivante va vous faire gagner du temps: **c'est parti, on envoie toute notre base OpenFood pour pouvoir la requêter!** Parcequ'en rester à 3 documents entrés à la main, ce n'est pas sérieux.
+C'est parti, on envoie toute notre base OpenFood pour pouvoir la requêter ! La fonction suivante (`index_elastic`) va vous faire gagner du temps pour indexer
+car indexer chaque produit à la main n'est pas très efficace.
 
 Du coup ça prend quelques minutes ... mais c'est pour nous en faire gagner ensuite. Cette opération est faite une fois, pour préparer des requêtes potentiellement nombreuses!
 
-```python
-from utils import index_elastic
-index_elastic(es =es, index_name = "openfood",setting_file = 'settings_OpenFood.json', df = openfood[['product_name',"libel_clean","energy_100g","nutriscore_score"]].drop_duplicates())
+~~~python
+utils.index_elastic(es =es, index_name = "openfood",
+        setting_file = 'schema.json',
+        df = openfood[['product_name',"libel_clean","energy_100g","nutriscore_score"]].drop_duplicates())
+~~~
+
+```
+Temps d'exécution total : 263.11 secondes ---
 ```
 
-```python
+~~~python
 es.count(index = 'openfood')
+~~~
+
 ```
+{'count': 630727, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}}
+```
+
 
 ## Nos premières requêtes
 
 Vérifions qu'on recupère quelques tartes aux noix même si l'on fait plein de fautes:
 
-```python
+~~~python
 es.search(index = 'openfood', q = 'TART NOI', size = 3)
+~~~
+
+```
+{'took': 4201, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 10000, 'relation': 'gte'}, 'max_score': 22.765423, 'hits': [{'_index': 'openfood', '_type': '_doc', '_id': '307496', '_score': 22.765423, '_source': {'product_name': 'Tarte noix', 'libel_clean': 'TARTE NOIX', 'energy_100g': 1833.0, 'nutriscore_score': 23.0}}, {'_index': 'openfood', '_type': '_doc', '_id': '825159', '_score': 22.277456, '_source': {'product_name': 'Tarte aux noix', 'libel_clean': 'TARTE AUX NOIX', 'energy_100g': 4.0, 'nutriscore_score': 4.0}}, {'_index': 'openfood', '_type': '_doc', '_id': '867887', '_score': 22.277456, '_source': {'product_name': 'Tarte aux noix', 'libel_clean': 'TARTE AUX NOIX', 'energy_100g': 1929.0, 'nutriscore_score': 21.0}}]}}
 ```
 
-Et c'est plutôt rapide non?
+Pour automatiser cette approche, on peut définir  la fonctioin suivante
 
 ```python
 def matchElastic(libelles):
     matches = dict()
-    
     start_time = time.time()
-
     for l in libelles:
         response = es.search(index = 'openfood', q = l, size = 1)
         if len(response['hits']['hits'])>0:
@@ -530,14 +634,14 @@ def matchElastic(libelles):
 ```
 
 ```python
-matches = matchElastic(libellesDF['libel_clean'])
+matches = matchElastic(courses['libel_clean'])
+pd.DataFrame.from_dict(matches, orient='index')
 ```
 
-Et voilà, on a un outil très rapide de requête (à noter que je dispose d'un elastic probablement configuré différemment du votre, les performances peuvent varier), maintenant **on peut préciser des requêtes plus sophistiquées!**
+Et voilà, on a un outil très rapide de requête ! 
+Maintenant, on peut préciser des requêtes plus sophistiquées![^2]
 
-En fait on a pas nettoyé les champs pour rien! On veut maintenant que notre requête porte spécifiquement sur le champ "libel_clean" (et pas indifféremment sur tout les champs textuels du document), ou encore en filtrant les produits avec un bon nutriscore.. Par exemple, des huiles d'olive avec un bon nutri score? 
-
-à vous de déchiffrer cette requête (QUERY DSL)! Vous pouvez aussi explorer les possibilités de requêtes via la [doc Elastic](https://www.elastic.co/guide/en/elasticsearch/reference/6.8/query-dsl.html) et vous entrainer à un écrire avec votre index tout neuf.
+[^2]: Vous pouvez aussi explorer les possibilités de requêtes via la [doc Elastic](https://www.elastic.co/guide/en/elasticsearch/reference/6.8/query-dsl.html) et vous entrainer à un écrire avec votre index tout neuf.
 
 
 ```python
@@ -566,142 +670,25 @@ body = '''
 '''
 ```
 
-```python
+~~~python
 es.search(index = 'openfood', body = body)
+~~~
+
 ```
+{'took': 10322, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 10000, 'relation': 'gte'}, 'max_score': 174.37657, 'hits': [{'_index': 'openfood', '_type': '_doc', '_id': '693544', '_score': 174.37657, '_source': {'product_name': 'Huile d olive', 'libel_clean': 'HUILE OLIVE', 'energy_100g': 3761.0, 'nutriscore_score': 11.0}}]}}
+```
+
 
 Qu'a-t-on demandé ici? De renvoyer 1 et 1 seul echo (`"size":"1"`) et seulement si celui ci a:
 * `"should"`: Au moins un (`"minimum_should_match":"1"`) des termes des deux champs `libel_clean` et `libel_clean.ngr` qui matche sur un terme de _HUILE OLIVE_, l'analyse (la définition du "terme") étant réalisé soit en tant que `text` ("libel_clean") soit en tant que n-gramme `ngr` ("libel_clean.ngr", une analyse que nous avons spécifié dans le mapping) 
 * `"filter"`: Le champ `float` nutriscore_score doit être compris entre 10 et 20 ("filter").  
 
 A noter :
-1. Les clauses (`"should"`+`"minimum_should_match":"1"`) peuvent être remplacé par un `"must"`, auquel cas, l'echo doit obligatoirement matché sur chaque clause.
+
+1. Les clauses (`"should"`+`"minimum_should_match":"1"`) peuvent être remplacé par un `"must"`, auquel cas, l'echo doit obligatoirement matcher sur chaque clause.
 2. Préciser dans `"filter"` (plutôt que dans "`should`") une condition signifie que celle-ci ne participe pas au score de pertinence. 
 
 
+On n'a pas encore un appariemment très satisfaisant, en particulier sur les boissons. Comment faire ? La réponse sera dans Galiana et al. (à venir)
 
-**C'est pas tout ça, mais on a pas encore un appariemment très satisfaisant, en particulier sur les boissons**
-
-```python
-matches
-```
-
-## S'aider de dictionnaires, et les construire
-
-
-Une méthode simple pour faire comprendre par exemple que "Stella Artois" est une marque de bière est de créer un dictionnaire de marques de bière. A partir de celui-ci, on pourra déterminer si oui ou non on a affaire à une bière. C'est typiquement de l'information connue, publique. On enrichie ainsi l'information disponible. 
-
-Oui sauf que à la main, c'est pas très marrant!
-
-Alors comment récupérer cela efficacement? Wikipedia offre un service web qui donne accès à ses contenus (à utiliser sans en abuser, voir les bonnes pratiques https://www.mediawiki.org/wiki/API:Etiquette). Cela peut être une idée pour constituer des listes de marques. 
-
-```python
-import urllib
-import re
-
-def dictionnary_from_wiki_category(categorie = ['Bière blonde','Vin_français','Marque de bière'], n: int = 10, filters = 'Utilisateur|Discussion|Classement|Liste|Catégorie', sub='\(.*\)'):
-    if isinstance(categorie, list):
-        categorie = categorie[0]
-    url = "https://fr.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:" + urllib.parse.quote(categorie) + "&cmlimit=" + str(n) + "&format=json"
-    with urllib.request.urlopen(url) as response:
-        jsonresp = response.read()
-    jsonresp = json.loads(jsonresp)['query']['categorymembers']
-    if len(jsonresp)>1:
-        res = [re.sub(sub,'',x['title']).strip() for x in jsonresp if not re.match(filters,x['title'])]
-        return(res)
-    else:
-        return []
-```
-
-```python
-dictionnary_from_wiki_category("Marque de bière", n = 20)
-```
-
-```python
-dictionnary_from_wiki_category("Fromage français", n = 20)
-```
-
-**Et donc?** 
-
-à ce stade et faute d'information supplémentaire, on peut associer à toutes les appellations de vins rouges, ou encore toutes les appelations de fromage non encore appariées, leur qualité nutritionnelle moyenne (https://ciqual.anses.fr/#/aliments/5210/vin-(aliment-moyen) ou https://ciqual.anses.fr/#/aliments/12999/fromage-(aliment-moyen)). Etant donné la diversité de ces classes dans le panier de consommation des français, cela peut valoir le coup.
-
-Cela peut se faire en créant par exemple un index elastic à partir de ces listes de produits wikipédia (associé à une information nutritionnelle "moyenne") pour venir y requêter les produits du reliquat. 
-
-
-# Considérer les embeddings de mots existants?
-
-
-Elastic ramène des echos en général bien ordonnés par pertinence, très bien, mais typiquement, cela peut ratisser large, surtout quand on utile les n-grammes ! Et parfois, il n'y a tout simplement pas l'information dans Ciqual ou Openfood Facts. 
-Il faut donc définir un critère pour décider de classer le premier echo comme un match, **soit une notion de proximité entre deux libellés**. Une possibilité est d'avoir recours aux distances textuelles classiques, dérivées de la distance de levenstein (avec par exemple une normalisation pour tenir compte de la longueur variable des libellés). 
-
-Une autre option pour définir des distances entre les termes est de s'appuyer sur champ de recherche récent qui cherche à définir des "plongements de mots".
-
-<!-- #region -->
-**Word Embeddings ou plongement de mots:** représentation vectorielle des chaînes de charactères, de mots, de phrases, de la langue en général, obtenu à partir de modèles de Deep Learning entraînés sur des corpus de texte importants. cf [l'introduction à l'analyse textuelle dans ce set de formation qui évoque Word2Vec](https://datalab.sspcloud.fr/my-lab/catalogue/inseefrlab-helm-charts-datascience/jupyter/deploiement?init.personnalInit=https://git.lab.sspcloud.fr/g6ginq/formation_text_mining_public/-/raw/master/installPy.sh&onyxia.friendlyName=Text_Mining_Python).
-
-
-Des plongements de mots spécifiques à la langue française sont mis à dispositions par des équipes de recherches:  
-https://camembert-model.fr/  
-https://github.com/getalp/Flaubert   
-
-Là aussi, on prend un peu de temps à installer les librairies nécessaires, et à charger les plongements de mots
-<!-- #endregion -->
-
-```python
-! pip install -q -q -q torch transformers
-```
-
-```python
-import torch
-from transformers import FlaubertModel, FlaubertTokenizer
-
-modelname = 'flaubert/flaubert_base_cased' 
-
-# Load pretrained model and tokenizer
-flaubert, log = FlaubertModel.from_pretrained(modelname, output_loading_info=True)
-flaubert_tokenizer = FlaubertTokenizer.from_pretrained(modelname, do_lowercase=False)
-```
-
-Calculons quelques distances entre quelques libellés bien choisis au sens de l'embedding "Flaubert"
-
-```python
-lib1 = "bière framboise"
-lib2 = "barquette framboises"
-lib3 = "bière blonde"
-```
-
-Représentation en `token` (un enchaînement de caractère = 1 entier l'indexant) `flaubert_tokenizer.encode`
-
-```python
-token1 = torch.tensor([flaubert_tokenizer.encode(lib1)])
-token2 = torch.tensor([flaubert_tokenizer.encode(lib2)])
-token3 = torch.tensor([flaubert_tokenizer.encode(lib3)])
-
-```
-
-Représentation vectorielle dense (moyenne des représentations vectorielles de chaque token), en passant les tokens au modèle `flaubert`
-
-```python
-vec1 = flaubert(token1)[0].mean(axis = 1)
-vec2 = flaubert(token2)[0].mean(axis = 1)
-vec3 = flaubert(token3)[0].mean(axis = 1)
-
-```
-
-```python
-[torch.sum((vec1-vec2)**2),torch.sum((vec3-vec2)**2),torch.sum((vec1-vec3)**2)]
-```
-
-Les deux bières sont plus proches l'une de l'autre que les autres couples de libellés. Mais ça demande un peu plus d'exploration à ce stade, voire de retravailler cet embedding pour notre problème. A noter que ces embeddings ne sont pas vraiment pensés pour des libellés courts et bruités, plutôt pour des textes. 
-
-Reentrainés à la marge pour notre cas d'usage (["tranfer learning"](https://blog.baamtu.com/en/word2vec-camembert-use-embedding-models/
-)), en supposant que nous disposons d'un échantillon d'entrainement de "vrai" couples de libellés appariés), nous pourrions peut être disposer d'une distance textuelle moins rudimentaire que la distance de levenstein.
-
-C'est en effet l'ambition des embeddings de mots de représenter la sémantique au delà de la proximité des chaînes de caractères.
-
-
-# Conclusion
-
-
-On a pas encore calculé notre apport total de calories sur la base de notre liste, plutôt exploré quelques idées pour traiter le problème. A vous de jouer maintenant avec tout ces ingrédients! Bon appétit
-
+A vous, de calculer le nombre de calories de notre recette de course ! 
