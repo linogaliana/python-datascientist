@@ -73,6 +73,20 @@ Il nécessite un serveur Elastic. Les utilisateurs du
 car cette technologie est disponible (que ce soit pour indexer une base ou
 pour requêter une base existante).
 
+La première partie de ce tutoriel ne nécessite pas d'architecture particulière et
+peut ainsi être exécutée en utilisant les packages suivants: 
+
+```{python}
+import time
+import pandas as pd
+```
+
+Le script `utils.py` regroupe un certain nombre de fonctions utiles
+
+```{python}
+import utils
+```
+
 
 ## Cas d'usage
 
@@ -176,7 +190,6 @@ knitr::include_graphics("openfood.png")
 Quelques fonctions utiles sont regroupées dans le script `utils.py` et importées dans le notebook. La base OpenFood peut être récupérée en ligne (opération qui peut prendre un peu de temps, on passe ici par le stockage interne de la plateforme en spécifiant `from_latest=False`). La base ciqual, plus légère, est récupérée elle directement en ligne.
 
 ```{python}
-import utils
 openfood = utils.import_openfood()
 ciqual = utils.import_ciqual()
 ```
@@ -241,7 +254,7 @@ La distance de Levenshtein est une mesure très utilisée pour comparer la simil
 chaînes de caractères. Il existe plusieurs packages pour calculer cette dernière. 
 `fuzzywuzzy` est le plus connu mais ce dernier est assez lent (implémentation en pur `Python`).
 Le package `rapidfuzz`, présenté ici, propose les mêmes fonctionalités mais est plus rapide car implémenté
-en C++ qui est plus efficace. 
+en `C++` qui est plus efficace. 
 
 ```{python}
 import rapidfuzz # "Rapid fuzzy string matching in Python and C++ using the Levenshtein Distance" soit l'équivalent plus rapide de la librarie fuzzywuzzy
@@ -262,23 +275,7 @@ Avec des bases plus conséquentes une stratégie plus parcimonieuse en mémoire 
 
 
 ```{python}
-import time
-import pandas as pd
-
-start_time = time.time()
-
-df = pd.DataFrame(libelles, columns = ["produit"]).merge(ciqual, how='cross')
-
-
-out = [rapidfuzz.process.extract(c, ciqual["alim_nom_fr"].tolist(), scorer=rapidfuzz.fuzz.token_sort_ratio, limit = 1) for c in libelles]
-out = [item for sublist in out for item in sublist]
-dist_leven = pd.DataFrame([c for c in out], columns = ['best_match', 'distance', 'index_ciqual'])
-dist_leven['produit'] = libelles
-
-dist_leven
-
-print(f"Temps d'exécution total : {(time.time() - start_time):.2f} secondes ---")
-    
+dist_leven = utils.match_product(libelles, ciqual)
 ```
 
 Cette première étape naïve est décevante à plusieurs égards: 
@@ -297,57 +294,70 @@ partie [NLP](#nlp), notamment:
 * suppressions des mots outils (e.g. ici on va d'abord négliger les quantités pour trouver la nature de l'aliment, en particulier pour Ciqual)
     
 
+## Preprocessing pour améliorer la pertinence des matches
 
-On nettoie les libellés en mobilisant des expressions régulières et un dictionnaire de mots outils. On peut adapter le nettoyage à la base, par exemple dans ciqual, la cuisson est souvent renseignée et bruite les appariemments. Plus de détails dans la formation python ["Analyse textuelle: introduction"](https://datalab.sspcloud.fr/my-lab/catalogue/inseefrlab-helm-charts-datascience/jupyter/deploiement?init.personnalInit=https://git.lab.sspcloud.fr/g6ginq/formation_text_mining_public/-/raw/master/installPy.sh&onyxia.friendlyName=Text_Mining_Python) disponible sur le datalab.
+On nettoie les libellés en mobilisant des expressions régulières et un dictionnaire de mots outils.
+On peut adapter le nettoyage à la base, par exemple dans ciqual, la cuisson est souvent renseignée et bruite les appariemments.
+La fonction `clean_libelle` du script [`utils.py`](#utils.py) propose quelques fonctions
+appliquant les méthodes disponibles dans la partie [NLP](#NLP)
 
-```python
+
+```{python}
 from utils import clean_libelle
 ```
 
-```python
-# Après avoir harmonisé la casse et retiré les accents (voir utils.py)
+On peut déjà : 
+
+* Harmoniser la casse et retirer les accents (voir utils.py)
+* Retirer tout les caractères qui ne sont pas des lettres (chiffres, ponctuations)
+* Retirer les caractères isolés
+
+```{python}
 stopWords = ['KG','CL','G','L','CRUE?S?', 'PREEMBALLEE?S?']
-replace_regex = {r'[^A-Z]': ' ', r'\b[A-Z0-9]{1,2}?\b':' '} # Retirer tout les caractères qui ne sont pas des lettres (chiffres, ponctuations); Retirer les caractères isolés
+replace_regex = {r'[^A-Z]': ' ', r'\b[A-Z0-9]{1,2}?\b':' '} # 
 ```
 
-```python
+Cela permet d'obtenir les bases nettoyées suivantes:
+
+```{python}
 ciqual = clean_libelle(ciqual, yvar = 'alim_nom_fr', replace_regex = replace_regex, stopWords = stopWords)
-```
-
-```python
-openfood = clean_libelle(openfood, yvar = 'product_name', replace_regex = replace_regex, stopWords = stopWords)
-```
-
-```python
-import pandas as pd
-libellesDF = pd.DataFrame(libelles, columns = ['libel'])
-libellesDF = clean_libelle(libellesDF, yvar = 'libel', replace_regex = replace_regex, stopWords = stopWords)
-```
-
-```python
-libellesDF
-```
-
-```python
-openfood.sample(10)
-```
-
-```python
 ciqual.sample(10)
 ```
 
-Est-ce que c'est mieux? Pas encore parfait, mais on progresse sur les produits appariés! 
-
-```python
-matches['openfood_clean'] = matchLevenstein(libellesDF['libel_clean'],list(openfood['libel_clean']))
+```{python}
+openfood = clean_libelle(openfood, yvar = 'product_name', replace_regex = replace_regex, stopWords = stopWords)
+openfood.sample(10)
 ```
 
-Pour le temps de calcul, c'est pas encore ça.
+```{python}
+courses = pd.DataFrame(libelles, columns = ['libel'])
+courses = clean_libelle(courses, yvar = 'libel', replace_regex = replace_regex, stopWords = stopWords)
+courses.sample(10)
+```
+
+
+Les noms de produits sont déjà plus harmonisés. Voyons voir si _a permet de trouver un
+*match* dans l'Openfood database: 
+
+
+```{python}
+dist_leven_openfood = utils.match_product(courses["libel_clean"], openfood, "libel_clean")
+dist_leven_openfood.sample(10)
+```
+
+Pas encore parfait, mais on progresse sur les produits appariés! 
+Concernant le temps de calcul, les quelques secondes nécessaires à
+ce calcul peuvent apparaître un faible prix à payer. Cependant,
+il convient de rappeler que le nombre de produits dans l'ensemble
+de recherche est faible. Cette solution n'est donc pas généralisable.
+
 
 
 ## Réduire les temps de recherche
 
-Finalement, l'idéal serait de disposer d'un **moteur de recherche** adapté à notre besoin, contenant les produits candidats, que l'on pourrait interroger, rapide en lecture, capable de classer les echos renvoyés par pertinence, que l'on pourrait requêter de manière flexible (par exemple, on pourrait vouloir signaler qu'un echo nous intéresse seulement si la donnée calorique n'est pas manquante). On pourrait même vouloir qu'il effectue pour nous des prétraitements sur les données. 
+Finalement, l'idéal serait de disposer d'un **moteur de recherche** adapté à notre besoin, contenant les produits candidats, que l'on pourrait interroger, rapide en lecture, capable de classer les echos renvoyés par pertinence, que l'on pourrait requêter de manière flexible
+(par exemple, on pourrait vouloir signaler qu'un echo nous intéresse seulement si la donnée calorique n'est pas manquante).
+On pourrait même vouloir qu'il effectue pour nous des prétraitements sur les données. 
 
 **Important pour la suite !**: 
 

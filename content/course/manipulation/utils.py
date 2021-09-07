@@ -7,7 +7,7 @@ from elasticsearch.helpers import bulk, parallel_bulk
 from collections import deque
 import json
 import time
-
+import rapidfuzz
 
 openfoodcols = ['product_name', 'energy_100g', 'nutriscore_score']
 
@@ -71,6 +71,18 @@ def clean_libelle(data, yvar = 'product_name', outvar = 'libel_clean',
         data.replace({outvar: {r'([ ]{2,})': ' '} }, regex=True, inplace=True)  # Suppression des espaces multiples
     
     return data
+
+
+def match_product(liste_produits, dataset_comparaison, yvar_comparaison = "alim_nom_fr"):
+  start_time = time.time()
+  out = [rapidfuzz.process.extract(c, dataset_comparaison[yvar_comparaison].tolist(), scorer=rapidfuzz.fuzz.token_sort_ratio, limit = 1) for c in liste_produits]
+  out = [item for sublist in out for item in sublist]
+  dist_leven = pd.DataFrame([c for c in out], columns = ['best_match', 'distance', 'index_ciqual'])
+  dist_leven['produit'] = liste_produits
+  print(f"Temps d'exécution total : {(time.time() - start_time):.2f} secondes ---")
+  return dist_leven
+
+
 
 
 def gen_dict_from_pandas(index_name, df):
