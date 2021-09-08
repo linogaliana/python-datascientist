@@ -1,4 +1,5 @@
 import glob
+import matplotlib
 import matplotlib.pyplot as plt
 import wordcloud
 import numpy as np
@@ -6,7 +7,6 @@ import PIL
 import io
 import requests
 import random
-
 list_files = glob.glob("./temp/course/**/*.Rmd", recursive=True)
 
 
