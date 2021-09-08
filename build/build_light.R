@@ -1,7 +1,7 @@
 content_rmd <- list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
 content_rmd <- content_rmd[!grepl("/git/", content_rmd)]
 content_rmd <- content_rmd[!grepl("06a_exo_supp_webscraping.", content_rmd)]
-content_rmd <- content_rmd[14]
+content_rmd <- content_rmd[5]
 
 file.remove(
   gsub(
