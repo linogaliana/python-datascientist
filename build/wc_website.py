@@ -7,16 +7,30 @@ import PIL
 import io
 import requests
 import random
+
+import nltk
+from nltk.corpus import stopwords
+nltk.download('stopwords')
+stop_words = set(stopwords.words('french'))
+
 list_files = glob.glob("./temp/course/**/*.Rmd", recursive=True)
 
 
-filename = list_files[0]
+fl = list_files[10]
 
 book_mask = np.array(PIL.Image.open("./build/python_black.png"))
 
 
-with open(filename, encoding='utf-8') as f:
-  content = f.readlines()
+def read_file(filename):
+    with open(filename, 'r', encoding='utf-8') as f:
+        text = f.readlines()
+        f.close()
+    new_text = " ".join([line for line in text])
+    s = new_text
+    return s
+
+
+list_content = [read_file(fl) for fl in list_files]
 
 
 def grey_color_func(word, font_size, position, orientation, random_state=None,
@@ -34,7 +48,12 @@ def clean_file(text):
     return text
 
 
-corpus = clean_file(text = content)
+corpus = clean_file(text = list_content)
+
+corpus = corpus.split(" ")
+corpus = [w for w in corpus if not w in stop_words]
+#corpus = [word for word in corpus if word.isalpha()]
+corpus = " ".join(corpus)
 
 fig = plt.figure()
 
