@@ -16,8 +16,6 @@ stop_words = set(stopwords.words('french'))
 list_files = glob.glob("./temp/course/**/*.Rmd", recursive=True)
 
 
-fl = list_files[10]
-
 book_mask = np.array(PIL.Image.open("./build/python_black.png"))
 
 
@@ -59,6 +57,6 @@ fig = plt.figure()
 
 plt.imshow(make_wordcloud(corpus), interpolation='bilinear')
 plt.axis("off")
-#plt.show()
-plt.savefig('./content/home/word.png', bbox_inches='tight')
+plt.tight_layout()
+plt.savefig('./content/home/word.png', bbox_inches='tight',  dpi=199)
 
