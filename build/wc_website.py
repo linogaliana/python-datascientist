@@ -7,6 +7,7 @@ import PIL
 import io
 import requests
 import random
+import re
 
 import nltk
 from nltk.corpus import stopwords
@@ -27,10 +28,6 @@ def read_file(filename):
     s = new_text
     return s
 
-
-list_content = [read_file(fl) for fl in list_files]
-
-
 def grey_color_func(word, font_size, position, orientation, random_state=None,
                     **kwargs):
     return "hsl(0, 0%%, %d%%)" % random.randint(60, 100)
@@ -40,11 +37,18 @@ def make_wordcloud(corpus):
     wc.generate(corpus).recolor(color_func=grey_color_func, random_state=3)
     return wc
 
+def keep_text_within_shortword(shortcode):
+    return re.sub(re.compile("(\{\{).*(\}\}\\n)|(\\n\{\{).*(\}\})"),"",shortcode)
 
 def clean_file(text):
     text = " ".join(text).lower()
-    return text
+    s = keep_text_within_shortword(text)
+    # REMOVE R CHUNKS ------
+    s = re.sub(r'(?s)(```\{r)(.*?)(```)', "", s)
+    s = re.sub(r'`', '', s)
+    return s
 
+list_content = [read_file(fl) for fl in list_files]
 
 corpus = clean_file(text = list_content)
 
@@ -59,4 +63,5 @@ plt.imshow(make_wordcloud(corpus), interpolation='bilinear')
 plt.axis("off")
 plt.tight_layout()
 plt.savefig('./content/home/word.png', bbox_inches='tight',  dpi=199)
+
 
