@@ -62,6 +62,6 @@ fig = plt.figure()
 plt.imshow(make_wordcloud(corpus), interpolation='bilinear')
 plt.axis("off")
 plt.tight_layout()
-plt.savefig('./content/home/word.png', bbox_inches='tight',  dpi=199)
+plt.savefig('./content/home/word.png', bbox_inches='tight', pad_inches = 0, dpi=199)
 
 
