@@ -6,8 +6,8 @@ title: Python pour les data-scientists et économistes
 hero_media: word.png
 design:
   background:
-    gradient_start: '#4bb4e3'
-    gradient_end: '#2b94c3'
+    gradient_start: '#000000'
+    gradient_end: '#000000'
     text_color_light: true
 cta:
   url: course/
