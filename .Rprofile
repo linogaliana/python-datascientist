@@ -27,7 +27,7 @@ badge <- function(type = "onyxia"){
 
 
 
-reminder_badges <- function(notebook = ""){
+reminder_badges <- function(notebook = "", onyxia_only = FALSE){
   
   if (notebook != ""){
     if (!endsWith(notebook, ".ipynb")){
@@ -60,7 +60,20 @@ reminder_badges <- function(notebook = ""){
   )
   colab_link <- sprintf("[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master%s)",
                         notebook)
-  
+
+  if (isTRUE(onyxia_only)){
+    return(
+    cat(
+      c(
+        github_link,
+        nbviewer_link,
+        onyxia_link
+      ),
+      sep = "\n"
+    )
+    )
+  }
+
   return(
     cat(
       c(
@@ -77,14 +90,14 @@ reminder_badges <- function(notebook = ""){
 }
 
 
-print_badges <- function(fpath = NULL){
+print_badges <- function(fpath = NULL, onyxia_only = FALSE){
   if (is.null(fpath)){
     fpath <- knitr::current_input(dir = TRUE)
   }
   fpath <- gsub(paste0(here::here(),"/./"), "", fpath)
   fpath <- gsub("Rmd", "ipynb", fpath)
   fpath <- gsub("content","notebooks",fpath)
-  reminder_badges(fpath)
+  reminder_badges(fpath, onyxia_only = onyxia_only)
 }
 
 github_link <- function(fpath = NULL){
