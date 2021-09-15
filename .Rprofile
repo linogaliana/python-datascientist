@@ -46,6 +46,11 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE){
     nbviewer_link <- 'https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/tree/master'
   }
   
+  download_link <- sprintf(
+    "[![Download](https://img.shields.io/badge/Download-Notebook-important?logo=Jupyter)](https://downgit.github.io/#/home?url=%s%s)",
+    github_link,
+    notebook
+  )
   github_link <- sprintf('<a href="%s%s" class="github"><i class="fab fa-github"></i></a>',
                          github_link,
                          notebook)
@@ -61,11 +66,7 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE){
   colab_link <- sprintf("[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master%s)",
                         notebook)
   
-  download_link <- sprintf(
-    "[![Download](https://img.shields.io/badge/Download-Notebook-important?logo=Jupyter)](https://downgit.github.io/#/home?url=%s%s)",
-    github_link,
-    notebook
-  )
+
   
 
   if (isTRUE(onyxia_only)){
