@@ -60,12 +60,20 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE){
   )
   colab_link <- sprintf("[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master%s)",
                         notebook)
+  
+  download_link <- sprintf(
+    "[![Onyxia](https://img.shields.io/badge/Download-Notebook-important?logo=Jupyter)](https://downgit.github.io/#/home?url=%s%s)",
+    github_link,
+    download_link
+  )
+  
 
   if (isTRUE(onyxia_only)){
     return(
     cat(
       c(
         github_link,
+        download_link,
         nbviewer_link,
         onyxia_link
       ),
@@ -78,6 +86,7 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE){
     cat(
       c(
         github_link,
+        download_link,
         nbviewer_link,
         onyxia_link,
         binder_link,
