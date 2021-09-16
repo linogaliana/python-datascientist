@@ -48,8 +48,8 @@ Dans ce tutoriel `pandas`, nous allons utiliser deux sources de données :
 * Les émissions de gaz à effet de serre estimées au niveau communal par l'ADEME. Le jeu de données est 
 disponible sur [data.gouv](https://www.data.gouv.fr/fr/datasets/inventaire-de-gaz-a-effet-de-serre-territorialise/#_)
 et requêtable directement dans python avec
-[cet url](https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert)
-`pandas` offre la possibilité d'importer des données directement depuis un url. C'est l'option
+[cet url](https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert).
+ `pandas` offre la possibilité d'importer des données directement depuis un url. C'est l'option
 prise dans ce tutoriel.
 Si vous préfèrez, pour des
 raisons d'accès au réseau ou de performance, importer depuis un poste local,
@@ -72,6 +72,15 @@ de taper, dans une invite de commande,
 pip install git+https://github.com/InseeFrLab/Py-Insee-Data@master
 ```
 
+Dans google colab, vous pouvez effectuer les instructions suivantes :
+
+```shell
+!pip install python-Levenshtein
+!pip install git+https://github.com/InseeFrLab/Py-Insee-Data.git
+```
+
+
+
 {{% /panel %}}
 
 [^1]: Toute contribution sur ce package, disponible sur [Github](https://github.com/InseeFrLab/Py-Insee-Data) est bienvenue !
@@ -89,16 +98,16 @@ import pynsee.download
 
 ## Exploration de la structure des données
 
-Commencer par importer les données de l'Ademe à l'aide du package `pandas`. Vous pouvez les nommer `df`
+Commencer par importer les données de l'Ademe à l'aide du package `pandas`. Vous pouvez les nommer `df`.
 
-```{python}
-df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
+```{python, show = FALSE, include = FALSE}
+df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global")
 ```
 
 Pour les données de cadrage au niveau communal (source Insee), le package `pynsee` facilite grandement la vie. 
 La liste des données disponibles est [ici](https://inseefrlab.github.io/DoReMIFaSol/articles/donnees_dispo.html).
-En l'occurrence, on va utiliser les données Filosofi (données de revenu) au niveau communal. 
-Le code pour télécharger celle-ci est le suivant
+En l'occurrence, on va utiliser les données Filosofi (données de revenus) au niveau communal. 
+Le code pour les télécharger est le suivant :
 
 ```{python, echo = TRUE}
 df_city = pynsee.download.telechargerDonnees("FILOSOFI_COM", date = "dernier")
@@ -129,9 +138,7 @@ df.sample(10)
 df.sample(frac = 0.05)
 df[:10].sample(n = 100, replace = True)
 df[:6].sample(n = 100, replace = True, weights = [0.5] + [0.1]*5)
-```
 
-```{python, show = FALSE, include = FALSE}
 df_city.head(10)
 df_city.tail(15)
 df_city.sample(10)
@@ -149,35 +156,34 @@ Cette première approche exploratoire donne une idée assez précise de la mani�
 
 La première chose à vérifier est le format des données, afin d'identifier des types de variables qui ne conviennent pas. Ici, comme c'est `pandas` qui a géré automatiquement les types de variables, il y a peu de chances que les types ne soient pas adéquats mais une vérification ne fait pas de mal.
 
-* Vérifier les types des variables. S'assurer que les types des variables communes aux deux bases soient cohérents.
+* Vérifier les types des variables. S'assurer que les types des variables communes aux deux bases sont cohérents.
 
-Ensuite, on vérifie les dimensions des `DataFrames` et la structure de certaines variables clé. En l'occurrence, les variables fondamentales pour lier nos données sont les variables communales. Ici, on a deux variables géographiques: un code commune et un nom de commune. 
+
+```{python, include = FALSE, eval = FALSE}
+print(df.dtypes)
+print(df_city.dtypes)
+```
+
+
+Ensuite, on vérifie les dimensions des `DataFrames` et la structure de certaines variables clés. En l'occurrence, les variables fondamentales pour lier nos données sont les variables communales. Ici, on a deux variables géographiques: un code commune et un nom de commune. 
 
 * Vérifier les dimensions des DataFrames
-* Vérifier le nombre de valeurs uniques des variables géographiques dans chaque base. Les résultats apparaissent-ils cohérents ?
-* Identifier les libellés pour lesquels on a plusieurs codes communes dans `df_city` et les stocker dans un vecteur `x` (conseil: faire attention à l'index de `x`)
-
-On se focalise temporairement sur les observations où le libellé comporte plus de deux codes communes différents
-
-* Regarder dans `df_city` ces observations
-* Pour mieux y voir, réordonner la base obtenue par order alphabétique
-* Déterminer la taille moyenne (variable nombre de personnes: `NBPERSMENFISC16`) et quelques statistiques descriptives de ces données. Comparer aux mêmes statistiques sur les données où libellés et codes communes coïncident
-* Vérifier sur les grandes villes (plus de 100 000 personnes), la proportion de villes où libellés et codes communes ne coïncident pas. Identifier ces observations.
-* Vérifier dans `df_city` les villes dont le libellé est égal à Montreuil. Vérifier également celles qui contiennent le terme 'Saint-Denis'
-
-{{% /panel %}}
-
 
 ```{python, include = FALSE, eval = FALSE}
-df.dtypes
-df_city.dtypes
+print(df.shape)
+print(df_city.shape)
 ```
 
+* Vérifier le nombre de valeurs uniques des variables géographiques dans chaque base. Les résultats apparaissent-ils cohérents ?
+
 ```{python, include = FALSE, eval = FALSE}
-df[['INSEE commune', 'Commune']].nunique()
-df_city[['CODGEO', 'LIBGEO']].nunique()
+print(df[['INSEE commune', 'Commune']].nunique())
+print(df_city[['CODGEO', 'LIBGEO']].nunique())
 # Résultats dont l'ordre de grandeur est proche. Dans les deux cas, #(libelles) < #(code)
 ```
+
+* Identifier les libellés pour lesquels on a plusieurs codes communes dans `df_city` et les stocker dans un vecteur `x` (conseil: faire attention à l'index de `x`)
+
 
 ```{python, include = FALSE, eval = FALSE}
 x = df_city.groupby('LIBGEO').count()['CODGEO']
@@ -186,30 +192,46 @@ x = x.reset_index()
 x
 ```
 
+On se focalise temporairement sur les observations où le libellé comporte plus de deux codes communes différents
+
+* Regarder dans `df_city` ces observations
+
 ```{python, include = FALSE, eval = FALSE}
 df_city[df_city['LIBGEO'].isin(x['LIBGEO'])]
+```
+* Pour mieux y voir, réordonner la base obtenue par order alphabétique
+
+```{python, include = FALSE, eval = FALSE}
 df_city[df_city['LIBGEO'].isin(x['LIBGEO'])].sort_values('LIBGEO')
 ```
+
+* Déterminer la taille moyenne (variable nombre de personnes: `NBPERSMENFISC16`) et quelques statistiques descriptives de ces données. Comparer aux mêmes statistiques sur les données où libellés et codes communes coïncident
 
 ```{python, include = FALSE, eval = FALSE}
 df_city[df_city['LIBGEO'].isin(x['LIBGEO'])]['NBPERSMENFISC16'].describe()
 df_city[~df_city['LIBGEO'].isin(x['LIBGEO'])]['NBPERSMENFISC16'].describe()
 ```
 
+* Vérifier sur les grandes villes (plus de 100 000 personnes), la proportion de villes où libellés et codes communes ne coïncident pas. Identifier ces observations.
+
 ```{python, include = FALSE, eval = FALSE}
 df_big_city = df_city[df_city['NBPERSMENFISC16']>100000]
 df_big_city['probleme'] = df_big_city['LIBGEO'].isin(x['LIBGEO'])
 df_big_city['probleme'].mean()
-```
-
-```{python, include = FALSE, eval = FALSE}
 df_big_city[df_big_city['probleme']]
 ```
+
+* Vérifier dans `df_city` les villes dont le libellé est égal à Montreuil. Vérifier également celles qui contiennent le terme 'Saint-Denis'
+
+
 
 ```{python, include = FALSE, eval = FALSE}
 df_city[df_city.LIBGEO == 'Montreuil']
 df_city[df_city.LIBGEO.str.contains('Saint-Denis')].head(10)
 ```
+
+{{% /panel %}}
+
 
 Ce petit exercice permet de se rassurer car les libellés dupliqués sont en fait des noms de commune identiques mais qui ne sont pas dans le même département. Il ne s'agit donc pas d'observations dupliquées. On se fiera ainsi aux codes communes, qui eux sont uniques.
 
@@ -225,75 +247,86 @@ Les indices sont des éléments spéciaux d'un DataFrame puisqu'ils permettent d
 A partir de l'exercice précédent, on peut se fier aux codes communes.
 
 * Fixer comme indice la variable de code commune dans les deux bases. Regarder le changement que cela induit sur le *display* du dataframe
-* Les deux premiers chiffres des codes communes sont le numéro de département. Créer une variable de département `dep` dans `df`
-* Calculer les émissions totales par secteur pour chaque département. Mettre en log ces résultats dans un objet `df_log`. Garder 5 départements et produire un barplot
-* Repartir de `df`. Calculer les émissions totales par département et sortir la liste des 10 principaux émetteurs de CO2 et des 5 départements les moins émetteurs. Sans faire de *merge*, regarder les caractéristiques de ces départements (population et niveau de vie)
-
-{{% /panel %}}
-
 
 ```{python, include = FALSE, eval = FALSE}
+display(df)
 df = df.set_index('INSEE commune')
+display(df)
+
+display(df_city)
 df_city =  df_city.set_index('CODGEO') 
+display(df_city)
 ```
+
+* Les deux premiers chiffres des codes communes sont le numéro de département. Créer une variable de département `dep` dans `df` et dans `df_city`
 
 ```{python, include = FALSE, eval = FALSE}
 df['dep'] = df.index.str[:2]
 df_city['dep'] = df_city.index.str[:2]
 ```
 
+* Calculer les émissions totales par secteur pour chaque département. Mettre en log ces résultats dans un objet `df_log`. Garder 5 départements et produire un barplot
+
 ```{python, include = FALSE, eval = FALSE}
 df_log = df.groupby('dep').sum().apply(np.log)
 df_log.sample(5).plot(kind = "bar")
 ```
 
-```{python, include = FALSE, eval = FALSE}
-df
-```
+* Repartir de `df`. Calculer les émissions totales par département et sortir la liste des 10 principaux émetteurs de CO2 et des 5 départements les moins émetteurs. Sans faire de *merge*, regarder les caractéristiques de ces départements (population et niveau de vie)
+
 
 ```{python, include = FALSE, eval = FALSE}
+## Emissions totales par département (df)
 df_emissions = df.reset_index().set_index(['INSEE commune','dep']).sum(axis = 1).groupby('dep').sum()
 gros_emetteurs = df_emissions.sort_values(ascending = False).head(10)
 petits_emetteurs = df_emissions.sort_values().head(5)
+
+
+## Caractéristiques des départements (df_city)
+print(df_city[df_city['dep'].isin(gros_emetteurs.index)][['NBPERSMENFISC16','MED16']].sum())
+print(df_city[df_city['dep'].isin(gros_emetteurs.index)][['NBPERSMENFISC16','MED16']].mean())
+print(df_city[df_city['dep'].isin(petits_emetteurs.index)][['NBPERSMENFISC16','MED16']].sum())
+print(df_city[df_city['dep'].isin(petits_emetteurs.index)][['NBPERSMENFISC16','MED16']].mean())
+
 ```
 
-```{python, include = FALSE, eval = FALSE}
-df_city[df_city['dep'].isin(gros_emetteurs.index)][['NBPERSMENFISC16','MED16']].sum()
-df_city[df_city['dep'].isin(gros_emetteurs.index)][['NBPERSMENFISC16','MED16']].mean()
-```
+{{% /panel %}}
 
-```{python, include = FALSE, eval = FALSE}
-df_city[df_city['dep'].isin(petits_emetteurs.index)][['NBPERSMENFISC16','MED16']].sum()
-df_city[df_city['dep'].isin(petits_emetteurs.index)][['NBPERSMENFISC16','MED16']].mean()
-```
+
+
 
 {{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
 
 **Exercice 4: performance des indices**
 
-Un des intérêts des indices est qu'il permettent des agrégations efficaces. 
+Un des intérêts des indices est qu'ils permettent des agrégations efficaces. 
 
 * Repartir de `df` et créer une copie `df_copy = df.copy()` et `df_copy2 = df.copy()` afin de ne pas écraser le DataFrame `df`
-* Utiliser la variable `dep` comme indice pour `df_copy` et retirer tout index pour `df_copy2`
-* Importer le module `timeit` et comparer le temps d'exécution de la somme par secteur, pour chaque département, des émissions de CO2
-
-{{% /panel %}}
-
 
 ```{python, include = FALSE, eval = FALSE}
 df_copy = df.copy()
 df_copy2 = df.copy()
+```
+
+* Utiliser la variable `dep` comme indice pour `df_copy` et retirer tout index pour `df_copy2`
+
+```{python, include = FALSE, eval = FALSE}
 df_copy = df_copy.set_index('dep')
 df_copy2 = df_copy2.reset_index()
 ```
 
-```{python, include = FALSE, eval = FALSE}
-%timeit df_copy.drop('Commune', axis = 1).groupby('dep').sum()
-```
+* Importer le module `timeit` et comparer le temps d'exécution de la somme par secteur, pour chaque département, des émissions de CO2
 
 ```{python, include = FALSE, eval = FALSE}
+%timeit df_copy.drop('Commune', axis = 1).groupby('dep').sum()
 %timeit df_copy2.drop('Commune', axis = 1).groupby('dep').sum()
 ```
+
+
+{{% /panel %}}
+
+
+
 
 <!-- #region -->
 # Restructurer les données
@@ -320,28 +353,43 @@ Le fait de passer d'un format *wide* au format *long* (ou vice-versa) peut être
 **Exercice 5: Restructurer les données: wide to long**
 
 * Créer une copie des données de l'ADEME en faisant `df_wide = df.copy()`
-* Restructurer les données au format *long* pour avoir des données d'émissions par secteur en gardant comme niveau d'analyse la commune (attention aux autres variables identifiantes). 
-* Faire la somme par secteur et représenter graphiquement
-* Garder, pour chaque département, le secteur le plus polluant
-
-{{% /panel %}}
-
-
 
 ```{python, include = FALSE, eval = FALSE}
 df_wide = df.copy()
+df_wide[['Commune','dep', "Autres transports", "Déchets"]].head()
+```
+
+* Restructurer les données au format *long* pour avoir des données d'émissions par secteur en gardant comme niveau d'analyse la commune (attention aux autres variables identifiantes).
+
+```{python, include = FALSE, eval = FALSE}
 df_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
                           var_name = "secteur", value_name = "emissions")
+```
+
+* Faire la somme par secteur et représenter graphiquement
+
+```{python, include = FALSE, eval = FALSE}
 (df_wide.reset_index()
  .melt(id_vars = ['INSEE commune','Commune','dep'],
                           var_name = "secteur", value_name = "emissions")
  .groupby('secteur').sum().plot(kind = "barh")
 )
+```
+
+* Garder, pour chaque département, le secteur le plus polluant
+
+```{python, include = FALSE, eval = FALSE}
 (df_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
                           var_name = "secteur", value_name = "emissions")
  .groupby(['secteur','dep']).sum().reset_index().sort_values(['dep','emissions'], ascending = False).groupby('dep').head(1)
 )
 ```
+
+
+{{% /panel %}}
+
+
+
 
 {{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
 
@@ -349,28 +397,54 @@ df_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
 
 Cette transformation est moins fréquente car appliquer des fonctions par groupe, comme nous le verrons par la suite, est très simple. 
 
-* Repartir de `df_wide = df.copy()`. 
+* Repartir de `df_wide = df.copy()
+
+```{python, include = FALSE, eval = FALSE}
+df_wide = df.copy()
+```
+
 * Reconstruire le DataFrame, au format long, des données d'émissions par secteur en gardant comme niveau d'analyse la commune puis faire la somme par département et secteur
+
+```{python, include = FALSE, eval = FALSE}
+df_long_agg = (df_wide.reset_index()
+ .melt(id_vars = ['INSEE commune','Commune','dep'],
+                          var_name = "secteur", value_name = "emissions").groupby(["dep", "secteur"]).sum()
+)
+
+df_long_agg.head()
+```
+
 * Passer au format *wide* pour avoir une ligne par secteur et une colonne par département
+
+```{python, include = FALSE, eval = FALSE}
+df_wide_agg = df_long_agg.reset_index().pivot_table(values = "emissions", index = "secteur", columns = "dep")
+
+df_wide_agg.head()
+```
+
+
 * Calculer, pour chaque secteur, la place du département dans la hiérarchie des émissions nationales
+
+
+```{python, include = FALSE, eval = FALSE}
+df_wide_agg.rank(axis = 1)
+```
+
+
 * A partir de là, en déduire le rang médian de chaque département dans la hiérarchie des émissions et regarder les 10 plus mauvais élèves, selon ce critère.
+
+
+```{python, include = FALSE, eval = FALSE}
+df_wide_agg.rank(axis = 1).median().nlargest(10)
+```
 
 {{% /panel %}}
 
 
-```{python, include = FALSE, eval = FALSE}
-df_wide = df.copy()
-df_wide_agg = (df_wide.reset_index()
- .melt(id_vars = ['INSEE commune','Commune','dep'],
-                          var_name = "secteur", value_name = "emissions").groupby(["dep", "secteur"]).sum()
- .reset_index().pivot_table(values = "emissions", index = "secteur", columns = "dep")
-)
-df_wide_agg.rank(axis = 1).median().nlargest(10)
-```
 
 # Combiner les données
 
-L'information de valeur s'obtient de moins en moins à partir d'une unique base de données. Il devient commun de devoir combiner des données issues de sources différentes. Nous allons ici nous focaliser sur le cas le plus favorable qui est la situation où une information permet d'apparier de manière exacte deux bases de données (autrement nous serions dans une situation, beaucoup plus complexe, d'appariement flou). La situation typique est l'appariement entre deux sources de données selon un identifiant individuel ou un identifiant de code commune, ce qui est notre cas.
+Une information que l'on cherche à obtenir s'obtient de moins en moins à partir d'une unique base de données. Il devient commun de devoir combiner des données issues de sources différentes. Nous allons ici nous focaliser sur le cas le plus favorable qui est la situation où une information permet d'apparier de manière exacte deux bases de données (autrement nous serions dans une situation, beaucoup plus complexe, d'appariement flou). La situation typique est l'appariement entre deux sources de données selon un identifiant individuel ou un identifiant de code commune, ce qui est notre cas.
 
 Il est recommandé de lire [ce guide assez complet sur la question des jointures avec R](https://linogaliana.gitlab.io/documentationR/joindre-des-tables-de-donn%C3%A9es.html) qui donne des recommandations également utiles en `python`.
 
@@ -384,42 +458,46 @@ On utilise de manière indifférente les termes *merge* ou *join*. Le deuxième 
 **Exercice 7: Calculer l'empreinte carbone par habitant**
 
 * Créer une variable `emissions` qui correspond aux émissions totales d'une commune
-* Faire une jointure à gauche entre les données d'émissions et les données de cadrage. Comparer les émissions moyennes des villes sans *match* (celles dont des variables bien choisies de la table de droite sont NaN) avec celles où on a bien une valeur correspondante dans la base Insee
-* Faire un *inner join* puis calculer l'empreinte carbone dans chaque commune. Sortir un histogramme en niveau puis en log et quelques statistiques descriptives sur le sujet. 
-* Regarder la corrélation entre les variables de cadrage et l'empreinte carbone. Certaines variables semblent expliquer l'empreinte carbone ?
-
-{{% /panel %}}
-
 
 ```{python, include = FALSE, eval = FALSE}
 df['emissions'] = df.sum(axis = 1)
-df_merged = df.merge(df_city, how = "left", left_index = True, right_index = True)
-
-df_merged[df_merged['LIBGEO'].isna()]['emissions'].mean()
 ```
+
+* Faire une jointure à gauche entre les données d'émissions et les données de cadrage. Comparer les émissions moyennes des villes sans *match* (celles dont des variables bien choisies de la table de droite sont NaN) avec celles où on a bien une valeur correspondante dans la base Insee
 
 ```{python, include = FALSE, eval = FALSE}
-df_merged[~df_merged['LIBGEO'].isna()]['emissions'].mean()
+df_merged = df.merge(df_city, how = "left", left_index = True, right_index = True)
+
+print(df_merged[df_merged['LIBGEO'].isna()]['emissions'].mean())
+print(df_merged[~df_merged['LIBGEO'].isna()]['emissions'].mean())
+
 ```
+
+
+* Faire un *inner join* puis calculer l'empreinte carbone (l'émission rapportée au nombre de ménages fiscaux) dans chaque commune. Sortir un histogramme en niveau puis en log et quelques statistiques descriptives sur le sujet. 
 
 ```{python, include = FALSE, eval = FALSE}
 df_merged = df.merge(df_city, left_index = True, right_index = True)
 df_merged['empreinte'] = df_merged['emissions']/df_merged['NBPERSMENFISC16']
-```
 
-```{python, include = FALSE, eval = FALSE}
 df_merged['empreinte'].plot(kind ="hist")
 np.log(df_merged['empreinte']).plot.hist()
 df_merged['empreinte'].describe()
 ```
 
-```{python, include = FALSE, eval = FALSE}
-df_merged.corr()['empreinte']
-```
+
+* Regarder la corrélation entre les variables de cadrage et l'empreinte carbone. Certaines variables semblent-elles pouvoir potentiellement influer sur l'empreinte carbone ?
 
 ```{python, include = FALSE, eval = FALSE}
-df
+df_merged.corr()['empreinte'].nlargest(10)
+# Les variables en lien avec le transport. 
 ```
+
+{{% /panel %}}
+
+
+
+
 
 <!-----
 
