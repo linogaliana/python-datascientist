@@ -1,3 +1,5 @@
+arborescence <- list.dirs("./content", recursive = TRUE)
+
 content_rmd <- list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
 content_rmd <- content_rmd[!grepl("/git/", content_rmd)]
 content_rmd <- content_rmd[!grepl("06a_exo_supp_webscraping.", content_rmd)]
@@ -9,10 +11,15 @@ file.remove(
   )
 )
 
+
+
 lapply(
   content_rmd, function(i){
     print(sprintf("Rendering %s", i))
-    knitr::knit(i, envir = new.env(), output = gsub(".Rmd", ".md", i))
+    rmarkdown::render(i, envir = new.env(),
+                      output_format = rmarkdown::md_document(variant = "commonmark"),
+                      # output_file = gsub(".Rmd", ".md", basename(i)),
+                      output_dir = dirname(i))
   })
 
 file.remove(
