@@ -17,7 +17,7 @@ lapply(
   content_rmd, function(i){
     print(sprintf("Rendering %s", i))
     rmarkdown::render(i, envir = new.env(),
-                      output_format = rmarkdown::md_document(variant = "commonmark"),
+                      output_format = rmarkdown::md_document(variant = "markdown"),
                       # output_file = gsub(".Rmd", ".md", basename(i)),
                       output_dir = dirname(i))
   })
