@@ -1,10 +1,12 @@
 ---
-title: Slides
-summary: An introduction to using Wowchemy's Slides feature.
-authors: []
-tags: []
-categories: []
-date: "2019-02-05T00:00:00Z"
+title: Python pour les data scientists et économistes
+summary: Slides de présentation du cours de 2A
+authors: ["Lino Galiana"]
+tags:
+  - introduction
+categories:
+  - Introduction
+date: "2021-09-20T00:00:00Z"
 slides:
   # Choose a theme from https://github.com/hakimel/reveal.js#theming
   theme: black
