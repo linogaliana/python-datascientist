@@ -94,6 +94,9 @@ s'agirait d'une grave erreur: même si l'implémentation de modèles est aisée,
 est nécessaire de bien comprendre la structure des données et leur adéquation
 avec les hypothèses d'un modèle. 
 
+Quelques éléments supplémentaires sont disponibles dans
+les [slides d'introduction](/slides/intro/)
+
 
 ## Evaluation
 
