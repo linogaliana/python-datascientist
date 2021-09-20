@@ -18,6 +18,53 @@ reminder_jupyter <- function(file = "./content/getting-started/06_rappels_classe
   
 }
 
+download_badge <- function(notebook = "", github_link = 'https://github.com/linogaliana/python-datascientist'){
+
+  if (notebook == ""){
+    link <- sprintf(
+      "https://downgit.github.io/#/home?url=%s/blob/master/notebooks/course",
+      github_link
+    )
+  } else{
+    link <- sprintf(
+      "https://downgit.github.io/#/home?url=%s%s",
+      github_link,
+      notebook
+    )
+  }
+  
+  
+  return(
+    sprintf(
+      "[![Download](https://img.shields.io/badge/Download-Notebook-important?logo=Jupyter)](%s)",
+      link
+    )
+  )
+  
+}
+
+visualize_badge <- function(notebook = "", github_link = 'https://github.com/linogaliana/python-datascientist'){
+  
+  
+  if (notebook == ""){
+    nbviewer_link <- 'https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/tree/master'
+  } else{
+    nbviewer_link <- sprintf(
+      'https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master%s',
+      notebook
+    )
+  }
+  
+  
+  return(
+    sprintf(
+      "[![nbviewer](https://img.shields.io/badge/Visualize-nbviewer-blue?logo=Jupyter)](%s)",
+      nbviewer_link
+    )
+  )  
+  
+}
+
 
 reminder_badges <- function(notebook = "", onyxia_only = FALSE){
   
