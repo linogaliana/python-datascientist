@@ -9,7 +9,9 @@ slides: intro.md
 
 Ce cours rassemble l'ensemble du contenu du cours 
 *Python pour les data scientists et économistes* que je donne 
-à l'[ENSAE](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/)
+à l'[ENSAE](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/). 
+Quelques éléments supplémentaires sont disponibles dans
+les [slides d'introduction](/slides/intro/)
 
 
 Le langage `Python` est récemment devenu, dans le monde académique comme
