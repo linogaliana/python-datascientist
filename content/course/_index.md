@@ -77,13 +77,24 @@ dans un contexte de travail de *data scientist* ou de
 *social scientist* (économie, sociologie, géographie...). Autrement dit, 
 il présuppose qu'on désire faire un usage intense
 de données dans un cadre statistique rigoureux.
-Nous partirons de l'hypothèse que les notions de statistiques et d'économétrie
-pour lesquels nous verrons des applications informatiques sont connues. 
-La facilité avec laquelle il est possible de construire des modèles complexes
-avec `Python` peut laisser apparaître que cet *a priori* est inutile. Il 
-s'agit d'une grave erreur: même si l'implémentation de modèles est aisée, il 
+
+Nous partirons de l'hypothèse que les notions de statistiques, d'économétrie
+et de *Machine Learning* pour lesquels nous verrons des applications informatiques sont connues.
+Ne pas connaître ces notions n'empêche néanmoins pas de comprendre
+le contenu de ce site *web*. En effet, la facilité d'usage de `Python` rend 
+évite de devoir programmer soi-même un modèle, ce qui possible l'application
+de modèles dont on n'est pas expert. La connaissance des modèles sera 
+plutôt nécessaire dans l'interprétation des résultats.
+
+Cepdant, la facilité avec laquelle il est possible de construire des modèles complexes
+avec `Python` peut laisser apparaître que connaître les spécifités de chaque
+modèle est inutile. Il 
+s'agirait d'une grave erreur: même si l'implémentation de modèles est aisée, il 
 est nécessaire de bien comprendre la structure des données et leur adéquation
 avec les hypothèses d'un modèle. 
+
+
+## Evaluation
 
 Les éléments relatifs à l'évaluation du cours sont disponibles dans la
 Section [Evaluation](evaluation)
