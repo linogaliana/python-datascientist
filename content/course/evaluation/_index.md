@@ -6,7 +6,6 @@ weight: 90
 slug: evaluation
 icon: user-graduate
 icon_pack: fas
-#linktitle: "Partie 4: Natural Language Processing (NLP)"
 summary: |
   Résumé des attentes pour les projets de fin d'année
 type: book
@@ -19,13 +18,12 @@ Résumé :
     - Un jeu de données (de préférence collecté par le groupe ou a minima enrichi)
     - De la visualisation
     - De la modélisation
+* Les étudiants sont invités à proposer des sujets qui leur plaisent, à faire valider par le chargé de TD.
+* __Le projet doit utiliser `Git` et être disponible sous
+[github](https://github.com/) <a href="https://github.com" class="github"><i class="fab fa-github"></i></a> ou [gitlab](https://gitlab.com/)__ <a href="https://gitlab.com" class="gitlab"><i class="fab fa-gitlab"></i></a> (dépôt public ou dépôt privé à partager avec le chargé de TD)
 * La __date du rendu__ est fixée au : **jeudi 6 janvier 2022 23h59**
 * Le **XX janvier 2022**, auront lieu des __soutenances__
-* __Le projet doit utiliser `Git` et être disponible sous
-[github](https://github.com/) <a href="https://github.com" class="github"><i class="fab fa-github"></i></a> ou [gitlab](https://gitlab.com/)__ <a href="https://gitlab.com" class="gitlab"><i class="fab fa-gitlab"></i></a>
-(dépôt public ou dépôt privé à partager avec le chargé de TD)
-* Les étudiants sont invités à proposer des sujets qui leur plaisent, à faire valider par le chargé de TD. 
-* Un exemple de configuration d'intégration continue est disponible [ici](/getting-started/pythonCI) pour aider à avoir un notebook reproductible (:warning: ce n'est pas une garantie)
+ 
 
 ## Attentes du projet
 
@@ -74,11 +72,10 @@ Même si le projet n’est pas celui du cours de stats, il faut que la démarche
 
 * Écrire un rapport sous forme de notebook
 * Avoir un répertoire github avec le rapport. Les données utilisées doivent être accessibles également, dans le dépôt ou sur internet.
-* Les dépôts Github où seul un *upload* du projet a été réalisé ne sont pas autorisés. Il faut utiliser effectivement le contrôle de version. 
+* Les dépôts Github où seul un *upload* du projet a été réalisé seront pénalisés. A l'inverse, les dépôts dans lequels le contrôle de version et le travail collaboratif ont été activement pratiqués (commits fréquents, pull requests, ..) seront valorisés.
 * Le code contenu dans le rapport devra être un maximum propre (pas de copier coller de cellule, préférez des fonctions)
 
-Le test à réaliser : faire tourner toutes les cellules de votre notebook et ne pas avoir d’erreur est une condition sine qua non pour avoir la moyenne.
-Un exemple de configuration d'intégration continue est disponible [ici](/getting-started/pythonCI) pour aider à avoir un notebook reproductible (:warning: ce n'est pas une garantie)
+Lors de l'évaluation, une attention particulière sera donnée à la *reproductibilité* de votre projet. Chaque étape (récupération et traitement des données, analyses descriptives, modélisation) doit pouvoir être reproduite à partir du notebook final. Pour les opérations qui prennent du temps (ex : webscraping massif, requêtage d'API avec des limites de nombre de requêtes, entraînement de modèle, etc.), vous devez inclure l'output (base de données, modèle entraîné..) dans le dépôt, afin que les étapes suivantes puissent s'éxecuter sans problème. Le test à réaliser : faire tourner toutes les cellules de votre notebook et ne pas avoir d’erreur est une condition sine qua non pour avoir la moyenne.
 
 
 ## Barême approximatif
@@ -86,7 +83,7 @@ Un exemple de configuration d'intégration continue est disponible [ici](/gettin
 * Données (collecte et nettoyage) : 4 points
 * Analyse descriptive : 4 points
 * Modélisation : 2 points
-* Démarche scientifique tout au long du projet : 4 points
+* Démarche scientifique et reproductibilité du projet : 4 points
 * Format du code (code propre et github) : 2 points
 * Soutenance : 4 points
 
