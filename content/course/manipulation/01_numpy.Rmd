@@ -35,9 +35,31 @@ print_badges()
 ```
 
 ```{r setup, include=FALSE}  
+dir_path <- gsub(here::here(), "..", here::here("course","manipulation"))
+
 library(knitr)  
 library(reticulate)  
 knitr::knit_engines$set(python = reticulate::eng_python)  
+knitr::opts_chunk$set(fig.path = "")
+
+# Hook from Maelle Salmon: https://ropensci.org/technotes/2020/04/23/rmd-learnings/
+knitr::knit_hooks$set(
+  plot = function(x, options) {
+    hugoopts <- options$hugoopts
+    paste0(
+      "{", "{<figure src=", # the original code is simpler
+      # but here I need to escape the shortcode!
+      '"', paste0(dir_path,"/",x), '" ',
+      if (!is.null(hugoopts)) {
+        glue::glue_collapse(
+          glue::glue('{names(hugoopts)}="{hugoopts}"'),
+          sep = " "
+        )
+      },
+      ">}}\n"
+    )
+  }
+)
 ```
 
 
@@ -92,7 +114,7 @@ de mémoire
 
 
 
-Les données géographiques constitueront une construction un peu plus complexe qu'un DataFrame traditionnel. 
+Les données géographiques constitueront une construction un peu plus complexe qu'un `DataFrame` traditionnel. 
 La dimension géographique prend la forme d'un tableau plus profond, au moins bidimensionnel
 (coordonnées d'un point). 
 
@@ -104,8 +126,14 @@ il suffit d'utiliser la méthode `array`:
 
 ```{python}
 np.array([1,2,5])
+```
+
+Il est possible d'ajouter un argument `dtype` pour contraindre le type du *array*:
+
+```{python}
 np.array([["a","z","e"],["r","t"],["y"]], dtype="object")
 ```
+
 
 Il existe aussi des méthodes pratiques pour créer des array:
 
@@ -114,7 +142,6 @@ Il existe aussi des méthodes pratiques pour créer des array:
 * séquences aléatoires: fonctions de génération de nombres aléatoires: `np.rand.uniform`, `np.rand.normal`, etc. 
 * tableau sous forme de matrice identité: `np.eye`
 
-Il est possible d'ajouter un argument `dtype` pour contraindre le type du *array*:
 
 ```{python}
 np.arange(0,10)
@@ -412,8 +439,6 @@ les fonctions `np.concatenate`, `np.vstack` ou la méthode `.r_` (concaténation
 x = np.random.normal(size = 10)
 ```
 
-A l'inverse, 
-
 Pour ordonner un array, on utilise `np.sort`
 
 ```{python}
@@ -432,10 +457,12 @@ np.partition(x, 3)
 
 ## Broadcasting
 
-Le broadcasting désigne un ensemble de règles pour appliquer une opération qui normalement
-ne s'applique que sur une seule valeur à l'ensemble des membres d'un tableau Numpy. 
+Le *broadcasting* désigne un ensemble de règles permettant
+d'appliquer des opérations sur des tableaux de dimensions différentes. En pratique, 
+cela consiste généralement à appliquer une seule opération à l'ensemble des membres d'un tableau `numpy`. 
 
-Le broadcasting nous permet d'appliquer ces opérations sur des tableaux de dimensions différentes.
+La différence peut être comprise à partir de l'exemple suivant. Le *broadcasting* permet
+de transformer le scalaire `5` en *array* de dimension 3:
 
 ```{python}
 a = np.array([0, 1, 2])
@@ -450,12 +477,14 @@ Le *broadcasting* peut être très pratique pour effectuer de manière efficace 
 la structure complexe. Pour plus de détails, se rendre
 [ici](https://jakevdp.github.io/PythonDataScienceHandbook/02.05-computation-on-arrays-broadcasting.html) ou [ici](https://stackoverflow.com/questions/47435526/what-is-the-meaning-of-axis-1-in-keras-argmax).
 
-## Application: k-nearest neighbor fait-main
+## Une application: programmer ses propres k-nearest neighbors
 
 <!----
 L'idée de cet exercice vient de
 [là](https://jakevdp.github.io/PythonDataScienceHandbook/02.08-sorting.html#Example:-k-Nearest-Neighbors). 
 ------>
+
+{{% panel status="exercise" title="Exercise (un peu corsé)" icon="fas fa-pencil-alt" %}}
 
 1. Créer `X` un tableau à deux dimensions (i.e. une matrice) comportant 10 lignes
 et 2 colonnes. Les nombres dans le tableau sont aléatoires.
@@ -487,32 +516,8 @@ for i in range(X.shape[0]):
 
 pour représenter graphiquement le réseau de plus proches voisins
 
-```{python, include = FALSE}
-X = np.random.random((10, 2))
-X
-```
+{{% /panel %}}
 
-Pour la question 2, Vous devriez obtenir un graphique ayant cet aspect :
-
-```{python, echo = FALSE}
-import matplotlib.pyplot as plt
-plt.scatter(X[:, 0], X[:, 1], s=100)
-```
-
-Finalement, vous devriez obtenir un graphique ayant cet aspect :
-
-```{python, echo = FALSE}
-plt.scatter(X[:, 0], X[:, 1], s=100)
-
-# draw lines from each point to its two nearest neighbors
-K = 2
-
-for i in range(X.shape[0]):
-    for j in nearest_partition[i, :K+1]:
-        # plot a line from X[i] to X[j]
-        # use some zip magic to make it happen:
-        plt.plot(*zip(X[j], X[i]), color='black')
-```
 
 ```{python, include = FALSE}
 # Correction
@@ -525,7 +530,23 @@ import matplotlib.pyplot as plt
 print(X[:,0])
 print(X[:,1])
 plt.scatter(X[:, 0], X[:, 1], s=100)
+```
 
+
+```{python, include = FALSE, echo = FALSE}
+fig = plt.figure()
+plt.scatter(X[:, 0], X[:, 1], s=100)
+fig
+plt.savefig("scatter_numpy.png", bbox_inches='tight')
+```
+
+Pour la question 2, vous devriez obtenir un graphique ayant cet aspect :
+
+```{r, echo = FALSE}
+knitr::include_graphics("scatter_numpy.png")
+```
+
+```{python, include = FALSE}
 # 3. Construire la matrice des distances euclidiennes
 print(X.shape)
 X1 = X[:, np.newaxis, :]
@@ -551,18 +572,29 @@ print(nearest_partition) # Ne pas oublier que le plus proche voisin d'un point e
 
 #7. Tester le bout de code
 # Each point in the plot has lines drawn to its two nearest neighbors.
+fig = plt.figure()
 for i in range(X.shape[0]):
     for j in nearest_partition[i, :K+1]:
         # plot a line from X[i] to X[j]
         # use some zip magic to make it happen:
         plt.plot(*zip(X[j], X[i]), color='black')
+fig
+plt.savefig("knn.png", bbox_inches='tight')
+```
+
+Le résultat de la question 7 est le suivant: 
+
+```{r, echo = FALSE}
+knitr::include_graphics("knn.png")
 ```
 
 
 Ai-je inventé cet exercice corsé ? Pas du tout, il [vient de là](https://jakevdp.github.io/PythonDataScienceHandbook/02.08-sorting.html#Example:-k-Nearest-Neighbors). Mais, si je vous l'avais indiqué immédiatement, auriez-vous cherché à répondre aux questions ?
 
 Par ailleurs, il ne serait pas une bonne idée de généraliser cet algorithme à de grosses données. La complexité de notre approche est $O(N^2)$. L'algorithme implémenté par Scikit-learn est
-en $O[NlogN]$
+en $O[NlogN]$.
+
+De plus, le calcul de distances matricielles en utilisant la puissance des cartes graphiques serait plus rapide. A cet égard, la librairie [faiss](https://github.com/facebookresearch/faiss) offre des performances beaucoup plus satisfaisantes que celles que permettraient `numpy` sur ce problème précis.
 
 <!-----
 ## Restructuration, concaténation et division
