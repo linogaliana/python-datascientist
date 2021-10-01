@@ -91,6 +91,50 @@ Pour faciliter l'import de données Insee, il est recommandé d'utiliser le pack
 de l'Insee disponibles sur le site web [insee.fr](https://www.insee.fr/fr/accueil)
 ou via des API. 
 
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+Le package `pynsee` est relativement jeune et n'est disponible que sur
+[Github](https://github.com/InseeFrLab/Py-Insee-Data), pas sur `PyPi`.
+Idéalement, on utilise la commande suivante, en ligne de commande, pour l'installer:
+
+```{shell, eval = FALSE}
+pip install git+https://github.com/InseeFrLab/Py-Insee-Data.git
+```
+
+Cependant, cela requiert que `Jupyter` et `Git` sachent communiquer. Si
+`Jupyter` ne sait pas où trouver `Git`, il est possible de rencontrer une erreur.
+
+Dans ce cas, il faut télécharger le package en `zip`, le `dézipper` et l'installer
+depuis ce dossier dézippé. Pour les deux premières étapes, on peut utiliser 
+les commandes suivantes:
+
+```{python, eval = FALSE}
+import requests
+import zipfile
+
+url = 'https://github.com/InseeFrLab/Py-Insee-Data/archive/refs/heads/master.zip'
+r = requests.get(url)
+open("pynsee.zip" , 'wb').write(r.content)
+
+with zipfile.ZipFile("pynsee.zip", 'r') as zip_ref:
+  zip_ref.extractall("pynsee")
+```
+
+Cela ajoute un dossier `pynsee` dans le répertoire de travail. Pour installer
+ce package, il faut se rendre dans le dossier `pynsee` (par exemple avec la
+commande `cd` et effectuer le `pip install` :
+
+```{shell, eval = FALSE}
+cd pynsee
+pip install -r requirements.txt
+pip install .
+```
+
+Si le fait de ne pas avoir de barre de progrès lors du téléchargement
+vous trouble, vous pouvez vous rendre à la
+[Section Annexe](#annexe) pour découvrir un bout de code
+qui effectue les mêmes tâches mais avec des barres de progrès
+
+{{% /panel %}}
 
 :warning: `pandas` offre la possibilité d'importer des données
 directement depuis un url. C'est l'option prise dans ce tutoriel.
@@ -98,6 +142,7 @@ Si vous préfèrez, pour des
 raisons d'accès au réseau ou de performance, importer depuis un poste local,
 vous pouvez télécharger les données et changer
 les commandes d'import avec le chemin adéquat plutôt que l'url. 
+
 
 Nous suivrons les conventions habituelles dans l'import des packages
 
@@ -1035,5 +1080,79 @@ Pour aller plus loin, se référer à la [documentation de `dask`](https://docs.
 * Le site
 [pandas.pydata](https://pandas.pydata.org/pandas-docs/stable/user_guide/basics.html)
 fait office de référence
+
+# Annexe {#annexe}
+
+## Téléchargement de `pynsee` avec barre de progrès
+
+Ce code vient du [package `pynsee`](https://github.com/InseeFrLab/Py-Insee-Data/blob/master/pynsee/download/__init__.py)...
+
+```{python, eval = FALSE}
+import warnings
+import os
+import requests
+import zipfile
+from pathlib import Path
+from shutil import copyfile, copyfileobj
+
+# import tqdm.auto as tqdma
+from tqdm import tqdm
+from tqdm.utils import CallbackIOWrapper
+
+
+def download_pb(url: str, fname: str, total: int = None):
+    """Useful function to get request with a progress bar
+    Borrowed from https://gist.github.com/yanqd0/c13ed29e29432e3cf3e7c38467f42f51
+    Arguments:
+        url {str} -- URL for the source file
+        fname {str} -- Destination where data will be written
+    """
+    resp = requests.get(url, stream=True)
+
+    if total is None:
+        total = int(resp.headers.get('content-length', 0))
+
+    with open(fname, 'wb') as file, tqdm(
+            desc='Downloading: ',
+            total=total,
+            unit='iB',
+            unit_scale=True,
+            unit_divisor=1024,
+    ) as bar:
+        for data in resp.iter_content(chunk_size=1024):
+            size = file.write(data)
+            bar.update(size)
+
+
+def unzip_pb(fzip, dest, desc="Extracting"):
+    """
+    Useful function to unzip with progress bar
+    Args:
+        fzip: Filename of the zipped file
+        dest: Destination where data must be written
+        desc: Argument inherited from zipfile.ZipFile
+    Returns:
+        zipfile.Zipfile(fzip).extractall(dest) with progress
+    """
+
+    dest = Path(dest).expanduser()
+    Path(dest).mkdir(parents=True, exist_ok=True)
+
+    with zipfile.ZipFile(fzip) as zipf, tqdm(
+            desc=desc, unit="B", unit_scale=True, unit_divisor=1024,
+            total=sum(getattr(i, "file_size", 0) for i in zipf.infolist()),
+    ) as pbar:
+        for i in zipf.infolist():
+            if not getattr(i, "file_size", 0):  # directory
+                zipf.extract(i, os.fspath(dest))
+            else:
+                with zipf.open(i) as fi, open(os.fspath(dest / i.filename), "wb") as fo:
+                    copyfileobj(CallbackIOWrapper(pbar.update, fi), fo)
+
+
+download_pb('https://github.com/InseeFrLab/Py-Insee-Data/archive/refs/heads/master.zip', 'pynsee.zip')
+
+unzip_pb("pynsee.zip", "pynsee")
+```
 
 ...
