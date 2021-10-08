@@ -273,7 +273,7 @@ communes = communes[~communes.insee.str.startswith("75")].append(arrondissements
 En refaisant la carte ci-dessus, on obtient bien, cette fois, le résultat
 espéré
 
-```{python plot paris2}
+```{python}
 paris = communes[communes.insee.str.startswith("75")]
 ax = paris.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
 ctx.add_basemap(ax, crs = paris.crs.to_string())
@@ -439,12 +439,14 @@ Il est néanmoins possible d'aggréger à la fois les géométries et les
 attribus avec la méthode `dissolve`: 
 
 
-```{python dissolve}
-plt.figure()
-communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').plot(column = "surf_ha")
+```{python}
+ax = communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').plot(column = "surf_ha")
+ax.set_axis_off()
+ax
 ```
 
 ```{python, include = FALSE}
+plt.tight_layout(pad=0, h_pad = 0)
 plt.savefig('dissolve1.png', bbox_inches='tight')
 ```
 
@@ -573,31 +575,43 @@ communes = communes.set_crs(2154)
 
 Alors que la reprojection (projection Albers: 5070) s'obtient de la manière suivante:
 
-```{python, eval = TRUE}
-plt.figure()
-communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').to_crs(5070).plot()
+```{python}
+ax = communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').to_crs(5070).plot()
+ax
 ```
 
 ```{python, include = FALSE}
+ax.set_axis_off()
+ax
+```
+
+```{python, echo = FALSE, include = FALSE}
+plt.tight_layout(pad=0, h_pad = 0)
 plt.savefig('reproj1.png', bbox_inches='tight')
 ```
+
 
 ```{r, echo = FALSE}
 knitr::include_graphics("reproj1.png")
 ```
 
 On le voit, cela modifie totalement la représentation de l'objet dans l'espace.
-Clairement, cette projection n'est pas adaptée aux longitudes et latitudes françaises. C'est normal, il s'agit d'une projection adaptée au continent 
+Clairement, cette projection n'est pas adaptée aux longitudes et latitudes françaises.
+C'est normal, il s'agit d'une projection adaptée au continent 
 nord-américain (et encore, pas dans son ensemble !).
 
 ```{python, eval = TRUE}
 world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-world[world.continent == "North America"].to_crs(5070).plot(alpha = 0.2, edgecolor = "k")
+ax = world[world.continent == "North America"].to_crs(5070).plot(alpha = 0.2, edgecolor = "k")
+ax
 ```
 
-```{python, include = FALSE}
+
+```{python, echo = FALSE, include = FALSE}
+plt.tight_layout(pad=0, h_pad = 0)
 plt.savefig('reproj2.png', bbox_inches='tight')
 ```
+
 
 ```{r, echo = FALSE}
 knitr::include_graphics("reproj2.png")
@@ -606,7 +620,7 @@ knitr::include_graphics("reproj2.png")
 
 # Joindre des données
 
-## Joindre données sur des attributs
+## Joindre des données sur des attributs
 
 Ce type de jointure se fait entre un objet géographique et un
 deuxième objet, géographique ou non. A l'exception de la question 
@@ -637,12 +651,15 @@ recommandable.
 
 
 
-### Prolongation possible : joindre données sur dimension géographique
+## Prolongation possible : joindre données sur dimension géographique
 
-**Conseils**
+
+{{% panel status="hint" title="Conseil" icon="fa fa-lightbulb" %}}
 Les jointures spatiales peuvent être très gourmandes en ressources (car il peut être nécessaire de croiser toutes les géométries de `x` avec toutes les géométries de `y`). Voici deux conseils qui peuvent vous aider:
 
 - Il est préférable de tester les jointures géographiques sur un petit échantillon de données, pour estimer le temps et les ressources nécessaires à la réalisation de la jointure.
 - Il est parfois possible d'écrire une fonction qui réduit la taille du problème. Exemple: vous voulez déterminer dans quelle commune se situe un logement dont vous connaissez les coordonnées et le département; vous pouvez écrire une fonction qui réalise pour chaque département une jointure spatiale entre les logements situés dans ce département et les communes de ce département, puis empiler les 101 tables de sorties.
+{{% /panel %}}
+
 
 
