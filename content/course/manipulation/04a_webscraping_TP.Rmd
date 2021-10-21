@@ -492,6 +492,9 @@ data = data.dropna()
 data
 ```
 
+On va transformer les coordonnées en degrés en coordonnées numériques
+afin d'être en mesure de faire une carte
+
 ```{python}
 def dms2dd(degrees, minutes, seconds, direction):
     dd = float(degrees) + float(minutes)/60 + float(seconds)/(60*60);
@@ -510,6 +513,48 @@ def parse_dms(dms):
 data['latitude'] = data['latitude'].apply(parse_dms)
 data['longitude'] = data['longitude'].apply(parse_dms)
 ```
+
+Tous les éléments sont en place pour faire une belle carte à ce stade. On
+va utilise `folium` pour celle-ci, qui est présenté dans la partie
+[visualisation](#cartotp)
+
+```{python folium1, include = FALSE}
+import geopandas as gpd
+from pathlib import Path
+import folium
+
+gdf = gpd.GeoDataFrame(
+    data, geometry=gpd.points_from_xy(data.longitude, data.latitude))
+
+Path("leaflet").mkdir(parents=True, exist_ok=True)
+
+center = gdf[['lat', 'lon']].mean().values.tolist()
+sw = gdf[['lat', 'lon']].min().values.tolist()
+ne = gdf[['lat', 'lon']].max().values.tolist()
+
+m = folium.Map(location = center, tiles='Stamen Toner')
+
+# I can add marker one by one on the map
+for i in range(0,len(gdf)):
+    folium.Marker([gdf.iloc[i]['lat'], gdf.iloc[i]['lon']], popup=gdf.iloc[i]['stade']).add_to(m)
+
+m.fit_bounds([sw, ne])
+```
+
+```{python, eval = FALSE}
+m
+```
+
+```{python, include = FALSE}
+map = m._repr_html_()
+```
+
+La carte obtenue doit ressembler à la suivante:
+
+```{r, results='asis'}
+cat(py$map)
+```
+
 
 # Exercice 1 : Les pokémons (version non guidée)
 
