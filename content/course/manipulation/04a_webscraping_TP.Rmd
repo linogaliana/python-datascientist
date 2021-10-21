@@ -192,7 +192,7 @@ from urllib import request
 
 On va commencer doucement. Prenons une page wikipedia, par exemple celle de la Ligue 1 de football : [Championnat de France de football 2019-2020](https://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020). On va souhaiter récupérer la liste des équipes, ainsi que les url des pages Wikipedia de ces équipes.
 
-```{python, include = FALSE}
+```{python}
 # Etape 1 : se connecter à la page wikipedia et obtenir le code source
 
 url_ligue_1 = "https://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020"
@@ -353,9 +353,13 @@ for row in rows:
 dico_participants
 ```
 
-```{python}
+```{python, echo = TRUE, include = FALSE}
 data_participants = pandas.DataFrame.from_dict(dico_participants,orient='index')
 data_participants.head()
+```
+
+```{python, echo = FALSE}
+data_participants.to_html()
 ```
 
 :five:
@@ -388,10 +392,15 @@ columns_participants
 data_participants.columns = columns_participants[1:]
 ```
 
-```{python}
-data_participants
+```{python, echo = TRUE, include = FALSE}
+data_participants.head()
 ```
 
+```{python, echo = FALSE}
+data_participants.to_html()
+```
+
+## Pour aller plus loin
 
 Essayez de comprendre pas à pas ce qui est fait dans les étapes qui suivent (la récupération d'informations supplémentaires en naviguant dans les pages des différents clubs). 
 
@@ -406,6 +415,11 @@ stade=[]
 latitude_stade=[]        
 longitude_stade=[]     
 
+def dms2dd(degrees, minutes, seconds, direction):
+    dd = float(degrees) + float(minutes)/60 + float(seconds)/(60*60);
+    if direction == 'S' or direction == 'O':
+        dd *= -1
+    return dd;
 
 url_list=["http://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020", "http://fr.wikipedia.org/wiki/Championnat_de_France_de_football_de_Ligue_2_2019-2020"]
 
@@ -464,17 +478,14 @@ for url_ligue in url_list :
                         else :
                             for coordinates in kartographer :
                                 print(coordinates)
-                                liste =   coordinates.split(",")             
-                                latitude_stade.append(liste[0])
-                                longitude_stade.append(liste[1])
+                                liste =   coordinates.split(",")          
+                                latitude_stade.append(str(liste[0]).replace(" ", "") + "'")
+                                longitude_stade.append(str(liste[1]).replace(" ", "") + "'")
                             
 
 dict = {'division' : division , 'equipe': equipe, 'stade': stade, 'latitude': latitude_stade, 'longitude' : longitude_stade}
 data = pd.DataFrame(dict)
-```
-
-```{python}
-len(division), len(equipe), len(stade), len(latitude_stade), len(longitude_stade)
+data = data.dropna()
 ```
 
 ```{python}
@@ -482,27 +493,22 @@ data
 ```
 
 ```{python}
-import re
-
 def dms2dd(degrees, minutes, seconds, direction):
     dd = float(degrees) + float(minutes)/60 + float(seconds)/(60*60);
-    if direction == 'S' or direction == 'O':
+    if direction in ('S', 'O'):
         dd *= -1
-    return dd;
+    return dd
 
 def parse_dms(dms):
     parts = re.split('[^\d\w]+', dms)
     lat = dms2dd(parts[0], parts[1], parts[2], parts[3])
-    lng = dms2dd(parts[4], parts[5], parts[6], parts[7])
-    return (lat, lng)
-
-dd = parse_dms("47°57'32' N 0°13'20' E")
-
-print(dd)
+    #lng = dms2dd(parts[4], parts[5], parts[6], parts[7])
+    return lat
 ```
 
-```{r}
-
+```{python}
+data['latitude'] = data['latitude'].apply(parse_dms)
+data['longitude'] = data['longitude'].apply(parse_dms)
 ```
 
 # Exercice 1 : Les pokémons (version non guidée)
