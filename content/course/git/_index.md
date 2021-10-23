@@ -24,27 +24,28 @@ Une grande partie du contenu de ce chapitre provient du cours
 
 ## Pourquoi faire du `Git` <i class="fas fa-code-branch"></i> ?
 
-Tous les statisticiens se sont déjà demandé (ou à leurs collègues) :
+Tous les statisticiens se sont déjà demandé (ou ont demandé à leurs collègues) :
 
 * quelle était la bonne version d'un programme
 * qui était l'auteur d'un bout de code en particulier
 * si un changement était important ou juste un essai
-* comment fusionner des programmes
+* où retrouver des traces d'un vieil essai abandonné mais potentiellement finalement prometteur 
+* comment fusionner des programmes écrits par plusieurs personnes
 * etc.
 
-Il existe un outil informatique puissant afin de répondre à tous ces besoins : la gestion de version (*version control system* (VCS) en anglais). Ses avantages sont incontestables et permettent de facilement :
+Il existe un outil informatique puissant qui répond à tous ces besoins : la gestion de version (*version control system* (VCS) en anglais). Ses avantages sont incontestables et permettent de facilement :
 
 * enregistrer l'historique des modifications d'un ensemble de fichiers
 * revenir à des versions précédentes d'un ou plusieurs fichiers
 * rechercher les modifications qui ont pu créer des erreurs
 * partager ses modifications et récupérer celles des autres
-* proposer des modifications, les discuter, sans pour autant modifier la dernière version existante
+* proposer des modifications, les discuter, sans pour autant modifier d'emblée la dernière version existante
 * identifier les auteurs et la date des modifications
 
 En outre, ces outils fonctionnent avec tous les langages informatiques (texte, R, Python, SAS, $\LaTeX$, Java, etc.) car reposent sur la comparaison des lignes et des caractères des programmes.
 
 
-On peut ainsi résumé les principaux avantages du contrôle de version
+On peut ainsi résumer les principaux avantages du contrôle de version
 de la manière suivante :
 
 1. Conserver et archiver l'ensemble des versions d'un code ou d'une documentation
@@ -55,9 +56,9 @@ de la manière suivante :
 
 ### Conserver et archiver du code
 
-Une des principales fonctionnalités de la gestion de version est conserver l'ensemble des fichiers de façon sécurisée et de proposer un archivage structuré des codes. Les fichiers sont stockés dans un **dépôt**, qui constitue le projet
+Une des principales fonctionnalités de la gestion de version est de conserver l'ensemble des fichiers de façon sécurisée et de proposer un archivage structuré des codes. Les fichiers sont stockés dans un **dépôt**, qui constitue le projet.
 
-Tout repose dans la gestion et la présentation de l'historique des modifications. Chaque modification (ajout, suppression ou changement) sur un ou plusieurs fichiers est identifiée par son auteur, sa date et un bref descriptif^[Plus précisément, chaque modification est identifiée de manière unique par un code `SHA` auquel est associé l'auteur, l'horodatage et des méta-données (par exemple le message descriptif associé)]. Chaque changement est donc unique et aisément identifiable quand ils sont classés par ordre chronologique. Les modifications transmises au dépôt sont appelées **commit**.
+Tout repose dans la gestion et la présentation de l'historique des modifications. Chaque modification (ajout, suppression ou changement) sur un ou plusieurs fichiers est identifiée par son auteur, sa date et un bref descriptif^[Plus précisément, chaque modification est identifiée de manière unique par un code `SHA` auquel est associé l'auteur, l'horodatage et des métadonnées (par exemple le message descriptif associé)]. Chaque changement est donc unique et aisément identifiable quand les modifications sont classées par ordre chronologique. Les groupes de modifications transmis au dépôt sont appelées **commit**.
 
 Avec des outils graphiques, on peut vérifier l'
 [ensemble des évolutions d'un fichier (`history`)](https://github.com/linogaliana/python-datascientist/commits/master/README.md),
@@ -66,7 +67,7 @@ On peut aussi
 [se concentrer sur une modification particulière d'un fichier](https://github.com/linogaliana/python-datascientist/commit/7e5d30ae0e260f9485453b42f195b0181a53e32e#diff-04c6e90faac2675aa89e2176d2eec7d8) ou vérifier, pour un fichier, la
 [modification qui a entraîné l'apparition de telle ou telle ligne (`blame`)](https://github.com/linogaliana/python-datascientist/blame/master/README.md)
 
-Sur son poste de travail, les dizaines (centaines ?) de programmes organisés à la main n'existent plus. Tout est regroupé dans un seul dossier, rassemblant les éléments du dépôt. Au sein du dépôt, tout l'historique est stocké et accessible rapidement. Si on souhaite travailler sur la dernière version des programmes (ou sur une ancienne version spécifique), il n'y a plus besoin de conserver les autres fichiers car ils sont dans l'historique du projet. Il est alors possible de choisir sur quelle version on veut travailler (la dernière commune à tout le monde, la sienne en train d'être développée, celle de l'année dernière, etc.).
+Sur son poste de travail, les dizaines (voire centaines) de programmes organisés à la main n'existent plus. Tout est regroupé dans un seul dossier, rassemblant les éléments du dépôt. Au sein du dépôt, tout l'historique est stocké et accessible rapidement. Si on souhaite travailler sur la dernière version des programmes (ou sur une ancienne version spécifique), il n'y a plus besoin de conserver les autres fichiers car ils sont dans l'historique du projet. Il est alors possible de choisir sur quelle version on veut travailler (la dernière commune à tout le monde, la sienne en train d'être développée, celle de l'année dernière, etc.).
 
 
 ### Travailler efficacement en équipe
@@ -84,10 +85,10 @@ correction
 
 A ces avantages s'ajoutent les fonctionalités collaboratives des sites de dépôt
 (les principaux étant `Github` et `Gitlab`), qui permettent d'intéragir via
-des *issues*, faire des suggestions de modifications, etc.
+des [*issues*](https://github.com/linogaliana/python-datascientist/issues), faire des suggestions de modifications, etc.
 
 
-L'usage individuel, c'est-à-dire seul sur son projet, permet aussi de "travailler en équipe avec soi même" car il permet de retrouver des mois plus tard le contenu et le contexte des modifications. Cela est notamment précieux lors des changements de poste ou des travaux réguliers mais espacés dans le temps (par exemple, un mois par an chaque année). Même lorsqu'on travaille tout seul, on collabore avec un *moi* futur qui peut ne plus se souvenir de la modification des fichiers.
+L'usage individuel, c'est-à-dire seul sur son projet, permet aussi de "travailler en équipe avec soi-même" car il permet de retrouver des mois plus tard le contenu et le contexte des modifications. Cela est notamment précieux lors des changements de poste ou des travaux réguliers mais espacés dans le temps (par exemple, un mois par an chaque année). Même lorsqu'on travaille tout seul, on collabore avec un *moi* futur qui peut ne plus se souvenir de la modification des fichiers.
 
 
 ### Améliorer la qualité des codes
@@ -105,7 +106,7 @@ ceux-ci à tourner sur des machines autres que celles du développeur du code.
 
 Les sites de dépôts `Github` et `Gitlab` permettent de faire beaucoup plus
 que seulement archiver des codes. Les fonctionalités de déploiement
-en continu permettent ainsi de:
+en continu permettent ainsi de :
 
 * créer des sites web pour valoriser des projets (par exemple les sites
 `pkgdown` en `R`)
