@@ -187,7 +187,7 @@ reminder_box <- function(boxtype = "warning", type = c("html","markdown")){
 }
 
 # Hook from Maelle Salmon: https://ropensci.org/technotes/2020/04/23/rmd-learnings/
-modif_plot <- function(x, options) {
+modif_plot <- function(x, options, dir_path) {
   hugoopts <- options$hugoopts
   paste0(
     "{", "{<figure src=", # the original code is simpler
