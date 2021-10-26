@@ -186,6 +186,23 @@ reminder_box <- function(boxtype = "warning", type = c("html","markdown")){
   cat(box, sep = "\n")
 }
 
+# Hook from Maelle Salmon: https://ropensci.org/technotes/2020/04/23/rmd-learnings/
+modif_plot <- function(x, options) {
+  hugoopts <- options$hugoopts
+  paste0(
+    "{", "{<figure src=", # the original code is simpler
+    # but here I need to escape the shortcode!
+    '"', paste0(dir_path,"/",x), '" ',
+    if (!is.null(hugoopts)) {
+      glue::glue_collapse(
+        glue::glue('{names(hugoopts)}="{hugoopts}"'),
+        sep = " "
+      )
+    },
+    ">}}\n"
+  )
+}
+
 
 message("For local preview when the pages are built: blogdown::hugo_build(local = TRUE)")
 
