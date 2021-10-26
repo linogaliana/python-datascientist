@@ -1,3 +1,5 @@
+source(".Rprofile")
+
 content_rmd <- readLines("diff.txt")
 content_rmd <- content_rmd[startsWith(content_rmd, "content/course")]
 content_rmd <- content_rmd[endsWith(content_rmd, ".Rmd")]
