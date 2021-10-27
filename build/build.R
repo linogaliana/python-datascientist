@@ -1,3 +1,6 @@
+library(knitr)  
+library(reticulate) 
+
 content_rmd <-  list.files("./content/course", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
 
 file.remove(
@@ -5,6 +8,10 @@ file.remove(
     ".Rmd",".html", content_rmd
   )
 )
+
+knitr::knit_engines$set(python = reticulate::eng_python)
+knitr::opts_chunk$set(fig.path = "")
+knitr::opts_chunk$set(eval = TRUE, warning = FALSE, message = FALSE)
 
 lapply(
   content_rmd, function(i){
