@@ -5,6 +5,7 @@ content_rmd <- content_rmd[startsWith(content_rmd, "content/course")]
 content_rmd <- content_rmd[endsWith(content_rmd, ".Rmd")]
 content_rmd <- content_rmd[!grepl("/git/", content_rmd)]
 content_rmd <- content_rmd[!grepl("06a_exo_supp_webscraping.", content_rmd)]
+content_rmd <- "content/course/manipulation/03_geopandas_tutorial.Rmd"
 
 file.remove(
   gsub(
