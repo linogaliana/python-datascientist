@@ -1,3 +1,8 @@
+source(".Rprofile")
+
+library(knitr)  
+library(reticulate)  
+
 content_rmd <- readLines("diff.txt")
 content_rmd <- content_rmd[startsWith(content_rmd, "content/course")]
 content_rmd <- content_rmd[endsWith(content_rmd, ".Rmd")]
@@ -9,6 +14,11 @@ file.remove(
     ".Rmd",".html", content_rmd
   )
 )
+
+knitr::knit_engines$set(python = reticulate::eng_python)
+knitr::opts_chunk$set(fig.path = "")
+knitr::opts_chunk$set(eval = TRUE, warning = FALSE, message = FALSE)
+
 
 lapply(
   content_rmd, function(i){
