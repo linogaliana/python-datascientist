@@ -32,32 +32,9 @@ summary: |
 
 ```{r setup, include=FALSE}
 dir_path <- gsub(here::here(), "..", here::here("course","manipulation"))
-
-library(knitr)  
-library(reticulate)  
-knitr::knit_engines$set(python = reticulate::eng_python)
-knitr::opts_chunk$set(fig.path = "")
-knitr::opts_chunk$set(eval = TRUE, warning = FALSE, message = FALSE)
-
-# Hook from Maelle Salmon: https://ropensci.org/technotes/2020/04/23/rmd-learnings/
 knitr::knit_hooks$set(
-  plot = function(x, options) {
-    hugoopts <- options$hugoopts
-    paste0(
-      "{", "{<figure src=", # the original code is simpler
-      # but here I need to escape the shortcode!
-      '"', paste0(dir_path,"/",x), '" ',
-      if (!is.null(hugoopts)) {
-        glue::glue_collapse(
-          glue::glue('{names(hugoopts)}="{hugoopts}"'),
-          sep = " "
-        )
-      },
-      ">}}\n"
-    )
-  }
+  plot = function(x, options) modif_plot(x, options, dir_path = dir_path)
 )
-
 ```
 
 ```{r, echo = FALSE, results = 'asis', include = TRUE, eval = TRUE}
@@ -124,7 +101,7 @@ Les données spatiales rassemblent classiquement deux types de données :
 
 **Les systèmes de projection font l'objet de standards internationaux et sont souvent désignés par des codes dits codes EPSG**. Ce [site](https://epsg.io/) est un bon aide-mémoire. Les plus fréquents, pour les utilisateurs français, sont les suivants (plus d'infos [ici](https://geodesie.ign.fr/contenu/fichiers/documentation/SRCfrance.pdf)):
 
-* `2154`: système de projection Lambert 93. Il s'agit du système de projection officiel: la plupart des données diffusées par l'administration pour la métropole sont disponibles dans ce système de projection. 
+* `2154`: système de projection Lambert 93. Il s'agit du système de projection officiel. La plupart des données diffusées par l'administration pour la métropole sont disponibles dans ce système de projection. 
 * `27572`: Lambert II étendu. Il s'agit de l'ancien système de projection officiel. Les données spatiales anciennes peuvent être dans ce format.
 * `4326`: WGS 84 ou système de pseudo-Mercator. Attention, ce n'est en réalité pas un système de projection mais un système de coordonnées (longitude / latitude) qui permet simplement un repérage angulaire sur l'ellipsoïde. Il est utilisé pour les données GPS.
 
@@ -220,9 +197,12 @@ def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
       zip_ref.extractall(dirname + '/' + destname)
 ```
 
-```{python apply download_unzip}
+```{python apply download_unzip, results = "hide"}
 download_unzip(url)
 communes = gpd.read_file(temporary_location + "/borders/communes-20190101.json")
+```
+
+```{python}
 communes.head()
 ```
 
@@ -265,7 +245,7 @@ ce qui est limitant pour une analyse focalisée sur Paris. On va donc les
 récupérer sur le site d'open data de la ville de Paris et les substituer 
 à Paris :
 
-```{python}
+```{python, results = "hide"}
 arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
 arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
 arrondissements['insee'] = arrondissements['insee'].astype(str)
@@ -308,7 +288,7 @@ disponibles [sur le site d'open data de la ville de Paris](https://opendata.pari
 requêtables directement par l'url
 <https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
 
-```{python}
+```{python, results = "hide"}
 velib_data = 'https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr'
 stations = gpd.read_file(velib_data)
 ```
