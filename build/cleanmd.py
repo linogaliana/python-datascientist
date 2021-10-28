@@ -2,11 +2,7 @@ import os
 import glob
 import re
 
-
-def cleanblog():
-    # LIST (R)MARKDOWN FILES ----------------
-    root_dir = os.getcwd()
-    os.chdir("./content")
+def list_rmd_files():
     types = ('course/**/*.Rmd', 'course/**/*.md')  # the tuple of file types
     files_grabbed = []
     for files in types:
@@ -15,13 +11,19 @@ def cleanblog():
     for i in files_grabbed:
         if (i.endswith(("_index.md", "_index.Rmd"))) is False :
             list_files += [i]
+    return list_files    
+
+
+def cleanblog():
+    root_dir = os.getcwd()
+    os.chdir("./content")
+    # LIST (R)MARKDOWN FILES ----------------
+    list_files = list_rmd_files()
     # APPLY cleanyaml
     for i in list_files:
         cleanfile(i, root_dir)
     #back to initial working directory
     os.chdir(root_dir)
-
-
 
 def cleanfile(filename, root_dir = None, show_code = False, hide_all_code = True):
     if root_dir is None:
@@ -59,6 +61,12 @@ def cleanfile(filename, root_dir = None, show_code = False, hide_all_code = True
     print("Done: " + filename)
 
 
+def substitute_echo(text):
+    m = re.search(r"knitr::opts_chunk\$set\((.*?)\)", text)
+    pat = m.groups()[0]
+    sub = re.sub(r"echo = FALSE", "echo = TRUE",pat)
+    newtext = re.sub(r"knitr::opts_chunk\$set\({}\)".format(pat),"knitr::opts_chunk$set({})".format(sub), text)
+    return newtext
 
 def remove_chunk( s, first, last ):
     try:
