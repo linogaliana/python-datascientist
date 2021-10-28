@@ -8,7 +8,7 @@ on:
       - dev
 
 jobs:
-  defineenv:
+  blogdown:
     name: Render-Blog
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
@@ -35,19 +35,6 @@ jobs:
         run: |
           conda info
           conda list
-
-  blogdown:
-    name: Render-Blog
-    runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
-    needs: defineenv
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
       - name: Build to md
         run: |
           git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
@@ -121,11 +108,9 @@ jobs:
          git commit -m "Automated changes";
          git pull
          git push
-         
   corrections:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
-    needs: defineenv
     steps:
       - uses: actions/checkout@v2
         with:
@@ -133,6 +118,19 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Install rmarkdown
+        env:
+          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
+        run: |
+          Rscript -e 'install.packages(c("rmarkdown"))'
+      - name: Install Python
+        run: |
+          Rscript -e "install.packages(c('remotes', 'reticulate'))"
+          Rscript -e "install.packages(c('here'))"
+      - shell: bash -l {0}
+        run: |
+          conda info
+          conda list
       - name: Modif Rmd echo status
         run: |
          python build/modifmd.py
