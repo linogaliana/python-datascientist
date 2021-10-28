@@ -35,7 +35,7 @@ def modif_rmd(filename):
     new_text = "".join([line for line in text])
   print('Processing file {}'.format(filename))
   s = substitute_echo(new_text)
-  with open(filename, 'w, encoding='utf-8') as f:
+  with open(filename, 'w', encoding='utf-8') as f:
     f.write(s)
   print("Done: " + filename)
 
