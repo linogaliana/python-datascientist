@@ -14,6 +14,12 @@ def list_rmd_files():
     return list_files    
 
 
+def regex_chunk_opt(text):
+  s = re.sub(r"#\| include: false", "#| include: true", text)
+  s = re.sub(r"#\| echo: false", "#| echo: true", s)
+  return s
+
+
 def cleanblog(type = "md"):
     root_dir = os.getcwd()
     os.chdir("./content")
@@ -35,6 +41,7 @@ def modif_rmd(filename):
     new_text = "".join([line for line in text])
   print('Processing file {}'.format(filename))
   s = substitute_echo(new_text)
+  s = regex_chunk_opt(s)
   with open(filename, 'w', encoding='utf-8') as f:
     f.write(s)
   print("Done: " + filename)
