@@ -33,6 +33,7 @@ def modif_rmd(filename):
   with open(filename, 'r', encoding='utf-8') as f:
     text = f.readlines()
     new_text = "".join([line for line in text])
+  print('Processing file {}'.format(filename))
   s = substitute_echo(new_text)
   with open(filename, mode, encoding='utf-8') as f:
     f.write(s)
@@ -77,6 +78,8 @@ def cleanfile(filename, root_dir = None, show_code = False, hide_all_code = True
 
 def substitute_echo(text):
     m = re.search(r"knitr::opts_chunk\$set\((.*?)\)", text)
+    if m is None:
+      return text
     pat = m.groups()[0]
     sub = re.sub(r"echo = FALSE", "echo = TRUE",pat)
     newtext = re.sub(r"knitr::opts_chunk\$set\({}\)".format(pat),"knitr::opts_chunk$set({})".format(sub), text)
