@@ -25,7 +25,7 @@ def cleanblog(type = "md"):
           cleanfile(i, root_dir)
     else:
       for i in list_files:
-          modif_rmd(i, root_dir)
+          modif_rmd(i)
     #back to initial working directory
     os.chdir(root_dir)
 
