@@ -198,7 +198,7 @@ ajouter un paramètre `page=2` pour rattraper les derniers échos:
 
 ```{python}
 wb2 = pd.json_normalize(
-    requests.get("http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json&page=2").json()
+    requests.get("http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json&page=2").json()[1]
     )
 pd.concat([wb, wb2])
 ```
@@ -234,26 +234,18 @@ leurs données sous forme d'API
 - Insee: https://api.insee.fr/catalogue/ et [`pynsee`](https://github.com/InseeFrLab/Py-Insee-Data/tree/master/pynsee)
 
 
+# L'API DVF : accéder à des données de transactions immobilières simplement
 
-### DVF : les transactions immobilières en France
+Le site `DVF` (demandes de valeurs foncières) permet de visualiser toutes les données relatives aux mutations à titre onéreux (ventes de maisons, appartements, garages...) réalisées durant les 5 dernières années
 
+Un site de visualisation est disponible sur <https://app.dvf.etalab.gouv.fr/>
 
-Le site DVF (demandes de valeurs foncières) permet de visualiser toutes les données relatives aux mutations à titre onéreux réalisées durant les 5 dernières années (pour faire simple les ventes de maisons ou d'appartements depuis 2015). 
-https://app.dvf.etalab.gouv.fr/
-
-Ce site est très complet quand il s'agit de connaître le prix moyen au mètre carré d'un quartier ou de comparer des régions entre elles. 
-
-L'API DVF a été réalisée par Christian Quest, Son code est disponible sur https://github.com/cquest/dvf_as_api
-
-Un exemple : on recherche toutes les transactions existantes dans DVF à Plogoff (code commune 29168, en Bretagne)
-
-```{python}
-data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168").json()
-```
-
-```{python}
-data_immo['resultats'][20]
-```
+Ce site est très complet quand il s'agit de connaître le prix moyen au mètre
+carré d'un quartier ou de comparer des régions entre elles. 
+L'API DVF permet d'aller plus loin afin de récupérer les résultats dans 
+un logiciel de traitement de données. Elle a été réalisée par
+[Christian Quest](https://github.com/cquest) et le code
+source est disponible sur Github <a href="https://github.com/cquest/dvf_as_api" class="github"><i class="fab fa-github"></i></a>
 
 Les critères de recherche sont les suivants :
 - `code_commune` = code INSEE de la commune (ex: 94068)
@@ -267,14 +259,30 @@ Les filtres de sélection complémentaires :
 - `type_local` (Maison, Appartement, Local, Dépendance)
 
 
-Par exemple si seules les maisons de la commune 29168 nous intéressent : 
+{{% panel status="exercise" title="Exploiter l'API DVF" icon="fas fa-pencil-alt" %}}
+1. Rechercher toutes les transactions existantes dans DVF à Plogoff (code commune `29168`, en Bretagne).
+Afficher les clés du JSON et en déduire le nombre de transactions répertoriées. 
+2. N'afficher que les transactions portant sur des maisons
+{{% /panel %}}
 
 ```{python}
+#| echo: false
+
+# Question 1
+data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168").json()
+#pd.json_normalize(data_immo["resultats"])
+
 data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168&type_local=Maison").json()
 ```
 
+Concernant les maisons, le résultat devrait être proche de celui-ci
+
 ```{python}
-data_immo['resultats'][0]
+#| echo: false
+
+# Question 2
+data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168&type_local=Maison").json()
+pd.json_normalize(data_immo["resultats"])
 ```
 
 # Exercices supplémentaires
@@ -301,14 +309,18 @@ library(reticulate)
 ```
 
 
-```{python, include = FALSE}
+```{python}
+#| include: false
+
 import json
 import requests
 import pandas as pd
 ```
 
 
-```{python, include = FALSE}
+```{python}
+#| include: false
+
 # Paramètres nécessaires
 df = pd.DataFrame([3274080005003,  5449000000996, 8002270014901,
 3228857000906, 3017620421006, 8712100325953], columns = ['code_ean'])
@@ -316,7 +328,9 @@ nutri = ['energy_100g', 'nutriscore_grade', 'nova_group', 'fat_100g', 'saturated
 cols_api = ['code', 'product_name', 'categories', 'categories_tags'] + ["nutriments.{}".format(i) for i in nutri]
 ```
 
-```{python, include = FALSE}
+```{python}
+#| include: false
+
 def get_products_api(barcode, col = cols_api):
     url = "https://world.openfoodfacts.org/api/v0/product/{}.json".format(str(barcode))
     #print(url)
@@ -332,7 +346,9 @@ get_products_api(3274080005003, col=["code","nutriments.fat_100g"])
 ```
 
 
-```{python,  include = FALSE}
+```{python}
+#| include: false
+
 openfood = [get_products_api(barcode) for barcode in df['code_ean'].dropna().astype(str).unique()]
 openfood = pd.concat(openfood)
 openfood.head(10)
@@ -342,7 +358,9 @@ Récupérer l'URL d'une des images et l'afficher dans votre navigateur. Par exem
 celle-ci:
 
 
-```{python, echo = FALSE}
+```{python}
+#| echo: false
+
 url_image = get_products_api(5449000000996, col = ["image_front_small_url"])["image_front_small_url"].iloc[0]
 ```
 
