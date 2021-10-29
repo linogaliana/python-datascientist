@@ -260,30 +260,110 @@ Les filtres de sélection complémentaires :
 
 
 {{% panel status="exercise" title="Exploiter l'API DVF" icon="fas fa-pencil-alt" %}}
-1. Rechercher toutes les transactions existantes dans DVF à Plogoff (code commune `29168`, en Bretagne).
+
+:one: 
+Rechercher toutes les transactions existantes dans DVF à Plogoff (code commune `29168`, en Bretagne).
 Afficher les clés du JSON et en déduire le nombre de transactions répertoriées. 
-2. N'afficher que les transactions portant sur des maisons
-{{% /panel %}}
 
 ```{python}
 #| echo: false
+#| include: false
 
 # Question 1
 data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168").json()
-#pd.json_normalize(data_immo["resultats"])
-
-data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168&type_local=Maison").json()
+data_immo.keys()
+ventes = pd.json_normalize(data_immo["resultats"])
 ```
 
-Concernant les maisons, le résultat devrait être proche de celui-ci
+
+:two: 
+N'afficher que les transactions portant sur des maisons. Le résultat devrait
+ressembler au DataFrame suivant:
 
 ```{python}
 #| echo: false
 
 # Question 2
-data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168&type_local=Maison").json()
-pd.json_normalize(data_immo["resultats"])
+maisons = requests.get("http://api.cquest.org/dvf?code_commune=29168&type_local=Maison").json()
+pd.json_normalize(maisons["resultats"])
 ```
+
+
+:three: Utiliser l'[API geo](https://api.gouv.fr/documentation/api-geo) pour
+récupérer le découpage communal de la ville de Plogoff
+
+```{python}
+#| echo: false
+
+import geopandas as gpd
+plgf = gpd.read_file("https://geo.api.gouv.fr/communes/29168?fields=nom,code,codesPostaux,codeDepartement,codeRegion,population&format=geojson&geometry=contour")
+```
+
+:four:
+Représenter l'histogramme des prix de vente
+
+```{python}
+p = ventes["valeur_fonciere"].plot(kind = "hist")
+p
+```
+
+```{python, include = FALSE}
+plt.savefig('histo_plgf.png', bbox_inches='tight')
+```
+
+```{r, include = FALSE}
+knitr::include_graphics('histo_plgf.png')
+```
+
+N'hésitez pas à aller plus loin en jouant sur des variables de
+groupes par exemple
+
+:five: 
+On va faire une carte des ventes en affichant le prix de l'achat.
+
+Supposons que le DataFrame des ventes s'appelle `ventes`. Il faut d'abord le
+convertir
+en objet `geopandas`. 
+
+```{python}
+ventes = ventes.dropna(subset = ['lat','lon'])
+ventes = gpd.GeoDataFrame(ventes, geometry=gpd.points_from_xy(ventes.lon, ventes.lat))
+ventes
+```
+
+Pour représenter graphiquement, on peut utiliser le code suivant (essayez de
+le comprendre et pas uniquement de l'exécuter)
+
+```{python}
+import folium
+
+center = ventes[['lat', 'lon']].mean().values.tolist()
+sw = ventes[['lat', 'lon']].min().values.tolist()
+ne = ventes[['lat', 'lon']].max().values.tolist()
+
+m = folium.Map(location = center, tiles='Stamen Toner')
+
+# I can add marker one by one on the map
+for i in range(0,len(ventes)):
+    folium.Marker([ventes.iloc[i]['lat'], ventes.iloc[i]['lon']], popup=ventes.iloc[i]['valeur_fonciere']).add_to(m) #bug du paramètre popup
+
+m.fit_bounds([sw, ne])
+```
+
+```{python, eval = FALSE}
+# Afficher la carte
+m
+```
+
+```{python, eval = TRUE, include = FALSE}
+map = m._repr_html_()
+```
+
+
+{{% /panel %}}
+
+
+
 
 # Exercices supplémentaires
 
