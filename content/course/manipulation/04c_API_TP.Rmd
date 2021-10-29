@@ -124,7 +124,12 @@ Avec l'API de la Banque mondiale, voici comme s'écrit une requête :
 que celles telles que `incomeLevel=LMC` (*"Lower middle income"*)
 
 En cliquant sur le lien, le site renvoie des données en XML,
-qui ressemblent pas mal à ce qu'on a vu plus tôt avec le scraping : une structure avec des balises qui s'ouvrent et qui se ferment. Pour obtenir la même information en `Python`:
+qui ressemblent pas mal à ce qu'on a vu plus tôt avec le scraping : une structure avec des balises qui s'ouvrent et qui se ferment.
+
+
+Pour obtenir la même information en `Python`, il faut revenir aux fondamentaux : on va avoir besoin du module `requests`. Suivant les API, nous avons soit besoin de rien de plus si nous parvenons directement à obtenir un json, soit devoir utiliser un *parser* comme `BeautifulSoup` dans le cas contraire. 
+
+Avec l'API de la banque mondiale, on va utiliser le module `requests` et sa méthode `get` : on lui donne l'url de l'API qui nous intéresse, on lui demande d'en faire un json et le tour est en apparence joué
 
 ```{python, results = "asis"}
 import requests
@@ -145,10 +150,51 @@ Quand on regarde de plus près, on voit que les informations suivantes apparaiss
 * Latitude
 
 Le format XML est fortement balisé, ce qui n'est pas très pratique. 
+En utilisant désormais un autre URL, on obtient un JSON, plus pratique pour travailler : 
 
-En utilisant désormais cette url ci : http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json, on obtient directement un json, qui est finalement presque comme un dictionnaire en python.
+> http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json
 
-Rien de plus simple donc pour demander quelque chose à une API, il suffit d'avoir la bonne url.
+```{python, results = "asis"}
+import requests
+import pandas as pd
+
+r = requests.get('http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json')
+r.content
+```
+
+Ici, il n'est même pas nécessaire en première approche 
+d'utiliser le package `json`, l'information
+étant déjà tabulée dans l'écho renvoyé (on a la même information pour tous les pays):
+
+```{python}
+wb = r.json()
+wb = pd.json_normalize(wb[1])
+wb.head(5)
+```
+
+Cependant, si on regarde la dimension de l'objet obtenu, on obtient un
+chiffre rond (50 lignes). Ceci est suspect et un petit tour dans la
+documentation de l'API nous apprendrait que c'est le nombre maximal de 
+retour possible. Il faut donc faire attention à la documentation et 
+ajouter un paramètre `page=2` pour rattraper les derniers échos: 
+
+```{python}
+wb2 = pd.json_normalize(
+    requests.get("http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json&page=2").json()
+    )
+pd.concat([wb, wb2])
+```
+
+```{python}
+# pour obtenir une observation 
+# on voit dans l'objet que l'élément 0 correspond à des informations sur les pages , pour avoir les informations des pays,
+# il faudra voir à partir de l'élément 1 de la liste qui est également une liste
+data_json[1][0]
+```
+
+```{python}
+data_json[1][0]['incomeLevel']['value']
+```
 
 
 
@@ -174,39 +220,6 @@ leurs données sous forme d'API
 
 
 
-## Et Python : comment s'adresse-t-il aux API ?
-
-Il faut ici revenir aux fondamentaux : on va avoir besoin du module `requests` de Python. Suivant les API, nous avons soit besoin de rien de plus si nous parvenons directement à obtenir un json, soit devoir utiliser un *parser* comme `BeautifulSoup` dans le cas contraire. 
-
-On va utiliser le module requests et sa méthode get : on lui donne l'url de l'API qui nous intéresse, on lui demande d'en faire un json et le tour est joué !
-
-
-### Banque Mondiale : données économiques par pays
-
-```{python}
-import requests
-data_json = requests.get("http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json").json()
-data_json
-```
-
-```{python}
-data_json[0]
-# On voit qu'il y a nous manque des informations : 
-# il y a un total de 52 éléments
-data_json_page_2 = requests.get("http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json&page=2").json()
-data_json_page_2
-```
-
-```{python}
-# pour obtenir une observation 
-# on voit dans l'objet que l'élément 0 correspond à des informations sur les pages , pour avoir les informations des pays,
-# il faudra voir à partir de l'élément 1 de la liste qui est également une liste
-data_json[1][0]
-```
-
-```{python}
-data_json[1][0]['incomeLevel']['value']
-```
 
 ### DVF : les transactions immobilières en France
 
