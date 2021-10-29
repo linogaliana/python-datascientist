@@ -88,6 +88,7 @@ def substitute_echo(text):
     if m is None:
       return text
     pat = m.groups()[0]
+    pat = re.sub(r"include = FALSE", "include = TRUE",pat)
     sub = re.sub(r"echo = FALSE", "echo = TRUE",pat)
     newtext = re.sub(r"knitr::opts_chunk\$set\({}\)".format(pat),"knitr::opts_chunk$set({})".format(sub), text)
     return newtext
