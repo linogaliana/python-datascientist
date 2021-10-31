@@ -33,6 +33,9 @@ summary: |
 
 ```{r setup, include=FALSE}  
 dir_path <- gsub(here::here(), "..", here::here("course","manipulation"))
+knitr::knit_hooks$set(
+  plot = function(x, options) modif_plot(x, options, dir_path = dir_path)
+)
 ```
 
 
@@ -40,222 +43,368 @@ dir_path <- gsub(here::here(), "..", here::here("course","manipulation"))
 print_badges()
 ```
 
-Petite revue d'[API REST](https://fr.wikipedia.org/wiki/Representational_state_transfer).
+# Introduction : Qu'est-ce qu'une API ?  
 
-<!-- #region -->
-## Définition :  
+## Définition
 
-API, à part que ce mot qui vaut 5 au scrabble, c'est quoi au juste ?
+Pour expliquer le principe d'une API, je vais reprendre le début de 
+la fiche dédiée dans la documentation collaborative
+[utilitR](https://www.book.utilitr.org/api.html) que je recommande de lire :
+
+> Une *Application Programming Interface* (ou API) est une interface de programmation qui permet d’utiliser une application existante pour restituer des données. Le terme d’API peut être paraître intimidant, mais il s’agit simplement d’une façon de mettre à disposition des données : plutôt que de laisser l’utilisateur consulter directement des bases de données (souvent volumineuses et complexes), l’API lui propose de formuler une requête qui est traitée par le serveur hébergeant la base de données, puis de recevoir des données en réponse à sa requête.
+> 
+> D’un point de vue informatique, une API est une porte d’entrée clairement identifiée par laquelle un logiciel offre des services à d’autres logiciels (ou utilisateurs). L’objectif d’une API est de fournir un point d’accès à une fonctionnalité qui soit facile à utiliser et qui masque les détails de la mise en oeuvre. Par exemple, l’API Sirene permet de récupérer la raison sociale d’une entreprise à partir de son identifiant Siren en interrogeant le référentiel disponible sur Internet directement depuis un script R, sans avoir à connaître tous les détails du répertoire Sirene.
+>
+> À l’Insee comme ailleurs, la connexion entre les bases de données pour les nouveaux projets tend à se réaliser par des API. L’accès à des données par des API devient ainsi de plus en plus commun et est amené à devenir une compétence de base de tout utilisateur de données.
+>
+> [`utilitR`](https://www.book.utilitr.org/api.html)
+
+## Avantages des API
+
+A nouveau, citons la documentation [utilitR](https://www.book.utilitr.org/api.html)
+
+Les API présentent de multiples avantages :
+
+> * Les API rendent les programmes plus reproductibles. En effet, grâce aux API, il est possible de mettre à jour facilement les données utilisées par un programme si celles-ci évoluent. Cette flexibilité accrue pour l’utilisateur évite au producteur de données d’avoir à réaliser de multiples extractions, et réduit le problème de la coexistence de versions différentes des données.
+> * Grâce aux API, l’utilisateur peut extraire facilement une petite partie d’une base de données plus conséquente.
+> * Les API permettent de mettre à disposition des données tout en limitant le nombre de personnes ayant accès aux bases de données elles-mêmes.
+> * Grâce aux API, il est possible de proposer des services sur mesure pour les utilisateurs (par exemple, un accès spécifique pour les gros utilisateurs).
+>
+> [`utilitR`](https://www.book.utilitr.org/api.html)
+
+## Utilisation des API
+
+Citons encore une fois
+la documentation [`utilitR`](https://www.book.utilitr.org/api.html)
+
+> Une API peut souvent être utilisée de deux façons : par une interface Web, et par l’intermédiaire d’un logiciel (R, Python…). Par ailleurs, les API peuvent être proposées avec un niveau de liberté variable pour l’utilisateur :
+> 
+> * soit en libre accès (l’utilisation n’est pas contrôlée et l’utilisateur peut utiliser le service comme bon lui semble) ;
+> * soit via la génération d’un compte et d’un jeton d’accès qui permettent de sécuriser l’utilisation de l’API et de limiter le nombre de requêtes.
+>
+> [`utilitR`](https://www.book.utilitr.org/api.html)
+
+De nombreuses API nécessitent une authentification, c'est-à-dire un 
+compte utilisateur afin de pouvoir accéder aux données. 
+Dans un premier temps, 
+nous regarderons exclusivement les API ouvertes sans restriction d'accès.  
+Certains exercices et exemples permettront néanmoins d'essayer des API
+avec restrictions d'accès. 
+
+# Requêter une API
+
+## Principe général
+
+> L’utilisation de l’interface Web est utile dans une démarche exploratoire mais trouve rapidement ses limites, notamment lorsqu’on consulte régulièrement l’API. L’utilisateur va rapidement se rendre compte qu’il est beaucoup plus commode d’utiliser une API via un logiciel de traitement pour automatiser la consultation ou pour réaliser du téléchargement de masse. De plus, l’interface Web n’existe pas systématiquement pour toutes les API.
+> 
+> Le mode principal de consultation d’une API consiste à adresser une requête à cette API via un logiciel adapté (R, Python, Java…). Comme pour l’utilisation d’une fonction, l’appel d’une API comprend des paramètres qui sont détaillées dans la documentation de l’API. 
+>
+> [`utilitR`](https://www.book.utilitr.org/api.html)
 
 
-API signifie Application Programming Interface. Le mot le plus important est “interface”, et c’est le mot le plus simple, car nous utilisons tous des interfaces.
+Voici les éléments importants à avoir en tête sur les requêtes (j'emprunte encore
+à [`utilitR`](https://www.book.utilitr.org/api.html)):
 
-Bon, et une interface ?
+* Le __point d’entrée__ d’un service offert par une API se présente sous la forme d’une URL (adresse web). Chaque service proposé par une API a sa propre URL. Par exemple, dans le cas de l’OpenFood Facts,
+l'URL à utiliser pour obtenir des informations sur un produit particulier (l'identifiant `737628064502`) estg https://world.openfoodfacts.org/api/v0/product/737628064502.json
+* Cette URL doit être complétée avec différents paramètres qui précisent la requête (par exemple l’identifiant Siren). Ces paramètres viennent s’ajouter à l’URL, souvent à la suite de `?`. Chaque service proposé par une API a ses propres paramètres, détaillés dans la documentation. 
+* Lorsque l’utilisateur soumet sa requête, l’API lui renvoie une réponse structurée contenant l’ensemble des informations demandées. Le résultat envoyé par une API est majoritairement aux formats JSON ou XML (deux formats dans lesquels les informations sont hiérarchisées de manière emboitée). Plus rarement, certains services proposent une information sous forme plate (de type csv).
 
-> Définition Larousse : "Une interface est un dispositif qui permet des échanges et interactions entre différents acteurs"
-
-Pour faire simple, une API est un moyen efficace de faire communiquer entre elles deux applications : concrètement, un fournisseur de service met à disposition des développeurs une interface codifiée, qui leur permet d'obtenir des informations à partir de requêtes.
-
-Sans rentrer dans le détail technique, le dialogue ressemble à : "envoie moi ton adresse sous la forme X = rue, Y = Ville, Z = Pays" et moi, en retour, je t'enverrai le code à afficher sur ton site pour avoir la carte interactive.
-
-
-
-<!-- #endregion -->
-
-<!-- #region -->
-## Les API qui existent
+Du fait de la dimension hiérarchique des formats JSON ou XML, le résultat n’est pas toujours facile à récupérer mais
+`python` propose d'excellents outils pour cela (meilleurs que ceux de `R`). Certains packages, notamment `json`, facilitent l’extraction de champs d’une sortie d’API. Dans certains cas, des packages spécifiques à une API ont été créés pour simplifier l’écriture d’une requête ou la récupération du résultat. Par exemple, le package
+[pynsee](https://github.com/InseeFrLab/Py-Insee-Data/tree/master/pynsee)
+propose des options qui seront retranscrites automatiquement dans l'URL de 
+requête pour faciliter le travail sur les données Insee. 
 
 
-De plus en plus de sites mettent à disposition des développeurs et autres curieux des API. 
+## Exemple avec l'API de la Banque Mondiale
 
-Pour en citer quelques-uns : 
+Avec l'API de la Banque mondiale, voici comme s'écrit une requête : 
 
-- Twitter : https://dev.twitter.com/rest/public
-- Facebook : https://developers.facebook.com/
-- Instagram : https://www.instagram.com/developer/
-- Spotify : https://developer.spotify.com/web-api/
+> http://api.worldbank.org/v2/countries?incomeLevel=LMC
+
+1. Le point d'entrée est l'URL <http://api.worldbank.org/v2>
+2. Un filtre est appliqué sur les pays (`countries?`) afin de ne conserver
+que celles telles que `incomeLevel=LMC` (*"Lower middle income"*)
+
+En cliquant sur le lien, le site renvoie des données en XML,
+qui ressemblent pas mal à ce qu'on a vu plus tôt avec le scraping : une structure avec des balises qui s'ouvrent et qui se ferment.
 
 
-Ou encore : 
+Pour obtenir la même information en `Python`, il faut revenir aux fondamentaux : on va avoir besoin du module `requests`. Suivant les API, nous avons soit besoin de rien de plus si nous parvenons directement à obtenir un json, soit devoir utiliser un *parser* comme `BeautifulSoup` dans le cas contraire. 
+
+Avec l'API de la banque mondiale, on va utiliser le module `requests` et sa méthode `get` : on lui donne l'url de l'API qui nous intéresse, on lui demande d'en faire un json et le tour est *en apparence* joué.
+
+```{python}
+import requests
+req = requests.get('http://api.worldbank.org/v2/countries?incomeLevel=LMC')
+req
+```
+
+Prenons par exemple les 1000 premiers caractères du résultat:
+
+```{python, results = "asis"}
+print(req.content[:1000])
+```
+
+
+Quand on regarde de plus près, on voit que les informations suivantes apparaissent: 
+ 
+* Code du pays
+* Nom du pays
+* Région
+* Classification en termes de revenus
+* Les types de prêt pour ces pays
+* La capitale
+* Longitude
+* Latitude
+
+Le format XML est fortement balisé, ce qui n'est pas très pratique. 
+En utilisant désormais un autre URL, on obtient un JSON, plus pratique pour travailler : 
+
+> http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json
+
+```{python}
+import requests
+import pandas as pd
+
+req = requests.get('http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json')
+```
+
+A nouveau, les premiers caractères sont les suivants:
+
+```{python, results = "asis"}
+print(req.content[:1000])
+```
+
+Cela ressemble déjà plus à un dictionnaire `Python`[^1].
+
+[^1]: Le JSON est un format très apprécié dans le domaine du *big data*
+car il permet de stocker de manière intelligente des données
+de structures diverses. Il 
+s'agit d'un des formats privilégiés du paradigme No-SQL pour lequel
+cet [excellent cours](http://b3d.bdpedia.fr/) propose plus de détails
+
+Ici, il n'est même pas nécessaire en première approche 
+d'utiliser le package `json`, l'information
+étant déjà tabulée dans l'écho renvoyé (on a la même information pour tous les pays):
+
+```{python}
+wb = req.json()
+wb = pd.json_normalize(wb[1])
+wb.head(5)
+```
+
+Cependant, si on regarde la dimension de l'objet obtenu, on obtient un
+chiffre rond (50 lignes). Ceci est suspect et un petit tour dans la
+documentation de l'API nous apprendrait que c'est le nombre maximal de 
+retour possible. Il faut donc faire attention à la documentation et 
+ajouter un paramètre `page=2` pour rattraper les derniers échos: 
+
+```{python}
+wb2 = pd.json_normalize(
+    requests.get("http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json&page=2").json()[1]
+    )
+pd.concat([wb, wb2])
+```
+
+Si on regarde l'information présente dans le DataFrame, on voit qu'elle se
+présente sous forme `lendingType.value`. C'est parce que `pandas` a 
+concaténé les différents niveaux de notre dictionnaire. Si on désire
+s'en assurer, on peut regarder sur un exemple:
+
+```{python}
+req.json()[1][0]['incomeLevel']['value'] == wb.loc[0, 'incomeLevel.value'] 
+```
+
+
+## Un catalogue incomplet d'API existantes
+
+De plus en plus de sites mettent des API à disposition des développeurs et autres curieux. 
+
+Pour en citer quelques-unes très connues : 
+
+- Twitter <i class="fab fa-twitter"></i> : https://dev.twitter.com/rest/public
+- Facebook <i class="fab fa-facebook"></i> : https://developers.facebook.com/
+- Instagram <i class="fab fa-instagram"></i> : https://www.instagram.com/developer/
+- Spotify <i class="fab fa-spotify"></i> : https://developer.spotify.com/web-api/
+
+Cependant, il est intéressant de ne pas se restreindre à celles-ci. Beaucoup
+de producteurs de données, privés comme publics, mettent à disposition 
+leurs données sous forme d'API
 
 - Pole Emploi : https://www.emploi-store-dev.fr/portail-developpeur-cms/home.html
 - SNCF : https://data.sncf.com/api
 - Banque Mondiale : https://datahelpdesk.worldbank.org/knowledgebase/topics/125589
-
-pour beaucoup d'entre elles, il faut créer un compte utilisateur afin de pouvoir accéder aux données (c'est notamment le cas pour les réseaux sociaux), nous regarderons en cours seulement les API ouvertes sans restriction d'accès.  
-
-<!-- #endregion -->
-
-## Comment parler à une API ?
-
-La plupart des API donnent des exemples par communiquer avec les données présentes sur le site.
-
-Simplement, il faut trouver l'url qui renvoit les données que vous souhaitez avoir
-
-Par exemple, avec l'API de la Banque mondiale, voici comme s'écrit une requête pour les données de la Banque Mondiale : 
-
-http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json
-
-Avec cette url, on demande la liste des pays dont le niveau de revenus est LMC, c'est à dire "Lower middle income". 
-
-En cliquant sur le lien, le site renvoit des données en XML, qui ressemblent pas mal à ce qu'on a vu plus tôt avec le scraping : une structure avec des balises qui s'ouvrent et qui se ferment.
-
-```{python active="", eval=FALSE}
-<wb:countries xmlns:wb="http://www.worldbank.org" page="1" pages="2" per_page="50" total="52">
-<wb:country id="ARM">
-    <wb:iso2Code>AM</wb:iso2Code>
-    <wb:name>Armenia</wb:name>
-    <wb:region id="ECS">Europe & Central Asia</wb:region>
-    <wb:adminregion id="ECA">Europe & Central Asia (excluding high income)</wb:adminregion>
-    <wb:incomeLevel id="LMC">Lower middle income</wb:incomeLevel>
-    <wb:lendingType id="IBD">IBRD</wb:lendingType>
-    <wb:capitalCity>Yerevan</wb:capitalCity>
-    <wb:longitude>44.509</wb:longitude>
-    <wb:latitude>40.1596</wb:latitude>
-</wb:country>
-
-<wb:country id="BGD">
-    <wb:iso2Code>BD</wb:iso2Code>
-    <wb:name>Bangladesh</wb:name>
-    <wb:region id="SAS">South Asia</wb:region>
-    <wb:adminregion id="SAS">South Asia</wb:adminregion>
-    <wb:incomeLevel id="LMC">Lower middle income</wb:incomeLevel>
-    <wb:lendingType id="IDX">IDA</wb:lendingType>
-    <wb:capitalCity>Dhaka</wb:capitalCity>
-    <wb:longitude>90.4113</wb:longitude>
-    <wb:latitude>23.7055</wb:latitude>
-</wb:country>
-
-.....
-```
-
- Quand on regare de plus près, on voit que les informations suivantes apparaissent
- 
-Code du pays | Nom du pays | Région | Classification en termes de revenus | Les types de prêt pour ces pays | La capitale | Longitude | Latitude
+- Insee: https://api.insee.fr/catalogue/ et [`pynsee`](https://github.com/InseeFrLab/Py-Insee-Data/tree/master/pynsee)
 
 
-----------------
-<wb:country id="ARM">
-    <wb:iso2Code>AM</wb:iso2Code>
-    <wb:name>Armenia</wb:name>
-    <wb:region id="ECS">Europe & Central Asia</wb:region>
-    <wb:adminregion id="ECA">Europe & Central Asia (excluding high income)</wb:adminregion>
-    <wb:incomeLevel id="LMC">Lower middle income</wb:incomeLevel>
-    <wb:lendingType id="IBD">IBRD</wb:lendingType>
-    <wb:capitalCity>Yerevan</wb:capitalCity>
-    <wb:longitude>44.509</wb:longitude>
-    <wb:latitude>40.1596</wb:latitude>
-</wb:country>
+# L'API DVF : accéder à des données de transactions immobilières simplement
 
-<wb:country id="BGD">
-    <wb:iso2Code>BD</wb:iso2Code>
-    <wb:name>Bangladesh</wb:name>
-    <wb:region id="SAS">South Asia</wb:region>
-    <wb:adminregion id="SAS">South Asia</wb:adminregion>
-    <wb:incomeLevel id="LMC">Lower middle income</wb:incomeLevel>
-    <wb:lendingType id="IDX">IDA</wb:lendingType>
-    <wb:capitalCity>Dhaka</wb:capitalCity>
-    <wb:longitude>90.4113</wb:longitude>
-    <wb:latitude>23.7055</wb:latitude>
-</wb:country>
+Le site `DVF` (demandes de valeurs foncières) permet de visualiser toutes les données relatives aux mutations à titre onéreux (ventes de maisons, appartements, garages...) réalisées durant les 5 dernières années
 
+Un site de visualisation est disponible sur <https://app.dvf.etalab.gouv.fr/>
 
-En utilisant cette url ci : http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json, on obtient directement un json, qui est finalement presque comme un dictionnaire en python.
-
-
-Rien de plus simple donc pour demander quelque chose à une API, il suffit d'avoir la bonne url.
-
-
-## Et Python : comment il s'adresse aux API ?
-
-C'est là qu'on revient aux fondamentaux : on va avoir besoin du module requests de Python et suivant les API, un parser comme BeautifulSoup ou rien si on réussit à obtenir un json.
-
-On va utiliser le module requests et sa méthode get : on lui donne l'url de l'API qui nous intéresse, on lui demande d'en faire un json et le tour est joué !
-
-
-### Banque Mondiale : données économiques par pays
-
-```{python}
-import requests
-data_json = requests.get("http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json").json()
-data_json
-```
-
-```{python}
-data_json[0]
-# On voit qu'il y a nous manque des informations : 
-# il y a un total de 52 éléments
-data_json_page_2 = requests.get("http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json&page=2").json()
-data_json_page_2
-```
-
-```{python}
-# pour obtenir une observation 
-# on voit dans l'objet que l'élément 0 correspond à des informations sur les pages , pour avoir les informations des pays,
-# il faudra voir à partir de l'élément 1 de la liste qui est également une liste
-data_json[1][0]
-```
-
-### DVF : les transactions immobilières en France
-
-
-Le site DVF (demandes de valeurs foncières),permet de visualiation toutes les données relatives mutations à titre onéreux réalisées les 5 dernières années (pour faire simple les ventes de maison ou d'apparement depuis 2015). 
-https://app.dvf.etalab.gouv.fr/
-
-Ce site est très complet quand il s'agit de connaitre le prix moyen au mètre carré d'un quartier ou de comparer des régions entre elles. 
-
-L'API DVF a été réalisée par Christian Quest, Son code est disponible sur https://github.com/cquest/dvf_as_api
-
-
-
-
-Un exemple : on recherche toutes les transactions existantes dans DVF à Plogoff (code commune 29168, en Bretagne)
-
-```{python}
-data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168").json()
-```
-
-```{python}
-data_immo['resultats'][20]
-```
+Ce site est très complet quand il s'agit de connaître le prix moyen au mètre
+carré d'un quartier ou de comparer des régions entre elles. 
+L'API DVF permet d'aller plus loin afin de récupérer les résultats dans 
+un logiciel de traitement de données. Elle a été réalisée par
+[Christian Quest](https://github.com/cquest) et le code
+source est disponible sur Github <a href="https://github.com/cquest/dvf_as_api" class="github"><i class="fab fa-github"></i></a>
 
 Les critères de recherche sont les suivants :
-- code_commune = code INSEE de la commune (ex: 94068)
-- section = section cadastrale (ex: 94068000CQ)
-- numero_plan = identifiant de la parcelle, (ex: 94068000CQ0110)
-- lat + lon + dist (optionnel): pour une recherche géographique, dist est par défaut un rayon de 500m
-- code_postal
+- `code_commune` = code INSEE de la commune (ex: 94068)
+- `section` = section cadastrale (ex: 94068000CQ)
+- `numero_plan` = identifiant de la parcelle, (ex: 94068000CQ0110)
+- `lat` + `lon` + `dist` (optionnel): pour une recherche géographique, dist est par défaut un rayon de 500m
+- `code_postal`
 
 Les filtres de sélection complémentaires :
-- nature_mutation (Vente, etc)
-- type_local (Maison, Appartement, Local, Dépendance)
+- `nature_mutation` (Vente, etc)
+- `type_local` (Maison, Appartement, Local, Dépendance)
 
 
-Par exemple si seules les maisons nous intéressent 
+{{% panel status="exercise" title="Exploiter l'API DVF" icon="fas fa-pencil-alt" %}}
+
+:one: 
+Rechercher toutes les transactions existantes dans DVF à Plogoff (code commune `29168`, en Bretagne).
+Afficher les clés du JSON et en déduire le nombre de transactions répertoriées. 
 
 ```{python}
-data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168&type_local=Maison").json()
+#| echo: false
+#| include: false
+
+# Question 1
+data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168").json()
+data_immo.keys()
+ventes = pd.json_normalize(data_immo["resultats"])
 ```
 
+
+:two: 
+N'afficher que les transactions portant sur des maisons. Le résultat devrait
+ressembler au DataFrame suivant:
+
 ```{python}
-data_immo['resultats'][0]
+#| echo: false
+
+# Question 2
+maisons = requests.get("http://api.cquest.org/dvf?code_commune=29168&type_local=Maison").json()
+pd.json_normalize(maisons["resultats"])
 ```
+
+
+:three: Utiliser l'[API geo](https://api.gouv.fr/documentation/api-geo) pour
+récupérer le découpage communal de la ville de Plogoff
+
+```{python}
+#| echo: false
+
+import geopandas as gpd
+plgf = gpd.read_file("https://geo.api.gouv.fr/communes/29168?fields=nom,code,codesPostaux,codeDepartement,codeRegion,population&format=geojson&geometry=contour")
+```
+
+:four:
+Représenter l'histogramme des prix de vente
+
+```{python, results = "hide"}
+p = ventes["valeur_fonciere"].plot(kind = "hist")
+p
+```
+
+N'hésitez pas à aller plus loin en jouant sur des variables de
+groupes par exemple
+
+:five: 
+On va faire une carte des ventes en affichant le prix de l'achat.
+
+Supposons que le DataFrame des ventes s'appelle `ventes`. Il faut d'abord le
+convertir
+en objet `geopandas`. 
+
+```{python}
+ventes = ventes.dropna(subset = ['lat','lon'])
+ventes = gpd.GeoDataFrame(ventes, geometry=gpd.points_from_xy(ventes.lon, ventes.lat))
+ventes
+```
+
+Avant de faire une carte, on va convertir 
+les limites de la commune de Plogoff en geoJSON pour faciliter 
+sa représentation avec `folium`
+([voir la doc `geopandas` à ce propos](https://geopandas.readthedocs.io/en/latest/gallery/polygon_plotting_with_folium.html#Add-polygons-to-map)):
+
+```{python}
+geo_j = plgf.to_json()
+```
+
+Pour représenter graphiquement, on peut utiliser le code suivant (essayez de
+le comprendre et pas uniquement de l'exécuter). 
+
+```{python, results = "hide"}
+import folium
+import numpy as np
+
+ventes['map_color'] = pd.qcut(ventes['valeur_fonciere'], [0,0.8,1], labels = ['lightblue','red'])
+ventes['icon'] = np.where(ventes['type_local']== 'Maison', "home", "")
+ventes['num_voie_clean'] = np.where(ventes['numero_voie'].isnull(), "", ventes['numero_voie'])
+ventes['text'] = ventes.apply(lambda s: "Adresse: {num} {voie} <br>Vente en {annee} <br>Prix {prix:.0f} €".format(
+                        num = s['num_voie_clean'],
+                        voie = s["voie"],
+                        annee = s['date_mutation'].split("-")[0],
+                        prix = s["valeur_fonciere"]),
+             axis=1)
+             
+center = ventes[['lat', 'lon']].mean().values.tolist()
+sw = ventes[['lat', 'lon']].min().values.tolist()
+ne = ventes[['lat', 'lon']].max().values.tolist()
+
+m = folium.Map(location = center, tiles='Stamen Toner')
+
+# I can add marker one by one on the map
+for i in range(0,len(ventes)):
+    folium.Marker([ventes.iloc[i]['lat'], ventes.iloc[i]['lon']],
+                  popup=ventes.iloc[i]['text'],
+                  icon=folium.Icon(color=ventes.iloc[i]['map_color'], icon=ventes.iloc[i]['icon'])).add_to(m)
+
+m.fit_bounds([sw, ne])
+```
+
+```{python, eval = FALSE}
+# Afficher la carte
+m
+```
+
+```{python, include = FALSE}
+map = m._repr_html_()
+```
+
+```{r, echo = FALSE, results = 'asis'}
+cat(py$map)
+```
+
+{{% /panel %}}
+
+
+
 
 # Exercices supplémentaires
 
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
 
-## Retrouver des produits dans l'openfood facts :pizza:
+**Exercice 1 : Retrouver des produits dans l'openfood facts :pizza:**
 
 Voici une liste de code-barres:
 `3274080005003,  5449000000996, 8002270014901,
 3228857000906, 3017620421006, 8712100325953`
 
 Utiliser l'[API d'openfoodfacts](https://world.openfoodfacts.org/data)
-(l'API, pas depuis le CSV)
+(l'API, pas depuis le CSV !)
 pour retrouver les produits correspondant
 et leurs caractéristiques nutritionnelles.
 
 Le panier paraît-il équilibré ? :chocolate_bar:
+
+Pour vous aidez, vous pouvez regarder une exemple de structure du json ici : https://world.openfoodfacts.org/api/v0/product/3274080005003.json en particulier la catégorie `nutriments`.
 
 ```{r, include = FALSE}
 library(reticulate)
@@ -263,22 +412,45 @@ library(reticulate)
 
 
 ```{python}
+#| include: false
+
 import json
 import requests
 import pandas as pd
+```
 
+
+```{python}
+#| include: false
+
+# Paramètres nécessaires
 df = pd.DataFrame([3274080005003,  5449000000996, 8002270014901,
 3228857000906, 3017620421006, 8712100325953], columns = ['code_ean'])
 nutri = ['energy_100g', 'nutriscore_grade', 'nova_group', 'fat_100g', 'saturated-fat_100g', 'carbohydrates_100g', 'sugars_100g', 'salt_100g', 'fiber_100g', 'proteins_100g', 'calcium_100g', 'iron_100g', 'sodium_100g', 'cholesterol_100g']
 cols_api = ['code', 'product_name', 'categories', 'categories_tags'] + ["nutriments.{}".format(i) for i in nutri]
+```
+
+```{python}
+#| include: false
+
 def get_products_api(barcode, col = cols_api):
-    res = requests.get("https://world.openfoodfacts.org/api/v0/product/{}.json".format(str(barcode)))
+    url = "https://world.openfoodfacts.org/api/v0/product/{}.json".format(str(barcode))
+    #print(url)
+    res = requests.get(url)
     results = res.json()
     product = results["product"]
     openfood = pd.json_normalize(product)
     openfood = openfood[list(set(col) & set(openfood.columns))]
     return openfood
   
+# Exemple
+get_products_api(3274080005003, col=["code","nutriments.fat_100g"])
+```
+
+
+```{python}
+#| include: false
+
 openfood = [get_products_api(barcode) for barcode in df['code_ean'].dropna().astype(str).unique()]
 openfood = pd.concat(openfood)
 openfood.head(10)
@@ -287,10 +459,15 @@ openfood.head(10)
 Récupérer l'URL d'une des images et l'afficher dans votre navigateur. Par exemple,
 celle-ci:
 
-```{python, echo = FALSE}
+
+```{python}
+#| echo: false
+
 url_image = get_products_api(5449000000996, col = ["image_front_small_url"])["image_front_small_url"].iloc[0]
 ```
 
 ```{r, echo = FALSE}
 knitr::include_graphics(py$url_image)
 ```
+
+{{% /panel %}}
