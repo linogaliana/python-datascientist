@@ -134,9 +134,10 @@ Les deux premières étapes se font sur `Github`
 
 **Exercice 1: créer un compte Github**
 
-1. Si vous n'en avez pas déjà un, créer un compte sur `github.com`
-2. Créer un dépôt vide. Ce dépôt sera personnel, vous pouvez le rendre public
-ou non, comme vous le souhaitez.
+1. Si vous n'en avez pas déjà un, créer un compte sur https://github.com
+2. Créer un dépôt vide. Créez ce dépôt **privé**, cela permettra
+dans l'exercice 2 d'activer notre jeton. Vous pourrez le rendre public
+après l'exercice 2, c'est comme vous le souhaitez.
 
 {{% /panel %}}
 
@@ -153,9 +154,9 @@ Il est donc nécessaire que la forge connaisse l’identité de chacun des
 contributeurs, afin de déterminer qui est l’auteur d’une modification apportée
 aux codes stockés dans le dépôt distant.
 Pour que `Github` reconnaisse un utilisateur proposant des modifications,
-il est nécessaire de s’authentifier (un dépôt distant, même public, ne peut pas être modifié par n’importe qui). L’authentification consiste ainsi à fournir un élément que seul vous et la forge sont censés connaître : un mot de passe, une clé compliquée, un jeton d’accès…
+il est nécessaire de s’authentifier (un dépôt distant, même public, ne peut pas être modifié par n’importe qui). L’authentification consiste ainsi à fournir un élément que seul vous et la forge sont censés connaître : un mot de passe, une clé compliquée, un jeton d’accès...
 
-Plus précisément, il existe deux modalités pour faire connaître son identité à GitLab :
+Plus précisément, il existe deux modalités pour faire connaître son identité à `Github` :
 
 * une authentification HTTPS (décrite ici) : l’authentification se fait avec un login et un mot de passe (qu’il faut renseigner à chaque interaction avec le dépôt), ou avec un token (méthode à privilégier).
 * une authentification SSH : l’authentification se fait par une clé cryptée disponible sur le poste de travail et que GitHub ou GitLab connaît. Une fois configurée, cette méthode ne nécessite plus de faire connaître son identité : l’empreinte digitale que constitue la clé suffit à reconnaître un utilisateur.
@@ -166,7 +167,12 @@ la méthode HTTPS sur la méthode SSH.
 Depuis août 2020, `Github` n'autorise plus l'authentification par mot de passe
 lorsqu'on interagit (`pull`/`push`) avec un dépôt distant
 ([raisons ici](https://github.blog/changelog/2021-08-12-git-password-authentication-is-shutting-down/)).
-
+Il est nécessaire d'utiliser un *token* (jeton d'accès) qui présente l'avantage
+d'être révoquable (on peut à tout moment supprimer un jeton si, par exemple,
+on suspecte qu'il a été diffusé par erreur) et à droits limités 
+(le jeton permet certaines opérations standards mais
+n'autorise pas certaines opérations déterminantes comme la suppression
+d'un dépôt)
 
 
 {{% panel status="note" title="Note" icon="fa fa-comment" %}}
@@ -177,10 +183,93 @@ avec le *credential helper* de `Git`. Celui-ci est présenté par la suite.
 S'il n'est pas possible d'utiliser le *credential helper* de `Git`, un mot de passe 
 ou _token_ peut être stocké de manière sécurisé dans
 un système de gestion de mot de passe comme [Keepass](https://keepass.fr/).
+
+Ne jamais stocker un jeton `Github`, ou pire un mot de passe, dans un fichier
+texte non crypté. Les logiciels de gestion de mot de passe
+(comme [Keepass](https://keepass.fr/), recommandé par l'Anssi)
+sont simples
+d'usage et permettent de ne conserver sur l'ordinateur qu'une version
+hashée du mot de passe qui ne peut être décryptée qu'avec un mot de passe
+connu de vous seuls. 
 {{% /panel %}}
 
 
 ## Créer un jeton
+
+La [documentation officielle](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) comporte un certain nombre de captures d'écran expliquant
+comme procéder
+
+Nous allons utiliser le `credential helper` associé à Git pour stocker
+ce jeton. Ce credential helper permet de conserver de manière sécurisée
+votre mot de passe en ne le stockant pas en clair mais de manière hashée.
+
+Si vous désirez conserver de manière plus durable votre jeton, je vous 
+recommande d'utiliser un gestionnaire de mot de passe comme 
+[Keepass](https://keepass.fr/). 
+
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+**Créer et stocker un token**
+
+1. Suivre la
+[documentation officielle](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) en ne donnant que les droits `repo` au jeton (ajouter les droits
+`workflow` si vous désirez que votre jeton soit utilisable pour des projets
+où l'intégration continue est nécessaire)
+2. Ouvrir un terminal depuis `Jupyter` (par exemple `File > New > Terminal`).
+3. Taper dans le terminal la commande 
+qui convient selon votre système d'exploitation pour activer le
+`credential helper`:
+
+```{shell, eval = FALSE}
+# Sous mac et linux
+git config --global credential.helper 
+
+# Sous windows
+git config --global credential.helper manager-core
+```
+
+3. Récupérer, sur la page d'accueil de votre dépôt, l'url du dépôt distant.
+Il prend la forme suivante
+
+https://github.com/username/reponame.git
+
+Vous pouvez utiliser l'icone à droite pour copier l'url.
+
+4. Retournez dans le terminal `Jupyter`. Taper 
+
+```{shell, eval = FALSE}
+git clone repo_url
+```
+
+où `repo_url` est l'url du dépôt en question (vous pouvez utiliser
+<kbd>MAJ</kbd>+<kbd>Inser</kbd> pour coller l'url précédemment copié)
+
+Tapez <kbd>Entrée</kbd>. Si vous n'avez pas d'erreur, cela signifie
+que l'authentification a bien fonctionné et donc que tout va
+bien. Normalement, si vous avez créé un dépôt vide dans l'exercice 1,
+vous avez un message de `Git`: 
+
+> warning: You appear to have cloned an empty repository.
+
+Ceci est normal, ce n'est pas une erreur. Le dossier de votre projet a bien
+été créé.
+
+Si vous avez une erreur, suivez la consigne ci-dessous pour réinitialiser
+votre *credential helper*
+
+{{% /panel %}}
+
+{{% panel status="note" title="Note" icon="fa fa-comment" %}}
+Si vous avez fait une faute de frappe dans le mot de passe ou dans le jeton, il est possible de vider la mémoire
+de la manière suivante, sous Mac ou Linux :
+
+~~~~shell
+git config --global --unset credential.helper
+~~~~
+
+Sous Windows, si vous avez utilisé l'option `manager-core` évoquée ci-dessus, vous pouvez utiliser une interface graphique pour effacer le mot de passe ou jeton erroné. Pour cela, dans le menu démarrer, taper `Gestionnaire d'identification` (ou `Credential Manager` si Windows ne trouve pas). Dans l'interface graphique qui s'ouvre, il est possible de supprimer le mot de passe ou jeton en question. Après cela, vous devriez à nouveau avoir l'opportunité de taper un mot de passe ou jeton lors d'une authentification HTTPS.
+{{% /panel %}}
+
+
 
 
 # Git tout seul 
