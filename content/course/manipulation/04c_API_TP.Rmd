@@ -613,7 +613,70 @@ Vous pouvez aller plus loin avec l'exercice suivant
 On va supposer que vous cherchez, dans un rayon donné autour d'un centre ville,
 les auto-écoles disponibles.
 
-:one: Pour commencer, utiliser l'API 
+:one: Pour commencer, utiliser l'[API geo](https://geo.api.gouv.fr/decoupage-administratif)
+
+```{python}
+#| echo: false
+
+# Cette fois on veut bien le centre, pas le contour
+pal = gpd.read_file("https://geo.api.gouv.fr/communes?nom=Palaiseau&limit=1&format=geojson")
+```
+
+:two: Voici une fonction pour créer un cercle autour d'un point (source [ici](https://gis.stackexchange.com/questions/289044/creating-buffer-circle-x-kilometers-from-point-using-python/289923))
+
+```{python}
+from functools import partial
+import pyproj
+from shapely.ops import transform
+from shapely.geometry import Point
+
+proj_wgs84 = pyproj.Proj('+proj=longlat +datum=WGS84')
+
+
+def geodesic_point_buffer(lat, lon, km):
+    # Azimuthal equidistant projection
+    aeqd_proj = '+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0'
+    project = partial(
+        pyproj.transform,
+        pyproj.Proj(aeqd_proj.format(lat=lat, lon=lon)),
+        proj_wgs84)
+    buf = Point(0, 0).buffer(km * 1000)  # distance in metres
+    return transform(project, buf).exterior.coords[:]
+```
+
+L'appliquer au centre ville de Palaiseau
+
+```{python}
+#| echo: false
+b = geodesic_point_buffer(pal.loc[0].geometry.y, pal.loc[0].geometry.x, 10.0)
+circle = pd.DataFrame(b, columns = ['y','x'])
+circle = gpd.GeoDataFrame(circle, geometry=gpd.points_from_xy(circle.y, circle.x), crs = pal.crs)
+```
+
+:three: Pour se convaincre, on peut représenter une carte
+
+```{python}
+import matplotlib.pyplot as plt
+import contextily as ctx
+
+fig,ax = plt.subplots(figsize=(10, 10))
+circle.to_crs("EPSG:3857").plot(ax = ax, color = 'red')
+pal.to_crs("EPSG:3857").plot(ax = ax, color = 'green')
+ctx.add_basemap(ax, source = ctx.providers.Stamen.Toner)
+ax
+```
+
+```{python, echo = FALSE, include = FALSE}
+plt.tight_layout(pad=0, h_pad = 0)
+plt.savefig('map_buffer.png', bbox_inches='tight')
+```
+
+```{r, echo = FALSE}
+knitr::include_graphics("map_buffer.png")
+```
+
+3. *To be continued*:  améliorer la constitutoin du cercle puis merge spatial 
+
 
 {{% /panel %}}
 
