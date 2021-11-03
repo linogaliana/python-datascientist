@@ -2,7 +2,7 @@
 date: "2018-09-09T00:00:00Z"
 icon: python
 icon_pack: fab
-linktitle: "Introduction: quelques rappels"
+linktitle: "Introduction: mener un projet statistique avec Python"
 summary: |
   Cette introduction propose quelques éléments de
   révision des concepts de base en Python et
