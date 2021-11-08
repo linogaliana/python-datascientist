@@ -19,7 +19,7 @@ reminder_jupyter <- function(file = "./content/getting-started/06_rappels_classe
 }
 
 download_badge <- function(notebook = "", github_link = 'https://github.com/linogaliana/python-datascientist'){
-
+  
   if (notebook == ""){
     link <- sprintf(
       "https://downgit.github.io/#/home?url=%s/blob/master/notebooks/course",
@@ -104,24 +104,25 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE){
   )
   colab_link <- sprintf("[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master%s)",
                         notebook)
+  vscode_link <- sprintf("[![githubdev](https://open.vscode.dev/badges/open-in-vscode.svg)](https://github.dev/linogaliana/python-datascientist%s)",
+                         notebook)
   
-
   
-
   if (isTRUE(onyxia_only)){
     return(
-    cat(
-      c(
-        github_link,
-        download_link,
-        nbviewer_link,
-        onyxia_link
-      ),
-      sep = "\n"
-    )
+      cat(
+        c(
+          github_link,
+          download_link,
+          nbviewer_link,
+          onyxia_link,
+          vscode_link
+        ),
+        sep = "\n"
+      )
     )
   }
-
+  
   return(
     cat(
       c(
@@ -130,7 +131,8 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE){
         nbviewer_link,
         onyxia_link,
         binder_link,
-        colab_link
+        colab_link,
+        vscode_link
       ),
       sep = "\n"
     )
