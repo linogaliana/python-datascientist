@@ -72,6 +72,10 @@ Les API présentent de multiples avantages :
 >
 > [`utilitR`](https://www.book.utilitr.org/api.html)
 
+L'utilisation accrue d'API dans le cadre de stratégies open-data est l'un
+des piliers des 15 feuilles de route ministérielles
+en matière d’ouverture, de circulation et de valorisation des données publiques.
+
 ## Utilisation des API
 
 Citons encore une fois
@@ -229,14 +233,17 @@ Pour en citer quelques-unes très connues :
 - Instagram <i class="fab fa-instagram"></i> : https://www.instagram.com/developer/
 - Spotify <i class="fab fa-spotify"></i> : https://developer.spotify.com/web-api/
 
-Cependant, il est intéressant de ne pas se restreindre à celles-ci. Beaucoup
+Cependant, il est intéressant de ne pas se restreindre à celles-ci dont les 
+données ne sont pas toujours les plus intéressantes. Beaucoup
 de producteurs de données, privés comme publics, mettent à disposition 
 leurs données sous forme d'API
 
+- [API gouv](https://api.gouv.fr/): beaucoup d'API officielles de l'Etat français 
+et accès à de la documentation
+- Insee: https://api.insee.fr/catalogue/ et [`pynsee`](https://github.com/InseeFrLab/Py-Insee-Data/tree/master/pynsee)
 - Pole Emploi : https://www.emploi-store-dev.fr/portail-developpeur-cms/home.html
 - SNCF : https://data.sncf.com/api
 - Banque Mondiale : https://datahelpdesk.worldbank.org/knowledgebase/topics/125589
-- Insee: https://api.insee.fr/catalogue/ et [`pynsee`](https://github.com/InseeFrLab/Py-Insee-Data/tree/master/pynsee)
 
 
 # L'API DVF : accéder à des données de transactions immobilières simplement
@@ -398,7 +405,303 @@ cat(py$map)
 {{% /panel %}}
 
 
-{{% panel status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+# Géocoder des données grâce aux API officielles
+
+Jusqu'à présent, nous avons travaillés sur des données où la dimension
+géographique était déjà présente ou relativement facile à intégrer. 
+
+Ce cas idéal ne se rencontre pas nécessairement dans la pratique. 
+On dispose parfois de localisations plus ou moins précises et plus ou
+moins bien formattées pour déterminer la localisation de certains
+lieux. 
+
+Depuis quelques années, un service officiel de géocodage a été mis en place.
+Celui-ci est gratuit et permet de manière efficace de coder des adresses
+à partir d'une API. Cette API, connue sous le nom de la Base d'Adresses Nationale
+(BAN) a bénéficié de la mise en commun de données de plusieurs
+acteurs (collectivités locales, Poste) et de compétences d'acteurs
+comme Etalab. La documentation de celle-ci est disponible à l'adresse
+https://api.gouv.fr/les-api/base-adresse-nationale
+
+
+Pour illustrer la manière de géocoder des données avec `Python`, nous
+allons partir de la base
+[des résultats des auto-écoles à l'examen du permis sur l'année 2018](https://www.data.gouv.fr/fr/datasets/taux-de-reussite-auto-ecole-par-auto-ecole-en-2018/).
+
+Ces données nécessitent un petit peu de travail pour être propres à une 
+analyse statistique. Après avoir renommé les colonnes, nous n'allons conserver que
+les informations relatives au permis B (permis voiture classique) et
+les auto-écoles ayant présenté au moins 20 personnes à l'examen. 
+
+
+```{python}
+import pandas as pd
+import xlrd
+import geopandas as gpd
+
+df = pd.read_excel("https://www.data.gouv.fr/fr/datasets/r/d4b6b072-8a7d-4e04-a029-8cdbdbaf36a5", header = [0,1])
+
+index_0 = ["" if df.columns[i][0].startswith("Unnamed") else df.columns[i][0] for i in range(len(df.columns))]
+index_1 = [df.columns[i][1] for i in range(len(df.columns))]
+keep_index = [True if el in ('', "B") else False for el in index_0] 
+
+cols = [index_0[i] + " " + index_1[i].replace("+", "_") for i in range(len(df.columns))]
+df.columns = cols
+df = df.loc[:, keep_index]
+df.columns = df.columns.str.replace("(^ |°)", "", regex = True).str.replace(" ", "_")
+df = df.dropna(subset = ['B_NB'])
+df = df.loc[~df["B_NB"].astype(str).str.contains("(\%|\.)"),:]
+
+df['B_NB'] = df['B_NB'].astype(int)
+df['B_TR'] = df['B_TR'].str.replace(",", ".").str.replace("%","").astype(float)
+
+df = df.loc[df["B_NB"]>20]
+```
+
+```{python, echo = FALSE, results = "asis"}
+moyenne_nationale = (df['B_NB']*df['B_TR']).sum()/df['B_NB'].sum()
+print("Sur cet échantillon, le taux de réussite moyen était, en 2018, de {:.2%}".format(moyenne_nationale/100))
+```
+
+Nos informations géographiques prennent la forme suivante: 
+
+```{python}
+df.loc[:,['Adresse','CP','Ville']].head(5)
+```
+
+Autrement dit, nous disposons d'une adresse, d'un code postal et d'un nom
+de ville. Ces informations peuvent servir à faire une recherche
+sur la localisation d'une auto-école. 
+
+## Utiliser l'API BAN
+
+La [documentation officielle de l'API](https://adresse.data.gouv.fr/api-doc/adresse)
+propose un certain nombre d'exemples de manière de géolocaliser des données. 
+Dans notre situation, deux points d'entrée paraissent intéressants:
+
+* L'API `/search/` qui représente un point d'entrée avec des URL de la forme
+https://api-adresse.data.gouv.fr/search/?q=\<adresse\>&postcode=\<codepostal\>&limit=1
+* L'API `/search/csv` qui prend un CSV en entrée et retourne ce même CSV avec
+les observations géocodées. La requête prend la forme suivante, en apparence
+moins simple à mettre en oeuvre : 
+`curl -X POST -F data=@search.csv -F columns=adresse -F columns=postcode https://api-adresse.data.gouv.fr/search/csv/`
+
+La tentation serait forte d'utiliser la première méthode avec une boucle sur les
+lignes de notre DataFrame pour géocoder l'ensemble de notre jeu de données. 
+Cela serait néanmoins une mauvaise idée car les communications entre notre
+session Python et les serveurs de l'API seraient beaucoup trop nombreuses
+pour offrir des performances satisfaisantes. 
+
+Pour vous en convaincre, vous pouvez exécuter le code suivant sur un petit
+échantillon de données (par exemple 100 comme ici) et remarquer que le temps
+d'exécution est assez important
+
+```{python}
+import time
+
+dfgeoloc = df.loc[:, ['Adresse','CP','Ville']].apply(lambda s: s.str.lower().str.replace(","," "))
+dfgeoloc['url'] = (dfgeoloc['Adresse'] + "+" + dfgeoloc['Ville'].str.replace("-",'+')).str.replace(" ","+")
+dfgeoloc['url'] = 'https://api-adresse.data.gouv.fr/search/?q=' + dfgeoloc['url'] + "&postcode=" + df['CP'] + "&limit=1"
+dfgeoloc = dfgeoloc.dropna()
+
+start_time = time.time()
+local = [gpd.GeoDataFrame.from_features(requests.get(dfgeoloc['url'].loc[i]).json()['features']) for i in range(len(dfgeoloc.head(100)))]
+print("--- %s seconds ---" % (time.time() - start_time))
+```
+
+Comme l'indique la documentation, si on désire industrialiser notre processus
+de géocodage, on va privilégier l'API CSV.
+
+Pour obtenir une requête CURL cohérente avec le format désiré par l'API
+on va à nouveau utiliser `requests` mais cette fois avec des paramètres
+supplémentaires:
+
+* `data` va nous permettre de passer des paramètres à CURL (équivalents aux `-F`
+de la requête CURL):
+    + `columns`: Les colonnes utilisées pour localiser une donnée. En l'occurrence,
+on utilise l'adresse et la ville (car les codes postaux n'étant pas uniques, 
+un même nom de voirie peut se trouver dans plusieurs villes partageant le même
+code postal)
+    + `postcode`: Le code postal de la ville. Idéalement nous aurions utilisé
+le code Insee mais nous ne l'avons pas dans nos données. 
+    + `result_columns`: on restreint les données échangées avec l'API aux 
+colonnes qui nous intéressent. Cela permet d'accélérer les processus (on
+échange moins de données) et de réduire l'impact carbone de notre activité
+(moins de transferts = moins d'énergie dépensée). En l'occurrence, on ne ressort
+que les données géolocalisées et un score de confiance en la géolocalisation.
+* `files`: permet d'envoyer un fichier via CURL
+
+Les données sont récupérées avec `request.post`. Comme il s'agit d'une
+chaîne de caractère, nous pouvons directement la lire avec `pandas` en 
+utilisant `io.StringIO` pour éviter d'écrire des données intermédiaires.
+
+Le nombre d'échos semblant être limité, je propose de procéder par morceaux
+(ici je découpe mon jeu de données en 5 morceaux).
+
+
+```{python}
+import requests
+import io   
+import numpy as np
+
+params = {
+    'columns': ['Adresse', 'Ville'],
+    'postcode': 'CP',
+    'result_columns': ['result_score', 'latitude', 'longitude'],
+}
+
+df[['Adresse','CP','Ville']] = df.loc[:, ['Adresse','CP','Ville']].apply(lambda s: s.str.lower().str.replace(","," "))
+
+def geoloc_chunk(x):
+    dfgeoloc = x.loc[:, ['Adresse','CP','Ville']]
+    dfgeoloc.to_csv("datageocodage.csv", index=False)
+    response = requests.post('https://api-adresse.data.gouv.fr/search/csv/', data=params, files={'data': ('datageocodage.csv', open('datageocodage.csv', 'rb'))})
+    geoloc = pd.read_csv(io.StringIO(response.text), dtype = {'CP': 'str'})
+    return geoloc
+    
+start_time = time.time()
+geodata = [geoloc_chunk(dd) for dd in np.array_split(df, 10)]
+print("--- %s seconds ---" % (time.time() - start_time))
+```
+
+Cette méthode est beaucoup plus rapide et permet ainsi, une fois retourné à nos
+données initiales, d'avoir un jeu de données géolocalisé
+
+```{python}
+geodata = pd.concat(geodata, ignore_index = True)
+df_xy = df.merge(geodata, on = ['Adresse','CP','Ville'])
+df_xy = df_xy.dropna(subset = ['latitude','longitude'])
+df_xy['text'] = df_xy['Raison_Sociale'] + '<br>' + df_xy['Adresse'] + '<br>' + df_xy['Ville'] + '<br>Nombre de candidats:' + df_xy['B_NB'].astype(str)
+
+df_xy.filter(['Raison_Sociale','Adresse','CP','Ville','latitude','longitude'], axis = "columns").sample(10)
+```
+
+Il ne reste plus qu'à utiliser `geopandas`
+et nous serons en mesure de faire une carte des localisations des auto-écoles :
+
+```{python}
+import geopandas as gpd
+dfgeo = gpd.GeoDataFrame(df_xy, geometry=gpd.points_from_xy(df_xy.longitude, df_xy.latitude))
+```
+
+Nous allons représenter les stations dans l'Essonne avec un zoom initialement
+sur les villes de Massy et Palaiseau. Le code est le suivant:
+
+```{python, results = "hide"}
+import folium
+
+# Représenter toutes les autoécoles de l'Essonne
+df_91 = df_xy.loc[df_xy["Dept"] == "091"]
+
+# Centrer la vue initiale sur Massy-Palaiseau
+df_pal = df_xy.loc[df_xy['Ville'].isin(["massy", "palaiseau"])]
+center = df_pal[['latitude', 'longitude']].mean().values.tolist()
+sw = df_pal[['latitude', 'longitude']].min().values.tolist()
+ne = df_pal[['latitude', 'longitude']].max().values.tolist()
+
+m = folium.Map(location = center, tiles='Stamen Toner')
+
+# I can add marker one by one on the map
+for i in range(0,len(df_91)):
+    folium.Marker([df_91.iloc[i]['latitude'], df_91.iloc[i]['longitude']],
+                  popup=df_91.iloc[i]['text'],
+                  icon=folium.Icon(icon='car', prefix='fa')).add_to(m)
+
+m.fit_bounds([sw, ne])
+```
+
+Ce qui permet d'obtenir la carte:
+
+```{python, eval = FALSE}
+# Afficher la carte
+m
+```
+
+```{python, include = FALSE}
+map2 = m._repr_html_()
+```
+
+```{r, echo = FALSE, results = 'asis'}
+cat(py$map2)
+```
+
+Vous pouvez aller plus loin avec l'exercice suivant
+
+{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+
+**Quelles sont les auto-écoles les plus proches de chez moi ?**
+
+On va supposer que vous cherchez, dans un rayon donné autour d'un centre ville,
+les auto-écoles disponibles.
+
+:one: Pour commencer, utiliser l'[API geo](https://geo.api.gouv.fr/decoupage-administratif)
+
+```{python}
+#| echo: false
+
+# Cette fois on veut bien le centre, pas le contour
+pal = gpd.read_file("https://geo.api.gouv.fr/communes?nom=Palaiseau&limit=1&format=geojson")
+```
+
+:two: Voici une fonction pour créer un cercle autour d'un point (source [ici](https://gis.stackexchange.com/questions/289044/creating-buffer-circle-x-kilometers-from-point-using-python/289923))
+
+```{python}
+from functools import partial
+import pyproj
+from shapely.ops import transform
+from shapely.geometry import Point
+
+proj_wgs84 = pyproj.Proj('+proj=longlat +datum=WGS84')
+
+
+def geodesic_point_buffer(lat, lon, km):
+    # Azimuthal equidistant projection
+    aeqd_proj = '+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0'
+    project = partial(
+        pyproj.transform,
+        pyproj.Proj(aeqd_proj.format(lat=lat, lon=lon)),
+        proj_wgs84)
+    buf = Point(0, 0).buffer(km * 1000)  # distance in metres
+    return transform(project, buf).exterior.coords[:]
+```
+
+L'appliquer au centre ville de Palaiseau
+
+```{python}
+#| echo: false
+b = geodesic_point_buffer(pal.loc[0].geometry.y, pal.loc[0].geometry.x, 10.0)
+circle = pd.DataFrame(b, columns = ['y','x'])
+circle = gpd.GeoDataFrame(circle, geometry=gpd.points_from_xy(circle.y, circle.x), crs = pal.crs)
+```
+
+:three: Pour se convaincre, on peut représenter une carte
+
+```{python}
+import matplotlib.pyplot as plt
+import contextily as ctx
+
+fig,ax = plt.subplots(figsize=(10, 10))
+circle.to_crs("EPSG:3857").plot(ax = ax, color = 'red')
+pal.to_crs("EPSG:3857").plot(ax = ax, color = 'green')
+ctx.add_basemap(ax, source = ctx.providers.Stamen.Toner)
+ax
+```
+
+```{python, echo = FALSE, include = FALSE}
+plt.tight_layout(pad=0, h_pad = 0)
+plt.savefig('map_buffer.png', bbox_inches='tight')
+```
+
+On a bien un cercle centré autour de Palaiseau:
+
+```{r, echo = FALSE}
+knitr::include_graphics("map_buffer.png")
+```
+
+3. *To be continued*:  améliorer la constitutoin du cercle puis merge spatial 
+
+
+{{% /panel %}}
 
 **Exercice 2 : Retrouver des produits dans l'openfood facts :pizza:**
 
