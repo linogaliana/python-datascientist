@@ -1,6 +1,6 @@
 import os
 import zipfile
-import urllib.request
+from urllib.request import Request, urlopen
 from pathlib import Path
 import numpy as np
 import pandas as pd
