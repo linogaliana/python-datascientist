@@ -156,14 +156,14 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE, split = NULL){
 }
 
 
-print_badges <- function(fpath = NULL, onyxia_only = FALSE){
+print_badges <- function(fpath = NULL, onyxia_only = FALSE, split = NULL){
   if (is.null(fpath)){
     fpath <- knitr::current_input(dir = TRUE)
   }
   fpath <- gsub(paste0(here::here(),"/./"), "", fpath)
   fpath <- gsub("Rmd", "ipynb", fpath)
   fpath <- gsub("content","notebooks",fpath)
-  reminder_badges(fpath, onyxia_only = onyxia_only)
+  reminder_badges(fpath, onyxia_only = onyxia_only, split = split)
 }
 
 github_link <- function(fpath = NULL){
