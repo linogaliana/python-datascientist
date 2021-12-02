@@ -53,14 +53,15 @@ Ce chapitre utilise le jeu de données présenté dans l'[introduction
 de cette partie](https://linogaliana-teaching.netlify.app/modelisation/):
 les données de vote aux élections présidentielles US
 croisées à des variables socio-démographiques. Le code 
-est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py).
-
-
-mais l'exercice 1 permet, à ceux qui le désirent, d'essayer de reproduire la constitution de la base de données. 
+est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py) mais l'exercice 1 permet, à ceux qui le désirent, d'essayer de reproduire la constitution de la base de données. 
 
 Le guide utilisateur de `scikit` est une référence précieuse,
 à consulter régulièrement. La partie sur le *preprocessing* est
 disponible [ici](https://scikit-learn.org/stable/modules/preprocessing.html).
+
+Nous verrons dans le chapitre sur les *pipelines* comment industrialiser
+ces étapes de pré-processing afin de se simplifier la vie pour appliquer
+un modèle sur un jeu de données différent de celui sur lequel il a été estimé. 
 
 
 # Construction de la base de données
@@ -96,29 +97,41 @@ par comté x année avec en colonnes les résultats de chaque candidat dans cet 
 
 Si vous ne faites pas l'exercice 1, pensez à charger les données en executant la fonction `get_data.py` :
 
-```{python, echo = TRUE, eval = FALSE, include = FALSE}
+```{python, echo = TRUE}
+#| eval: false
+#| include: false
+
 #!pip install geopandas
 import urllib.request
-#code = 'https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/course/modelisation/get_data.py'
+code = 'https://raw.githubusercontent.com/linogaliana/python-datascientist/dev/content/course/modelisation/get_data.py'
 # En attendant intégration sur le repo de linogaliana
-code = 'https://raw.githubusercontent.com/antuki/python-datascientist/relec-ka-1311/content/course/modelisation/get_data.py'
 data = urllib.request.urlopen(code).read()
 exec(data)
-#votes.head()
+
+votes.head()
 ```
 
 ```{python, echo = FALSE, include = FALSE}
 exec(open('./get_data.py').read())
 ```
 
+Ce code introduit une base nommée `votes` dans l'environnement. Elle a l'aspect
+suivant:
+
+```{python, echo = FALSE, include = FALSE}
+votes.head()
+```
+
+
 La carte choroplèthe suivante permet de visualiser rapidement les résultats
 (l'Alaska et Hawaï ont été exclus). 
 
-```{python, warning = FALSE, echo=TRUE, message = FALSE, include = FALSE}
+```{python, warning = FALSE, echo=TRUE, message = FALSE}
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+color_dict = {'republican': '#FF0000', 'democrats': '#0000FF'}
 #votes.plot(column = "winner", figsize = (12,12), c=votes['winner'].map(color_dict))
 
 fig, ax = plt.subplots(figsize = (12,12))
@@ -139,11 +152,20 @@ knitr::include_graphics("map_vote.png")
 ```
 
 Les cartes choroplèthes peuvent donner une impression fallacieuse ayant servi 
-de justification pour contester les résultats du vote. 
+de justification pour contester les résultats du vote. En effet, un biais
+connu des représentations choroplèthes est qu'elles donnent une importance
+visuelle excessive aux grands espaces. Or, ceux-ci sont souvent des espaces
+peu denses et influencent donc moins la variable d'intérêt (en l'occurrence
+le taux de vote en faveur des républicains/démocrates). Une représentation à 
+privilégier pour ce type de phénomènes est les ronds proportionnels. 
+
 Le [GIF "Land does not vote, people do"](https://www.core77.com/posts/90771/A-Great-Example-of-Better-Data-Visualization-This-Voting-Map-GIF)
 qui avait eu un certain succès en 2020 propose un autre mode de visualisation.
-En tenant compte de la population,
-on obtient la carte suivante :
+La carte originale a probablement été construite avec `JavaScript`. Cependant,
+on dispose avec `Python` pour répliquer, à faible coût, cette approche avec 
+l'une des surcouches à JavaScript vue dans la partie [visualisation](#visualisation). 
+
+En l'occurrence, on peut utiliser `plotly` pour tenir compte de la population:
 
 
 ```{python, include = FALSE, echo=TRUE}
@@ -220,7 +242,8 @@ fig.write_json("people_vote.json")
 
 ## Explorer la structure des données
 
-La première étape nécessaire à suivre avant de modéliser est de déterminer les variables à inclure dans le modèle.
+La première étape nécessaire à suivre avant de se lancer dans la modélisation
+est de déterminer les variables à inclure dans le modèle.
 
 Les fonctionnalités de `pandas` sont, à ce niveau, suffisantes pour explorer des structures simples. Néanmoins, lorsqu'on est face à un jeu de données présentant de nombreuses variables explicatives (*features* en machine learning, *covariates* en économétrie), il est souvent judicieux d'avoir une première étape de sélection de variable, ce que nous verrons par la suite dans la [partie dédiée](https://linogaliana-teaching.netlify.app/lasso/).  
 
@@ -237,7 +260,10 @@ Avant d'être en mesure de sélectionner le meilleur ensemble de variables expli
 #| echo: false
 
 # 1. Créer le data.frame df2.
-df2 = votes.set_index("GEOID")[["winner", "votes_gop", 'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]]
+df2 = votes.set_index("GEOID").loc[: , ["winner", "votes_gop",
+          'Unemployment_rate_2019', 'Median_Household_Income_2019',
+          'Percent of adults with less than a high school diploma, 2015-19',
+          "Percent of adults with a bachelor's degree or higher, 2015-19"]]
 ```
 
 2. Représenter grâce à un graphique la matrice de corrélation avec `heatmap` de `seaborn`.
@@ -257,7 +283,7 @@ df2.drop("winner", axis = 1).corr().style.background_gradient(cmap='coolwarm').s
 
 Elle aura l'aspect suivant:
 
-```{r}
+```{r, echo = FALSE}
 knitr::include_graphics('correlation_matrix2.png')
 ```
 
@@ -273,7 +299,7 @@ ax
 plt.savefig('scatter_matrix.png', bbox_inches='tight')
 ```
 
-```{r}
+```{r, echo = FALSE}
 knitr::include_graphics("scatter_matrix.png")
 ```
 
@@ -301,18 +327,28 @@ htmlsnip2.write_json("scatter_matrix.json")
 
 
 
-
-
-
-
 ## Transformer les données
 
 Les différences d'échelle ou de distribution entre les variables peuvent 
-diverger des hypothèses sous-jacentes dans les modèles. Par exemple, dans le cadre
+diverger des hypothèses sous-jacentes dans les modèles.
+
+Par exemple, dans le cadre
 de la régression linéaire, les variables catégorielles ne sont pas traitées à la même
-enseigne que les variables ayant valeur dans $\mathbb{R}$. Il est ainsi 
-souvent nécessaire d'appliquer des tâches de *preprocessing*, c'est-à-dire des tâches de modification de la distribution des données pour les rendre
-cohérentes avec les hypothèses des modèles.
+enseigne que les variables ayant valeur dans $\mathbb{R}$. Une variable
+discrète (prenant un nombre fini de valeurs) devra être transformées en suite de
+variables 0/1 par rapport à une modalité de référence pour être en adéquation
+avec les hypothèses de la régression linéaire. On appelle ce type de transformation
+*one-hot encoding*, sur lequel nous reviendrons. Il s'agit d'une transformation,
+parmi d'autres, disponibles dans `scikit` pour mettre en adéquation un jeu de
+données et des hypothèses mathématiques. 
+
+L'ensemble de ces tâches s'appelle le *preprocessing*. L'un des intérêts
+d'utiliser `scikit` est qu'on peut considérer qu'une tâche de preprocessing
+est une tâche d'apprentissage (on apprend des paramètres d'une structure 
+de données) qui est réutilisable pour un jeu de données à la structure
+similaire:
+
+![](scikit_predict.png)
 
 ### Standardisation
 
