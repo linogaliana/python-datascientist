@@ -54,8 +54,8 @@ if __name__ == "__main__":
 
     # Main URLs
     LAUNCHER_TMPLT = ("https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter"
-                      "?onyxia.friendlyName=%C2%ABpython-datascience%C2%BB"
-                      "&init.personalInit=%C2%https://raw.githubusercontent.com/linogaliana/python-datascientist/master/sspcloud/init-jupyter.sh%C2%BB"
+                      "?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB"
+                      "&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB"
                       "&init.personalInitArgs=%C2%AB{init_args}%C2%BB"
                       "&security.allowlist.enabled=false")
     COURSE_NAME_ENCODED = urllib.parse.quote(md['name'])
