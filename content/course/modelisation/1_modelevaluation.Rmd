@@ -25,7 +25,7 @@ categories:
 type: book
 summary: |
   Faire preuve de méthode pour évaluer la qualité d'un modèle 
-  permet de proposer des prédictions plus robuste, ayant
+  permet de proposer des prédictions plus robustes, ayant
   de meilleures performances out-of-sample. Décomposer
   l'échantillon initial en sous-échantillons d'entraînement
   et de tests, faire de la validation croisée, utiliser
@@ -52,7 +52,7 @@ c'est-à-dire les résultats des élections US 2020 présentés dans l'[introduc
 de cette partie](https://linogaliana-teaching.netlify.app/modelisation/): les données de vote aux élections présidentielles US
 croisées à des variables socio-démographiques.
 Le code 
-est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/modelisation/get_data.py)
+est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py)
 
 
 ```{python, echo = FALSE, include = FALSE, eval = FALSE}
@@ -61,7 +61,30 @@ exec(open('./get_data.py').read())
 
 ## Découper l'échantillon
 
-![](https://scikit-learn.org/stable/_images/grid_search_workflow.png){width="50%"}
+Le chapitre précédent présentait le pipeline simple ci-dessous
+pour introduire à la notion d'entraînement d'un modèle:
+
+```{r, echo = FALSE}
+knitr::include_graphics("scikit_predict.png")
+```
+
+Ce *pipeline* fait abstraction d'hypothèses à faire sur des paramètres
+exogènes à l'estimation mais qui affectent la performance de la prédiction.
+Par exemple, de nombreux modèles proposent une pénalisation des modèles
+non parcimonieux pour éviter le sur-apprentissage. Le choix de la pénalisation
+idéale dépend de la structure des données et n'est jamais connue, *ex-ante*
+par le modélisateur. Faut-il pénaliser fortement ou non le modèle ? En l'absence
+d'argument théorique, on aura tendance à tester plusieurs paramètres de
+pénalisation et choisir celui qui permet la meilleure prédiction.
+
+La notion de validation croisée permettra de généraliser cette approche. Ces paramètres
+qui affectent la prédiction seront pas la suite appelés des
+**hyperparamètres**. Comme nous allons le voir, nous allons aboutir à un 
+raffinement de l'approche pour obtenir un *pipeline* ayant plutôt cet aspect:
+
+```{r, echo = FALSE}
+knitr::include_graphics("scikit_predict2.png")
+```
 
 ### Le problème du sur-apprentissage
 
@@ -72,36 +95,38 @@ prédictives et non un ajustement parfait
 aux données historiques.
 
 Il existe un arbitrage biais-variance dans la qualité d'estimation[^1]. Soit $h(X,\theta)$ un modèle statistique. On 
-peut décomposer l'erreur d'estimation en deux parties:
+peut décomposer l'erreur d'estimation en deux parties :
 
 $$
 \mathbb{E}\bigg[(y - h(\theta,X))^2 \bigg] = \underbrace{ \bigg( y - \mathbb{E}(h_\theta(X)) \bigg)^2}_{\text{biais}^2} + \underbrace{\mathbb{V}\big(h(\theta,X)\big)}_{\text{variance}}
 $$
 
-Il y a ainsi un compromis entre biais et variance. Un modèle peu parcimonieux, c'est-à-dire proposant un grand nombre de paramètres, va, en général, avoir un faible biais mais une grande variance. En effet, le modèle va tendre à se souvenir d'une combinaison de paramètres à partir d'un grand nombre d'exemples sans être capable d'apprendre la règle qui permette de structurer les données. 
+Il y a ainsi un compromis à faire entre biais et variance. Un modèle peu parcimonieux, c'est-à-dire proposant un grand nombre de paramètres, va, en général, avoir un faible biais mais une grande variance. En effet, le modèle va tendre à se souvenir d'une combinaison de paramètres à partir d'un grand nombre d'exemples sans être capable d'apprendre la règle qui permette de structurer les données. 
 
 [^1] Cette formule permet de bien comprendre la théorie statistique asymptotique, notamment le théorème de Cramer-Rao. Dans la classe des estimateurs sans biais, c'est-à-dire dont le premier terme est nul, trouver l'estimateur à variance minimale revient à trouver l'estimateur qui minimise $\mathbb{E}\bigg[(y - h_\theta(X))^2 \bigg]$. C'est la définition même de la régression, ce qui, quand on fait des hypothèses supplémentaires sur le modèle statistique, explique le théorème de Cramer-Rao.
 
 
-![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Overfitting.svg/300px-Overfitting.svg.png)
+Par exemple, la ligne verte ci-dessous est trop dépendante des données et risque de produire une erreur plus importante que la ligne noire (qui moyennise plus) sur de nouvelles données. 
 
-La ligne verte ci-dessus est trop dépendante des données et risque de produire une erreur plus importante que la ligne noire (qui moyennise plus) sur de nouvelles données. 
+
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Overfitting.svg/300px-Overfitting.svg.png)
 
 
 Pour renforcer la validité externe d'un modèle, il est ainsi commun, en *Machine Learning*:
 
-1. d'estimer un modèle sur un jeu de données mais d'évaluer la performance, et donc la pertinence, du modèle sur d'autres données. On parle de jeu d'apprentissage (*training set*) et jeu de validation ou de test (*testing set*) ;
+1. d'estimer un modèle sur un jeu de données (jeu d'apprentissage ou *training set*) mais d'évaluer la performance, et donc la pertinence, du modèle sur d'autres données (jeu de validation, de test ou *testing set*) ;
 2. avoir des mesures de performances qui pénalisent fortement les modèles peu parcimonieux (BIC) ou conduire une première phase de sélection de variable (par des méthodes de LASSO...)
 
 
-Pour décomposer un modèle en jeu d'estimation et de test, la meilleure méthode est d'utiliser les fonctionalités de `scikit`. La proportion  de la manière suivante:
+Pour décomposer un modèle en jeu d'estimation et de test, la meilleure méthode est d'utiliser les fonctionnalités de `scikit` de la manière suivante : 
 
 ```{python, eval = FALSE, echo = TRUE}
 from sklearn.model_selection import train_test_split
-xTrain, xTest, yTrain, yTest = train_test_split(x, y, test_size = 0.2, random_state = 0)
+xTrain, xTest, yTrain, yTest = train_test_split(x, y,
+test_size = 0.2, random_state = 0)
 ```
 
-La proportion d'observations dans le jeu de test est contrôlée par l'argument `test_size`. La proportion optimale n'existe pas ; la règle du pouce habituelle est d'assigner aléatoirement 20% des observations dans l'échantillon de test pour garder suffisamment d'observations dans l'échantillon d'estimation. 
+La proportion d'observations dans le jeu de test est contrôlée par l'argument `test_size`. La proportion optimale n'existe pas ; la règle du pouce habituelle est d'assigner aléatoirement 20 % des observations dans l'échantillon de test pour garder suffisamment d'observations dans l'échantillon d'estimation. 
 
 
 {{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
@@ -109,10 +134,10 @@ Lorsqu'on travaille avec des séries temporelles, l'échantillonnage aléatoire 
 {{% /panel %}}
 
 {{% panel status="note" title="Note" icon="fa fa-comment" %}}
-Avec des données multi-niveaux, comme c'est le cas de données géographiques ou de données individuelles avec des variables de classe, il peut être intéressant d'utiliser un échantillonnage stratifié. Cela permet de garder une proportion équivalente de chaque groupe dans les deux jeux de données de test ou d'apprentissage. Ce type d'échantillonnage stratifié est possible avec `scikit`.
+Avec des données multi-niveaux, comme c'est le cas de données géographiques ou de données individuelles avec des variables de classe, il peut être intéressant d'utiliser un échantillonnage stratifié. Cela permet de garder une proportion équivalente de chaque groupe dans les deux jeux de données de test ou d'apprentissage. Ce type d'échantillonnage stratifié est également possible avec `scikit`.
 {{% /panel %}}
 
-L'exercice sur les SVM illustre cette construction et la manière
+L'[exercice sur les SVM](https://linogaliana-teaching.netlify.app/svm/) illustre cette construction et la manière
 dont elle facilite l'évaluation de la qualité d'un modèle.
 
 ### Validation croisée
@@ -135,12 +160,12 @@ exactement chaque observation comme l’échantillon de test (une *n-fold cross 
 
 ## Mesurer la performance
 
-Jusqu'à présent, nous avons passé sous silence la question du support de $y$. En pratique, celui-ci va néanmoins déterminer deux questions cruciales: la méthode et l'indicateur de performance.
+Jusqu'à présent, nous avons passé sous silence la question du support de $y$. En pratique, celui-ci va néanmoins déterminer deux questions cruciales : la méthode et l'indicateur de performance.
 
-On distingue en général les problèmes de:
+En apprentissage supervisé, on distingue en général les problèmes de:
 
-* Classification: la variable $y$ est discrète
-* Régression: la variable $y$ est continue
+* Classification : la variable $y$ est discrète
+* Régression : la variable $y$ est continue
 
 Les deux approches ne sont pas sans lien. On peut par exemple voir le modèle économétrique de choix d'offre de travail comme un problème de classification (participation ou non au marché du travail) ou de régression (régression sur un modèle à variable latente)
 
@@ -163,7 +188,7 @@ En présence de classes désequilibrées, la
 F-mesure est plus pertinente pour évaluer les
 performances mais l’apprentissage restera
 mauvais si l’algorithme est sensible à ce
-problème. Notamment, si on désire avoir une performance équivalente sur les classes minoritaires, il faut généralement les sur-pondérer (ou faire un échantillonage stratifié) lors de la constitution de l'échantillon d'observation
+problème. Notamment, si on désire avoir une performance équivalente sur les classes minoritaires, il faut généralement les sur-pondérer (ou faire un échantillonnage stratifié) lors de la constitution de l'échantillon d'observation.
 
 Il est possible de construire des modèles à partir des probabilités prédites d'appartenir à la classe d'intérêt. Pour cela, on fixe un seuil $c$ tel que
 
