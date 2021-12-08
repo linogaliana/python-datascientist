@@ -181,44 +181,32 @@ centroids["winner"] =  np.where(centroids['votes_gop'] > centroids['votes_dem'],
 
 centroids['lon'] = centroids['geometry'].x
 centroids['lat'] = centroids['geometry'].y
-centroids = pd.DataFrame(centroids[["county_name",'lon','lat','winner', 'CENSUS_2010_POP']])
+centroids = pd.DataFrame(centroids[["county_name",'lon','lat','winner', 'CENSUS_2010_POP',"state_name"]])
 groups = centroids.groupby('winner')
 
 df = centroids.copy()
-
-df['text'] = df["county_name"] + '<br>Population ' + (df['CENSUS_2010_POP']/1e3).astype(str)+' thousands'
-limits = ["republican","democrats"]
-colors = ['#FF0000', '#0000FF']
 ```
 
 ```{python, include = TRUE, echo=TRUE}
 df['color'] = df['winner'].replace(color_dict)
 df['size'] = df['CENSUS_2010_POP']/6000
+df['text'] = df['CENSUS_2010_POP'].astype(int).apply(lambda x: '<br>Population: {:,} people'.format(x))
+df['hover'] = df['county_name'].astype(str) +  df['state_name'].apply(lambda x: ' ({}) '.format(x)) + df['text']
 
-df['color'] = df['winner'].replace(color_dict)
-df['size'] = df['CENSUS_2010_POP']/6000
-df['text'] = df["county_name"] + '<br>Population ' + (df['CENSUS_2010_POP']/1e3).astype(str)+' thousands'
-
-fig_plotly = pgo.Figure(
-  data=pgo.Scattergeo(
-      locationmode = 'USA-states',
-      lon=df["lon"], lat=df["lat"],
-      text = df["text"],
-      mode = 'markers',
-      marker_color = df["color"],
-      marker_size = df['size']
-    )
-)
+fig_plotly = go.Figure(data=go.Scattergeo(
+    locationmode = 'USA-states',
+    lon=df["lon"], lat=df["lat"],
+    text = df["hover"],
+    mode = 'markers',
+    marker_color = df["color"],
+    marker_size = df['size'],
+    hoverinfo="text"
+    ))
 ```
 
 ```{python, include = TRUE, echo=TRUE}
 fig_plotly.update_traces(
-                  marker = dict(
-              opacity=0.5,
-              line_color='rgb(40,40,40)',
-              line_width=0.5,
-              sizemode = 'area'
-                  )
+  marker = {'opacity': 0.5, 'line_color': 'rgb(40,40,40)', 'line_width': 0.5, 'sizemode': 'area'}
 )
 
 fig_plotly.update_layout(
