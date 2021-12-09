@@ -46,20 +46,33 @@ print_badges()
 ```
 
 
-Pour illustrer le travail de données nécessaire pour construire un modèle de Machine Learning, mais aussi nécessaire pour l'exploration de données avant de faire une régression linéaire, nous allons partir du même jeu de données que précédemment,
+Pour illustrer le travail d'exploration des données nécessaire avant de construire un modèle de Machine Learning, nous allons partir du même jeu de données que précédemment,
 c'est-à-dire les résultats des élections US 2020 présentés dans l'[introduction
 de cette partie](https://linogaliana-teaching.netlify.app/modelisation/): les données de vote aux élections présidentielles US
 croisées à des variables socio-démographiques.
 Le code 
-est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/modelisation/get_data.py)
+est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py).
 
+
+```{python, echo = TRUE, include = FALSE}
+#!pip install geopandas
+
+import requests
+
+url = 'https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/course/modelisation/get_data.py'
+r = requests.get(url, allow_redirects=True)
+open('getdata.py', 'wb').write(r.content)
+
+import getdata
+votes = getdata.create_votes_dataframes()
+```
 
 
 ```{python, echo = FALSE, include = FALSE}
 exec(open('./get_data.py').read())
 ```
 
-```{python}
+```{python, echo=TRUE}
 import matplotlib.pyplot as plt
 ```
 
@@ -104,32 +117,43 @@ La généralisation au cas non linéaire implique d'introduire des noyaux transf
 
 ## Exercice
 
-{{% panel status="exercise" title="Premier algorithme de classification" icon="fas fa-pencil-alt" %}}
-1. Créer une variable *dummy* `y` dont la valeur vaut 1 quand les républicains l'emportent
-2. Créer des échantillons de test (20% des observations) et d'estimation avec comme *features*: `'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"` et comme *label* la variable `y`. Pour éviter le *warning* 
+{{% panel status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
 
-> A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel()
+**Exercice 1 : Premier algorithme de classification**
 
-à chaque fois que vous estimez votre modèle, vous pouvez utiliser `DataFrame[['y']].values.ravel()` plutôt que `DataFrame[['y']]` lorsque vous constituez vos échantillons.
-
-3. Entraîner un classifieur SVM avec comme paramètre de régularisation `C = 1`. Regarder les mesures de performance suivante: `accuracy`, `f1`, `recall` et `precision`. Vérifier la matrice de confusion: vous devriez voir que malgré des scores en apparence pas si mauvais, il y a un problème
-
-4. Refaire les questions précédentes avec des variables normalisées. Le résultat est-il différent ?
-
-5. Changer de variables *x*. Prendre uniquement `votes_gop` et `Median_Household_Income_2019`. Regarder les résultats, notamment la matrice de confusion
-
-6. Faire une 5-fold validation croisée pour déterminer le paramètre *C* idéal. 
-{{% /panel %}}
-
-```{python}
+```{python, echo = TRUE}
+# packages utiles
 from sklearn import svm
 import sklearn.metrics
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
+```
 
+1. Créer une variable *dummy* appelée `y` dont la valeur vaut 1 quand les républicains l'emportent. 
+
+
+```{python}
+#| include: false
+#| echo: false
+
+# 1. Création de la dummy y de victoire des républicains
+votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
+```
+
+2. Créer des échantillons de test (20 % des observations) et d'estimation (80 %) avec comme *features*: `'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"` et comme *label* la variable `y`. 
+
+> A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel()
+
+*Note : Pour éviter ce warning à chaque fois que vous estimez votre modèle, vous pouvez utiliser `DataFrame[['y']].values.ravel()` plutôt que `DataFrame[['y']]` lorsque vous constituez vos échantillons.*
+
+
+```{python}
+#| include: false
+#| echo: false
+
+#2. Création des échantillons d'entraînement et de validation
 xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
 
-votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
 df = votes[["y"] + xvars]
 tempdf = df.dropna(how = "any")
 
@@ -137,7 +161,20 @@ X_train, X_test, y_train, y_test = train_test_split(
     df[xvars],
     df[['y']].values.ravel(), test_size=0.2, random_state=0
 )
+#X_train.head()
+#y_test
      
+```
+
+
+3. Entraîner un classifieur SVM avec comme paramètre de régularisation `C = 1`. Regarder les mesures de performance suivante : `accuracy`, `f1`, `recall` et `precision`.
+
+
+```{python}
+#| include: false
+#| echo: false
+
+# 3. Entraînement du modèle et performances
 clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 
@@ -145,20 +182,37 @@ sc_accuracy = sklearn.metrics.accuracy_score(y_pred, y_test)
 sc_f1 = sklearn.metrics.f1_score(y_pred, y_test)
 sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
 sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
+
+#print(sc_accuracy)
+#print(sc_f1)
+#print(sc_recall)
+#print(sc_precision)
 ```
 
 Le classifieur avec `C = 1` devrait avoir les performances suivantes:
 
+```{python, results = "asis"}
+out = pd.DataFrame.from_dict({"Accuracy": [sc_accuracy], "Recall": [sc_recall],
+                        "Precision": [sc_precision], "F1": [sc_f1]}, orient = "index", columns = ["Score"])
+print(out.to_markdown())
+```
 
-| Métrique | Score |
-|----------|-------|
-| Accuracy | `r py$sc_accuracy` |
-| Recall | `r py$sc_recall` |
-| Precision | `r py$sc_precision` |
-| F1 | `r py$sc_f1` |
+4. Vérifier la matrice de confusion : vous devriez voir que malgré des scores en apparence pas si mauvais, il y a un problème notable. 
 
-```{python confusion_matrix, message = FALSE, warning = FALSE, include = FALSE}
+
+```{python confusion_matrix, message = FALSE, warning = FALSE}
+#| include: false
+#| echo: false
+
+# 4. Matrice de confusion
 sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
+
+#Réponse : Notre classifieur manque totalement les labels 0, qui sont minoritaires.
+#Une raison possible ? L'échelle des variables: le revenu a une
+#distribution qui peut écraser celle des autres variables,
+#dans un modèle linéaire. Il faut donc, a minima, 
+#standardiser les variables.
+
 plt.savefig("confusion_matrix.png")
 ```
 
@@ -166,9 +220,14 @@ plt.savefig("confusion_matrix.png")
 knitr::include_graphics("confusion_matrix.png")
 ```
 
-Notre classifieur manque totalement les *labels* 0, qui sont minoritaires. Une raison possible ? L'échelle des variables: le revenu a une distribution qui peut écraser celle des autres variables, dans un modèle linéaire. Il faut donc, a minima, standardiser les variables. Néanmoins, ici cela n'apporte pas de gain:
+5. Refaire les questions précédentes avec des variables normalisées. Le résultat est-il différent ?
+
 
 ```{python confusion_matrix2}
+#| include: false
+#| echo: false
+
+# 5. Refaire les questions précédentes avec des variables normalisées.
 import sklearn.preprocessing as preprocessing
 
 X = tempdf[xvars]
@@ -184,6 +243,11 @@ X_train, X_test, y_train, y_test = train_test_split(
 clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
+
+#Réponse : Non, standardiser les variables n'apporte pas de gain
+# Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables. 
+# C'est pour cette raison que l'étape de sélection de variable est cruciale.
+
 plt.savefig("confusion_matrix2.png")
 ```
 
@@ -192,10 +256,24 @@ knitr::include_graphics("confusion_matrix2.png")
 ```
 
 
-Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables.
-C'est pour cette raison que l'étape de sélection de variable est cruciale. En utilisant uniquement le résultat passé du vote démocrate et le revenu (`votes_gop` et `Median_Household_Income_2019`), on obtient un résultat beaucoup plus cohérent:
+6. Changer de variables *x*. Utiliser uniquement le résultat passé du vote démocrate et le revenu (`votes_gop` et `Median_Household_Income_2019`). Regarder les résultats, notamment la matrice de confusion. 
+
+Le nouveau classifieur avec devrait avoir les performances suivantes :
+
+```{python, results = "asis"}
+out = pd.DataFrame.from_dict({"Accuracy": [sc_accuracy], "Recall": [sc_recall],
+                        "Precision": [sc_precision], "F1": [sc_f1]}, orient = "index", columns = ["Score"])
+print(out.to_markdown())
+```
+
+
+
 
 ```{python confusion_matrix3, message = FALSE, warning = FALSE}
+#| include: false
+#| echo: false
+
+# 6. Refaire les questions en changeant la variable X.
 votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
 df = votes[["y", "share_2016_republican", 'Median_Household_Income_2019']]
 tempdf = df.dropna(how = "any")
@@ -218,17 +296,36 @@ sc_f1 = sklearn.metrics.f1_score(y_pred, y_test)
 sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
 sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
 
+#print(sc_accuracy)
+#print(sc_f1)
+#print(sc_recall)
+#print(sc_precision)
+
 sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
+# On obtient un résultat beaucoup plus cohérent.
+
 plt.savefig("confusion_matrix3.png")
 ```
 
-```{r}
+```{r, echo = FALSE}
 knitr::include_graphics("confusion_matrix3.png")
 ```
 
-| Métrique | Score |
-|----------|-------|
-| Accuracy | `r py$sc_accuracy` |
-| Recall | `r py$sc_recall` |
-| Precision | `r py$sc_precision` |
-| F1 | `r py$sc_f1` |
+
+7. [OPTIONNEL] Faire une 5-fold validation croisée pour déterminer le paramètre *C* idéal. 
+
+```{python}
+# TODO : correction à rédiger.
+```
+
+{{% /panel %}}
+
+
+
+
+
+
+
+
+
+
