@@ -67,7 +67,7 @@ visualize_badge <- function(notebook = "", github_link = 'https://github.com/lin
 
 
 reminder_badges <- function(notebook = "", onyxia_only = FALSE, split = NULL,
-                            type = c("html", "md")){
+                            type = c("md", "html")){
   
   type <- match.arg(type)
   
@@ -181,7 +181,7 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE, split = NULL,
                 vscode_link)
   }
   
-  badges <- c('<p class="badges">', badges, '</p>')
+  if (type == "html") badges <- c('<p class="badges">', badges, '</p>')
   return(
     cat(badges, sep = "\n")
   )
