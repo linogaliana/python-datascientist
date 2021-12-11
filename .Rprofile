@@ -181,7 +181,7 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE, split = NULL,
                 vscode_link)
   }
   
-  badges <- c("<badges>", badges, '</badges>')
+  badges <- c('<p class="badges">', badges, '</p>')
   return(
     cat(badges, sep = "\n")
   )
