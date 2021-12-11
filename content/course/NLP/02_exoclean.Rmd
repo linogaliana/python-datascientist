@@ -26,7 +26,7 @@ type: book
 summary: |
   Ce chapitre continue de présenter l'approche de data-cleaning
   du NLP en s'appuyant sur le corpus de trois auteurs
-  anglo-saxons: Mary Shelley, Edgar Allan Poe, H.P. Lovecraft.
+  anglo-saxons : Mary Shelley, Edgar Allan Poe, H.P. Lovecraft.
 ---
 
 ```{r setup, include=FALSE}
@@ -46,7 +46,7 @@ print_badges()
 Cette page approfondit certains aspects présentés dans la
 [partie introductive](#nlp). Après avoir travaillé sur le
 *Comte de Monte Cristo*, on va continuer notre exploration de la littérature
-avec cette fois des auteurs anglophones:
+avec cette fois des auteurs anglophones :
 
 * Edgar Allan Poe, (EAP) ;
 * HP Lovecraft (HPL) ;
@@ -55,10 +55,10 @@ avec cette fois des auteurs anglophones:
 Les données sont disponibles ici : [spooky.csv](https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/blob/master/data/spooky.csv) et peuvent être requétées via l'url 
 <https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv>.
 
-Le but va être dans un premier temps de regarder dans le détail les termes les plus fréquents utilisés par les auteurs, de les représenter graphiquement puis on va ensuite essayer de prédire quel texte correspond à quel auteur à partir d'un modèle `Word2Vec`.
+Le but va être dans un premier temps de regarder dans le détail les termes les plus fréquemment utilisés par les auteurs, de les représenter graphiquement puis on va ensuite essayer de prédire quel texte correspond à quel auteur à partir d'un modèle `Word2Vec`.
 
 
-Ce notebook librement inspiré de  : 
+Ce notebook est librement inspiré de  : 
 
 * https://www.kaggle.com/enerrio/scary-nlp-with-spacy-and-keras
 * https://github.com/GU4243-ADS/spring2018-project1-ginnyqg
@@ -66,7 +66,7 @@ Ce notebook librement inspiré de  :
 
 ## Librairies nécessaires
 
-Cette page évoquera, les principales librairies pour faire du NLP, notamment: 
+Cette page évoquera les principales librairies pour faire du NLP, notamment : 
 
 * [WordCloud](https://github.com/amueller/word_cloud)
 * [nltk](https://www.nltk.org/)
@@ -76,8 +76,8 @@ Cette page évoquera, les principales librairies pour faire du NLP, notamment:
 
 Il faudra également installer les librairies `gensim` et `pywaffle`
 
-{{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
-Comme dans la [partie précédente](#nlp), il faut télécharger quelques éléments pour que `NTLK` puisse fonctionner correctement. Pour cela, faire:
+{{% panel status="warning" title="Attention" icon="fa fa-exclamation-triangle" %}}
+Comme dans la [partie précédente](#nlp), il faut télécharger quelques éléments pour que `NTLK` puisse fonctionner correctement. Pour cela, faire :
 
 ~~~python
 import nltk
@@ -89,9 +89,9 @@ nltk.download('wordnet')
 {{% /panel %}}
 
 
-La liste des modules à importer est assez longue, la voici:
+La liste des modules à importer est assez longue, la voici :
 
-```{python}
+```{python, echo = TRUE}
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import seaborn as sns
@@ -108,6 +108,7 @@ from time import time
 # from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS as stopwords
 from sklearn.metrics import log_loss
 import matplotlib.pyplot as plt
+#!pip install pywaffle
 from pywaffle import Waffle
 
 from nltk.stem import WordNetLemmatizer
@@ -122,29 +123,83 @@ nltk.download('wordnet')
 
 ## Données utilisées
 
-{{% panel status="exercise" title="Exercise (pour ceux ayant envie de tester leurs connaissances en pandas)" icon="fas fa-pencil-alt" %}}
-1. Importer le jeu de données `spooky` à partir de l'URL <https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv> sous le nom `train`. L'encoding est `latin-1`
-2. Mettre des majuscules au nom des colonnes
-3. Retirer le prefix `id` de la colonne `Id`
-4. Mettre la colonne `Id` en index
-{{% /panel %}}
+{{% panel status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
 
-Une fois n'est pas coutume, la correction de cet exercice ci-dessous:
+**Exercice 1 : Importer les données spooky** [OPTIONNEL]
 
-```{python, echo = TRUE}
+*Pour ceux qui ont envie de tester leurs connaissances en pandas*
+
+```{python}
+# packages utiles
 import pandas as pd
-
-url='https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv'
-import pandas as pd
-train = pd.read_csv(url,
-                    encoding='latin-1')
-train.columns = train.columns.str.capitalize()
-                    
-train['ID'] = train['Id'].str.replace("id","")
-train = train.set_index('Id')
 ```
 
-Le jeu de données met ainsi en regard un auteur avec une phrase qu'il a écrite:
+1. Importer le jeu de données `spooky` à partir de l'URL <https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv> sous le nom `train`. L'encoding est `latin-1`
+
+```{python}
+#| include: false
+#| echo: false
+
+#1. Import des données
+url='https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv'
+train = pd.read_csv(url,encoding='latin-1')
+```
+
+2. Mettre des majuscules au nom des colonnes.
+
+```{python}
+#| include: false
+#| echo: false
+
+#2. Majuscules aux noms des colonnes
+train.columns = train.columns.str.capitalize()
+```
+
+3. Retirer le prefix `id` de la colonne `Id` et appeler la nouvelle colonne `ID`.
+
+```{python}
+#| include: false
+#| echo: false
+
+#3. Retirer le prefixe id
+train['ID'] = train['Id'].str.replace("id","")
+```
+
+
+4. Mettre l'ancienne colonne `Id` en index. 
+
+```{python}
+#| include: false
+#| echo: false
+
+#3. Retirer le prefixe id
+train = train.set_index('ID')
+#train.head()
+```
+
+
+
+{{% /panel %}}
+
+Si vous ne faites pas l'exercice 1, pensez à charger les données en executant la fonction `get_data.py` :
+
+```{python, echo = TRUE}
+import requests
+
+#url = 'https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/course/NLP/get_data.py'
+url = 'https://raw.githubusercontent.com/antuki/python-datascientist/relec-ka-1112/content/course/NLP/get_data.py'
+r = requests.get(url, allow_redirects=True)
+open('getdata.py', 'wb').write(r.content)
+
+import getdata
+train = getdata.create_train_dataframes()
+```
+
+Ce code introduit une base nommée `train` dans l'environnement.
+
+
+
+Le jeu de données met ainsi en regard un auteur avec une phrase qu'il a écrite : 
 
 ```{python}
 train.head()
@@ -157,7 +212,7 @@ sampsize = train.shape[0]
 
 On peut se rendre compte que les extraits des 3 auteurs ne sont pas forcément équilibrés dans le jeu de données. Il faudra en tenir compte dans la prédiction. 
 
-```{python}
+```{python, echo=TRUE, eval=TRUE}
 fig = plt.figure()
 sns.barplot(x=['Edgar Allen Poe', 'Mary W. Shelley', 'H.P. Lovecraft'], y=train['Author'].value_counts())
 plt.savefig("wordfreq.png", bbox_inches='tight')
@@ -174,7 +229,9 @@ manière plus extensive dans le [chapitre précédent](#nlp).
 
 L'idée est d'étudier la fréquence des mots d'un document et la
 surreprésentation des mots par rapport à un document de
-référence (appelé *corpus*). Cette approche un peu simpliste mais très
+référence (appelé *corpus*).
+
+Cette approche un peu simpliste mais très
 efficace : on peut calculer des scores permettant par exemple de faire
 de classification automatique de document par thème, de comparer la
 similarité de deux documents. Elle est souvent utilisée en première analyse,
@@ -182,29 +239,48 @@ et elle reste la référence pour l'analyse de textes mal
 structurés (tweets, dialogue tchat, etc.). 
 
 Les analyses tf-idf (*term frequency-inverse document frequency*) ou les
-constructions d'indices de similarité cosine reposent sur ce type d'approche
+constructions d'indices de similarité cosinus reposent sur ce type d'approche
 {{% /panel %}}
 
 
 ## Fréquence d'un mot
 
 Avant de s'adonner à une analyse systématique du champ lexical de chaque
-auteur, on va rechercher un unique mot, le mot *fear*. 
+auteur, on se focaliser dans un premier temps sur un unique mot, le mot *fear*. 
 
+{{% panel status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
 
-{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
-1. Compter le nombre de phrases, pour chaque auteur, où apparaît le mot `fear`
-2. Utiliser `pywaffle` pour obtenir les graphiques ci-dessous qui résument
-de manière synthétique le nombre d'occurrences du mot *"fear"* par auteur
-3. Refaire l'analyse avec le mot *"horror"*
-{{% /panel %}}
+**Exercice 2 : Fréquence d'un mot** 
+
+1. Compter le nombre de phrases, pour chaque auteur, où apparaît le mot `fear`.
 
 ```{python}
-def graph_occurrence(word, train_data):
+#| echo: false
+
+#1. Compter le nombre de phrase pour chaque auteur avec fear
+def nb_occurrences(word, train_data):
     train_data['wordtoplot'] = train_data['Text'].str.contains(word).astype(int)
     table = train.groupby('Author').sum()
     data = table.to_dict()['wordtoplot']
-    
+    return table
+  
+table = nb_occurrences("fear", train)
+table.head()
+```
+
+2. Utiliser `pywaffle` pour obtenir les graphiques ci-dessous qui résument
+de manière synthétique le nombre d'occurrences du mot *"fear"* par auteur.
+
+
+```{python}
+#| include: false
+#| echo: false
+
+
+#2. Faire un graphique d'occurences avc pywaffle
+def graph_occurrence(word, train_data):
+    table = nb_occurrences(word, train_data)
+    data = table.to_dict()['wordtoplot']
     fig = plt.figure(
         FigureClass=Waffle, 
         rows=15, 
@@ -214,28 +290,34 @@ def graph_occurrence(word, train_data):
     )
     return fig
 
-```
-
-```{python}
 fig = graph_occurrence("fear", train)
 plt.savefig("fear.png", bbox_inches='tight')
 ```
 
+```{r}
+knitr::include_graphics("fear.png")
+```
+
+3. Refaire l'analyse avec le mot *"horror"*. 
+
 ```{python}
+#| include: false
+#| echo: false
+
+#3. Graphe d'occurences avec le mot horror
 fig = graph_occurrence("horror", train)
 plt.savefig("horror.png", bbox_inches='tight')
 ```
 
 ```{r}
-knitr::include_graphics("fear.png")
 knitr::include_graphics("horror.png")
 ```
 
-
 La peur est ainsi plus évoquée par Mary Shelley
 (sentiment assez naturel face à la créature du docteur Frankenstein) alors
-que Lovecraft n'a pas volé sa réputation d'écrivain de l'horreur
+que Lovecraft n'a pas volé sa réputation d'écrivain de l'horreur !
 
+{{% /panel %}}
 
 ## Premier *wordcloud*
 
@@ -243,12 +325,18 @@ Pour aller plus loin dans l'analyse du champ lexical de chaque auteur,
 on peut représenter un `wordcloud` qui permet d'afficher chaque mot avec une
 taille proportionnelle au nombre d'occurrence de celui-ci
 
-{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
-1. Faire un wordcloud pour représenter les mots les plus utilisés par chaque auteur
-2. Calculer les 25 mots plus communs pour chaque auteur et représenter l'histogramme du décompte
-{{% /panel %}}
+{{% panel status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+
+**Exercice 3 : Wordcloud** 
+
+1. En utilisant la fonction `wordCloud`, faire trois nuages de mot pour représenter les mots les plus utilisés par chaque auteur.
 
 ```{python}
+#| include: false
+#| echo: false
+
+
+#1. Wordclouds
 def graph_wordcloud(author, train_data, varname = "Text"):
   txt = train_data[train_data['Author']==author][varname]
   all_text = ' '.join([text for text in txt])
@@ -275,7 +363,14 @@ knitr::include_graphics("wordcloud1.png")
 ```
 
 
+2. Calculer les 25 mots plus communs pour chaque auteur et représenter les trois histogrammes des décomptes. 
+
 ```{python}
+#| include: false
+#| echo: false
+
+
+#2. Histogramme de décompte
 count_words = pd.DataFrame({'counter' : train
     .groupby('Author')
     .apply(lambda s: ' '.join(s['Text']).split())
@@ -295,12 +390,16 @@ plt.savefig('wordcount1.png', bbox_inches='tight')
 knitr::include_graphics("wordcount1.png")
 ```
 
-Démonstration par l'exemple qu'il vaut mieux nettoyer le texte avant de 
-l'analyser.
 On voit ici que ce sont des mots communs, comme *"the"*, *"of"*, etc. sont très
 présents. Mais ils sont peu porteurs d'information, on peut donc les éliminer
-avant de faire une analyse syntaxique poussée (sauf si on est intéressé
-par la loi de Zipf). 
+avant de faire une analyse syntaxique poussée.
+Ceci est une démonstration par l'exemple qu'il vaut mieux nettoyer le texte avant de 
+l'analyser (sauf si on est intéressé
+par la loi de Zipf, cf. exercice suivant).
+
+
+{{% /panel %}}
+
 
 ## Aparté: la loi de Zipf
 
@@ -311,7 +410,7 @@ liée à son rang $n_i$ dans l'ordre des fréquences par une loi de la forme
 $f(n_i) = c/n_i$ où $c$ est une constante. Zipf, dans les années 1930, se basait sur l'oeuvre 
 de Joyce, *Ulysse* pour cette affirmation. 
 
-Plus généralement, on peut dériver la loi de Zipf d'une distribution exponentielle des fréquences: $f(n_i) = cn_{i}^{-k}$. Cela permet d'utiliser la famille des modèles linéaire généralisés, notamment les régressions poissonniennes, pour mesurer les paramètres de la loi. Les modèles linéaire traditionnels en `log` souffrent en effet, dans ce contexte, de biais (la loi de Zipf est un cas particulier d'un modèle gravitaire, où appliquer des OLS est une mauvaise idée, cf. [Galiana et al. (2020)](https://linogaliana.netlify.app/publication/2020-segregation/) pour les limites).
+Plus généralement, on peut dériver la loi de Zipf d'une distribution exponentielle des fréquences: $f(n_i) = cn_{i}^{-k}$. Cela permet d'utiliser la famille des modèles linéaires généralisés, notamment les régressions poissonniennes, pour mesurer les paramètres de la loi. Les modèles linéaire traditionnels en `log` souffrent en effet, dans ce contexte, de biais (la loi de Zipf est un cas particulier d'un modèle gravitaire, où appliquer des OLS est une mauvaise idée, cf. [Galiana et al. (2020)](https://linogaliana.netlify.app/publication/2020-segregation/) pour les limites).
 
 On va estimer le modèle suivant par GLM via `statsmodels`:
 
@@ -319,7 +418,9 @@ $$
 \mathbb{E}\bigg( f(n_i)|n_i \bigg) = \exp(\beta_0 + \beta_1 \log(n_i))
 $$
 
-Prenons les résultats de l'exercice précédent et enrichissons les du rang et de la fréquence d'occurrence d'un mot:
+Prenons les résultats de l'exercice précédent et enrichissons les du rang et de la fréquence d'occurrence d'un mot : 
+
+<!-- source : https://stackoverflow.com/questions/23377108/pandas-percentage-of-total-with-groupby -->
 
 ```{python, echo = TRUE, eval = FALSE}
 count_words = pd.DataFrame({'counter' : train
@@ -333,8 +434,9 @@ count_words[['word','count']] = pd.DataFrame(count_words['counter'].tolist(), in
 count_words = count_words.reset_index()
 
 count_words = count_words.assign(
-    freq = lambda x: x['count'] / (x.groupby("Author").transform('sum')['count']),
-    rank = lambda x: x.groupby("Author").transform('rank', ascending = False)['count']
+    tot_mots_auteur = lambda x: (x.groupby("Author")['count'].transform('sum')),
+    freq = lambda x: x['count'] /  x['tot_mots_auteur'],
+    rank = lambda x: x.groupby("Author")['count'].transform('rank', ascending = False)
 )
 ```
 
@@ -365,7 +467,7 @@ model = sm.GLM(count_words['freq'].astype(float), exog, family = sm.families.Poi
 print(model.summary())
 ```
 
-TO BE COMPLETED
+<!-- TO BE COMPLETED -->
 
 {{% /panel %}}
 
@@ -373,27 +475,34 @@ TO BE COMPLETED
 ## Nettoyage d'un texte
 
 Les premières étapes dans le nettoyage d'un texte, qu'on a
-dévelopé au cours du [chapitre précédent](#nlp), sont:
+développé au cours du [chapitre précédent](#nlp), sont :
 
 * suppression de la ponctuation
 * suppression des *stopwords*
 
 Cela passe par la tokenisation d'un texte, c'est-à-dire la décomposition
-de celui-ci en unités lexicales (les *tokens*). Ces unités lexicales peuvent être de différentes natures, selon l'analyse que l'on désire procéder. Ici, on va définir les tokens comme des mots.
+de celui-ci en unités lexicales (les *tokens*). Ces unités lexicales peuvent être de différentes natures, selon l'analyse que l'on désire mener. Ici, on va définir les tokens comme étant les mots utilisés.
 
 Plutôt que de faire soi-même ce travail de nettoyage, avec des fonctions mal optimisées, on peut utiliser la librairie `nltk` comme détaillé [précédemment](#nlp). 
 
 
-{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+{{% panel status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+
+**Exercice 4 : Nettoyage du texte** 
+
 Repartir de `train`, notre jeu de données d'entraînement. Pour rappel, `train` a la structure suivante:
 
-```{python}
+```{python, echo=TRUE}
 train.head(2)
 ```
 
-1. Tokeniser chaque phrase avec `nltk`. Le `DataFrame` devrait maintenant avoir cet aspect:
+1. Tokeniser chaque phrase avec `nltk`. Le `DataFrame` devrait maintenant avoir cet aspect :
 
 ```{python}
+#| include: false
+#| echo: false
+
+#1. Tokenisation
 train_clean = (train
     .groupby(["ID","Author"])
     .apply(lambda s: nltk.word_tokenize(' '.join(s['Text'])))
@@ -402,9 +511,13 @@ train_clean = (train
 train_clean.head(2)
 ```
 
-2. Retirer les stopwords avec `nltk`
+2. Retirer les stopwords avec `nltk`.
 
 ```{python}
+#| include: false
+#| echo: false
+
+#2. Enlever les stopwords.
 from nltk.corpus import stopwords  
 stop_words = set(stopwords.words('english'))
 
@@ -419,13 +532,13 @@ train_clean.head(2)
 {{% /panel %}}
 
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
-La méthode `apply` est très pratique ici car nous avons une phrase par ligne. Plutôt que de faire un `DataFrame` par auteur, ce qui n'est pas très flexible comme approche, on peut directement appliquer la tokenisation
-sur notre `DataFrame` grâce à `apply`
+La méthode `apply` est très pratique ici car nous avons une phrase par ligne. Plutôt que de faire un `DataFrame` par auteur, ce qui n'est pas une approche très flexible, on peut directement appliquer la tokenisation
+sur notre `DataFrame` grâce à `apply`, sans le diviser.
 {{% /panel %}}
 
-Ce petit nettoyage permet d'arriver à un texte plus intéressant en termes d'analyse lexicale. Par exemple, si on reproduit l'analyse précédente,
+Ce petit nettoyage permet d'arriver à un texte plus intéressant en termes d'analyse lexicale. Par exemple, si on reproduit l'analyse précédente... :
 
-```{python}
+```{python, echo=TRUE}
 train_clean["Text"] = train_clean['tokenized'].apply(lambda s: " ".join(map(str, s)))
 
 n_topics = ["HPL","EAP","MWS"]
@@ -451,21 +564,19 @@ mettre en place les classes d'équivalence développées dans la
 [partie précédente](#nlp) afin de remplacer différentes variations d'un même
 mot par une forme canonique :
 
+* la **racinisation** (*stemming*) assez fruste mais rapide, notamment
+en présence de fautes d’orthographe. Dans ce cas, chevaux peut devenir chev
+mais être ainsi confondu avec chevet ou cheveux. Elles est généralement plus simple à mettre en oeuvre, quoique
+plus fruste. 
+
 * la **lemmatisation** qui requiert la connaissance des statuts
-grammaticaux (exemple : chevaux devient cheval)
-* la **racinisation** (*stemming*) plus fruste mais plus rapide, notamment
-en présence de fautes d’orthographes. Dans ce cas, chevaux peut devenir chev
-mais être ainsi confondu avec chevet ou cheveux 
-
-La racinisation est généralement plus simple à mettre en oeuvre, quoique
-plus fruste. Elle est développée dans la [partie précédente](#nlp). 
-
-La lemmatisation est mise en oeuvre, comme toujours avec NLTK, à travers un
+grammaticaux (exemple : chevaux devient cheval).
+Elle est mise en oeuvre, comme toujours avec `nltk`, à travers un
 modèle. En l'occurrence, un `WordNetLemmatizer`  (WordNet est une base
 lexicographique ouverte). Par exemple, les mots *"women"*, *"daughters"*
-et *"leaves"* seront ainsi lemmatisés de la manière suivante:
+et *"leaves"* seront ainsi lemmatisés de la manière suivante :
 
-```{python}
+```{python, echo = TRUE}
 from nltk.stem import WordNetLemmatizer
 lemm = WordNetLemmatizer()
 
@@ -482,11 +593,12 @@ nltk.download('wordnet')
 ~~~
 {{% /panel %}}
 
+{{% panel status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
 
-{{% panel status="exercise" title="Exercise: lemmatisation avec NLTK et spaCy" icon="fas fa-pencil-alt" %}}
+**Exercice 5 : Lemmatisation avec `nltk` et `spaCy`** 
 
 On va se restreindre au corpus d'Edgar Allan Poe et repartir de la base de données
-brute
+brute :
 
 ```{python, echo = TRUE}
 eap_clean = train[train["Author"] == "EAP"]
@@ -496,9 +608,13 @@ eap_clean = ' '.join(eap_clean['Text'])
 word_list = nltk.word_tokenize(eap_clean)
 ```
 
-1. Utiliser un `WordNetLemmatizer` et observer le résultat
+Utiliser un `WordNetLemmatizer` et observer le résultat.
 
 ```{python}
+#| include: false
+#| echo: false
+
+#Exercice 5 : WordNetLemmatizer
 lemmatizer = WordNetLemmatizer()
 lemmatized_output = ' '.join([lemmatizer.lemmatize(w) for w in word_list])
 
@@ -507,34 +623,36 @@ print("---------------------------")
 print(lemmatized_output[:209])
 ```
 
-
 {{% /panel %}}
 
 
 ## TF-IDF: calcul de fréquence
 
+Le calcul [tf-idf](https://fr.wikipedia.org/wiki/TF-IDF) (term frequency–inverse document frequency) permet de calculer un score de proximité entre un terme de recherche et un document (c'est ce que font les moteurs de recherche). 
 
-Le calcul [tf-idf](https://fr.wikipedia.org/wiki/TF-IDF) (term frequency–inverse document frequency) permet de calculer un score de proximité entre un terme de recherche et un document (c'est ce que font les moteurs de recherche):
-
-* La partie `tf` calcule une fonction croissante de la fréquence du terme de recherche dans le document à l'étude;
+* La partie `tf` calcule une fonction croissante de la fréquence du terme de recherche dans le document à l'étude ;
 * La partie `idf` calcule une fonction inversement proportionnelle à la fréquence du terme dans l'ensemble des documents (ou corpus).
 
 Le score total, obtenu en multipliant les deux composantes, permet ainsi de donner un score d'autant plus élevé que le terme est surréprésenté dans un document (par rapport à l'ensemble des documents). Il existe plusieurs fonctions, qui pénalisent plus ou moins les documents longs, ou qui sont plus ou moins *smooth*.
 
-{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
-Repartir de `train`. 
 
-1. Utiliser le vectoriseur TfIdF de `scikit-learn` pour transformer notre corpus en une matrice `document x terms`. Au passage, utiliser l'option `stop_words` pour ne pas provoquer une inflation de la taille de la matrice. Nommer le modèle `tfidf` et le jeu entraîné `tfs`
+{{% panel status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+
+**Exercice 6 : TF-IDF: calcul de fréquence** 
+
+1. Utiliser le vectoriseur TfIdF de `scikit-learn` pour transformer notre corpus en une matrice `document x terms`. Au passage, utiliser l'option `stop_words` pour ne pas provoquer une inflation de la taille de la matrice. Nommer le modèle `tfidf` et le jeu entraîné `tfs`.
 
 ```{python}
+#| include: false
+#| echo: false
+
+#1. TfIdf de scikit
 from sklearn.feature_extraction.text import TfidfVectorizer
 tfidf = TfidfVectorizer(stop_words=stopwords.words("english"))
 tfs = tfidf.fit_transform(train['Text'])
-
 ```
 
-
-2. Après avoir construit la matrice de documents x terms avec le code suivant
+2. Après avoir construit la matrice de documents x terms avec le code suivant, rechercher les lignes où les termes ayant la structure `abandon` sont non-nuls. 
 
 ```{python, echo = TRUE}
 feature_names = tfidf.get_feature_names()
@@ -545,25 +663,30 @@ df = pd.DataFrame(tfs.todense(), columns=feature_names)
 df.head()
 ```
 
-rechercher les lignes où les termes ayant la structure `abandon` sont non-nuls. Les lignes sont les suivantes:
+Les lignes sont les suivantes :
 
 ```{python}
+#| include: false
+#| echo: false
+
+#2. Lignes où les termes de abandon sont non nuls.
 tempdf = df.loc[(df.filter(regex = "abandon")!=0).any(axis=1)]
-tempdf.index
-```
-
-```{python}
+print(tempdf.index)
 tempdf.head(5)
 ```
 
 3. Trouver les 50 extraits où le score TF-IDF est le plus élevé et l'auteur associé. Vous devriez obtenir le classement suivant:
 
 ```{python}
+#| include: false
+#| echo: false
+
+#3. 50 extraits avec le TF-IDF le plus élevé.
 list_fear = df["fear"].sort_values(ascending =False).head(n=50).index.tolist()
 train.iloc[list_fear].groupby('Author').count()['Text'].sort_values(ascending = False)
 ```
 
-et les 10 scores les plus élevés sont les suivants:
+Les 10 scores les plus élevés sont les suivants :
 
 ```{python}
 print(train.iloc[list_fear[:9]]['Text'].values)
@@ -571,7 +694,7 @@ print(train.iloc[list_fear[:9]]['Text'].values)
 
 {{% /panel %}}
 
-On remarque que les scores les plus élévés sont soient des extraits courts où le mot apparait une seule fois, et des extraits plus longs où le mot fear apprait plusieurs fois.
+On remarque que les scores les plus élévés sont soient des extraits courts où le mot apparait une seule fois, soit des extraits plus longs où le mot fear apparaît plusieurs fois.
 
 
 {{% panel status="note" title="Note" icon="fa fa-comment" %}}
@@ -582,12 +705,15 @@ La matrice `document x terms` est un exemple typique de matrice sparse puisque, 
 ## Approche contextuelle: les *n-gramms*
 
 {{% panel status="note" title="Note" icon="fa fa-comment" %}}
-Pour être en mesure de mener cette analyse, il est nécessaire de télécharger un corpus supplémentaire:
-~~~python
+Pour être en mesure de mener cette analyse, il est nécessaire de télécharger un corpus supplémentaire :
+
+
+```{python, echo=TRUE, eval=TRUE}
 import nltk
 nltk.download('genesis')
 nltk.corpus.genesis.words('english-web.txt')
-~~~
+```
+
 {{% /panel %}}
 
 Il s'agit maintenant de raffiner l'analyse. 
@@ -595,31 +721,37 @@ Il s'agit maintenant de raffiner l'analyse.
 On s'intéresse non seulement aux mots et à leur fréquence, mais aussi aux mots qui suivent. Cette approche est essentielle pour désambiguiser les homonymes. Elle permet aussi d'affiner les modèles "bag-of-words". Le calcul de n-grams (bigrams pour les co-occurences de mots deux-à-deux, tri-grams pour les co-occurences trois-à-trois, etc.) constitue la méthode la plus simple pour tenir compte du contexte.
 
 
-nltk offre des methodes pour tenir compte du contexte : pour ce faire, nous calculons les n-grams, c'est-à-dire l'ensemble des co-occurrences successives de mots deux-à-deux (bigrams), trois-à-trois (tri-grams), etc.
-
-En général, on se contente de bi-grams, au mieux de tri-grams :
+`nltk` offre des methodes pour tenir compte du contexte : pour ce faire, nous calculons les n-grams, c'est-à-dire l'ensemble des co-occurrences successives de mots n-à-n.  En général, on se contente de bi-grams, au mieux de tri-grams :
 
 * les modèles de classification, analyse du sentiment, comparaison de documents, etc. qui comparent des n-grams avec n trop grands sont rapidement confrontés au problème de données sparse, cela réduit la capacité prédictive des modèles ;
-* les performances décroissent très rapidement en fonction de n, et les coûts de stockage des données augmentent rapidement (environ n fois plus élevé que la base de donnée initiale).
+* les performances décroissent très rapidement en fonction de n, et les coûts de stockage des données augmentent rapidement (environ n fois plus élevé que la base de données initiale).
 
-{{% panel status="exercise" title="Exercise" icon="fas fa-pencil-alt" %}}
+
+{{% panel status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+
+**Exercice 7  : n-grams et contexte du mot fear** 
 
 On va, rapidement, regarder dans quel contexte apparaît le mot `fear` dans
 l'oeuvre d'Edgar Allan Poe (EAP). Pour cela, on transforme d'abord
-le corpus EAP en tokens `NLTK`
+le corpus EAP en tokens `nltk` : 
 
 ```{python, echo = TRUE}
 eap_clean = train_clean[train_clean["Author"] == "EAP"]
 eap_clean = ' '.join(eap_clean['Text'])
 #Tokenisation naïve sur les espaces entre les mots => on obtient une liste de mots
 tokens = eap_clean.split()
+print(tokens[:10])
 text = nltk.Text(tokens)
+print(text)
 ```
 
 1. Utiliser la méthode `concordance` pour afficher le contexte dans lequel apparaît le terme `fear`. La liste devrait ressembler à celle-ci:
 
-```{python, echo = FALSE}
-# Question 1
+```{python}
+#| include: false
+#| echo: false
+
+# 1. Methode concordance
 print("Exemples d'occurences du terme 'fear' :")
 text.concordance("fear")
 print('\n')
@@ -632,27 +764,38 @@ apparaissent le plus fréquemment ensemble. Parmi toutes les paires de deux mots
 
 2. Sélectionner et afficher les meilleures collocation, par exemple selon le critère du ratio de vraisemblance. 
 
-Une approche ingénue de la `collocation` amène ainsi à considérer les mots suivants: 
+Vous aurez besoin des fonctions ` BigramCollocationFinder.from_words` et `BigramAssocMeasures.likelihood_ratio` : 
 
-```{python}
-# Question 2
+```{python, echo=TRUE}
 from nltk.collocations import BigramCollocationFinder
 from nltk.metrics import BigramAssocMeasures
+```
+
+Une approche ingénue de la `collocation` amène ainsi à considérer les mots suivants : 
+
+```{python}
+#| include: false
+#| echo: false
+
+# 2. Modélisation des meilleures collocations
 bcf = BigramCollocationFinder.from_words(text)
 bcf.nbest(BigramAssocMeasures.likelihood_ratio, 20)
 ```
 
-Si ces mots sont très fortement associés, les expressions sont également peu fréquentes. Il est donc parfois nécessaire d'appliquer des filtres, par exemple ignorer les bigrammes qui apparaissent moins de 5 fois dans le corpus.
 
-3. Refaire la question précédente mais, avant cela, utiliser un modèle `BigramCollocationFinder` et la méthode `apply_freq_filter` pour ne conserver que les bigrammes présents au moins 5 fois. 
+
+Lorsque deux mots sont fortement associés, cela est parfois dû au fait qu'ils apparaissent rarement. Il est donc parfois nécessaire d'appliquer des filtres, par exemple ignorer les bigrammes qui apparaissent moins de 5 fois dans le corpus.
+
+3. Refaire la question précédente en utilisant toujours un modèle `BigramCollocationFinder` suivi de la méthode `apply_freq_filter` pour ne conserver que les bigrammes présents au moins 5 fois. Puis, au lieu d'utiliser la méthode de maximum de vraisemblance, testez la méthode `nltk.collocations.BigramAssocMeasures().jaccard`.
 
 ```{python}
+#| include: false
+#| echo: false
+
+# 3. Modélisation des meilleures collocations (qui apparaissent 5+)
 finder = nltk.BigramCollocationFinder.from_words(text)
-
 finder.apply_freq_filter(5)
-
 bigram_measures = nltk.collocations.BigramAssocMeasures()
-
 collocations = finder.nbest(bigram_measures.jaccard, 15) 
 
 for collocation in collocations:
@@ -660,11 +803,15 @@ for collocation in collocations:
     print(c)
 ```
 
-Cette liste a un peu plus de sens, on a des noms de personnages, de lieux mais aussi des termes fréquemment employés ensemble (*Chess Player* par exemple)
+Cette liste a un peu plus de sens, on a des noms de personnages, de lieux mais aussi des termes fréquemment employés ensemble (*Chess Player* par exemple).
 
-3. Ne s'intéresser qu'aux *collocations* qui concernent le mot *fear*
+4. Ne s'intéresser qu'aux *collocations* qui concernent le mot *fear*
 
 ```{python}
+#| include: false
+#| echo: false
+
+# 4. collocations du mot fear
 bigram_measures = nltk.collocations.BigramAssocMeasures()
 
 def collocations_word(word = "fear"):
@@ -678,15 +825,16 @@ def collocations_word(word = "fear"):
     # return the 100 n-grams with the highest PMI
     print(finder.nbest(bigram_measures.likelihood_ratio,100))
     
-collocations_word("word")
+collocations_word("fear")
 ```
 
-
-{{% /panel %}}
-
-Si on mène la même analyse pour le terme *love*, on remarque que de manière logique, on retrouve bien des sujets généralement accolés au verbe:
+Si on mène la même analyse pour le terme *love*, on remarque que de manière logique, on retrouve bien des sujets généralement accolés au verbe :
 
 ```{python, echo = FALSE}
 collocations_word("love")
 ```
+
+{{% /panel %}}
+
+
 
