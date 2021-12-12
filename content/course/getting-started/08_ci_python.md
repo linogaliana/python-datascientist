@@ -27,6 +27,7 @@ document faisant parti d'un projet informatique.
 Cette pratique permet ainsi de détecter de manière précoce des possibilités
 de *bug* ou l'introduction d'un changement non anticipé. Tout comme `Git`,
 cette pratique devient un standard dans les domaines collaboratifs.
+
 L'intégration continue permet de sécuriser le travail, puisqu'elle offre un
 filet de sécurité (par exemple un test sur une machine à la configuration
 arbitraire), mais permet aussi de déployer en temps réel certaines
@@ -79,12 +80,15 @@ Il est également possible de
 l'utiliser avec un dépôt stocké sur `Github`. L'inconvénient de cette approche
 est qu'elle est assez lente.
 * `Github Actions`: c'est l'alternative (relativement récente) au service d'intégration continue de
-Gitlab uniquement basée sur les technologies Github.
-* `Travis CI`: un service externe d'intégration continue qui peut être connecté
-à `Github` ou `Gitlab`. Les *pipelines* Travis ont l'avantage d'être assez
-rapides. Cette solution convient néanmoins pour des *pipelines* moins complexes
-que ceux de `Gitlab CI`
+Gitlab uniquement basée sur les technologies Github. La très forte
+dynamique de développement a rendu ce service incontournable.
 
+Historiquement, il existait d'autres services d'intégration continue, notamment
+`Travis CI` ou `AppVeyor`[^1]
+
+[^1]: Ces services d'intégration continue étaient utilisés lorsque `Github`
+ne proposait pas encore de service intégré, comme le faisait `Gitlab`.
+Ils sont de moins en moins fréquemment utilisés.
 
 ## Intégration continue avec `Python`: tester un notebook
 
