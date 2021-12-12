@@ -90,16 +90,44 @@ Historiquement, il existait d'autres services d'intégration continue, notamment
 ne proposait pas encore de service intégré, comme le faisait `Gitlab`.
 Ils sont de moins en moins fréquemment utilisés.
 
+## Fonctionnement des actions Github
+
+Les actions `Github` fonctionnent par couches successives au sein desquelles
+on effectue un certain nombre d'instructions. 
+La meilleure manière d'apprendre les actions `Github` est de lire la
+documentation officielle 
+et regarder quelques *pipelines* pour comprendre la démarche. 
+L'un des intérêts des Github Actions est la possibilité d'avoir un *pipeline*
+proposant une intrication de langages différents pour avoir une chaine de 
+production qui propose les outils les plus efficaces pour répondre à un
+objectif en limitant les verrous techniques. 
+Par exemple, le *pipeline* de ce cours propose une intrication des langages
+Python et R avec des technologies anaconda et javascript pour permettre que
+les mêmes fichiers sources génèrent un site web et des notebooks disponibles
+sur plusieurs environnements. https://github.com/linogaliana/python-datascientist/blob/master/.github/workflows/prod.yml
+
+
+Ces couches sont des étapes du *pipeline* et portent ainsi le nom de `steps`.
+
+https://github.com/linogaliana/python-datascientist/blob/master/.github/workflows/prod.yml
+
+
 ## Intégration continue avec `Python`: tester un notebook
 
 Cette section n'est absolument pas exaustive. Au contraire, elle ne fournit
 qu'un exemple minimal pour expliquer la logique de l'intégration continue. Il
 ne s'agit ainsi pas d'une garantie absolue de reproductibilité d'un *notebook*.
 
+`Github` propose une action officielle pour utiliser `Python` dans un
+*pipeline* d'intégration continue. Elle est disponible sur le
+[MarketPlace Github](https://github.com/marketplace/actions/setup-python).
+Il s'agit d'un bon point de départ, à enrichir
+
+
 ### Lister les dépendances
 
-Avant d'écrire les instructions à exécuter par `Travis`, il faut définir un
-environnement d'exécution car `Travis` ne connaît pas la configuration `Python`
+Avant d'écrire les instructions à exécuter par `Github`, il faut définir un
+environnement d'exécution car `Github` ne connaît pas la configuration `Python`
 dont vous avez besoin.
 
 Il convient ainsi de lister les dépendances nécessaires dans un fichier
