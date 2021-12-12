@@ -189,7 +189,7 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE, split = NULL,
 }
 
 
-print_badges <- function(fpath = NULL, onyxia_only = FALSE, split = 4){
+print_badges <- function(fpath = NULL, onyxia_only = FALSE, split = NULL){
   if (is.null(fpath)){
     fpath <- knitr::current_input(dir = TRUE)
   }
