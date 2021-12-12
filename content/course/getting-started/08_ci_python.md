@@ -2,8 +2,8 @@
 jupyter:
   jupytext:
     text_representation:
-      extension: .md
-      format_name: markdown
+      extension: .Rmd
+      format_name: rmarkdown
       format_version: '1.2'
       jupytext_version: 1.6.0
   kernelspec:
