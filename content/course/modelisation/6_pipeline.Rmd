@@ -156,7 +156,10 @@ prix.
 Ces données peuvent être importées directement depuis [`data.gouv`](https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres/):
 
 ```{python}
+import numpy as np
 import pandas as pd
+import seaborn as sns
+
 mutations = pd.read_csv('https://www.data.gouv.fr/fr/datasets/r/3004168d-bec4-44d9-a781-ef16f41856a2', sep = "|", decimal=",")
 ```
 
@@ -188,8 +191,6 @@ de surface disponibles dans le jeu de données. En effet, les variables
 en question sont très corrélées les unes entre elles :
 
 ```{python}
-import seaborn as sns
-
 corr = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].corr()
 sns.heatmap(corr, 
             xticklabels=corr.columns.values,
@@ -203,4 +204,129 @@ de variable pourrait amener à nier
 
 ```{python}
 mutations['surface'] = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].sum(axis = 1)
+```
+
+
+# Un premier pipeline: *random forest* sur des variables standardisées
+
+Notre premier *pipeline* va nous permettre d'intégrer ensemble:
+
+1. Une étape de *preprocessing* avec la standardisation de variables
+2. Une étape d'estimation du prix en utilisant un modèle de *random forest*
+
+Pour le moment, on va prendre comme acquis un certain nombre de variables
+explicatives (les *features*) et les hyperparamètres du modèle
+
+## Préalable : quelques méthodes pour gagner en flexibilité dans le preprocessing
+
+Notre *dataframe* comporte des types hétérogènes de variables:
+
+* Des variables numériques dont les variances sont très hétérogènes
+* Des variables textuelles qui mériteraient un recodage sous forme numérique
+* Des variables discrètes dont les modalités devraient être éclatées (_one hot encoding_)
+
+Pour gagner en flexibilité, nous allons proposer certaines méthodes qui permettent
+d'appliquer les étapes de _preprocessing_ adéquates à un sous-ensemble de 
+variables[^1]. 
+
+[^1]: Un certain nombre des éléments suivants ont été glannés, par ci par là,
+depuis `stackoverflow`.
+
+Pour cela, il convient d'adopter l'approche de la programmation orientée objet. 
+On va créer des classes avec des méthodes `transform` et `fit_transform`
+qui pourront ainsi être intégrées directement dans les *pipelines*, comme s'il
+s'agissait de méthodes issues de `scikit`.
+
+La première généralise `LabelEncoder` à un sous-ensemble de colonnes:
+
+```{python}
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+
+class MultiColumnLabelEncoder:
+    def __init__(self,columns = None):
+        self.columns = columns # array of column names to encode
+
+    def fit(self,X,y=None):
+        return self # not relevant here
+
+    def transform(self,X):
+        '''
+        Transforms columns of X specified in self.columns using
+        LabelEncoder(). If no columns specified, transforms all
+        columns in X.
+        '''
+        output = X.copy()
+        if self.columns is not None:
+            for col in self.columns:
+                output[col] = LabelEncoder().fit_transform(output[col])
+        else:
+            for colname,col in output.iteritems():
+                output[colname] = LabelEncoder().fit_transform(col)
+        return output
+
+    def fit_transform(self,X,y=None):
+        return self.fit(X,y).transform(X)
+```
+
+La seconde généralise cette fois le *one hot encoding* a un sous ensemble de 
+fonctions
+
+```{python}
+class MultiColumnOneHotEncoder:
+    def __init__(self,columns = None):
+        self.columns = columns # array of column names to encode
+
+    def fit(self,X,y=None):
+        return self # not relevant here
+
+    def transform(self,X):
+        '''
+        Transforms columns of X specified in self.columns using
+        LabelEncoder(). If no columns specified, transforms all
+        columns in X.
+        '''
+        output = X.copy()
+        if self.columns is not None:
+            for col in self.columns:
+                output[col] = OneHotEncoder(sparse=False).fit_transform(output[col])
+        else:
+            for colname,col in output.iteritems():
+                output[colname] = OneHotEncoder(sparse=False).fit_transform(col)
+        return output
+
+    def fit_transform(self,X,y=None):
+        return self.fit(X,y).transform(X)
+```
+
+Les méthodes suivantes vont nous permettre de passer en arguments les noms
+de colonnes pour intégrer la récupération des bonnes colonnes de nos
+dataframes dans le pipeline:
+
+```{python}
+from sklearn.base import BaseEstimator, TransformerMixin, RegressorMixin
+
+class Columns(BaseEstimator, TransformerMixin):
+    def __init__(self, names=None):
+        self.names = names
+
+    def fit(self, X, y=None, **fit_params):
+        return self
+
+    def transform(self, X):
+        return X[self.names]
+
+class Normalize(BaseEstimator, TransformerMixin):
+    def __init__(self, func=None, func_param={}):
+        self.func = func
+        self.func_param = func_param
+
+    def transform(self, X):
+        if self.func != None:
+            return self.func(X, **self.func_param)
+        else:
+            return X
+
+    def fit(self, X, y=None, **fit_params):
+        return self
 ```
