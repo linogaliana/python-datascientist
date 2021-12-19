@@ -153,3 +153,54 @@ Nous allons utiliser les données de transactions immobilières DVF pour cherche
 la meilleure manière de prédire, sachant les caractéristiques d'un bien, son
 prix.
 
+Ces données peuvent être importées directement depuis [`data.gouv`](https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres/):
+
+```{python}
+import pandas as pd
+mutations = pd.read_csv('https://www.data.gouv.fr/fr/datasets/r/3004168d-bec4-44d9-a781-ef16f41856a2', sep = "|", decimal=",")
+```
+
+On propose
+
+```{python}
+mutations['Date mutation'] = pd.to_datetime(mutations['Date mutation'], format = "%d/%m/%Y")
+mutations['year'] = mutations['Date mutation'].dt.year
+mutations['month'] = mutations['Date mutation'].dt.month
+mutations['dep'] = mutations['Code postal'].astype(str).str[:2]
+mutations['lprix'] = np.log(mutations["Valeur fonciere"])
+mutations['confinement'] = mutations['Date mutation'].between(pd.to_datetime("2020-03-17"), pd.to_datetime("2020-05-03")).astype(int)
+```
+
+Si vous travaillez avec les données de 2020, n'oubliez pas
+d'intégrer l'effet
+confinement strict dans vos modèles. Pour cela, vous pouvez créer une variable
+indicatrice entre les dates en question:
+
+```{python}
+mutations['confinement'] = mutations['Date mutation'].between(pd.to_datetime("2020-03-17"), pd.to_datetime("2020-05-03")).astype(int)
+```
+
+Les données DVF proposent une observation par transaction. Ces transactions
+peuvent concerner plusieurs lots.
+Pour simplifier,
+on va créer une variable de surface qui agrège les différentes informations
+de surface disponibles dans le jeu de données. En effet, les variables
+en question sont très corrélées les unes entre elles :
+
+```{python}
+import seaborn as sns
+
+corr = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].corr()
+sns.heatmap(corr, 
+            xticklabels=corr.columns.values,
+            yticklabels=corr.columns.values, annot = True)
+```
+
+Les agréger revient à supposer que le modèle de fixation des prix est le même
+entre chaque lot. C'est une hypothèse simplificatrice qu'une personne plus 
+experte du marché immobilier, ou qu'une approche propre de sélection
+de variable pourrait amener à nier 
+
+```{python}
+mutations['surface'] = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].sum(axis = 1)
+```
