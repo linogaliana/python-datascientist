@@ -10,7 +10,7 @@ jupyter:
     display_name: Python 3
     language: python
     name: python3
-title: "Latent Dirichlet Association (LDA)"
+title: "Latent Dirichlet Allocation (LDA)"
 date: 2020-10-29T13:00:00Z
 draft: false
 weight: 30
@@ -35,7 +35,6 @@ dir_path <- gsub(here::here(), "..", here::here("course","NLP"))
 knitr::knit_hooks$set(
   plot = function(x, options) modif_plot(x, options, dir_path = dir_path)
 )
-knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r, echo = FALSE, results = 'asis', include = TRUE, eval = TRUE}
@@ -64,6 +63,12 @@ Ce notebook librement inspiré de  :
 * https://www.kaggle.com/enerrio/scary-nlp-with-spacy-and-keras
 * https://github.com/GU4243-ADS/spring2018-project1-ginnyqg
 * https://www.kaggle.com/meiyizi/spooky-nlp-and-topic-modelling-tutorial/notebook
+
+La LDA est une technique d'estimation bayésienne.
+Le [poly d'Alberto Brietti](http://alberto.bietti.me/files/rapport-lda.pdf)
+sur le sujet constitue une très bonne ressource pour comprendre
+les fondements de cette technique. 
+
 
 ## Librairies nécessaires
 
@@ -109,7 +114,6 @@ from time import time
 # from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS as stopwords
 from sklearn.metrics import log_loss
 import matplotlib.pyplot as plt
-from pywaffle import Waffle
 
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
@@ -171,9 +175,9 @@ train_clean.head(2)
 
 ## Principe de la LDA (Latent Dirichlet Allocation)
 
-Le modèle Latent Dirichlet Allocation (LDA) est un modèle probabiliste génératif qui permet
+Le modèle __Latent Dirichlet Allocation (LDA)__ est un modèle probabiliste génératif qui permet
 de décrire des collections de documents de texte ou d’autres types de données discrètes. LDA fait
-partie d’une catégorie de modèles appelés “topic models”, qui cherchent à découvrir des structures
+partie d’une catégorie de modèles appelés _“topic models”_, qui cherchent à découvrir des structures
 thématiques cachées dans des vastes archives de documents.
 
 
@@ -186,15 +190,17 @@ Aujourd’hui, ce genre de méthodes s’utilisent fréquemment dans le web, par
 analyser des ensemble d’articles d’actualité, les regrouper par sujet, faire de la recommendation
 d’articles, etc. 
 
-LDA assumes documents are produced from a mixture of topics. Those topics then generate words based on their probability distribution. Given a dataset of documents, LDA backtracks and tries to figure out what topics would create those documents in the first place.
+La LDA est une méthode qui considère les corpus comme des __mélanges__ de sujets et
+de mots. Chaque document peut être représenté comme le résultat d'un mélange :
 
-La LDA est une méthode qui considère les corpus comme des mélanges de sujets et
-de mots. Chaque document peut être représenté comme le résutlat d'un mélange
-de sujets et, au sein de ces sujets, d'un choix de mots. L’estimation des
+* de sujets
+* et, au sein de ces sujets, d'un choix de mots.
+
+L’estimation des
 paramètres de la LDA passe par l’estimation des distributions des variables
 latentes à partir des données observées (*posterior inference*). 
 Mathématiquement, on peut se représenter la LDA comme une 
-technique de maximisation de log vraisemblance avec un algorithme EM
+technique de maximisation de *log vraisemblance* avec un algorithme EM (*expectation maximisation*)
 dans un modèle de mélange.
 
 La matrice termes-documents qui sert de point de départ est la suivante:
@@ -211,9 +217,11 @@ La LDA consiste à transformer cette matrice *sparse*
 1. Une matrice document-sujet
 2. Une matrice sujet-mots
 
+On dit que cette matrice est sparse car elle contient principalement des 0. En effet, un document n'utilise qu'une partie mineure du vocabulaire complet. 
+
 En notant $K_i$ le sujet $i$. On obtient donc
 
-* Une matrice document-sujet ayant la structure suivante:
+* Une __matrice document-sujet__ ayant la structure suivante:
 
 |     | K_1 | K_2 | K_3 | ... | K_M |
 |---- |--------|--------|--------|-----|--------|
@@ -221,7 +229,7 @@ En notant $K_i$ le sujet $i$. On obtient donc
 | ... | ...    | ...    | ...    | ... | ...    |
 |doc_N| 1      | 1      | 1      | ... | 0      |
 
-* Une matrice sujets-mots ayant la structure suivante:
+* Une __matrice sujets-mots__ ayant la structure suivante:
 
 |     | word_1 | word_2 | word_3 | ... | word_J |
 |---- |--------|--------|--------|-----|--------|
@@ -237,16 +245,21 @@ Ces deux matrices ont l'interprétation suivante :
 En fait, le principe de la LDA est de construire ces deux matrices à partir des fréquences d'apparition des mots dans le texte. 
 
 
-
 On va se concentrer sur Edgar Allan Poe. 
-
-**Détails à venir**
-
 
 ```{python}
 corpus = train_clean[train_clean["Author"] == "EAP"]
 ```
 
+## Entraîner une LDA
+
+Il existe plusieurs manières d'entraîner une LDA.
+
+Nous allons utiliser `scikit` ici avec la méthode `LatentDirichletAllocation`.
+Comme expliqué dans la partie [modélisation](#modelisation):
+
+1. On initialise le modèle
+2. On le met à jour avec la méthode `fit`
 
 ```{python}
 from sklearn.feature_extraction.text import CountVectorizer
@@ -256,16 +269,6 @@ from sklearn.decomposition import LatentDirichletAllocation
 count_vectorizer = CountVectorizer(stop_words='english')# Fit and transform the processed titles
 count_data = count_vectorizer.fit_transform(corpus['tokenized'].apply(lambda s: ' '.join(s)))
 
-# Load the LDA model from sk-learn
- 
-# Helper function
-def print_topics(model, count_vectorizer, n_top_words):
-    words = count_vectorizer.get_feature_names()
-    for topic_idx, topic in enumerate(model.components_):
-        print("\nTopic #%d:" % topic_idx)
-        print(" ".join([words[i]
-                        for i in topic.argsort()[:-n_top_words - 1:-1]]))
-        
 # Tweak the two parameters below
 number_topics = 5
 number_words = 10# Create and fit the LDA model
@@ -274,40 +277,70 @@ lda = LatentDirichletAllocation(n_components=11, max_iter=5,
                                 learning_offset = 50.,
                                 random_state = 0,
                                 n_jobs = 1)
-lda.fit(count_data)# Print the topics found by the LDA model
-print("Topics found via LDA:")
+lda.fit(count_data)
+```
+
+## Visualiser les résultats
+
+On peut déjà commencer par utiliser une fonction pour afficher les
+résultats
+
+```{python}
+# Helper function
+def print_topics(model, count_vectorizer, n_top_words):
+    words = count_vectorizer.get_feature_names()
+    for topic_idx, topic in enumerate(model.components_):
+        print("\nTopic #%d:" % topic_idx)
+        print(" ".join([words[i]
+                        for i in topic.argsort()[:-n_top_words - 1:-1]]))
+
 print_topics(lda, count_vectorizer, number_words)
 ```
 
-```{python, eval = FALSE, echo = TRUE}
-import pyLDAvis
-import pyLDAvis.sklearn
 
-# pyLDAvis.enable_notebook()
-pyLDAvis.sklearn.prepare(lda, count_data, count_vectorizer, n_jobs = 1)
+La représentation sous forme de liste de mots n'est pas la plus pratique...
+
+On peut essayer de se représenter un *wordcloud* de chaque sujet pour mieux voir si cette piste est pertinente:
+
+```{python, results = "hide"}
+tf_feature_names = count_vectorizer.get_feature_names()
+
+def wordcloud_lda(lda, tf_feature_names):
+
+  fig, axs = plt.subplots(len(lda.components_) // 3 + 1, 3)
+  
+  for i in range(len(lda.components_)):
+      corpus_lda = lda.components_[i]
+      first_topic_words = [tf_feature_names[l] for l in corpus_lda.argsort()[:-50-1:-1]]
+      k = i // 3
+      j = (i - k*3)
+      wordcloud = WordCloud(stopwords=stop_words, background_color="black",width = 2500, height = 1800)
+      wordcloud = wordcloud.generate(" ".join(first_topic_words))
+      axs[k][j].set_title("Wordcloud pour le \nsujet {}".format(i))
+      axs[k][j].axis('off')
+      axs[k][j].imshow(wordcloud)
+  
+  r = len(lda.components_) % 3
+  [fig.delaxes(axs[len(lda.components_) // 3,k-1]) for k in range(r+1, 3+1) if r != 0]
+
+wc = wordcloud_lda(lda, tf_feature_names)
+wc
+```
+
+```{python, echo = FALSE}
+wc
+plt.savefig('wordcloud_lda.png', bbox_inches='tight')
+```
+
+```{r, echo = FALSE}
+knitr::include_graphics("wordcloud_lda.png")
 ```
 
 
-{{< rawhtml >}}
-
-```{python, eval = TRUE, echo = FALSE}
-import pyLDAvis
-import pyLDAvis.sklearn
-
-# pyLDAvis.enable_notebook()
-pyLDAvis.prepared_data_to_html(
-  pyLDAvis.sklearn.prepare(lda, count_data, count_vectorizer, n_jobs = 1)
-)
-```
-
-{{< /rawhtml >}}
-
-
-
-{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 Le module `pyLDAvis` offre quelques visualisations bien pratiques lorsqu'on
 désire représenter de manière synthétique les résultats d'une LDA
 
+{{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 Dans un *notebook*
 
 ~~~python
@@ -324,4 +357,37 @@ argument.
 
 {{% /panel %}}
 
+```{python, eval = FALSE, echo = TRUE}
+import pyLDAvis
+import pyLDAvis.sklearn
 
+# pyLDAvis.enable_notebook()
+vis_data = pyLDAvis.sklearn.prepare(lda, count_data, count_vectorizer, n_jobs = 1)
+pyLDAvis.display(vis_data)
+```
+
+
+{{< rawhtml >}}
+
+```{python, eval = TRUE, echo = FALSE, results = "hide"}
+import pyLDAvis
+import pyLDAvis.sklearn
+
+vis_data = pyLDAvis.sklearn.prepare(lda, count_data, count_vectorizer, n_jobs = 1)
+```
+
+
+```{python, eval = TRUE, echo = FALSE, results = "asis", width = "40%"}
+print(
+  pyLDAvis.prepared_data_to_html(vis_data)
+)
+```
+
+{{< /rawhtml >}}
+
+
+
+
+# Références
+
+* Le [poly d'Alberto Brietti](http://alberto.bietti.me/files/rapport-lda.pdf)
