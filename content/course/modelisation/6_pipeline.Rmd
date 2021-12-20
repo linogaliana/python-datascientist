@@ -163,7 +163,8 @@ import seaborn as sns
 mutations = pd.read_csv('https://www.data.gouv.fr/fr/datasets/r/3004168d-bec4-44d9-a781-ef16f41856a2', sep = "|", decimal=",")
 ```
 
-On propose
+On propose d'enrichir la base de quelques variables qui pourraient servir
+ultérieurement:
 
 ```{python}
 mutations['Date mutation'] = pd.to_datetime(mutations['Date mutation'], format = "%d/%m/%Y")
@@ -171,7 +172,6 @@ mutations['year'] = mutations['Date mutation'].dt.year
 mutations['month'] = mutations['Date mutation'].dt.month
 mutations['dep'] = mutations['Code postal'].astype(str).str[:2]
 mutations['lprix'] = np.log(mutations["Valeur fonciere"])
-mutations['confinement'] = mutations['Date mutation'].between(pd.to_datetime("2020-03-17"), pd.to_datetime("2020-05-03")).astype(int)
 ```
 
 Si vous travaillez avec les données de 2020, n'oubliez pas
@@ -330,3 +330,44 @@ class Normalize(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None, **fit_params):
         return self
 ```
+
+## Définition des ensembles de tests
+
+Nous allons donc nous restreindre à un sous-ensemble de colonnes dans un
+premier temps :
+
+```{python}
+xvars = ['dep', 'Nombre de lots', 'Code type local', 'surface', 'Nombre pieces principales']
+xvars2 = pd.Series(xvars).str.replace(" ","_").tolist()
+
+mutations2 = mutations.loc[:, xvars + ["Valeur fonciere"]]
+```
+
+Nous allons également ne conserver que les transactions inférieures à 5 millions
+d'euros (on anticipe que celles ayant un montant supérieur sont des transactions
+exceptionnelles dont le mécanisme de fixation du prix diffère)
+
+```{python}
+mutations2  = mutations2.dropna()
+mutations2 = mutations2.loc[mutations2['Valeur fonciere'] < 5e6] #keep only values below 10 millions
+
+mutations2.columns = mutations2.columns.str.replace(" ", "_")
+numeric_features = mutations2.columns[~mutations2.columns.isin(['dep','Code_type_local', 'confinement'])].tolist()
+categorical_features = ['dep','Code_type_local']
+```
+
+Au passage, nous avons abandonné la variable de code postal pour privilégier
+la commune afin de réduire la dimension de notre jeu de données. Si on voulait
+vraiment avoir un bon modèle, il faudrait faire autrement car le code postal
+est probablement un très bon prédicteur du prix d'un bien, une fois que
+les caractéristiques du bien sont contrôlées.
+
+Nous allons stratifier notre échantillonage de train/test par département
+afin de tenir compte, de manière minimale, de la géographie.
+
+```{python}
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(mutations2[xvars2], mutations2[["Valeur_fonciere"]].values.ravel(), test_size = 0.2, random_state = 0, stratify=mutations2[['dep']])
+```
+
