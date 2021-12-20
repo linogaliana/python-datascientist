@@ -64,9 +64,13 @@ Ils présentent de nombreux intérêts, parmi lesquels:
 
 {{% panel status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 Un des intérêts des *pipelines* scikit est qu'ils fonctionnent aussi avec
-des méthodes qui ne sont pas issues de `scikit`. Il est très 
+des méthodes qui ne sont pas issues de `scikit`.
+
+Il est très 
 facile d'introduire un modèle de réseau de neurone `Keras` dans
-un pipeline `scikit`. Pour introduire un modèle économétrique `statsmodels`
+un pipeline `scikit`.
+
+Pour introduire un modèle économétrique `statsmodels`
 c'est un peu plus coûteux mais nous allons proposer des exemples
 qui peuvent servir de modèle et qui montrent que c'est faisable 
 sans trop de difficulté.
@@ -194,8 +198,15 @@ en question sont très corrélées les unes entre elles :
 corr = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].corr()
 sns.heatmap(corr, 
             xticklabels=corr.columns.values,
-            yticklabels=corr.columns.values, annot = True)
+            yticklabels=corr.columns.values, cmap='coolwarm', annot=True, fmt=".2f")
+plt.savefig('correlation_matrix_dvf.png', bbox_inches='tight')
 ```
+
+```{r, echo = FALSE}
+knitr::include_graphics('correlation_matrix_dvf.png')
+```
+
+
 
 Les agréger revient à supposer que le modèle de fixation des prix est le même
 entre chaque lot. C'est une hypothèse simplificatrice qu'une personne plus 
@@ -269,7 +280,7 @@ class MultiColumnLabelEncoder:
         return self.fit(X,y).transform(X)
 ```
 
-La seconde généralise cette fois le *one hot encoding* a un sous ensemble de 
+La seconde généralise cette fois le *one hot encoding* à un sous ensemble de 
 fonctions
 
 ```{python}
@@ -331,7 +342,7 @@ class Normalize(BaseEstimator, TransformerMixin):
         return self
 ```
 
-## Définition des ensembles de tests
+## Définition des ensembles train/test
 
 Nous allons donc nous restreindre à un sous-ensemble de colonnes dans un
 premier temps :
@@ -370,4 +381,33 @@ from sklearn.model_selection import train_test_split
 
 X_train, X_test, y_train, y_test = train_test_split(mutations2[xvars2], mutations2[["Valeur_fonciere"]].values.ravel(), test_size = 0.2, random_state = 0, stratify=mutations2[['dep']])
 ```
+
+## Définition du premier pipeline
+
+from sklearn.ensemble import RandomForestRegressor
+
+regr = RandomForestRegressor(max_depth=2, random_state=0)
+
+pipe = Pipeline([
+    ("features", FeatureUnion([
+        ('numeric', make_pipeline(Columns(names=numeric_features[:-1]),StandardScaler())),
+        ('categorical', make_pipeline(Columns(names=categorical_features),OneHotEncoder(sparse=False)))
+    ])),
+    ('randomforest', RandomForestRegressor())
+])
+
+pipe.fit(X_train, y_train)
+
+
+compar = pd.DataFrame([y_test, pipe.predict(X_test)]).T
+compar.columns = ['obs','pred']
+compar['diff'] = compar.obs - compar.pred
+
+print("Le RMSE sur le jeu de test est {:,}".format(
+   int(np.sqrt(mean_squared_error(y_test, pipe.predict(X_test))))
+))
+
+g = sns.scatterplot(data = compar, x = 'obs', y = 'pred', ax = ax)
+plt.axvline(1e6, color='r', linestyle = '--')
+plt.axhline(1e6, color='r', linestyle = '--')
 
