@@ -459,9 +459,81 @@ ce _pipeline_ opère:
 pipe
 ```
 
+Maintenant, il ne reste plus qu'à estimer notre modèle sur l'ensemble
+d'entraînement. C'est très simple avec un _pipeline_ : il suffit d'utiliser
+de mettre à jour le _pipeline_ avec la méthode `fit`
 
-
+```{python}
 pipe.fit(X_train, y_train)
+```
+
+## Variable importance
+
+Pour le moment, on va utiliser un *hack* pour récupérer le `DataFrame`
+suite au preprocessing. 
+
+```{python}
+class Debug(BaseEstimator, TransformerMixin):
+
+    def transform(self, X):
+        #print(X.shape)
+        #self.shape = shape
+        # what other output you want
+        return X
+
+    def fit(self, X, y=None, **fit_params):
+        return self
+
+pipe_deb = Pipeline([
+    ("features", FeatureUnion([
+        ('numeric', make_pipeline(Columns(names=numeric_features[:-1]),StandardScaler())),
+        ('categorical', make_pipeline(Columns(names=categorical_features),OneHotEncoder(sparse=False)))
+    ])),
+    ("debug", Debug())#,    
+#    ('randomforest', regr)
+])
+
+X_train_mod = pipe_deb.fit_transform(X_train)
+features_post_processing = pd.DataFrame(X_train_mod.tolist())
+```
+
+Celui-ci ne serait pas nécessaire, en soi, si on voulait utiliser les 
+fonctionalités de `scikit` (le _pipeline_ est géré de manière cohérente)
+mais c'est nécessaire si on veut utiliser `yellowbrick` pour faire
+l'analyse d'importance de variables
+
+On ne va représenter, parmi notre ensemble important de colonnes, que celles
+qui ont une importance non nulle. L'importance va être définie à partir 
+de la mesure d'impureté [A DEFINIR]
+
+```{python}
+importances = pipe['randomforest'].feature_importances_
+std = np.std([tree.feature_importances_ for tree in pipe['randomforest'].estimators_], axis=0)
+
+forest_importances = pd.Series(importances, index=features_post_processing.columns)
+
+forest_importances = pd.Series(importances, index=features_post_processing.columns)
+forest_importances
+
+fig, ax = plt.subplots()
+forest_importances[forest_importances>0].plot.bar(yerr=std[forest_importances>0], ax=ax)
+ax.set_title("Feature importances using MDI")
+ax.set_ylabel("Mean decrease in impurity")
+fig.tight_layout()
+```
+
+Idéalement, on utiliserait `yellowbrick` pour représenter l'importance des variables
+Mais en l'état actuel du *pipeline* on a beaucoup de variables dont le poids
+est nul qui viennent polluer la visualisation
+
+```{python}
+from yellowbrick.model_selection import FeatureImportances
+viz = FeatureImportances(pipe['randomforest'])
+viz.fit()
+viz.show()
+```
+
+## Prédiction
 
 
 compar = pd.DataFrame([y_test, pipe.predict(X_test)]).T
