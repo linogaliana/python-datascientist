@@ -469,8 +469,26 @@ de variables)
 [^4]: Voir ce [*thread stackoverflow*](https://stackoverflow.com/questions/54646709/sklearn-pipeline-get-feature-names-after-onehotencode-in-columntransformer)
 
 
+```{python}
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.compose import make_column_transformer
+
+numeric_pipeline = make_pipeline(
+  #SimpleImputer(),
+  StandardScaler()
+)
+transformer = make_column_transformer(
+    (numeric_pipeline, numeric_features[:-1]),
+    (OneHotEncoder(sparse = False), categorical_features))
+pipe = Pipeline(steps=[('preprocessor', transformer),
+                      ('randomforest', regr)])
+```
+
+
 Nous avons construit ce pipeline sous forme de couches successives. La couche
-`randomforest` prendra automatiquement le résultat de la couche `features`
+`randomforest` prendra automatiquement le résultat de la couche `preprocessor`
 en _input_. La couche `features` permet d'introduire de manière relativement
 simple (quand on a les bonnes méthodes) la complexité du *preprocessing*
 sur données réelles dont les types divergent. 
@@ -499,42 +517,61 @@ de mettre à jour le _pipeline_ avec la méthode `fit`
 pipe.fit(X_train, y_train)
 ```
 
+On peut utiliser le nom du pipeline en conjonction de certaines méthodes
+pour appliquer cette étape sur un jeu de données pour visualiser
+l'effet de la transformation.
+
+Par exemple, pour visualiser le jeu de données transformé avant l'étape
+d'estimation, on peut 
+faire
+
+```{python}
+pipe[:-1].fit_transform(X_train)
+```
+
+De même, si on veut récupérer le nom des *features* en sortie du preprocessing,
+on utilisera la méthode `.get_feature_names_out` qui est bien pratique
+(c'est cette méthode qui est plus complexe à appeler dans les versions `scikit`
+ancienne qui nous a fait privilégier le *pipeline* ci-dessous)
+
+```{python}
+features_names=pipe['preprocessor'].get_feature_names_out()
+features_names
+```
+
+
 ## Variable importance
 
-Pour le moment, on va utiliser un *hack* pour récupérer le `DataFrame`
-suite au preprocessing. 
-
-```
-X_train_mod = pipe_deb.fit_transform(X_train)
-features_post_processing = pd.DataFrame(X_train_mod.tolist())
-```
-
-Celui-ci ne serait pas nécessaire, en soi, si on voulait utiliser les 
-fonctionalités de `scikit` (le _pipeline_ est géré de manière cohérente)
-mais c'est nécessaire si on veut utiliser `yellowbrick` pour faire
-l'analyse d'importance de variables
-
 On ne va représenter, parmi notre ensemble important de colonnes, que celles
-qui ont une importance non nulle. L'importance va être définie à partir 
+qui ont une importance non nulle. Grâce à notre vecteur `features_names`,
+on va pouvoir facilement afficher le nom des colonnes en question (et donc
+comprendre les *features* déterminantes)
+
+L'importance va être définie à partir 
 de la mesure d'impureté[^3]
 
 [^3]: Extrait de [ce blog](https://mljar.com/blog/feature-importance-in-random-forest/):
 Gini importance (or mean decrease impurity), which is computed from the Random Forest structure. Let’s look how the Random Forest is constructed. It is a set of Decision Trees. Each Decision Tree is a set of internal nodes and leaves. In the internal node, the selected feature is used to make decision how to divide the data set into two separate sets with similars responses within. The features for internal nodes are selected with some criterion, which for classification tasks can be gini impurity or infomation gain, and for regression is variance reduction. We can measure how each feature decrease the impurity of the split (the feature with highest decrease is selected for internal node). For each feature we can collect how on average it decreases the impurity. The average over all trees in the forest is the measure of the feature importance. 
 
-```{python}
+```{python, results = "hide"}
 importances = pipe['randomforest'].feature_importances_
 std = np.std([tree.feature_importances_ for tree in pipe['randomforest'].estimators_], axis=0)
 
-forest_importances = pd.Series(importances, index=features_post_processing.columns)
-
-forest_importances = pd.Series(importances, index=features_post_processing.columns)
-forest_importances
+forest_importances = pd.Series(importances[importances>0], index=features_names[importances>0])
 
 fig, ax = plt.subplots()
-forest_importances[forest_importances>0].plot.bar(yerr=std[forest_importances>0], ax=ax)
+forest_importances.plot.bar(yerr=std[importances>0], ax=ax)
 ax.set_title("Feature importances using MDI")
 ax.set_ylabel("Mean decrease in impurity")
 fig.tight_layout()
+```
+
+```{python, echo = FALSE, include = FALSE}
+plt.savefig("varimportance.png")
+```
+
+```{r}
+knitr::include_graphics("varimportance.png")
 ```
 
 Idéalement, on utiliserait `yellowbrick` pour représenter l'importance des variables
@@ -547,6 +584,15 @@ viz = FeatureImportances(pipe['randomforest'])
 viz.fit()
 viz.show()
 ```
+
+```{python, echo = FALSE, include = FALSE}
+plt.savefig("varimportance2.png")
+```
+
+```{r}
+knitr::include_graphics("varimportance2.png")
+```
+
 
 ## Prédiction
 
