@@ -1,56 +1,9 @@
----
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .Rmd
-      format_name: rmarkdown
-      format_version: '1.2'
-      jupytext_version: 1.6.0
-  kernelspec:
-    display_name: Python 3
-    language: python
-    name: python3
-title: "Prédiction avec Word2Vec et Keras"
-date: 2020-10-29T13:00:00Z
-draft: false
-weight: 40
-slug: word2vec
-type: book
-tags:
-  - NLP
-  - Littérature
-  - Topics Modelling
-  - Word2Vec
-  - Keras
-categories:
-  - Tutoriel
-summary: |
-  La partie précédente nous a amené à explorer les structures latentes
-  d'un texte. Le modèle Word2Vec permet maintenant d'explorer le
-  word embedding (prolongement de mots).
-  Word2Vec est une représentation d'un corpus sous forme vectorielle
-  permettant d'entraîner des réseaux de neurone pour
-  reconstruire le contexte linguistique des mots et ainsi pouvoir,
-  dans un contexte donné, déterminer un certain champ lexical.
----
-
-```{r setup, include=FALSE}
-dir_path <- gsub(here::here(), "..", here::here("course","NLP"))
-knitr::knit_hooks$set(
-  plot = function(x, options) modif_plot(x, options, dir_path = dir_path)
-)
-knitr::opts_chunk$set(echo = FALSE)
-```
-
-```{r, echo = FALSE, results = 'asis', include = TRUE, eval = TRUE}
-print_badges()
-```
-
+# Prédiction d'auteurs littéraires à partir de différentes méthodes de vectorisation
 
 Cette page approfondit certains aspects présentés dans la
 [partie introductive](#nlp). Après avoir travaillé sur le
 *Comte de Monte Cristo*, on va continuer notre exploration de la littérature
-avec cette fois des auteurs anglophones :
+avec cette fois des auteurs anglophones:
 
 * Edgar Allan Poe, (EAP) ;
 * HP Lovecraft (HPL) ;
@@ -59,158 +12,377 @@ avec cette fois des auteurs anglophones :
 Les données sont disponibles ici : [spooky.csv](https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/blob/master/data/spooky.csv) et peuvent être requétées via l'url 
 <https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv>.
 
-Le but va être d'essayer de prédire quel texte correspond à quel auteur à partir d'un modèle `Word2Vec`.
+Le but va être dans un premier temps de regarder dans le détail les termes les plus fréquents utilisés par les auteurs, de les représenter graphiquement puis on va ensuite essayer de prédire quel texte correspond à quel auteur à partir de différents modèles de vectorisation, notamment les *word embeddings*.
 
-
-Les chapitres précédents permettaient de mieux comprendre les enjeux
-du nettoyage de documents textuels et la modélisation de documents
-par une approche fréquentiste. On va ici aller plus loin dans la modélisation
-en utilisant un réseau de neurones grâce au package `Keras`.
-
-
-Ce notebook librement inspiré de  : 
+Ce notebook est librement inspiré de  : 
 
 * https://www.kaggle.com/enerrio/scary-nlp-with-spacy-and-keras
 * https://github.com/GU4243-ADS/spring2018-project1-ginnyqg
 * https://www.kaggle.com/meiyizi/spooky-nlp-and-topic-modelling-tutorial/notebook
 
-## Librairies nécessaires
-
-Cette page évoquera, les principales librairies pour faire du NLP, notamment: 
-
-* [WordCloud](https://github.com/amueller/word_cloud)
-* [nltk](https://www.nltk.org/)
-* [spacy](https://spacy.io/)
-* [Keras](https://keras.io/)
-* [TensorFlow](https://www.tensorflow.org/)
 
 
-{{% panel status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
-Comme dans la [partie précédente](#nlp), il faut télécharger quelques éléments pour que `NTLK` puisse fonctionner correctement. Pour cela, faire :
-
-```{python, eval = FALSE, results = "hide"}
-import nltk
-nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('genesis')
-nltk.download('wordnet')
-```
-
-Comme nous allons utiliser également `spacy`, il convient de télécharger
-le corpus Anglais. Pour cela, on peut se référer à
-[la documentation de `spacy`](https://spacy.io/usage/models),
-extrèmement bien faite.
-
-- Idéalement, il faut installer le module via la ligne de commande. Dans
-une cellule de notebook `Jupyter`, faire :
-
-```{python, eval = FALSE, results = "hide"}
+```python
+!pip install spacy gensim sentence_transformers
 !python -m spacy download en_core_web_sm
 ```
 
-- Sans accès à la ligne de commande (depuis une instance `Docker` par exemple),
-faire :
 
-```{python, eval = TRUE, results = "hide"}
-import spacy
-spacy.cli.download("en_core_web_sm")
-```
-
-- Sinon, il est également possible d'installer le module en faisant pointer
-`pip install` depuis le fichier adéquat sur
-[`Github`](https://github.com/explosion/spacy-models). Pour cela, taper
-
-~~~python
-pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.0.0/en_core_web_sm-3.0.0-py3-none-any.whl
-~~~
-
-{{% /panel %}}
-
-
-La liste des modules à importer est assez longue, la voici:
-
-```{python, echo=TRUE}
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import seaborn as sns
-import matplotlib.pyplot as plt
-from wordcloud import WordCloud
-#from IPython.display import display
-import base64
-import string
-import re
-import nltk
-
+```python
 from collections import Counter
-from time import time
-# from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS as stopwords
-from sklearn.metrics import log_loss
+
+import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-
-from nltk.stem import WordNetLemmatizer
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from sklearn.decomposition import NMF, LatentDirichletAllocation
-```
-
-## Données utilisées
-
-*Si vous avez déjà lu la section précédente et importé les données, vous
-pouvez passer à la section suivante*
-
-Le code suivant permet d'importer le jeu de données `spooky`: 
-
-```{python, echo = TRUE}
-import pandas as pd
-
-url='https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv'
-import pandas as pd
-train = pd.read_csv(url,
-                    encoding='latin-1')
-train.columns = train.columns.str.capitalize()
-                    
-train['ID'] = train['Id'].str.replace("id","")
-train = train.set_index('Id')
-```
-
-Le jeu de données met ainsi en regard un auteur avec une phrase qu'il a écrite:
-
-```{python}
-train.head()
-```
-
-## Prédiction - Modélisation en utilisant Word2vec et Keras
-
-Jusqu'à présent, nous avons utilisé principalement `nltk` pour le 
-*preprocessing* de données textuelles. Cette fois, nous proposons
-d'utiliser la librairie `spaCy` qui permet de mieux automatiser sous forme de
-*pipeline* de *preprocessing*. 
-
-
-
-```{python, echo = TRUE}
+import seaborn as sns
 import spacy
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.model_selection import GridSearchCV, cross_val_score
+from gensim.models.word2vec import Word2Vec
+import gensim.downloader
+from sentence_transformers import SentenceTransformer
+```
+
+## Découverte des données
+
+### Import
+
+
+```python
+data_url = 'https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv'
+spooky_df = pd.read_csv(data_url)
+```
+
+### Description
+
+
+```python
+spooky_df.info()
+```
+
+
+```python
+spooky_df.head()
+```
+
+
+```python
+spooky_df.values[0]
+```
+
+
+```python
+spooky_df['author'].unique()
+```
+
+
+```python
+initials_to_author = {
+    'EAP': 'Edgar Allen Poe',
+    'HPL': 'H.P. Lovecraft',
+    'MWS': 'Mary Wollstonecraft Shelley'
+}
+```
+
+## Preprocessing
+
+En NLP, la première étape est souvent celle du *preprocessing*, qui inclut notamment les étapes de tokenization et de nettoyage du texte. Comme celles-ci ont été vues en détail dans le précédent chapitre, on se contentera ici d'un *preprocessing* minimaliste : suppression de la ponctuation et suppression des stop words (pour la visualisation et les méthodes de vectorisation basées sur des comptages).
+
+### Nettoyage
+
+
+```python
 nlp = spacy.load('en_core_web_sm')
 ```
 
-On va utiliser une fonction standardisée pour nettoyer les champs textuels
-avec `spacy`. Idéalement, on pourrait utiliser un `pipe` `spacy`. Mais là
-on va privilégier une fonction :
 
-```{python, echo=TRUE}
-punctuations = string.punctuation
-from nltk.corpus import stopwords  
-stop_words = spacy.lang.en.STOP_WORDS
+```python
+def clean_docs(texts, remove_stopwords=False):
+    
+    docs = nlp.pipe(texts, 
+                    n_process=4,
+                    disable=['parser', 'ner',
+                             'lemmatizer', 'textcat'])
+    stopwords = nlp.Defaults.stop_words
 
-def preprocess_text(text):
-    doc = text
-    doc = nlp(doc, disable=['parser', 'ner','tagger'])
-    tokens = [tok.lemma_.lower().strip() for tok in doc if tok.lemma_ != '-PRON-']
-    tokens = [tok for tok in tokens if tok not in stop_words and tok not in punctuations]
-    tokens = ' '.join(tokens)
-    return(tokens)
+    docs_cleaned = []
+    for doc in docs:
+        tokens = [tok.text.lower().strip() for tok in doc if not tok.is_punct]
+        if remove_stopwords:
+            tokens = [tok for tok in tokens if tok not in stopwords]
+        doc_clean = ' '.join(tokens)
+        docs_cleaned.append(doc_clean)
+        
+    return docs_cleaned
 
-train['text_clean'] = train['Text'].apply(preprocess_text)
-#train.head()
+spooky_df['text_clean'] = clean_docs(spooky_df['text'])
 ```
 
-<!-- TO BE CONTINUED -->
+### Encodage de la variable à prédire
+
+On réalise un simple encodage de la variable à prédire : il y a trois catégories, représentées par des entiers de 0 à 2.
+
+
+```python
+le = LabelEncoder()
+spooky_df['author_encoded'] = le.fit_transform(spooky_df['author'])
+le.classes_
+```
+
+### Construction des bases d'entraînement et de test
+
+Etape très importante : on met de côté un échantillon de test (20 %) avant toute analyse (même descriptive). Cela permettra d'évaluer nos différents modèles toute à la fin de manière très rigoureuse, puisque ces données n'auront jamais utilisées pendant l'entraînement.
+
+
+```python
+X_train, X_test, y_train, y_test = train_test_split(spooky_df['text_clean'].values, 
+                                                    spooky_df['author_encoded'].values, 
+                                                    test_size=0.2, 
+                                                    random_state=33)
+```
+
+
+```python
+X_train[0]
+```
+
+
+```python
+print(y_train[0], le.inverse_transform([y_train[0]])[0])
+```
+
+## Statistiques exploratoires
+
+### Répartition des labels
+
+
+```python
+plt.style.use('dark_background')
+pd.Series(le.inverse_transform(y_train)).value_counts().plot(kind='bar')
+```
+
+On observe une petite asymétrie : les passages des livres d'Edgar Allen Poe sont plus nombreux dans notre corpus d'entraînement, ce qui peut être problématique dans le cadre d'une tâche de classification. L'écart n'est pas dramatique, mais on essaiera d'en tenir compte dans l'analyse en choisissant une métrique d'évaluation pertinente. 
+
+### Mots les plus fréquemment utilisés par chaque auteur
+
+
+```python
+# Suppression des stop words
+X_train_no_sw = clean_docs(X_train, remove_stopwords=True)
+X_train_no_sw = np.array(X_train_no_sw)
+```
+
+
+```python
+def plot_top_words(initials, n_words=20):
+    # Calcul des mots les plus fréquemment utilisés par l'auteur
+    texts = X_train_no_sw[le.inverse_transform(y_train) == initials]
+    all_tokens = ' '.join(texts).split()
+    counts = Counter(all_tokens)
+    top_words = [word[0] for word in counts.most_common(n_words)]
+    top_words_counts = [word[1] for word in counts.most_common(n_words)]
+    
+    # Représentation sous forme de barplot
+    plt.style.use('dark_background')
+    plt.figure(figsize=(20, 6))
+    sns.barplot(x=top_words, y=top_words_counts)
+    plt.title(f'Most Common Words used by {initials_to_author[initials]}')
+    plt.show()
+```
+
+
+```python
+plot_top_words('EAP')
+```
+
+
+```python
+plot_top_words('HPL')
+```
+
+
+```python
+plot_top_words('MWS')
+```
+
+Beaucoup de mots se retrouvent très utilisés par les trois auteurs. Il y a cependant des différences notables : le mot "life" est le plus employé par MWS, alors qu'il n'apparaît pas dans les deux autres tops. De même, le mot "old" est le plus utilisé par HPL là où les deux autres ne l'utilisent pas de manière surreprésentée. Il semble donc qu'il y ait des particularités propres à chacun des auteurs en termes de vocabulaire, ce qui laisse penser qu'il est envisageable de prédire les auteurs à partir de leurs textes dans une certaine mesure.
+
+## Prédiction sur le set d'entraînement
+
+Nous allons à présent vérifier cette conjecture en comparant plusieurs modèles de vectorisation, i.e. de transformation du texte en objets numériques pour que l'information contenue soit exploitable dans un modèle de classification. Comme nous nous intéressons plus à l'effet de la vectorisation qu'à la tâche de classification en elle-même, nous allons utiliser un algorithme de classification simple (un SVM linéaire), avec des paramètres non fine-tunés. Ce modèle est connu pour être très performant sur les tâches de classification de texte, et nous fournira donc une bonne *baseline*. Cela nous permettra également de comparer de manière objective l'impact des méthodes de vectorisation sur la performance finale.
+
+On va utiliser au maximum les objets de type pipeline de `sklearn`, qui permettent de réaliser des analyses reproductibles et de fine-tuner proprement les différents hyperparamètres. Pour les deux premières méthodes de vectorisation (basées sur des fréquences et fréquences relatives des mots), on va simplement normaliser les données d'entrée, ce qui va permettre au SVM de converger plus rapidement, ces modèles étant sensibles aux différences d'échelle dans les données. On va également fine-tuner via grid-search certains hyperparamètres liés à ces méthodes de vectorisation : 
+- on teste différents ranges de n-grams (unigrammes et unigrammes + bigrammes)
+- on teste avec et sans stop-words
+
+Afin d'éviter le surapprentissage, on va évaluer les différents modèles via validation croisée, calculée sur 4 blocs. On récupère à la fin le meilleur modèle selon une métrique spécifiée. On choisit le score F1, moyenne harmonique de la précision et du rappel, qui donne un poids équilibré aux deux métriques, tout en pénalisant fortement le cas où l'une des deux est faible. Précisément, on retient le score F1 *micro-averaged* : les contributions des différentes classes à prédire sont aggrégées, puis l'on calcule le score F1 sur ces données aggrégées. L'avantage de ce choix est qu'il permet de tenir compte des différences de fréquences des différentes classes.
+
+
+```python
+clf = LinearSVC(max_iter=10000, C=0.1)
+```
+
+
+```python
+def fit_vectorizers(vectorizer):
+    pipeline = Pipeline(
+    [
+        ("vect", vectorizer()),
+        ("scaling", StandardScaler(with_mean=False)),
+        ("clf", clf),
+    ]
+    )
+
+    parameters = {
+        "vect__ngram_range": ((1, 1), (1, 2)),  # unigrams or bigrams
+        "vect__stop_words": ("english", None)
+    }
+
+    grid_search = GridSearchCV(pipeline, parameters, scoring='f1_micro',
+                               cv=4, n_jobs=4, verbose=1)
+    grid_search.fit(X_train, y_train)
+
+    best_parameters = grid_search.best_estimator_.get_params()
+    for param_name in sorted(parameters.keys()):
+        print("\t%s: %r" % (param_name, best_parameters[param_name]))
+
+    print(f"CV scores {grid_search.cv_results_['mean_test_score']}")
+    print(f"Mean F1 {np.mean(grid_search.cv_results_['mean_test_score'])}")
+```
+
+### Bag-of-words
+
+On commence par une approche "bag-of-words", i.e. qui revient simplement à représenter chaque document par un vecteur qui compte le nombre d'apparitions de chaque mot du vocabulaire dans le document.
+
+
+```python
+fit_vectorizers(CountVectorizer)
+```
+
+### TF-IDF
+
+On s'intéresse ensuite à l'approche TF-IDF, qui permet de tenir compte des fréquences *relatives* des mots. Ainsi, pour un mot donné, on va multiplier la fréquence d'apparition du mot dans le document (calculé comme dans la méthode précédente) par un terme qui pénalise une fréquence élevée du mot dans le corpus. La vectorisation TF-IDF permet donc de limiter l'influence des *stop-words* et donc de donner plus de poids aux mots les plus salients d'un document. On observe clairement que la performance de classification est bien supérieure, ce qui montre la pertinence de cette technique.
+
+
+```python
+fit_vectorizers(TfidfVectorizer)
+```
+
+### Word2vec + averaging
+
+On va maintenant explorer les techniques de vectorisation basées sur les *embeddings* de mots, et notamment la plus populaire : `word2vec`. L'idée derrière est simple, mais a révolutionné le NLP : au lieu de représenter les documents par des vecteurs *sparse* de très grande dimension (la taille du vocabulaire) comme on l'a fait jusqu'à présent, on va les représenter par des vecteurs *dense* (continus) de dimension réduite (en général, autour de 100-300). Chacune de ces dimensions va représenter un facteur latent, c'est à dire une variable inobservée, de la même manière que les composantes principales produites par une ACP.
+
+![title](w2v_vecto.png)
+
+Pourquoi est-ce intéressant ? Pour plein de raisons, mais pour résumer : cela permet de beaucoup mieux capturer la similarité sémantique entre les documents. Par exemple, un humain sait qu'un document contenant le mot "Roi" et un autre document contenant le mot "Reine" ont beaucoup de chance d'aborder des sujets semblables. Pourtant, une vectorisation de type comptage ou TF-IDF ne permet pas de saisir cette similarité : le calcul d'une mesure de similarité (norme euclidienne ou similarité cosine) entre les deux vecteurs ne prendra en compte la similarité des deux concepts, puisque les mots utilisés sont différents. A l'inverse, un modèle `word2vec` bien entraîné va capter qu'il existe un facteur latent de type "royauté", et la similarité entre les vecteurs associés aux deux mots sera forte. La magie va même plus loin : le modèle captera aussi qu'il existe un facteur latent de type "genre", et va permettre de construire un espace sémantique dans lequel les relations arithmétiques entre vecteurs ont du sens ; par exemple : $king - man + woman ≈ queen$.
+
+Comment ces modèles sont-ils entraînés ? Via une tâche de prédiction résolue par un réseau de neurones simple. L'idée fondamentale est que la signification d'un mot se comprend en regardant les mots qui apparaissent fréquemment dans son voisinage. Pour un mot donné, on va donc essayer de prédire les mots qui apparaissent dans une fenêtre autour du mot cible. En répétant cette tâche de nombreuses fois et sur un corpus suffisamment varié, on obtient finalement des *embeddings* pour chaque mot du vocabulaire, qui présentent les propriétés discutées précédemment.
+
+
+```python
+X_train_tokens = [text.split() for text in X_train]
+w2v_model = Word2Vec(X_train_tokens, vector_size=200, window=5, 
+                     min_count=1, workers=4)
+```
+
+
+```python
+w2v_model.wv.most_similar("mother")
+```
+
+On voit que les mots les plus similaires à "mother" sont souvent des mots liés à la famille, mais pas toujours. C'est lié à la taille très restreinte du corpus sur lequel on entraîne le modèle, qui ne permet pas de réaliser des associations toujours pertinentes.
+
+
+```python
+def get_mean_vector(w2v_vectors, words):
+    words = [word for word in words if word in w2v_vectors]
+    if words:
+        avg_vector = np.mean(w2v_vectors[words], axis=0)
+    else:
+        avg_vector = np.zeros_like(w2v_vectors['hi'])
+    return avg_vector
+
+def fit_w2v_avg(w2v_vectors):
+    X_train_vectors = np.array([get_mean_vector(w2v_vectors, words)
+                                for words in X_train_tokens])
+    
+    scores = cross_val_score(clf, X_train_vectors, y_train, 
+                         cv=4, scoring='f1_micro', n_jobs=4)
+
+    print(f"CV scores {scores}")
+    print(f"Mean F1 {np.mean(scores)}")
+```
+
+
+```python
+fit_w2v_avg(w2v_model.wv)
+```
+
+La performance chute fortement ; la faute à la taille très restreinte du corpus, comme annoncé précédemment.
+
+### Word2vec pré-entraîné + averaging
+
+Quand on travaille avec des corpus de taille restreinte, c'est généralement une mauvaise idée d'entraîner son propre modèle `word2vec`. Heureusement, des modèles pré-entraînés sur de très gros corpus sont disponibles. Ils permettent de réaliser du *transfer learning*, c'est à dire de bénéficier de la performance d'un modèle qui a été entraîné sur une autre tâche ou bien un autre corpus.
+
+
+```python
+glove_model = gensim.downloader.load('glove-wiki-gigaword-200')
+```
+
+
+```python
+glove_model.most_similar('mother')
+```
+
+
+```python
+fit_w2v_avg(glove_model)
+```
+
+La performance remonte substantiellement. Cela étant, on ne parvient pas à faire mieux que les approches basiques, on arrive à peine aux performances de la vectorisation par comptage. La cause est cette fois certainement dans la manière dont on exploite les *embeddings* : afin d'obtenir une représentation vectorielle pour chaque document, on moyennise les vecteurs des différents mots compris dans un document. Cela a plusieurs limites : 
+- on ne tient pas compte de l'ordre et donc du contexte des mots
+- lorsque les documents sont longs, la moyennisation peut créer des représentation bruitées.
+
+### Contextual embeddings
+
+Les *embeddings* contextuels visent à pallier les limites des *embeddings* traditionnels évoquées précédemment. Cette fois, les mots n'ont plus de représentation vectorielle fixe, celle-ci est calculée dynamiquement en fonction des mots du voisinage, et ainsi de suite. Cela permet de tenir compte de la structure spatiale des phrases et de tenir compte du fait que le sens d'un mot est fortement dépendant des mots qui l'entourent (ex : dans les phrases "le président Macron" et "le camembert Président" le mot président n'a pas du tout le même rôle). Ces *embeddings* sont produits par des architectures très complexes, de type Transformer (BERT, etc.).
+
+
+```python
+model = SentenceTransformer('all-mpnet-base-v2')
+```
+
+
+```python
+X_train_vectors = model.encode(X_train)
+```
+
+
+```python
+scores = cross_val_score(clf, X_train_vectors, y_train, 
+                         cv=4, scoring='f1_micro', n_jobs=4)
+
+print(f"CV scores {scores}")
+print(f"Mean F1 {np.mean(scores)}")
+```
+
+Verdict : on fait très légèrement mieux que la vectorisation TF-IDF. On voit donc l'importance de tenir compte du contexte. Mais pourquoi, avec une méthode très compliquée, ne parvenons-nous pas à battre une méthode toute simple ? On peut avancer plusieurs raisons : 
+- le TF-IDF est un modèle simple, mais toujours très performant (on parle de "tough-to-beat baseline").
+- la classification d'auteurs est une tâche très particulière et très ardue, qui ne fait pas justice aux *embeddings*. Comme on l'a dit précédemment, ces derniers se révèlent particulièrement pertinent lorsqu'il est question de similarité sémantique entre des textes (clustering, etc.). Dans le cas de notre tâche de classification, il est probable que certains mots (noms de personnage, noms de lieux) soient suffisants pour classifier de manière pertinente, ce que ne permettent pas de capter les *embeddings*.
+
+## Exercices
+
+- Prédictions sur le test set en utilisant les modèles entraînés
+- Faire un *vrai* split train/test : faire l'entraînement avec des textes de certains auteurs, et faire la prédiction avec des textes d'auteurs différents. Cela permettrait de neutraliser la présence de noms de lieux, de personnages, etc.
+- Comparer avec d'autres algorithmes de classification qu'un SVM
+- (Avancé) : fine-tuner le modèle d'embeddings contextuels sur la tâche de classification
+
+
+```python
+
+```
