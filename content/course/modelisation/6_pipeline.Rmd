@@ -419,20 +419,46 @@ l'hyperparamètre `max_depth = 2`.
 
 ```{python}
 from sklearn.ensemble import RandomForestRegressor
-regr = RandomForestRegressor(max_depth=2, random_state=0)
+regr = RandomForestRegressor(max_depth=2, random_state=123)
 ```
 
+Notre _pipeline_ va intégrer les étapes suivantes:
+
+1. __Preprocessing__:
+    + Les variables numériques vont être standardisées avec un `StandardScaler`.
+Pour cela, nous allons utiliser la liste `numeric_features` définie précédemment.
+    + Les variables catégorielles vont être explosées avec un *one hot encoding*
+(méthode `OneHotEncoder` de `scikit`)
+Pour cela, nous allons utiliser la liste `categorical_features`
+2. __Random forest__: nous allons appliquer l'estimateur `regr` défini plus haut
+
 ```{python}
+from sklearn.pipeline import make_pipeline, FeatureUnion
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.pipeline import Pipeline
+
 pipe = Pipeline([
     ("features", FeatureUnion([
         ('numeric', make_pipeline(Columns(names=numeric_features[:-1]),StandardScaler())),
         ('categorical', make_pipeline(Columns(names=categorical_features),OneHotEncoder(sparse=False)))
     ])),
-    ('randomforest', RandomForestRegressor())
+    ('randomforest', regr)
 ])
+```
 
+Nous avons construit ce pipeline sous forme de couches successives. La couche
+`randomforest` prendra automatiquement le résultat de la couche `features`
+en _input_. La couche `features` permet d'introduire de manière relativement
+simple (quand on a les bonnes méthodes) la complexité du *preprocessing*
+sur données réelles dont les types divergent. 
+
+On peut visualiser le graphe et ainsi se représenter la manière dont
+ce _pipeline_ opère:
+
+```{python}
 pipe
 ```
+
 
 
 pipe.fit(X_train, y_train)
