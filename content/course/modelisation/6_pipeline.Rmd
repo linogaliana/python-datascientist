@@ -332,6 +332,26 @@ class Normalize(BaseEstimator, TransformerMixin):
         return self
 ```
 
+Enfin, on va créer une méthode intermédiaire sous forme de *hack*
+(elle prend une matrice en entrée et renvoie la même matrice) 
+pour
+pouvoir facilement récupérer notre matrice de *feature* afin de vérifier
+ses caractéristiques (notamment le nombre de colonnes disponibles):
+
+```{python fitdebug}
+class Collect(BaseEstimator, TransformerMixin):
+
+    def transform(self, X):
+        #print(X.shape)
+        #self.shape = shape
+        # what other output you want
+        return X
+
+    def fit(self, X, y=None, **fit_params):
+        return self
+
+```
+
 
 # Un premier pipeline: *random forest* sur des variables standardisées
 
@@ -437,19 +457,17 @@ Pour cela, nous allons utiliser la liste `numeric_features` définie précédemm
 Pour cela, nous allons utiliser la liste `categorical_features`
 2. __Random forest__: nous allons appliquer l'estimateur `regr` défini plus haut
 
-```{python}
-from sklearn.pipeline import make_pipeline, FeatureUnion
-from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
-from sklearn.pipeline import Pipeline
+J'ajoute en commentaire un exemple de comment s'introduirait une imputation
+de valeurs manquantes. La version 1.0 de `scikit` facilite l'intégration
+d'étapes complexes dans les pipelines[^4]. Si vous ne utilisez une 
+version antérieure à la 1.0 de `scikit`, vous pouvez vous rendre dans
+la section [Annexe](#annexe) pour avoir des exemples de définition alternative
+(attention cependant, vous ne pourrez récupérer le nom des *features*
+transformées comme ici, ce qui peut pénaliser l'analyse d'importance
+de variables)
 
-pipe = Pipeline([
-    ("features", FeatureUnion([
-        ('numeric', make_pipeline(Columns(names=numeric_features[:-1]),StandardScaler())),
-        ('categorical', make_pipeline(Columns(names=categorical_features),OneHotEncoder(sparse=False)))
-    ])),
-    ('randomforest', regr)
-])
-```
+[^4]: Voir ce [*thread stackoverflow*](https://stackoverflow.com/questions/54646709/sklearn-pipeline-get-feature-names-after-onehotencode-in-columntransformer)
+
 
 Nous avons construit ce pipeline sous forme de couches successives. La couche
 `randomforest` prendra automatiquement le résultat de la couche `features`
@@ -486,27 +504,7 @@ pipe.fit(X_train, y_train)
 Pour le moment, on va utiliser un *hack* pour récupérer le `DataFrame`
 suite au preprocessing. 
 
-```{python fitdebug}
-class Debug(BaseEstimator, TransformerMixin):
-
-    def transform(self, X):
-        #print(X.shape)
-        #self.shape = shape
-        # what other output you want
-        return X
-
-    def fit(self, X, y=None, **fit_params):
-        return self
-
-pipe_deb = Pipeline([
-    ("features", FeatureUnion([
-        ('numeric', make_pipeline(Columns(names=numeric_features[:-1]),StandardScaler())),
-        ('categorical', make_pipeline(Columns(names=categorical_features),OneHotEncoder(sparse=False)))
-    ])),
-    ("debug", Debug())#,    
-#    ('randomforest', regr)
-])
-
+```
 X_train_mod = pipe_deb.fit_transform(X_train)
 features_post_processing = pd.DataFrame(X_train_mod.tolist())
 ```
@@ -572,6 +570,48 @@ plt.axvline(1e6, color='r', linestyle = '--')
 plt.axhline(1e6, color='r', linestyle = '--')
 ```
 
+# Annexes: pipelines alternatifs
+
+```{python}
+from sklearn.pipeline import make_pipeline, FeatureUnion
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.pipeline import Pipeline
+
+pipe2 = Pipeline([
+    ("features", FeatureUnion([
+        ('numeric', make_pipeline(Columns(names=numeric_features[:-1]),StandardScaler())),
+        ('categorical', make_pipeline(Columns(names=categorical_features),OneHotEncoder(sparse=False)))
+    ])),
+    ('identity', Collect()),
+    ('randomforest', regr)
+])
+```
+
+{{< rawhtml >}}
+
+```{python, echo = FALSE, results = "asis"}
+print(estimator_html_repr(pipe2))
+```
+
+{{< /rawhtml >}}
+
+```{python}
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('numeric', StandardScaler(), numeric_features[:-1]),
+        ('categorical', OneHotEncoder(sparse=False), categorical_features)])
+
+pipe3 = Pipeline(steps=[('preprocessor', preprocessor),
+                      ('randomforest', regr)])
+```
+
+{{< rawhtml >}}
+
+```{python, echo = FALSE, results = "asis"}
+print(estimator_html_repr(pipe3))
+```
+
+{{< /rawhtml >}}
 # Références
 
 - Breiman L (2001). _"Random Forests". Machine Learning_. 45 (1): 5–32.
