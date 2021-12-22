@@ -160,19 +160,27 @@ initials_to_author = {
 
 En NLP, la première étape est souvent celle du *preprocessing*, qui inclut notamment les étapes de tokenization et de nettoyage du texte. Comme celles-ci ont été vues en détail dans le précédent chapitre, on se contentera ici d'un *preprocessing* minimaliste : suppression de la ponctuation et suppression des *stop words* (pour la visualisation et les méthodes de vectorisation basées sur des comptages).
 
-### Nettoyage
+Jusqu'à présent, nous avons utilisé principalement `nltk` pour le 
+*preprocessing* de données textuelles. Cette fois, nous proposons
+d'utiliser la librairie `spaCy` qui permet de mieux automatiser sous forme de
+*pipeline* de *preprocessing*. 
 
 
-```python
+```{python}
 nlp = spacy.load('en_core_web_sm')
 ```
 
+On va utiliser un `pipe` `spacy` qui permet d'automatiser, et de paralléliser,
+un certain nombre d'opérations. Les *pipes* sont l'équivalent, en NLP, de
+nos *pipelines* `scikit` ou des *pipes* `pandas`. Il s'agit donc d'un outil
+très approprié pour industrialiser un certain nombre d'opérations de
+*preprocessing*:
 
-```python
-def clean_docs(texts, remove_stopwords=False):
+```{python}
+def clean_docs(texts, remove_stopwords=False, n_process = 4):
     
     docs = nlp.pipe(texts, 
-                    n_process=4,
+                    n_process=n_process,
                     disable=['parser', 'ner',
                              'lemmatizer', 'textcat'])
     stopwords = nlp.Defaults.stop_words
@@ -186,18 +194,35 @@ def clean_docs(texts, remove_stopwords=False):
         docs_cleaned.append(doc_clean)
         
     return docs_cleaned
+```
 
+On applique la fonction `clean_docs` à notre colonne `pandas`.
+Les `pandas.Series` étant itérables, elles se comportent comme des listes et
+fonctionnent ainsi très bien avec notre `pipe` `spacy`
+
+```{python}
 spooky_df['text_clean'] = clean_docs(spooky_df['text'])
 ```
 
 ### Encodage de la variable à prédire
 
-On réalise un simple encodage de la variable à prédire : il y a trois catégories, représentées par des entiers de 0 à 2.
+On réalise un simple encodage de la variable à prédire :
+il y a trois catégories, représentées par des entiers de 0 à 2.
 
+Pour cela, on utilise le `LabelEncoder` de `scikit` déjà présenté 
+dans la [partie modélisation](#preprocessing). On va utiliser la méthode
+`fit_transform` qui permet, en un tour de main, d'appliquer à la fois
+l'entraînement (`fit`), à savoir la création d'une correspondance entre valeurs
+numériques et _labels_, et l'appliquer (`transform`) à la même colonne.
 
-```python
+```{python}
 le = LabelEncoder()
 spooky_df['author_encoded'] = le.fit_transform(spooky_df['author'])
+```
+
+On peut vérifier les classes de notre `LabelEncoder`:
+
+```{python}
 le.classes_
 ```
 
