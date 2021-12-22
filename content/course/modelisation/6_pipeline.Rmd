@@ -218,139 +218,6 @@ de variable pourrait amener à nier
 mutations['surface'] = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].sum(axis = 1)
 ```
 
-# Préalable : quelques méthodes pour gagner en flexibilité dans le preprocessing
-
-Notre *dataframe* comporte des types hétérogènes de variables:
-
-* Des variables numériques dont les variances sont très hétérogènes
-* Des variables textuelles qui mériteraient un recodage sous forme numérique
-* Des variables discrètes dont les modalités devraient être éclatées (_one hot encoding_)
-
-Pour gagner en flexibilité, nous allons proposer certaines méthodes qui permettent
-d'appliquer les étapes de _preprocessing_ adéquates à un sous-ensemble de 
-variables[^1]. 
-
-[^1]: Un certain nombre des éléments suivants ont été glannés, par ci par là,
-depuis `stackoverflow`.
-
-Pour cela, il convient d'adopter l'approche de la programmation orientée objet. 
-On va créer des classes avec des méthodes `transform` et `fit_transform`
-qui pourront ainsi être intégrées directement dans les *pipelines*, comme s'il
-s'agissait de méthodes issues de `scikit`.
-
-La première généralise `LabelEncoder` à un sous-ensemble de colonnes:
-
-```{python}
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-
-class MultiColumnLabelEncoder:
-    def __init__(self,columns = None):
-        self.columns = columns # array of column names to encode
-
-    def fit(self,X,y=None):
-        return self # not relevant here
-
-    def transform(self,X):
-        '''
-        Transforms columns of X specified in self.columns using
-        LabelEncoder(). If no columns specified, transforms all
-        columns in X.
-        '''
-        output = X.copy()
-        if self.columns is not None:
-            for col in self.columns:
-                output[col] = LabelEncoder().fit_transform(output[col])
-        else:
-            for colname,col in output.iteritems():
-                output[colname] = LabelEncoder().fit_transform(col)
-        return output
-
-    def fit_transform(self,X,y=None):
-        return self.fit(X,y).transform(X)
-```
-
-La seconde généralise cette fois le *one hot encoding* à un sous ensemble de 
-fonctions
-
-```{python}
-class MultiColumnOneHotEncoder:
-    def __init__(self,columns = None):
-        self.columns = columns # array of column names to encode
-
-    def fit(self,X,y=None):
-        return self # not relevant here
-
-    def transform(self,X):
-        '''
-        Transforms columns of X specified in self.columns using
-        LabelEncoder(). If no columns specified, transforms all
-        columns in X.
-        '''
-        output = X.copy()
-        if self.columns is not None:
-            for col in self.columns:
-                output[col] = OneHotEncoder(sparse=False).fit_transform(output[col])
-        else:
-            for colname,col in output.iteritems():
-                output[colname] = OneHotEncoder(sparse=False).fit_transform(col)
-        return output
-
-    def fit_transform(self,X,y=None):
-        return self.fit(X,y).transform(X)
-```
-
-Les méthodes suivantes vont nous permettre de passer en arguments les noms
-de colonnes pour intégrer la récupération des bonnes colonnes de nos
-dataframes dans le pipeline:
-
-```{python}
-from sklearn.base import BaseEstimator, TransformerMixin, RegressorMixin
-
-class Columns(BaseEstimator, TransformerMixin):
-    def __init__(self, names=None):
-        self.names = names
-
-    def fit(self, X, y=None, **fit_params):
-        return self
-
-    def transform(self, X):
-        return X[self.names]
-
-class Normalize(BaseEstimator, TransformerMixin):
-    def __init__(self, func=None, func_param={}):
-        self.func = func
-        self.func_param = func_param
-
-    def transform(self, X):
-        if self.func != None:
-            return self.func(X, **self.func_param)
-        else:
-            return X
-
-    def fit(self, X, y=None, **fit_params):
-        return self
-```
-
-Enfin, on va créer une méthode intermédiaire sous forme de *hack*
-(elle prend une matrice en entrée et renvoie la même matrice) 
-pour
-pouvoir facilement récupérer notre matrice de *feature* afin de vérifier
-ses caractéristiques (notamment le nombre de colonnes disponibles):
-
-```{python fitdebug}
-class Collect(BaseEstimator, TransformerMixin):
-
-    def transform(self, X):
-        #print(X.shape)
-        #self.shape = shape
-        # what other output you want
-        return X
-
-    def fit(self, X, y=None, **fit_params):
-        return self
-
-```
 
 
 # Un premier pipeline: *random forest* sur des variables standardisées
@@ -540,7 +407,7 @@ features_names
 ```
 
 
-## Variable importance
+## _Variable importance_
 
 On ne va représenter, parmi notre ensemble important de colonnes, que celles
 qui ont une importance non nulle. Grâce à notre vecteur `features_names`,
@@ -599,6 +466,8 @@ knitr::include_graphics("varimportance2.png")
 L'analyse de l'importance de variables permet de mieux comprendre
 le fonctionnement interne des *random forests*. 
 
+On obtient un modèle dont les performances sont les suivantes:
+
 ```{python}
 from sklearn.metrics import mean_squared_error
 
@@ -611,12 +480,164 @@ print("Le RMSE sur le jeu de test est {:,}".format(
    int(np.sqrt(mean_squared_error(y_test, pipe.predict(X_test))))
 ))
 
-g = sns.scatterplot(data = compar, x = 'obs', y = 'pred', ax = ax)
-plt.axvline(1e6, color='r', linestyle = '--')
-plt.axhline(1e6, color='r', linestyle = '--')
+g = sns.scatterplot(data = compar, x = 'obs', y = 'pred')
+g.set(ylim=(0, 2e6), xlim=(0, 2e6))
 ```
 
+C'est très décevant. La prédiction a trop peu de variabilité pour capturer
+la variance des prix observée. Cela vient du fait que les variables
+ayant de l'importance dans la prédiction sont principalement des effets fixes,
+qui ne permettent donc qu'une variabilité limitée.
+
+```{python}
+plt.savefig('predict1.png', bbox_inches='tight')
+```
+
+```{r, echo = FALSE}
+knitr::include_graphics('predict1.png')
+```
+
+
+# Recherche des hyperparamètres optimaux avec une validation croisée
+
+
 # Annexes: pipelines alternatifs
+
+# Préalable : quelques méthodes pour gagner en flexibilité dans le preprocessing
+
+Notre *dataframe* comporte des types hétérogènes de variables:
+
+* Des variables numériques dont les variances sont très hétérogènes
+* Des variables textuelles qui mériteraient un recodage sous forme numérique
+* Des variables discrètes dont les modalités devraient être éclatées (_one hot encoding_)
+
+Pour gagner en flexibilité, nous allons proposer certaines méthodes qui permettent
+d'appliquer les étapes de _preprocessing_ adéquates à un sous-ensemble de 
+variables[^1]. Ces méthodes ne sont plus nécessaires dans les versions
+récentes de `scikit`.
+
+[^1]: Un certain nombre des éléments suivants ont été glannés, par ci par là,
+depuis `stackoverflow`.
+
+Pour cela, il convient d'adopter l'approche de la programmation orientée objet. 
+On va créer des classes avec des méthodes `transform` et `fit_transform`
+qui pourront ainsi être intégrées directement dans les *pipelines*, comme s'il
+s'agissait de méthodes issues de `scikit`.
+
+La première généralise `LabelEncoder` à un sous-ensemble de colonnes:
+
+```{python}
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+
+class MultiColumnLabelEncoder:
+    def __init__(self,columns = None):
+        self.columns = columns # array of column names to encode
+
+    def fit(self,X,y=None):
+        return self # not relevant here
+
+    def transform(self,X):
+        '''
+        Transforms columns of X specified in self.columns using
+        LabelEncoder(). If no columns specified, transforms all
+        columns in X.
+        '''
+        output = X.copy()
+        if self.columns is not None:
+            for col in self.columns:
+                output[col] = LabelEncoder().fit_transform(output[col])
+        else:
+            for colname,col in output.iteritems():
+                output[colname] = LabelEncoder().fit_transform(col)
+        return output
+
+    def fit_transform(self,X,y=None):
+        return self.fit(X,y).transform(X)
+```
+
+La seconde généralise cette fois le *one hot encoding* à un sous ensemble de 
+fonctions
+
+```{python}
+class MultiColumnOneHotEncoder:
+    def __init__(self,columns = None):
+        self.columns = columns # array of column names to encode
+
+    def fit(self,X,y=None):
+        return self # not relevant here
+
+    def transform(self,X):
+        '''
+        Transforms columns of X specified in self.columns using
+        LabelEncoder(). If no columns specified, transforms all
+        columns in X.
+        '''
+        output = X.copy()
+        if self.columns is not None:
+            for col in self.columns:
+                output[col] = OneHotEncoder(sparse=False).fit_transform(output[col])
+        else:
+            for colname,col in output.iteritems():
+                output[colname] = OneHotEncoder(sparse=False).fit_transform(col)
+        return output
+
+    def fit_transform(self,X,y=None):
+        return self.fit(X,y).transform(X)
+```
+
+Les méthodes suivantes vont nous permettre de passer en arguments les noms
+de colonnes pour intégrer la récupération des bonnes colonnes de nos
+dataframes dans le pipeline:
+
+```{python}
+from sklearn.base import BaseEstimator, TransformerMixin, RegressorMixin
+
+class Columns(BaseEstimator, TransformerMixin):
+    def __init__(self, names=None):
+        self.names = names
+
+    def fit(self, X, y=None, **fit_params):
+        return self
+
+    def transform(self, X):
+        return X[self.names]
+
+class Normalize(BaseEstimator, TransformerMixin):
+    def __init__(self, func=None, func_param={}):
+        self.func = func
+        self.func_param = func_param
+
+    def transform(self, X):
+        if self.func != None:
+            return self.func(X, **self.func_param)
+        else:
+            return X
+
+    def fit(self, X, y=None, **fit_params):
+        return self
+```
+
+Enfin, on va créer une méthode intermédiaire sous forme de *hack*
+(elle prend une matrice en entrée et renvoie la même matrice) 
+pour
+pouvoir facilement récupérer notre matrice de *feature* afin de vérifier
+ses caractéristiques (notamment le nombre de colonnes disponibles):
+
+```{python fitdebug}
+class Collect(BaseEstimator, TransformerMixin):
+
+    def transform(self, X):
+        #print(X.shape)
+        #self.shape = shape
+        # what other output you want
+        return X
+
+    def fit(self, X, y=None, **fit_params):
+        return self
+
+```
+
 
 ```{python}
 from sklearn.pipeline import make_pipeline, FeatureUnion
