@@ -332,21 +332,48 @@ de leurs textes dans une certaine mesure.
 
 ## Prédiction sur le set d'entraînement
 
-Nous allons à présent vérifier cette conjecture en comparant plusieurs modèles de vectorisation, i.e. de transformation du texte en objets numériques pour que l'information contenue soit exploitable dans un modèle de classification. Comme nous nous intéressons plus à l'effet de la vectorisation qu'à la tâche de classification en elle-même, nous allons utiliser un algorithme de classification simple (un SVM linéaire), avec des paramètres non fine-tunés. Ce modèle est connu pour être très performant sur les tâches de classification de texte, et nous fournira donc une bonne *baseline*. Cela nous permettra également de comparer de manière objective l'impact des méthodes de vectorisation sur la performance finale.
+Nous allons à présent vérifier cette conjecture en comparant
+plusieurs modèles de vectorisation,
+_i.e._ de transformation du texte en objets numériques
+pour que l'information contenue soit exploitable dans un modèle de classification.
 
-On va utiliser au maximum les objets de type pipeline de `sklearn`, qui permettent de réaliser des analyses reproductibles et de fine-tuner proprement les différents hyperparamètres. Pour les deux premières méthodes de vectorisation (basées sur des fréquences et fréquences relatives des mots), on va simplement normaliser les données d'entrée, ce qui va permettre au SVM de converger plus rapidement, ces modèles étant sensibles aux différences d'échelle dans les données. On va également fine-tuner via grid-search certains hyperparamètres liés à ces méthodes de vectorisation : 
-- on teste différents ranges de n-grams (unigrammes et unigrammes + bigrammes)
-- on teste avec et sans stop-words
+Comme nous nous intéressons plus à l'effet de la vectorisation qu'à la tâche de classification en elle-même,
+nous allons utiliser un algorithme de classification simple (un SVM linéaire), avec des paramètres non fine-tunés.
 
-Afin d'éviter le surapprentissage, on va évaluer les différents modèles via validation croisée, calculée sur 4 blocs. On récupère à la fin le meilleur modèle selon une métrique spécifiée. On choisit le score F1, moyenne harmonique de la précision et du rappel, qui donne un poids équilibré aux deux métriques, tout en pénalisant fortement le cas où l'une des deux est faible. Précisément, on retient le score F1 *micro-averaged* : les contributions des différentes classes à prédire sont aggrégées, puis l'on calcule le score F1 sur ces données aggrégées. L'avantage de ce choix est qu'il permet de tenir compte des différences de fréquences des différentes classes.
+Ce modèle est connu pour être très performant sur les tâches de classification de texte, et nous fournira donc une bonne *baseline*. Cela nous permettra également de comparer de manière objective l'impact des méthodes de vectorisation sur la performance finale.
+
+On va utiliser au maximum les objets de type pipeline de `sklearn`,
+qui permettent de réaliser des analyses reproductibles
+et de fine-tuner proprement les différents hyperparamètres.
+
+Pour les deux premières méthodes de vectorisation
+(basées sur des fréquences et fréquences relatives des mots),
+on va simplement normaliser les données d'entrée, ce qui va permettre au SVM de converger plus rapidement, ces modèles étant sensibles aux différences d'échelle dans les données.
+
+On va également fine-tuner via grid-search certains hyperparamètres liés à ces méthodes de vectorisation : 
+- on teste différents _ranges_ de `n-grams` (unigrammes et unigrammes + bigrammes)
+- on teste avec et sans _stop-words_
+
+Afin d'éviter le surapprentissage,
+on va évaluer les différents modèles via validation croisée, calculée sur 4 blocs.
+
+On récupère à la fin le meilleur modèle selon une métrique spécifiée.
+On choisit le `score F1`,
+moyenne harmonique de la précision et du rappel,
+qui donne un poids équilibré aux deux métriques, tout en pénalisant fortement le cas où l'une des deux est faible.
+Précisément, on retient le score F1 *micro-averaged* : les contributions des différentes classes à prédire sont aggrégées, puis l'on calcule le score F1 sur ces données aggrégées. L'avantage de ce choix est qu'il permet de tenir compte des différences de fréquences des différentes classes.
 
 
-```python
+```{python}
 clf = LinearSVC(max_iter=10000, C=0.1)
 ```
 
+On va utiliser un *pipeline* `scikit` ce qui va nous permettre d'avoir
+un code très concis pour effectuer cet ensemble de tâches cohérentes. 
+De plus, cela va nous assurer de gérer de manière cohérentes nos différentes
+transformations (cf. [partie sur les pipelines](#pipelines))
 
-```python
+```{python}
 def fit_vectorizers(vectorizer):
     pipeline = Pipeline(
     [
@@ -373,50 +400,105 @@ def fit_vectorizers(vectorizer):
     print(f"Mean F1 {np.mean(grid_search.cv_results_['mean_test_score'])}")
 ```
 
-### Bag-of-words
+## Bag-of-words
 
-On commence par une approche "bag-of-words", i.e. qui revient simplement à représenter chaque document par un vecteur qui compte le nombre d'apparitions de chaque mot du vocabulaire dans le document.
+On commence par une approche _"bag-of-words"_, 
+i.e. qui revient simplement à représenter chaque document par un vecteur
+qui compte le nombre d'apparitions de chaque mot du vocabulaire dans le document.
 
 
-```python
+```{python}
 fit_vectorizers(CountVectorizer)
 ```
 
-### TF-IDF
+## TF-IDF
 
-On s'intéresse ensuite à l'approche TF-IDF, qui permet de tenir compte des fréquences *relatives* des mots. Ainsi, pour un mot donné, on va multiplier la fréquence d'apparition du mot dans le document (calculé comme dans la méthode précédente) par un terme qui pénalise une fréquence élevée du mot dans le corpus. La vectorisation TF-IDF permet donc de limiter l'influence des *stop-words* et donc de donner plus de poids aux mots les plus salients d'un document. On observe clairement que la performance de classification est bien supérieure, ce qui montre la pertinence de cette technique.
+On s'intéresse ensuite à l'approche TF-IDF,
+qui permet de tenir compte des fréquences *relatives* des mots.
+
+Ainsi, pour un mot donné, on va multiplier la fréquence d'apparition du mot dans le document (calculé comme dans la méthode précédente) par un terme qui pénalise une fréquence élevée du mot dans le corpus.
+
+La vectorisation TF-IDF permet donc de limiter l'influence des *stop-words* et donc de donner plus de poids aux mots les plus salients d'un document. On observe clairement que la performance de classification est bien supérieure, ce qui montre la pertinence de cette technique.
 
 
-```python
+```{python}
 fit_vectorizers(TfidfVectorizer)
 ```
 
-### Word2vec + averaging
+## Word2vec + averaging
 
-On va maintenant explorer les techniques de vectorisation basées sur les *embeddings* de mots, et notamment la plus populaire : `word2vec`. L'idée derrière est simple, mais a révolutionné le NLP : au lieu de représenter les documents par des vecteurs *sparse* de très grande dimension (la taille du vocabulaire) comme on l'a fait jusqu'à présent, on va les représenter par des vecteurs *dense* (continus) de dimension réduite (en général, autour de 100-300). Chacune de ces dimensions va représenter un facteur latent, c'est à dire une variable inobservée, de la même manière que les composantes principales produites par une ACP.
+On va maintenant explorer les techniques de vectorisation basées sur les *embeddings* de mots, et notamment la plus populaire : `word2vec`.
+
+L'idée derrière est simple, mais a révolutionné le NLP :
+au lieu de représenter les documents par des
+vecteurs *sparse* de très grande dimension (la taille du vocabulaire)
+comme on l'a fait jusqu'à présent,
+on va les représenter par des vecteurs *dense* (continus)
+de dimension réduite (en général, autour de 100-300).
+
+Chacune de ces dimensions va représenter un facteur latent,
+c'est à dire une variable inobservée,
+de la même manière que les composantes principales produites par une ACP.
 
 ![title](w2v_vecto.png)
 
-Pourquoi est-ce intéressant ? Pour plein de raisons, mais pour résumer : cela permet de beaucoup mieux capturer la similarité sémantique entre les documents. Par exemple, un humain sait qu'un document contenant le mot "Roi" et un autre document contenant le mot "Reine" ont beaucoup de chance d'aborder des sujets semblables. Pourtant, une vectorisation de type comptage ou TF-IDF ne permet pas de saisir cette similarité : le calcul d'une mesure de similarité (norme euclidienne ou similarité cosine) entre les deux vecteurs ne prendra en compte la similarité des deux concepts, puisque les mots utilisés sont différents. A l'inverse, un modèle `word2vec` bien entraîné va capter qu'il existe un facteur latent de type "royauté", et la similarité entre les vecteurs associés aux deux mots sera forte. La magie va même plus loin : le modèle captera aussi qu'il existe un facteur latent de type "genre", et va permettre de construire un espace sémantique dans lequel les relations arithmétiques entre vecteurs ont du sens ; par exemple : $king - man + woman ≈ queen$.
+_Pourquoi est-ce intéressant ?_
+Pour de nombreuses raisons, mais pour résumer :
+cela permet de beaucoup mieux capturer la similarité sémantique entre les documents.
 
-Comment ces modèles sont-ils entraînés ? Via une tâche de prédiction résolue par un réseau de neurones simple. L'idée fondamentale est que la signification d'un mot se comprend en regardant les mots qui apparaissent fréquemment dans son voisinage. Pour un mot donné, on va donc essayer de prédire les mots qui apparaissent dans une fenêtre autour du mot cible. En répétant cette tâche de nombreuses fois et sur un corpus suffisamment varié, on obtient finalement des *embeddings* pour chaque mot du vocabulaire, qui présentent les propriétés discutées précédemment.
+Par exemple, un humain sait qu'un document contenant le mot _"Roi"_
+et un autre document contenant le mot _"Reine"_ ont beaucoup de chance
+d'aborder des sujets semblables.
+
+Pourtant, une vectorisation de type comptage ou TF-IDF
+ne permet pas de saisir cette similarité :
+le calcul d'une mesure de similarité (norme euclidienne ou similarité cosine)
+entre les deux vecteurs ne prendra en compte la similarité des deux concepts, puisque les mots utilisés sont différents.
+
+A l'inverse, un modèle `word2vec` bien entraîné va capter
+qu'il existe un facteur latent de type _"royauté"_,
+et la similarité entre les vecteurs associés aux deux mots sera forte.
+
+La magie va même plus loin : le modèle captera aussi qu'il existe un
+facteur latent de type _"genre"_,
+et va permettre de construire un espace sémantique dans lequel les
+relations arithmétiques entre vecteurs ont du sens ;
+par exemple :
+$$\text{king} - \text{man} + \text{woman} ≈ \text{queen}$$
+
+_Comment ces modèles sont-ils entraînés ?_
+Via une tâche de prédiction résolue par un réseau de neurones simple.
+
+L'idée fondamentale est que la signification d'un mot se comprend
+en regardant les mots qui apparaissent fréquemment dans son voisinage.
+
+Pour un mot donné, on va donc essayer de prédire les mots
+qui apparaissent dans une fenêtre autour du mot cible.
+
+En répétant cette tâche de nombreuses fois et sur un corpus suffisamment varié,
+on obtient finalement des *embeddings* pour chaque mot du vocabulaire,
+qui présentent les propriétés discutées précédemment.
 
 
-```python
+```{python}
 X_train_tokens = [text.split() for text in X_train]
 w2v_model = Word2Vec(X_train_tokens, vector_size=200, window=5, 
                      min_count=1, workers=4)
 ```
 
 
-```python
+```{python}
 w2v_model.wv.most_similar("mother")
 ```
 
-On voit que les mots les plus similaires à "mother" sont souvent des mots liés à la famille, mais pas toujours. C'est lié à la taille très restreinte du corpus sur lequel on entraîne le modèle, qui ne permet pas de réaliser des associations toujours pertinentes.
+On voit que les mots les plus similaires à _"mother"_
+sont souvent des mots liés à la famille, mais pas toujours.
+
+C'est lié à la taille très restreinte du corpus sur lequel on entraîne le modèle,
+qui ne permet pas de réaliser des associations toujours pertinentes.
 
 
-```python
+```{python}
 def get_mean_vector(w2v_vectors, words):
     words = [word for word in words if word in w2v_vectors]
     if words:
@@ -437,51 +519,78 @@ def fit_w2v_avg(w2v_vectors):
 ```
 
 
-```python
+```{python}
 fit_w2v_avg(w2v_model.wv)
 ```
 
-La performance chute fortement ; la faute à la taille très restreinte du corpus, comme annoncé précédemment.
+La performance chute fortement ;
+la faute à la taille très restreinte du corpus, comme annoncé précédemment.
 
-### Word2vec pré-entraîné + averaging
+## Word2vec pré-entraîné + averaging
 
-Quand on travaille avec des corpus de taille restreinte, c'est généralement une mauvaise idée d'entraîner son propre modèle `word2vec`. Heureusement, des modèles pré-entraînés sur de très gros corpus sont disponibles. Ils permettent de réaliser du *transfer learning*, c'est à dire de bénéficier de la performance d'un modèle qui a été entraîné sur une autre tâche ou bien un autre corpus.
+Quand on travaille avec des corpus de taille restreinte,
+c'est généralement une mauvaise idée d'entraîner son propre modèle `word2vec`.
+
+Heureusement, des modèles pré-entraînés sur de très gros corpus sont disponibles.
+Ils permettent de réaliser du *transfer learning*,
+c'est à dire de bénéficier de la performance d'un modèle qui a été entraîné sur une autre tâche ou bien un autre corpus.
 
 
-```python
+```{python}
 glove_model = gensim.downloader.load('glove-wiki-gigaword-200')
 ```
 
 
-```python
+```{python}
 glove_model.most_similar('mother')
 ```
 
 
-```python
+```{python}
 fit_w2v_avg(glove_model)
 ```
 
-La performance remonte substantiellement. Cela étant, on ne parvient pas à faire mieux que les approches basiques, on arrive à peine aux performances de la vectorisation par comptage. La cause est cette fois certainement dans la manière dont on exploite les *embeddings* : afin d'obtenir une représentation vectorielle pour chaque document, on moyennise les vecteurs des différents mots compris dans un document. Cela a plusieurs limites : 
+La performance remonte substantiellement.
+Cela étant, on ne parvient pas à faire mieux que les approches basiques,
+on arrive à peine aux performances de la vectorisation par comptage.
+
+La cause est cette fois certainement dans la manière dont on exploite
+les *embeddings* :
+afin d'obtenir une représentation vectorielle pour chaque document,
+on moyennise les vecteurs des différents mots compris dans un document.
+
+Cela a plusieurs limites : 
+
 - on ne tient pas compte de l'ordre et donc du contexte des mots
-- lorsque les documents sont longs, la moyennisation peut créer des représentation bruitées.
+- lorsque les documents sont longs, la moyennisation peut créer
+des représentation bruitées.
 
-### Contextual embeddings
+# Contextual embeddings
 
-Les *embeddings* contextuels visent à pallier les limites des *embeddings* traditionnels évoquées précédemment. Cette fois, les mots n'ont plus de représentation vectorielle fixe, celle-ci est calculée dynamiquement en fonction des mots du voisinage, et ainsi de suite. Cela permet de tenir compte de la structure spatiale des phrases et de tenir compte du fait que le sens d'un mot est fortement dépendant des mots qui l'entourent (ex : dans les phrases "le président Macron" et "le camembert Président" le mot président n'a pas du tout le même rôle). Ces *embeddings* sont produits par des architectures très complexes, de type Transformer (BERT, etc.).
+Les *embeddings* contextuels visent à pallier les limites des *embeddings*
+traditionnels évoquées précédemment.
+
+Cette fois, les mots n'ont plus de représentation vectorielle fixe,
+celle-ci est calculée dynamiquement en fonction des mots du voisinage, et ainsi de suite.
+Cela permet de tenir compte de la structure spatiale des phrases
+et de tenir compte du fait que le sens d'un mot est fortement dépendant des mots
+qui l'entourent (ex : dans les phrases "le président Macron" et "le camembert Président" le mot président n'a pas du tout le même rôle).
+
+Ces *embeddings* sont produits par des architectures très complexes,
+de type Transformer (`BERT`, etc.).
 
 
-```python
+```{python}
 model = SentenceTransformer('all-mpnet-base-v2')
 ```
 
 
-```python
+```{python}
 X_train_vectors = model.encode(X_train)
 ```
 
 
-```python
+```{python}
 scores = cross_val_score(clf, X_train_vectors, y_train, 
                          cv=4, scoring='f1_micro', n_jobs=4)
 
@@ -489,9 +598,20 @@ print(f"CV scores {scores}")
 print(f"Mean F1 {np.mean(scores)}")
 ```
 
-Verdict : on fait très légèrement mieux que la vectorisation TF-IDF. On voit donc l'importance de tenir compte du contexte. Mais pourquoi, avec une méthode très compliquée, ne parvenons-nous pas à battre une méthode toute simple ? On peut avancer plusieurs raisons : 
-- le TF-IDF est un modèle simple, mais toujours très performant (on parle de "tough-to-beat baseline").
-- la classification d'auteurs est une tâche très particulière et très ardue, qui ne fait pas justice aux *embeddings*. Comme on l'a dit précédemment, ces derniers se révèlent particulièrement pertinent lorsqu'il est question de similarité sémantique entre des textes (clustering, etc.). Dans le cas de notre tâche de classification, il est probable que certains mots (noms de personnage, noms de lieux) soient suffisants pour classifier de manière pertinente, ce que ne permettent pas de capter les *embeddings*.
+Verdict : on fait très légèrement mieux que la vectorisation TF-IDF.
+On voit donc l'importance de tenir compte du contexte.
+
+_Mais pourquoi, avec une méthode très compliquée, ne parvenons-nous pas à battre une méthode toute simple ?_
+
+On peut avancer plusieurs raisons : 
+- le TF-IDF est un modèle simple, mais toujours très performant
+(on parle de _"tough-to-beat baseline"_).
+- la classification d'auteurs est une tâche très particulière et très ardue,
+qui ne fait pas justice aux *embeddings*. Comme on l'a dit précédemment, ces derniers se révèlent particulièrement pertinent lorsqu'il est question de similarité sémantique entre des textes (clustering, etc.).
+
+Dans le cas de notre tâche de classification, il est probable que
+certains mots (noms de personnage, noms de lieux) soient suffisants pour classifier de manière pertinente,
+ce que ne permettent pas de capter les *embeddings*.
 
 ## Exercices
 
@@ -500,7 +620,3 @@ Verdict : on fait très légèrement mieux que la vectorisation TF-IDF. On voit 
 - Comparer avec d'autres algorithmes de classification qu'un SVM
 - (Avancé) : fine-tuner le modèle d'embeddings contextuels sur la tâche de classification
 
-
-```python
-
-```
