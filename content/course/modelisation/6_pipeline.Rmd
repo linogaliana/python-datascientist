@@ -530,6 +530,63 @@ knitr::include_graphics('predict1.png')
 
 # Recherche des hyperparamètres optimaux avec une validation croisée
 
+On détecte que le premier modèle n'est pas très bon et ne nous aidera
+pas vraiment à évaluer de manière fiable la maison de nos rêves. 
+
+On va essayer de voir si notre modèle ne serait pas meilleur avec des
+hyperparamètres plus adaptés. Après tout, nous avons choisi par défaut
+la profondeur de l'arbre mais c'était un choix au doigt mouillé. 
+
+Quels sont les hyperparamètres qu'on peut essayer d'optimiser ? 
+
+```{python}
+pipe['randomforest'].get_params()
+```
+
+Un [détour par la documentation](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html)
+nous aide à comprendre ceux sur lesquels on va jouer. Par exemple, il serait
+absurde de jouer sur le paramètre `random_state` qui est la racine du générateur
+pseudo-aléatoire. 
+
+Nous allons nous contenter de jouer sur les paramètres:
+
+* `n_estimators`: Le nombre d'arbres de décision que notre forêt contient
+* `max_depth`: La profondeur de chaque arbre
+
+Il existe plusieurs manières de faire de la validation croisée. Nous allons ici
+utiliser la *grid search* qui consiste à estimer et tester le modèle sur chaque
+combinaison d'une grille de paramètres et sélectionner le couple de valeurs
+des hyperparamètres amenant à la meilleure prédiction
+
+```{python, results = "hide"}
+import numpy as np
+from sklearn.model_selection import GridSearchCV
+
+# Parameters of pipelines can be set using ‘__’ separated parameter names:
+param_grid = {
+    "randomforest__n_estimators": np.linspace(10,200, 50).astype(int),
+    "randomforest__max_depth": np.linspace(2,10,2).astype(int)
+}
+grid_search = GridSearchCV(pipe, param_grid=param_grid)
+grid_search.fit(pd.concat((X_train, X_test), axis=0), np.concatenate([y_train,y_test]))
+```
+
+Si vous exécutez la cellule ci-dessus, cela risque de donner de nombreux
+warnings. En effet, on est face à un problème de *data leaking* car l'échantillon
+n'est pas balancé entre nos classes (les départements). Certaines classes se 
+retrouvent hors de l'échantillon d'estimation mais dans l'échantillon de prédiction.
+
+Pour éviter cela, il serait mieux de définir explicitement le schéma de
+validation croisée à mettre en oeuvre. Cela pourrait être fait avec
+la méthode `StratifiedGroupKFold` (plus d'éléments à venir)
+
+```{python, eval = FALSE}
+from sklearn.model_selection import StratifiedGroupKFold
+cv = StratifiedGroupKFold(n_splits=5)
+#grid_search.fit(pd.concat((X_train, X_test), axis=0), np.concatenate([y_train,y_test]), cv = cv, groups = pd.concat((X_train, X_test), axis=0)['dep'])
+```
+
+
 
 # Annexes: pipelines alternatifs
 
