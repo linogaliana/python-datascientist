@@ -347,12 +347,14 @@ en termes de vocabulaire,
 ce qui laisse penser qu'il est envisageable de prédire les auteurs à partir
 de leurs textes dans une certaine mesure.
 
-## Prédiction sur le set d'entraînement
+# Prédiction sur le set d'entraînement
 
 Nous allons à présent vérifier cette conjecture en comparant
 plusieurs modèles de vectorisation,
 _i.e._ de transformation du texte en objets numériques
 pour que l'information contenue soit exploitable dans un modèle de classification.
+
+## Démarche
 
 Comme nous nous intéressons plus à l'effet de la vectorisation qu'à la tâche de classification en elle-même,
 nous allons utiliser un algorithme de classification simple (un SVM linéaire), avec des paramètres non fine-tunés.
@@ -367,7 +369,8 @@ Pour les deux premières méthodes de vectorisation
 (basées sur des fréquences et fréquences relatives des mots),
 on va simplement normaliser les données d'entrée, ce qui va permettre au SVM de converger plus rapidement, ces modèles étant sensibles aux différences d'échelle dans les données.
 
-On va également fine-tuner via grid-search certains hyperparamètres liés à ces méthodes de vectorisation : 
+On va également _fine-tuner_ via _grid-search_
+certains hyperparamètres liés à ces méthodes de vectorisation : 
 
 - on teste différents _ranges_ de `n-grams` (unigrammes et unigrammes + bigrammes)
 - on teste avec et sans _stop-words_
@@ -379,17 +382,27 @@ On récupère à la fin le meilleur modèle selon une métrique spécifiée.
 On choisit le `score F1`,
 moyenne harmonique de la précision et du rappel,
 qui donne un poids équilibré aux deux métriques, tout en pénalisant fortement le cas où l'une des deux est faible.
-Précisément, on retient le `score F1 *micro-averaged*` : les contributions des différentes classes à prédire sont aggrégées, puis l'on calcule le score F1 sur ces données aggrégées. L'avantage de ce choix est qu'il permet de tenir compte des différences de fréquences des différentes classes.
-
+Précisément, on retient le `score F1 *micro-averaged*` :
+les contributions des différentes classes à prédire sont agrégées,
+puis on calcule le `score F1` sur ces données aggrégées.
+L'avantage de ce choix est qu'il permet de tenir compte des différences
+de fréquences des différentes classes.
 
 ```{python}
 clf = LinearSVC(max_iter=10000, C=0.1)
 ```
 
+## Pipeline de prédiction
+
 On va utiliser un *pipeline* `scikit` ce qui va nous permettre d'avoir
 un code très concis pour effectuer cet ensemble de tâches cohérentes. 
 De plus, cela va nous assurer de gérer de manière cohérentes nos différentes
 transformations (cf. [partie sur les pipelines](#pipelines))
+
+Pour se faciliter la vie, on définit une fonction `fit_vectorizers` qui
+intègre dans un *pipeline* générique une méthode d'estimation `scikit`
+et fait de la validation croisée en cherchant le meilleur modèle
+(en excluant/incluant les *stopwords* et avec unigrammes/bigrammes)
 
 ```{python}
 def fit_vectorizers(vectorizer):
@@ -420,12 +433,11 @@ def fit_vectorizers(vectorizer):
     return grid_search
 ```
 
-# Bag-of-words
+# Approche _bag-of-words_
 
-On commence par une approche _"bag-of-words"_, 
+On commence par une approche __"bag-of-words"__, 
 i.e. qui revient simplement à représenter chaque document par un vecteur
 qui compte le nombre d'apparitions de chaque mot du vocabulaire dans le document.
-
 
 ```{python}
 cv_bow = fit_vectorizers(CountVectorizer)
@@ -433,12 +445,18 @@ cv_bow = fit_vectorizers(CountVectorizer)
 
 # TF-IDF
 
-On s'intéresse ensuite à l'approche TF-IDF,
+On s'intéresse ensuite à l'approche __TF-IDF__,
 qui permet de tenir compte des fréquences *relatives* des mots.
 
-Ainsi, pour un mot donné, on va multiplier la fréquence d'apparition du mot dans le document (calculé comme dans la méthode précédente) par un terme qui pénalise une fréquence élevée du mot dans le corpus.
+Ainsi, pour un mot donné, on va multiplier la fréquence d'apparition du mot dans le document (calculé comme dans la méthode précédente) par un terme qui pénalise une fréquence élevée du mot dans le corpus. L'image ci-dessous, empruntée à Chris Albon, illustre cette mesure:
 
-La vectorisation TF-IDF permet donc de limiter l'influence des *stop-words* et donc de donner plus de poids aux mots les plus salients d'un document. On observe clairement que la performance de classification est bien supérieure, ce qui montre la pertinence de cette technique.
+![](https://chrisalbon.com/images/machine_learning_flashcards/TF-IDF_print.png)
+*Source: [https://chrisalbon](https://chrisalbon.com/code/machine_learning/preprocessing_text/tf-idf/)*
+
+La vectorisation `TF-IDF` permet donc de limiter l'influence des *stop-words*
+et donc de donner plus de poids aux mots les plus salients d'un document.
+On observe clairement que la performance de classification est bien supérieure,
+ce qui montre la pertinence de cette technique.
 
 
 ```{python}
