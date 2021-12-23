@@ -464,23 +464,9 @@ knitr::include_graphics("varimportance.png")
 
 Idéalement, on utiliserait `yellowbrick` pour représenter l'importance des variables
 Mais en l'état actuel du *pipeline* on a beaucoup de variables dont le poids
-est nul qui viennent polluer la visualisation
-
-```{python}
-from yellowbrick.model_selection import FeatureImportances
-viz = FeatureImportances(pipe['randomforest'])
-viz.fit(X_train_mod)
-viz.show()
-```
-
-```{python, echo = FALSE, include = FALSE}
-plt.savefig("varimportance2.png")
-```
-
-```{r}
-knitr::include_graphics("varimportance2.png")
-```
-
+est nul qui viennent polluer la visualisation. Vous pouvez 
+consulter la
+[documentation de `yellowbrick` sur ce sujet](https://www.scikit-yb.org/en/latest/api/model_selection/importances.html)
 
 ## Prédiction
 
@@ -560,7 +546,8 @@ des hyperparamètres amenant à la meilleure prédiction. Par défaut, `scikit`
 effectue une _5-fold cross validation_. Nous n'allons pas changer
 ce comportement. 
 
-Les paramètres 
+Comme expliqué précédemment, les paramètres s'appelent sous la forme
+`<step>__<parameter_name>`
 
 La validation croisée pouvant être très consommatrice de temps, nous 
 n'allons l'effectuer que sur un nombre réduit de valeurs de notre grille.
@@ -569,24 +556,57 @@ forme de liste (comme pour l'argument `max_depth` ci-dessous) ou
 sous forme d'`array` (comme pour l'argument `n_estimators`) ce qui est
 souvent pratique pour générer un criblage d'un intervalle avec `np.linspace`.
 
-```{python, results = "hide", eval = FALSE}
+Comme l'objectif est de se concentrer sur la démarche plus qu'essayer de
+trouver un bon modèle,
+nous allons également réduire la taille des données pour accélérer
+les calculs
+
+```{python}
 import numpy as np
-import time
 from sklearn.model_selection import GridSearchCV
 
+import time
 
 start_time = time.time()
-
+# Parameters of pipelines can be set using ‘__’ separated parameter names:
 param_grid = {
-    "randomforest__n_estimators": np.linspace(10,100, 5).astype(int),
+    "randomforest__n_estimators": np.linspace(5,25, 5).astype(int),
     "randomforest__max_depth": [2,4]
 }
 grid_search = GridSearchCV(pipe, param_grid=param_grid)
-grid_search.fit(pd.concat((X_train, X_test), axis=0), np.concatenate([y_train,y_test]))
+grid_search.fit(X, Y)
 
 end_time = time.time()
 print("Elapsed time : {}", end_time - start_time)
 ```
+
+On peut récupérer les paramètres optimaux avec la méthode `best_params_`:
+
+```{python}
+grid_search.best_params_
+```
+
+On pourra aussi ré-utiliser le modèle optimal de la manière suivante:
+
+```{python, eval = FALSE}
+grid_search.best_estimator_
+```
+
+
+{{< rawhtml >}}
+
+```{python, echo = FALSE, results = "asis"}
+print(estimator_html_repr(grid_search.best_estimator_))
+```
+
+{{< /rawhtml >}}
+
+
+
+```{python}
+perf_random_forest = pd.DataFrame(grid_search.cv_results_)
+```
+
 
 ## Remarque sur l'échantillonnage
 
