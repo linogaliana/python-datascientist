@@ -556,28 +556,65 @@ Nous allons nous contenter de jouer sur les paramètres:
 Il existe plusieurs manières de faire de la validation croisée. Nous allons ici
 utiliser la *grid search* qui consiste à estimer et tester le modèle sur chaque
 combinaison d'une grille de paramètres et sélectionner le couple de valeurs
-des hyperparamètres amenant à la meilleure prédiction
+des hyperparamètres amenant à la meilleure prédiction. Par défaut, `scikit`
+effectue une _5-fold cross validation_. Nous n'allons pas changer
+ce comportement. 
 
-```{python, results = "hide"}
+Les paramètres 
+
+La validation croisée pouvant être très consommatrice de temps, nous 
+n'allons l'effectuer que sur un nombre réduit de valeurs de notre grille.
+Il est possible de passer la liste des valeurs à passer au crible sous
+forme de liste (comme pour l'argument `max_depth` ci-dessous) ou
+sous forme d'`array` (comme pour l'argument `n_estimators`) ce qui est
+souvent pratique pour générer un criblage d'un intervalle avec `np.linspace`.
+
+```{python, results = "hide", eval = FALSE}
 import numpy as np
+import time
 from sklearn.model_selection import GridSearchCV
 
-# Parameters of pipelines can be set using ‘__’ separated parameter names:
+
+start_time = time.time()
+
 param_grid = {
-    "randomforest__n_estimators": np.linspace(10,200, 50).astype(int),
-    "randomforest__max_depth": np.linspace(2,10,2).astype(int)
+    "randomforest__n_estimators": np.linspace(10,100, 5).astype(int),
+    "randomforest__max_depth": [2,4]
 }
 grid_search = GridSearchCV(pipe, param_grid=param_grid)
 grid_search.fit(pd.concat((X_train, X_test), axis=0), np.concatenate([y_train,y_test]))
+
+end_time = time.time()
+print("Elapsed time : {}", end_time - start_time)
 ```
 
-Si vous exécutez la cellule ci-dessus, cela risque de donner de nombreux
-warnings. En effet, on est face à un problème de *data leaking* car l'échantillon
-n'est pas balancé entre nos classes (les départements). Certaines classes se 
-retrouvent hors de l'échantillon d'estimation mais dans l'échantillon de prédiction.
+## Remarque sur l'échantillonnage
 
-Pour éviter cela, il serait mieux de définir explicitement le schéma de
-validation croisée à mettre en oeuvre. Cela pourrait être fait avec
+En l'état actuel de l'échantillonnage entre train et test au sein de la
+_grid search_,
+on est face à un problème de *data leaking* car l'échantillon
+n'est pas balancé entre nos classes (les départements).
+
+Certaines classes se 
+retrouvent hors de l'échantillon d'estimation mais dans l'échantillon de prédiction.
+Autrement dit, notre *pipeline* de *preprocessing* se retrouve à devoir
+nettoyer des valeurs qu'il ne connaît pas. 
+
+Nous avons choisi une option, dans notre *pipeline* pour se faciliter la vie
+à ce propos. Nous ne rencontrons pas d'erreur car nous avons utilisé l'option 
+`handle_unknown = "ignore"` plutôt que 
+`handle_unknown = "error"` (défaut) dans le _one hot encoding_. 
+Cette option est dangereuse et n'est pas recommandée pour un vrai _pipeline_.
+De manière générale, il vaut mieux adopter une approche de
+programmation défensive en n'hésitant pas à renvoyer une erreur si la
+structure du *DataFrame* de prédiction diffère vraiment de celle du *DataFrame*
+d'entraînement.
+
+
+Pour éviter cette erreur, il serait mieux de définir explicitement le schéma de
+validation croisée à mettre en oeuvre.
+Précédemment, nous avions utilisé un échantillonnage stratifié. 
+Cela pourrait être fait ici avec
 la méthode `StratifiedGroupKFold` (plus d'éléments à venir)
 
 ```{python, eval = FALSE}
@@ -585,6 +622,16 @@ from sklearn.model_selection import StratifiedGroupKFold
 cv = StratifiedGroupKFold(n_splits=5)
 #grid_search.fit(pd.concat((X_train, X_test), axis=0), np.concatenate([y_train,y_test]), cv = cv, groups = pd.concat((X_train, X_test), axis=0)['dep'])
 ```
+
+# Eléments supplémentaires à venir
+
+Ce chapitre est amené à être enrichi des éléments suivants
+(cf. [#207](https://github.com/linogaliana/python-datascientist/issues/207))
+
+- [ ] Comparaison performance entre modèles grâce aux pipelines
+- [ ] Intégration d'une étape de sélection de variable dans un pipeline
+- [ ] `statsmodels` dans un pipeline
+- [ ] `Keras` dans un pipeline
 
 
 
@@ -753,7 +800,7 @@ print(estimator_html_repr(pipe2))
 preprocessor = ColumnTransformer(
     transformers=[
         ('numeric', StandardScaler(), numeric_features[:-1]),
-        ('categorical', OneHotEncoder(sparse=False), categorical_features)])
+        ('categorical', OneHotEncoder(sparse=False, handle_unknown = "ignore"), categorical_features)])
 
 pipe3 = Pipeline(steps=[('preprocessor', preprocessor),
                       ('randomforest', regr)])
