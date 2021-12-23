@@ -655,6 +655,45 @@ on fixe la profondeur de 2).
 En revanche, changer la profondeur de l'arbre améliore la 
 performance de manière plus marquée.
 
+Maintenant, il nous reste à re-entraîner le modèle avec ces nouveaux
+paramètres sur l'ensemble du jeu de *train* et l'évaluer sur l'ensemble
+du jeu de *test*:
+
+```{python}
+pipe_optimal = grid_search.best_estimator_
+pipe_optimal.fit(X_train, y_train)
+
+compar = pd.DataFrame([y_test, pipe_optimal.predict(X_test)]).T
+compar.columns = ['obs','pred']
+compar['diff'] = compar.obs - compar.pred
+```
+
+On obtient le RMSE suivant:
+
+```{python}
+print("Le RMSE sur le jeu de test est {:,}".format(
+   int(np.sqrt(mean_squared_error(y_test, pipe_optimal.predict(X_test))))
+))
+```
+
+Et si on regarde la qualité en prédiction:
+
+```{python}
+g = sns.relplot(data = compar, x = 'obs', y = 'pred', color = "royalblue", alpha = 0.8)
+g.set(ylim=(0, 2e6), xlim=(0, 2e6),
+      title='Evaluating estimation error on test sample',
+      xlabel='Observed values',
+      ylabel='Predicted values')
+g.ax.axline(xy1=(0, 0), slope=1, color="red", dashes=(5, 2))
+
+```
+
+Cela reste décevant pour plusieurs raisons:
+
+- nous n'avons pas fait d'étape de sélection de variable
+- nous n'avons pas chercher à déterminer si la variable à prédire la plus
+pertinente était le prix ou une transformation de celle-ci
+(par exemple le prix au $m^2$)
 
 ## Remarque sur la performance
 
@@ -716,7 +755,7 @@ Ce chapitre est amené à être enrichi des éléments suivants
 
 ## Préalable : quelques méthodes pour gagner en flexibilité dans le preprocessing
 
-Notre *dataframe* comporte des types hétérogènes de variables:
+Notre *DataFrame* comporte des types hétérogènes de variables:
 
 * Des variables numériques dont les variances sont très hétérogènes
 * Des variables textuelles qui mériteraient un recodage sous forme numérique
