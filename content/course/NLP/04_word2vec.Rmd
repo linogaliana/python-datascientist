@@ -419,6 +419,8 @@ def fit_vectorizers(vectorizer):
 
     print(f"CV scores {grid_search.cv_results_['mean_test_score']}")
     print(f"Mean F1 {np.mean(grid_search.cv_results_['mean_test_score'])}")
+    
+    return grid_search
 ```
 
 # Bag-of-words
@@ -429,7 +431,7 @@ qui compte le nombre d'apparitions de chaque mot du vocabulaire dans le document
 
 
 ```{python}
-fit_vectorizers(CountVectorizer)
+cv_bow = fit_vectorizers(CountVectorizer)
 ```
 
 # TF-IDF
@@ -443,12 +445,13 @@ La vectorisation TF-IDF permet donc de limiter l'influence des *stop-words* et d
 
 
 ```{python}
-fit_vectorizers(TfidfVectorizer)
+cv_tfidf = fit_vectorizers(TfidfVectorizer)
 ```
 
-# Word2vec + averaging
+# Word2vec avec averaging
 
-On va maintenant explorer les techniques de vectorisation basées sur les *embeddings* de mots, et notamment la plus populaire : `word2vec`.
+On va maintenant explorer les techniques de vectorisation basées sur les
+*embeddings* de mots, et notamment la plus populaire : `Word2Vec`.
 
 L'idée derrière est simple, mais a révolutionné le NLP :
 au lieu de représenter les documents par des
@@ -467,7 +470,7 @@ knitr::include_graphics("w2v_vecto.png")
 
 
 
-_Pourquoi est-ce intéressant ?_
+__Pourquoi est-ce intéressant ?__
 Pour de nombreuses raisons, mais pour résumer :
 cela permet de beaucoup mieux capturer la similarité sémantique entre les documents.
 
@@ -491,7 +494,7 @@ relations arithmétiques entre vecteurs ont du sens ;
 par exemple :
 $$\text{king} - \text{man} + \text{woman} ≈ \text{queen}$$
 
-_Comment ces modèles sont-ils entraînés ?_
+__Comment ces modèles sont-ils entraînés ?__
 Via une tâche de prédiction résolue par un réseau de neurones simple.
 
 L'idée fondamentale est que la signification d'un mot se comprend
@@ -541,11 +544,12 @@ def fit_w2v_avg(w2v_vectors):
 
     print(f"CV scores {scores}")
     print(f"Mean F1 {np.mean(scores)}")
+    return scores
 ```
 
 
 ```{python}
-fit_w2v_avg(w2v_model.wv)
+cv_w2vec = fit_w2v_avg(w2v_model.wv)
 ```
 
 La performance chute fortement ;
@@ -572,12 +576,26 @@ glove_model.most_similar('mother')
 
 
 ```{python}
-fit_w2v_avg(glove_model)
+cv_w2vec_transfert = fit_w2v_avg(glove_model)
 ```
 
 La performance remonte substantiellement.
 Cela étant, on ne parvient pas à faire mieux que les approches basiques,
 on arrive à peine aux performances de la vectorisation par comptage.
+
+En effet, pour rappel, les performances sont les suivantes:
+
+```{python}
+perfs = pd.DataFrame(
+    [np.mean(cv_bow.cv_results_['mean_test_score']),
+     np.mean(cv_tfidf.cv_results_['mean_test_score']),
+    np.mean(cv_w2vec),
+    np.mean(cv_w2vec_transfert)],
+    index = ['Bag-of-Words','TF-IDF', 'Word2Vec non pré-entraîné', 'Word2Vec pré-entraîné'],
+    columns = ["Mean F1 score"]
+).sort_values("Mean F1 score",ascending = False)
+perfs
+```
 
 La cause est cette fois certainement dans la manière dont on exploite
 les *embeddings* :
@@ -622,6 +640,18 @@ scores = cross_val_score(clf, X_train_vectors, y_train,
 print(f"CV scores {scores}")
 print(f"Mean F1 {np.mean(scores)}")
 ```
+
+```{python}
+perfs = pd.concat(
+  [perfs,
+  pd.DataFrame(
+    [np.mean(scores)],
+    index = ['Contextual Embedding'],
+    columns = ["Mean F1 score"])]
+).sort_values("Mean F1 score",ascending = False)
+perfs
+```
+
 
 Verdict : on fait très légèrement mieux que la vectorisation TF-IDF.
 On voit donc l'importance de tenir compte du contexte.
