@@ -147,15 +147,6 @@ Le jeu de données met ainsi en regard un auteur avec une phrase qu'il a écrite
 spooky_df.head()
 ```
 
-Pour rappel, nous avons les auteurs suivants dans notre corpus:
-
-```{python}
-initials_to_author = {
-    'EAP': 'Edgar Allen Poe',
-    'HPL': 'H.P. Lovecraft',
-    'MWS': 'Mary Wollstonecraft Shelley'
-}
-```
 
 ## Preprocessing
 
@@ -268,10 +259,20 @@ print(y_train[0], le.inverse_transform([y_train[0]])[0])
 
 ## Répartition des labels
 
+Refaisons un graphique que nous avons déjà produit précédemment pour voir
+la répartition de notre corpus entre auteurs:
 
 ```{python}
 plt.style.use('dark_background')
 pd.Series(le.inverse_transform(y_train)).value_counts().plot(kind='bar')
+```
+
+```{python, echo = FALSE, results = "hide"}
+plt.savefig("repart.png")
+```
+
+```{r, echo = FALSE}
+knitr::include_graphics("repart.png")
 ```
 
 On observe une petite asymétrie : les passages des livres d'Edgar Allen Poe sont plus nombreux dans notre corpus d'entraînement, ce qui peut être problématique dans le cadre d'une tâche de classification.
@@ -279,6 +280,8 @@ L'écart n'est pas dramatique, mais on essaiera d'en tenir compte dans l'analyse
 
 ## Mots les plus fréquemment utilisés par chaque auteur
 
+On va supprimer les *stopwords* pour réduire le bruit dans notre jeu
+de données
 
 ```{python}
 # Suppression des stop words
@@ -293,10 +296,10 @@ Vous pouvez essayer de faire vous-même les nuages ci-dessous
 ou cliquer sur la ligne ci-dessous pour afficher le code ayant
 généré les figures:
 
-{{< spoiler text="Click to view the spoiler" >}}
+{{< spoiler text="Cliquer pour afficher le code" >}}
 
 ```{python}
-def plot_top_words(initials, n_words=20):
+def plot_top_words(initials, ax, n_words=20):
     # Calcul des mots les plus fréquemment utilisés par l'auteur
     texts = X_train_no_sw[le.inverse_transform(y_train) == initials]
     all_tokens = ' '.join(texts).split()
@@ -306,18 +309,34 @@ def plot_top_words(initials, n_words=20):
     
     # Représentation sous forme de barplot
     plt.style.use('dark_background')
-    plt.figure(figsize=(20, 6))
-    sns.barplot(x=top_words, y=top_words_counts)
-    plt.title(f'Most Common Words used by {initials_to_author[initials]}')
-    plt.show()
+    ax = sns.barplot(ax = ax, x=top_words, y=top_words_counts)
+    ax.set_title(f'Most Common Words used by {initials_to_author[initials]}')
 ```
+
+```{python, results = "hide"}
+initials_to_author = {
+    'EAP': 'Edgar Allen Poe',
+    'HPL': 'H.P. Lovecraft',
+    'MWS': 'Mary Wollstonecraft Shelley'
+}
+
+fig, axs = plt.subplots(3, 1, figsize = (12,12))
+
+plot_top_words('EAP', ax = axs[0])
+plot_top_words('HPL', ax = axs[1])
+plot_top_words('MWS', ax = axs[2])
+```
+
 
 {{< /spoiler >}}
 
 ```{python}
-plot_top_words('EAP')
-plot_top_words('HPL')
-plot_top_words('MWS')
+plt.savefig("plottopwords.png")
+```
+
+
+```{r, echo = FALSE}
+knitr::include_graphics("plottopwords.png")
 ```
 
 Beaucoup de mots se retrouvent très utilisés par les trois auteurs.
@@ -352,6 +371,7 @@ Pour les deux premières méthodes de vectorisation
 on va simplement normaliser les données d'entrée, ce qui va permettre au SVM de converger plus rapidement, ces modèles étant sensibles aux différences d'échelle dans les données.
 
 On va également fine-tuner via grid-search certains hyperparamètres liés à ces méthodes de vectorisation : 
+
 - on teste différents _ranges_ de `n-grams` (unigrammes et unigrammes + bigrammes)
 - on teste avec et sans _stop-words_
 
@@ -441,7 +461,11 @@ Chacune de ces dimensions va représenter un facteur latent,
 c'est à dire une variable inobservée,
 de la même manière que les composantes principales produites par une ACP.
 
-![title](w2v_vecto.png)
+```{r, fig.cap = "Exemple de Word2Vec"}
+knitr::include_graphics("w2v_vecto.png")
+```
+
+
 
 _Pourquoi est-ce intéressant ?_
 Pour de nombreuses raisons, mais pour résumer :
@@ -581,7 +605,7 @@ Ces *embeddings* sont produits par des architectures très complexes,
 de type Transformer (`BERT`, etc.).
 
 
-```{python}
+```{python, results = "hide"}
 model = SentenceTransformer('all-mpnet-base-v2')
 ```
 
