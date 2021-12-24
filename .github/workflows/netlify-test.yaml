@@ -8,7 +8,7 @@ on:
       - dev
 
 jobs:
-  markdownise:
+  markdownise-modelisation:
     name: Compile to md
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
@@ -25,7 +25,7 @@ jobs:
           conda list
       - name: Build to md
         run: |
-          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
+          git diff ./content/course/manipulation --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
           cat diff.txt
           Rscript -e 'source("./build/build_light.R")'
       - uses: actions/upload-artifact@v2
@@ -33,9 +33,34 @@ jobs:
           name: md-manipulation
           path: ./content/course/manipulation/*.md
           retention-days: 1
+  markdownise-visualisation:
+    name: Compile to md
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Check python installed
+        run: |
+          conda info
+          conda list
+      - name: Build to md
+        run: |
+          git diff ./content/course/visualisation --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
+          cat diff.txt
+          Rscript -e 'source("./build/build_light.R")'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: md-visualisation
+          path: ./content/course/visualisation/*.md
+          retention-days: 1
   deploy:
     name: Render-Blog
-    needs: markdownise
+    needs: markdownise-modelisation, markdownise-visualisation 
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
     steps:
@@ -49,6 +74,10 @@ jobs:
         with:
           name: md-manipulation
           path: ./content/course/manipulation
+      - uses: actions/download-artifact@v2
+        with:
+          name: md-visualisation
+          path: ./content/course/visualisation
       - name: Clean files with Python function
         run: |
          rm -rf "./temp"
