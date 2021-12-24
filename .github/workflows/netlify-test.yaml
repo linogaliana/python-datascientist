@@ -20,9 +20,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{github.event.pull_request.head.repo.full_name}}
       - name: Check python installed
-        run: |
-          Rscript -e 'blogdown::install_hugo("0.83.0", force = TRUE)'
-          Rscript -e 'print(blogdown:::hugo_version())'
       - shell: bash -l {0}
         run: |
           conda info
@@ -32,11 +29,26 @@ jobs:
           git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
           cat diff.txt
           Rscript -e 'source("./build/build_light.R")'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: md-manipulation
+          path: ./content/course/manipulation/*.md
+          retention-days: 1
   deploy:
     name: Render-Blog
     needs: markdownise
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - uses: actions/download-artifact@v2
+        with:
+          name: md-manipulation
+          path: ./content/course/manipulation
       - name: Clean files with Python function
         run: |
          rm -rf "./temp"
