@@ -8,8 +8,8 @@ on:
       - dev
 
 jobs:
-  blogdown:
-    name: Render-Blog
+  markdownise:
+    name: Compile to md
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
     steps:
@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{github.event.pull_request.head.repo.full_name}}
-      - name: Check hugo and python are installed
+      - name: Check python installed
         run: |
           Rscript -e 'blogdown::install_hugo("0.83.0", force = TRUE)'
           Rscript -e 'print(blogdown:::hugo_version())'
@@ -32,6 +32,11 @@ jobs:
           git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
           cat diff.txt
           Rscript -e 'source("./build/build_light.R")'
+  deploy:
+    name: Render-Blog
+    needs: markdownise
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
       - name: Clean files with Python function
         run: |
          rm -rf "./temp"
@@ -40,6 +45,10 @@ jobs:
          pip install matplotlib wordcloud nltk
          python build/cleanmd.py
          python build/wc_website.py
+      - name: Check hugo installed
+        run: |
+          Rscript -e 'blogdown::install_hugo("0.83.0", force = TRUE)'
+          Rscript -e 'print(blogdown:::hugo_version())'
       - name: Render blog
         run: |
           Rscript -e 'source("./build/netlify.R")'
