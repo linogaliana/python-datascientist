@@ -8,10 +8,10 @@ on:
       - dev
 
 jobs:
-  markdownise-modelisation:
+  markdownise-manipulation:
     name: Compile to md
     runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:modelisation
+    container: linogaliana/python-datascientist:manipulation
     steps:
       - uses: actions/checkout@v2
         with:
@@ -58,9 +58,59 @@ jobs:
           name: md-visualisation
           path: ./content/course/visualisation/*.md
           retention-days: 1
+  markdownise-modelisation:
+    name: Compile to md
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:modelisation
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Check python installed
+        run: |
+          conda info
+          conda list
+      - name: Build to md
+        run: |
+          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} -- ./content/course/modelisation >> diff.txt
+          cat diff.txt
+          Rscript -e 'source("./build/build_light.R")'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: md-modelisation
+          path: ./content/course/modelisation/*.md
+          retention-days: 1
+  markdownise-nlp:
+    name: Compile to md
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:nlp
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Check python installed
+        run: |
+          conda info
+          conda list
+      - name: Build to md
+        run: |
+          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} -- ./content/course/nlp >> diff.txt
+          cat diff.txt
+          Rscript -e 'source("./build/build_light.R")'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: md-nlp
+          path: ./content/course/nlp/*.md
+          retention-days: 1
   deploy:
     name: Render-Blog
-    needs: [markdownise-modelisation, markdownise-visualisation]
+    needs: [markdownise-manipulation, markdownise-visualisation, markdownise-modelisation]
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
     steps:
@@ -78,6 +128,10 @@ jobs:
         with:
           name: md-visualisation
           path: ./content/course/visualisation
+      - uses: actions/download-artifact@v2
+        with:
+          name: md-modelisation
+          path: ./content/course/modelisation
       - name: Clean files with Python function
         run: |
          rm -rf "./temp"
