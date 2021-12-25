@@ -100,17 +100,43 @@ jobs:
           conda list
       - name: Build to md
         run: |
-          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} -- ./content/course/nlp >> diff.txt
+          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} -- ./content/course/NLP >> diff.txt
           cat diff.txt
           Rscript -e 'source("./build/build_light.R")'
       - uses: actions/upload-artifact@v2
         with:
           name: md-nlp
-          path: ./content/course/nlp/*.md
+          path: ./content/course/NLP/*.md
+          retention-days: 1
+  markdownise-reste:
+    name: Compile to md
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:minimal
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Check python installed
+        run: |
+          conda info
+          conda list
+      - name: Build to md
+        run: |
+          rm -rf manipulation/ visualisation/ modelisation/ NLP/
+          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
+          cat diff.txt
+          Rscript -e 'source("./build/build_light.R")'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: md-reste
+          path: ./content/course/*.md
           retention-days: 1
   deploy:
     name: Render-Blog
-    needs: [markdownise-manipulation, markdownise-visualisation, markdownise-modelisation]
+    needs: [markdownise-manipulation, markdownise-visualisation, markdownise-modelisation,markdownise-nlp, markdownise-reste]
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
     steps:
@@ -132,6 +158,14 @@ jobs:
         with:
           name: md-modelisation
           path: ./content/course/modelisation
+      - uses: actions/download-artifact@v2
+        with:
+          name: md-nlp
+          path: ./content/course/NLP
+      - uses: actions/download-artifact@v2
+        with:
+          name: md-reste
+          path: ./content/course
       - name: Clean files with Python function
         run: |
          rm -rf "./temp"
