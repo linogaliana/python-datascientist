@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:manipulation
     steps:
-      - uses: linogaliana/python-datascientist-actions/compile@v1.0.11
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.14
         with:
           directory-name: 'manipulation'
   markdownise-visualisation:
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:visualisation
     steps:
-      - uses: linogaliana/python-datascientist-actions/compile@v1.0.11
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.14
         with:
           directory-name: 'visualisation'
   markdownise-modelisation:
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:modelisation
     steps:
-      - uses: linogaliana/python-datascientist-actions/compile@v1.0.11
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.14
         with:
           directory-name: 'modelisation'
   markdownise-nlp:
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:nlp
     steps:
-      - uses: linogaliana/python-datascientist-actions/compile@v1.0.11
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.14
         with:
           directory-name: 'NLP'
   markdownise-reste:
@@ -45,14 +45,14 @@ jobs:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:minimal
     steps:
-      - uses: linogaliana/python-datascientist-actions/compile-all@v1.0.11
+      - uses: linogaliana/python-datascientist-actions/compile-all@v1.0.14
   deploy:
     name: Render-Blog
     needs: [markdownise-manipulation, markdownise-visualisation, markdownise-modelisation,markdownise-nlp, markdownise-reste]
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
     steps:
-      - uses: linogaliana/python-datascientist-actions/hugo-netlify@v1.0.11
+      - uses: linogaliana/python-datascientist-actions/hugo-netlify@v1.0.14
         with:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -61,83 +61,57 @@ jobs:
         with:
           name: Website
           path: public/
-      - uses: linogaliana/python-datascientist-actions/convert-jupyter@v1.0.11
+      - uses: linogaliana/python-datascientist-actions/convert-jupyter@v1.0.14
         with:
           directory-name: "notebooks"
           BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
-  corrections:
+  markdownise-manipulation-corrections:
+    name: Partie manipulation
     runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
+    container: linogaliana/python-datascientist:manipulation
     steps:
-      - uses: actions/checkout@v2
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.14
         with:
-          submodules: true
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - name: Install rmarkdown
-        env:
-          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
-        run: |
-          Rscript -e 'remotes::install_github("yihui/xfun")'
-          Rscript -e 'remotes::install_github("yihui/knitr")'
-          Rscript -e 'install.packages(c("rmarkdown"))'
-      - name: Install Python
-        run: |
-          Rscript -e "install.packages(c('remotes', 'reticulate'))"
-          Rscript -e "install.packages(c('here'))"
-      - shell: bash -l {0}
-        run: |
-          conda info
-          conda list
-      - name: Modif Rmd echo status
-        run: |
-         python build/modifmd.py
-      - name: Build to md
-        run: |
-          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
-          cat diff.txt
-          Rscript -e 'source("./build/build_light.R")'
-      - name: Clean files with Python function
-        run: |
-         rm -rf "./temp"
-         mkdir -p temp
-         mkdir -p corrections
-         python build/cleanmd.py
-      - name: Convert in ipynb with Jupytext
-        run: |
-         pip install jupytext
-         cd ./temp
-         for i in $(find . -type f \( -iname "*.Rmd" \)); do \
-            j="${i%.Rmd}.md" ;
-            echo "$j" ;
-            if [ -e $j ]
-            then
-              echo "Converting $j"; \
-              #jupytext --to py --execute "$i"
-              jupytext --to ipynb "$j" ;
-              k="${j%.md}.ipynb" ;
-            fi            
-         done
-         mkdir -p ../corrections
-         cp -R . ../corrections
-         cd ..
-      - uses: actions/upload-artifact@v2
+          directory-name: 'manipulation'
+          modify-chunk: true
+  markdownise-visualisation-corrections:
+    name: Partie visualisation
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:visualisation
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.14
         with:
-          name: Corrections
-          path: corrections/
-      - name: Commit new notebooks
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        env:
+          directory-name: 'visualisation'
+          modify-chunk: true
+  markdownise-modelisation-corrections:
+    name: Partie modélisation
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:modelisation
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.14
+        with:
+          directory-name: 'modelisation'
+          modify-chunk: true
+  markdownise-nlp-corrections:
+    name: Partie NLP
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:nlp
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.14
+        with:
+          directory-name: 'NLP'
+  markdownise-reste-corrections:
+    name: Markdown non thématiques
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:minimal
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile-all@v1.0.14
+  notebooks-corrections:
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:minimal
+    needs: [markdownise-manipulation-corrections, markdownise-visualisation-corrections, markdownise-modelisation-corrections, markdownise-nlp, markdownise-reste-corrections]
+    steps:
+      - uses: linogaliana/python-datascientist-actions/convert-jupyter@v1.0.14
+        with:
+          directory-name: "corrections"
           BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-         git config user.name 'github-actions[bot]'
-         git config user.email 'github-actions[bot]@users.noreply.github.com'
-         # git config user.email github-actions@github.com
-         #git checkout ${BRANCHE_REF}
-         git status
-         git add corrections/**/*.ipynb;
-         git commit -m "Automated changes";
-         git pull
-         git push
-
