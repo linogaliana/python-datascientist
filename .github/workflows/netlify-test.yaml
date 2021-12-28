@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:manipulation
     steps:
-      - uses: linogaliana/python-datascientist-actions/compile@v1.0.8
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.9
         with:
           directory-name: 'manipulation'
   markdownise-visualisation:
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:visualisation
     steps:
-      - uses: linogaliana/python-datascientist-actions/compile@v1.0.8
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.9
         with:
           directory-name: 'visualisation'
   markdownise-modelisation:
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:modelisation
     steps:
-      - uses: linogaliana/python-datascientist-actions/compile@v1.0.8
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.9
         with:
           directory-name: 'modelisation'
   markdownise-nlp:
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:nlp
     steps:
-      - uses: linogaliana/python-datascientist-actions/compile@v1.0.8
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.9
         with:
           directory-name: 'NLP'
   markdownise-reste:
@@ -45,71 +45,18 @@ jobs:
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:minimal
     steps:
-      - uses: linogaliana/python-datascientist-actions/compile-all@v1.0.8
+      - uses: linogaliana/python-datascientist-actions/compile-all@v1.0.9
   deploy:
     name: Render-Blog
     needs: [markdownise-manipulation, markdownise-visualisation, markdownise-modelisation,markdownise-nlp, markdownise-reste]
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: linogaliana/python-datascientist-actions/hugo-netlify@v1.0.9
         with:
-          submodules: true
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - uses: actions/download-artifact@v2
-        with:
-          name: md-reste
-          path: ./content/course
-      - uses: actions/download-artifact@v2
-        with:
-          name: md-manipulation
-          path: ./content/course/manipulation
-      - uses: actions/download-artifact@v2
-        with:
-          name: md-visualisation
-          path: ./content/course/visualisation
-      - uses: actions/download-artifact@v2
-        with:
-          name: md-modelisation
-          path: ./content/course/modelisation
-      - uses: actions/download-artifact@v2
-        with:
-          name: md-nlp
-          path: ./content/course/NLP
-      - name: Clean files with Python function
-        run: |
-         rm -rf "./temp"
-         mkdir -p temp
-         mkdir -p notebooks
-         pip install matplotlib wordcloud nltk
-         python build/cleanmd.py
-         python build/wc_website.py
-      - name: Check hugo installed
-        run: |
-          Rscript -e 'blogdown::install_hugo("0.83.0", force = TRUE)'
-          Rscript -e 'print(blogdown:::hugo_version())'
-      - name: Render blog
-        run: |
-          Rscript -e 'source("./build/netlify.R")'
-      - name: Install npm
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: actions/setup-node@v2          
-        with:
-          node-version: '12'        
-      - name: Deploy to Netlify
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        # NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID added in the repo's secrets
-        env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-          npm init -y
-          npm install --unsafe-perm=true netlify-cli -g
-          netlify init
-          netlify deploy --alias=${BRANCHE_REF} --dir="public" --message "Preview deploy from ${BRANCHE_REF}"
+          alias: ${{ github.event.pull_request.head.ref }}
       - uses: actions/upload-artifact@v2
         with:
           name: Website
