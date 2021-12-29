@@ -35,33 +35,6 @@ file.remove(
 
 
 
-#blogdown::stop_server()
-
-
-# Sys.setenv(HUGO_RELATIVEURLS = "true",
-#            BLOGDOWN_POST_RELREF = "true")
-
-# cmd = blogdown:::find_hugo()
-
-#blogdown:::create_shortcode('postref.html', 'blogdown/postref', TRUE)
-
-# cmd_args = c("--themesDir themes", "-t github.com")#, "--gc")#, "--minify")
-# system2(cmd, cmd_args)
-
-#blogdowntest::serve_site()
-
-# file.remove(
-#   gsub(
-#     ".Rmd",".md", list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
-#   )
-# )
-
-# file.remove(
-#   gsub(
-#     ".Rmd",".ipynb", list.files("./content", recursive = TRUE, pattern = "*.Rmd", full.names = TRUE)
-#   )
-# )
-
 
 
 
