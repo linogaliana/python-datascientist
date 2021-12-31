@@ -5,64 +5,123 @@ on:
     branches:
       - main
       - master
+      - light-action
 
 jobs:
-  blogdown:
+  markdownise-manipulation:
+    name: Partie manipulation
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:manipulation
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.65
+        with:
+          directory-name: 'manipulation'
+          branch-deploy: false
+  markdownise-visualisation:
+    name: Partie visualisation
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:visualisation
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.65
+        with:
+          directory-name: 'visualisation'
+          branch-deploy: false
+  markdownise-modelisation:
+    name: Partie modélisation
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:modelisation
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.65
+        with:
+          directory-name: 'modelisation'
+          branch-deploy: false
+  markdownise-nlp:
+    name: Partie NLP
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:nlp
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile@v1.0.65
+        with:
+          directory-name: 'NLP'
+          branch-deploy: false
+  markdownise-reste:
+    name: Markdown non thématiques
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:minimal
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile-all@v1.0.65
+        with:
+          branch-deploy: false
+  deploy:
     name: Render-Blog
     runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
-    if: "!contains(github.event.commits[0].message, '[skip ci]')"
+    container: linogaliana/python-datascientist:minimal
+    needs: [markdownise-manipulation, markdownise-visualisation, markdownise-modelisation,markdownise-nlp, markdownise-reste]
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
-      - uses: actions/checkout@v1
+      - uses: linogaliana/python-datascientist-actions/hugo-netlify@v1.0.65
         with:
-          submodules: true
-      - name: Install rmarkdown
-        env:
-          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
-        run: |
-          Rscript -e 'print(blogdown:::hugo_version())'
-          Rscript -e "install.packages(c('remotes', 'reticulate'))"
-          Rscript -e 'remotes::install_github("yihui/xfun")'
-          Rscript -e 'remotes::install_github("yihui/knitr")'
-          Rscript -e 'install.packages(c("rmarkdown"))'
-          Rscript -e "install.packages(c('here'))"
-      - name: install hugo
-        run: Rscript -e 'blogdown::install_hugo("0.83.0", force = TRUE)'
-      - shell: bash -l {0}
-        run: |
-          conda info
-          conda list
-      - name: Render blog
-        run: |
-          Rscript -e 'source("./build/build.R")'
-      - name: Create
-        run: |
-         rm -rf "./temp"
-         mkdir -p temp
-         mkdir -p notebooks
-         pip install matplotlib wordcloud nltk
-         python build/cleanmd.py
-         python build/wc_website.py
-      - name: Render blog
-        run: |
-          Rscript -e 'source("./build/netlify.R")'
-      - name: Install npm
-        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
-        uses: actions/setup-node@v2          
-        with:
-          node-version: '12'        
-      - name: Deploy to Netlify
-        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
-        # NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID added in the repo's secrets
-        env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-          npm init -y
-          npm install --unsafe-perm=true netlify-cli -g
-          netlify deploy --prod --dir="public" --message "Deploy master"
-      - uses: actions/upload-artifact@v1
+          alias: "test-master"
+      - uses: actions/upload-artifact@v2
         with:
-          name: public
+          name: Website [public]
           path: public/
+          retention-days: 2
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Source files
+          path: .
+          retention-days: 2
+# 
+# 
+#   blogdown:
+#     name: Render-Blog
+#     runs-on: ubuntu-latest
+#     container: linogaliana/python-datascientist:latest
+#     if: "!contains(github.event.commits[0].message, '[skip ci]')"
+#     steps:
+#       - uses: actions/checkout@v1
+#         with:
+#           submodules: true
+#       - name: Check python installed
+#         run: |
+#           conda info
+#           conda list
+#         shell: bash
+# 
+#       - name: Render blog
+#         run: |
+#           Rscript -e 'source("./build/build.R")'
+#       - name: Create
+#         run: |
+#          rm -rf "./temp"
+#          mkdir -p temp
+#          mkdir -p notebooks
+#          pip install matplotlib wordcloud nltk
+#          python build/cleanmd.py
+#          python build/wc_website.py
+#       - name: Render blog
+#         run: |
+#           Rscript -e 'source("./build/netlify.R")'
+#       - name: Install npm
+#         if: ${{ github.repository == 'linogaliana/python-datascientist' }}
+#         uses: actions/setup-node@v2          
+#         with:
+#           node-version: '12'        
+#       - name: Deploy to Netlify
+#         if: ${{ github.repository == 'linogaliana/python-datascientist' }}
+#         # NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID added in the repo's secrets
+#         env:
+#           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+#           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+#           BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
+#         run: |
+#           npm init -y
+#           npm install --unsafe-perm=true netlify-cli -g
+#           netlify deploy --prod --dir="public" --message "Deploy master"
+#       - uses: actions/upload-artifact@v1
+#         with:
+#           name: public
+#           path: public/
