@@ -9,6 +9,14 @@ content_rmd <- content_rmd[endsWith(content_rmd, ".Rmd")]
 #content_rmd <- content_rmd[!grepl("/git/", content_rmd)]
 content_rmd <- content_rmd[!grepl("06a_exo_supp_webscraping.", content_rmd)]
 
+# make sure you also take _index.Rmd
+content_index <- dirname(content_rmd)
+content_index <- paste0(content_index, "/_index.Rmd")
+content_index <- content_index[file.exists(content_index)]
+
+
+content_rmd <- unique(c(content_rmd, content_index))
+  
 file.remove(
   gsub(
     ".Rmd",".html", content_rmd
