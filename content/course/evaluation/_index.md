@@ -70,12 +70,19 @@ Même si le projet n’est pas celui du cours de stats, il faut que la démarche
 
  Sur le format du rendu, vous devrez :
 
-* Écrire un rapport sous forme de notebook
-* Avoir un répertoire github avec le rapport. Les données utilisées doivent être accessibles également, dans le dépôt ou sur internet.
-* Les dépôts Github où seul un *upload* du projet a été réalisé seront pénalisés. A l'inverse, les dépôts dans lequels le contrôle de version et le travail collaboratif ont été activement pratiqués (commits fréquents, pull requests, ..) seront valorisés.
+* Écrire un rapport sous forme de `Notebook` (quelques exceptions à cette règle peuvent exister, par exemple si vous développer une appli `Dash`)
+* Avoir un répertoire `Github` avec le rapport. Les données utilisées doivent être accessibles également, dans le dépôt ou sur internet.
+* Les __dépôts `Github` où seul un *upload* du projet a été réalisé seront pénalisés__. A l'inverse, les dépôts dans lequels le contrôle de version et le travail collaboratif ont été activement pratiqués (`commits` fréquents, `pull requests`, ..) seront valorisés.
 * Le code contenu dans le rapport devra être un maximum propre (pas de copier coller de cellule, préférez des fonctions)
 
-Lors de l'évaluation, une attention particulière sera donnée à la *reproductibilité* de votre projet. Chaque étape (récupération et traitement des données, analyses descriptives, modélisation) doit pouvoir être reproduite à partir du notebook final. Pour les opérations qui prennent du temps (ex : webscraping massif, requêtage d'API avec des limites de nombre de requêtes, entraînement de modèle, etc.), vous devez inclure l'output (base de données, modèle entraîné..) dans le dépôt, afin que les étapes suivantes puissent s'éxecuter sans problème. Le test à réaliser : faire tourner toutes les cellules de votre notebook et ne pas avoir d’erreur est une condition sine qua non pour avoir la moyenne.
+[Ce post](https://towardsdatascience.com/8-guidelines-to-create-professional-data-science-notebooks-97572894b2e5) donne
+quelques conseils pour avoir des notebooks agréables à lire. N'oubliez pas cette règle :
+
+> code is read much more often than written
+
+Lors de l'évaluation, une attention particulière sera donnée à la *reproductibilité* de votre projet.
+Chaque étape (récupération et traitement des données, analyses descriptives, modélisation) doit pouvoir être reproduite à partir du notebook final. Pour les opérations qui prennent du temps (ex : webscraping massif, requêtage d'API avec des limites de nombre de requêtes, entraînement de modèle, etc.), vous devez inclure l'output (base de données, modèle entraîné..) dans le dépôt, afin que les étapes suivantes puissent s'éxecuter sans problème.
+Le test à réaliser : faire tourner toutes les cellules de votre notebook et ne pas avoir d’erreur est une condition _sine qua non_ pour avoir la moyenne.
 
 
 ## Barême approximatif
@@ -96,8 +103,10 @@ Le projet doit être réalisé en groupe de deux, voire trois.
 
 | Projet | Auteurs | URL projet <a href="https://github.com" class="github"><i class="fab fa-github"></i></a> | Tags |
 |--------|---------|------------|------|
+| GPS vélo intégrant les bornes Vélib, les accidents, la congestion et la météo | Vinciane Desbois ; Imane Fares ; Romane Gajdos | https://github.com/ImaneFa/Projet_Python | Vélib ; Pistes cyclables ; Accidents ; Folium|
+
 <!---
 -----Suivre ce modèle------
 | Prédiction du prix des carottes | Bugs Bunny ; Daffy Duck | https://github.com/TheAlgorithms/Python | Prédiction ; Machine Learning ; Alimentation |
 ----->
-| GPS vélo intégrant les bornes Vélib, les accidents, la congestion et la météo | Vinciane Desbois ; Imane Fares ; Romane Gajdos | https://github.com/ImaneFa/Projet_Python | Vélib ; Pistes cyclables ; Accidents ; Folium|
+
