@@ -8,6 +8,7 @@ content_rmd <- content_rmd[startsWith(content_rmd, "content/course")]
 content_rmd <- content_rmd[endsWith(content_rmd, ".Rmd")]
 #content_rmd <- content_rmd[!grepl("/git/", content_rmd)]
 content_rmd <- content_rmd[!grepl("06a_exo_supp_webscraping.", content_rmd)]
+content_rmd <- content_rmd[file.exists(content_rmd)]
 
 # make sure you also take _index.Rmd
 content_index <- dirname(content_rmd)
