@@ -120,17 +120,25 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE, split = NULL,
     )
   }
   
-  onyxia_link_tmplt <- "https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB&init.personalInitArgs=%C2%AB${section}%20${chapter}%C2%BB&security.allowlist.enabled=false"
+  chapter <- tools::file_path_sans_ext(basename(notebook))
+  section <- basename(dirname(notebook))
+  
+  onyxia_link_tmplt <- paste0(
+    "https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter",
+    "?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB",
+    "&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB",
+    "&init.personalInitArgs=%C2%AB${section}%20${chapter}%C2%BB&security.allowlist.enabled=false"
+  )
   onyxia_link_launcher <- stringr::str_interp(onyxia_link_tmplt, list(section=section, chapter=chapter))
   if (type == "md"){
-    onyxia_link <- sprintf(
-      "[![Onyxia](https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&color=yellow?logo=Python)](%s)",
-      onyxia_link_launcher
-      )
+    onyxia_link <- paste0(
+      "[![Onyxia](https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&color=yellow?logo=Python)]",
+      "(",onyxia_link_launcher,")"
+    )
   } else{
     onyxia_link <- sprintf(
-    '<a href="%s" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&amp;color=yellow?logo=Python" alt="Onyxia"></a>',
-    onyxia_link_launcher
+      '<a href="%s" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&amp;color=yellow?logo=Python" alt="Onyxia"></a>',
+      onyxia_link_launcher
     )
   }
   
