@@ -82,6 +82,8 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE, split = NULL,
       'https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master%s',
       notebook
     )
+    chapter <- tools::file_path_sans_ext(basename(notebook))
+    section <- basename(dirname(notebook))
   } else{
     github_link <- 'https://github.com/linogaliana/python-datascientist'
     binder_path <- ""  
@@ -118,10 +120,18 @@ reminder_badges <- function(notebook = "", onyxia_only = FALSE, split = NULL,
     )
   }
   
+  onyxia_link_tmplt <- "https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB&init.personalInitArgs=%C2%AB${section}%20${chapter}%C2%BB&security.allowlist.enabled=false"
+  onyxia_link_launcher <- stringr::str_interp(onyxia_link_tmplt, list(section=section, chapter=chapter))
   if (type == "md"){
-    onyxia_link <- "[![Onyxia](https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&color=yellow?logo=Python)](https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter?onyxia.friendlyName=«python-datascientist»&resources.requests.memory=«4Gi»&security.allowlist.enabled=false&init.personalInit=«https://raw.githubusercontent.com/linogaliana/python-datascientist/master/init_onyxia.sh»)"
+    onyxia_link <- sprintf(
+      "[![Onyxia](https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&color=yellow?logo=Python)](%s)",
+      onyxia_link_launcher
+      )
   } else{
-    onyxia_link <- '<a href="https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter?onyxia.friendlyName=%c2%abpython-datascientist%c2%bb&amp;resources.requests.memory=%c2%ab4Gi%c2%bb&amp;security.allowlist.enabled=false&amp;init.personalInit=%c2%abhttps://raw.githubusercontent.com/linogaliana/python-datascientist/master/init_onyxia.sh%c2%bb" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&amp;color=yellow?logo=Python" alt="Onyxia"></a>'
+    onyxia_link <- sprintf(
+    '<a href="%s" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&amp;color=yellow?logo=Python" alt="Onyxia"></a>',
+    onyxia_link_launcher
+    )
   }
   
   if (!is.null(split) && (4 %in% split)){
