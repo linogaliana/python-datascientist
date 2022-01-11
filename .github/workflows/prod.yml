@@ -8,58 +8,74 @@ on:
       - light-action
 
 jobs:
-  blogdown:
-    name: Render-Blog
+  markdownise-manipulation:
+    name: Partie manipulation
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
-    if: "!contains(github.event.commits[0].message, '[skip ci]')"
     steps:
-      - uses: actions/checkout@v1
+      - uses: linogaliana/python-datascientist-actions/compile-master@v1.0.116
         with:
-          submodules: true
-      - name: Check python installed
-        run: |
-          conda info
-          conda list
-        shell: bash
-      - name: Build to md
-        run: |
-          Rscript -e 'source("./build/build.R")'
-      - name: Clean files with Python function
-        run: |
-         pip install matplotlib wordcloud nltk
-         python build/cleanmd.py
-         python build/wc_website.py
-      - name: Check hugo installed
-        run: |
-          rm -rf /usr/bin/hugo
-          Rscript -e 'blogdown::install_hugo("0.83.0", force = TRUE)'
-          Rscript -e 'print(blogdown:::hugo_version())'
-        shell: bash
-      - name: Render blog
-        run: |
-          ls
-          find ./content -name "*.md" -type f
-          Rscript -e 'source("./build/netlify.R")'
-        shell: bash
-      - name: Install npm
-        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
-        uses: actions/setup-node@v2          
+          directory-name: 'manipulation'
+          job_type: "master"
+          script-name: "build.R"
+  markdownise-visualisation:
+    name: Partie visualisation
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile-master@v1.0.116
         with:
-          node-version: '12'        
-      - name: Deploy to Netlify
-        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
-        # NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID added in the repo's secrets
-        env:
+          directory-name: 'visualisation'
+          job_type: "master"
+          script-name: "build.R"
+  markdownise-modelisation:
+    name: Partie modélisation
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile-master@v1.0.116
+        with:
+          directory-name: 'modelisation'
+          job_type: "master"
+          script-name: "build.R"
+  markdownise-nlp:
+    name: Partie NLP
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile-master@v1.0.116
+        with:
+          directory-name: 'NLP'
+          job_type: "master"
+          script-name: "build.R"
+  markdownise-reste:
+    name: Markdown non thématiques
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    steps:
+      - uses: linogaliana/python-datascientist-actions/compile-all-master@v1.0.116
+        with:
+          job_type: "master"
+          script-name: "build.R"
+  deploy:
+    name: Render-Blog
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:minimal
+    needs: [markdownise-manipulation, markdownise-visualisation, markdownise-modelisation,markdownise-nlp, markdownise-reste]
+    # if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - uses: linogaliana/python-datascientist-actions/hugo-netlify@v1.0.116
+        with:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-          npm init -y
-          npm install --unsafe-perm=true netlify-cli -g
-          #netlify deploy --prod --dir="public" --message "Deploy master"
-          netlify deploy --alias=${BRANCHE_REF} --dir="public" --message "Preview deploy from ${BRANCHE_REF}"
-      - uses: actions/upload-artifact@v1
+          alias: "test-master"
+      - uses: actions/upload-artifact@v2
         with:
-          name: public
+          name: Website [public]
           path: public/
+          retention-days: 2
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Source files
+          path: .
+          retention-days: 2
