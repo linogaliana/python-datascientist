@@ -81,7 +81,7 @@ En premier lieu, il convient d'installer les librairies adéquates
 Ensuite, comme nous allons utiliser également `spacy`, il convient de télécharger
 le corpus Anglais. Pour cela, on peut se référer à
 [la documentation de `spacy`](https://spacy.io/usage/models),
-extrèmement bien faite.
+extrêmement bien faite.
 
 
 - Idéalement, il faut installer le module via la ligne de commande. Dans
@@ -100,7 +100,7 @@ spacy.cli.download("en_core_web_sm")
 ```
 
 - Sinon, il est également possible d'installer le module en faisant pointer
-`pip install` depuis le fichier adéquat sur
+`pip install` vers le fichier adéquat sur
 [`Github`](https://github.com/explosion/spacy-models). Pour cela, taper
 
 ~~~python
@@ -151,15 +151,20 @@ spooky_df.head()
 
 ## Preprocessing
 
-En NLP, la première étape est souvent celle du *preprocessing*, qui inclut notamment les étapes de tokenization et de nettoyage du texte. Comme celles-ci ont été vues en détail dans le précédent chapitre, on se contentera ici d'un *preprocessing* minimaliste : suppression de la ponctuation et suppression des *stop words* (pour la visualisation et les méthodes de vectorisation basées sur des comptages).
+En NLP, la première étape est souvent celle du *preprocessing*, qui inclut notamment les étapes de tokenization et de nettoyage du texte. Comme celles-ci ont été vues en détail dans le précédent chapitre, on se contentera ici d'un *preprocessing* minimaliste : suppression de la ponctuation et des *stop words* (pour la visualisation et les méthodes de vectorisation basées sur des comptages).
 
 Jusqu'à présent, nous avons utilisé principalement `nltk` pour le 
 *preprocessing* de données textuelles. Cette fois, nous proposons
 d'utiliser la librairie `spaCy` qui permet de mieux automatiser sous forme de
-*pipeline* de *preprocessing*. 
+*pipelines* de *preprocessing*. 
+
+Pour initialiser le processus de nettoyage,
+on va utiliser le corpus `en_core_web_sm` (voir plus
+haut pour l'installation de ce corpus):
 
 
 ```{python}
+import spacy
 nlp = spacy.load('en_core_web_sm')
 ```
 
@@ -167,7 +172,7 @@ On va utiliser un `pipe` `spacy` qui permet d'automatiser, et de paralléliser,
 un certain nombre d'opérations. Les *pipes* sont l'équivalent, en NLP, de
 nos *pipelines* `scikit` ou des *pipes* `pandas`. Il s'agit donc d'un outil
 très approprié pour industrialiser un certain nombre d'opérations de
-*preprocessing*:
+*preprocessing* :
 
 ```{python}
 def clean_docs(texts, remove_stopwords=False, n_process = 4):
@@ -205,7 +210,7 @@ spooky_df.head()
 ## Encodage de la variable à prédire
 
 On réalise un simple encodage de la variable à prédire :
-il y a trois catégories, représentées par des entiers de 0 à 2.
+il y a trois catégories (auteurs), représentées par des entiers 0, 1 et 2.
 
 Pour cela, on utilise le `LabelEncoder` de `scikit` déjà présenté 
 dans la [partie modélisation](#preprocessing). On va utiliser la méthode
@@ -218,7 +223,7 @@ le = LabelEncoder()
 spooky_df['author_encoded'] = le.fit_transform(spooky_df['author'])
 ```
 
-On peut vérifier les classes de notre `LabelEncoder`:
+On peut vérifier les classes de notre `LabelEncoder` :
 
 ```{python}
 le.classes_
@@ -230,9 +235,8 @@ On met de côté un échantillon de test (20 %) avant toute analyse (même descr
 Cela permettra d'évaluer nos différents modèles toute à la fin de manière très rigoureuse,
 puisque ces données n'auront jamais utilisées pendant l'entraînement.
 
-Notre échantillon initial n'est pas balancé puisqu'on retrouve plus d'oeuvres de
-certains auteurs que d'autres. On va donc stratifier notre échantillon
-pour s'assurer qu'on a bien une répartition similaire d'auteurs dans nos
+Notre échantillon initial n'est pas équilibré (*balanced*) : on retrouve plus d'oeuvres de
+certains auteurs que d'autres. Afin d'obtenir un modèle qui soit évalué au mieux, nous allons donc stratifier notre échantillon de manière à obtenir une répartition similaire d'auteurs dans nos
 ensembles d'entraînement et de test.
 
 ```{python}
@@ -243,6 +247,14 @@ X_train, X_test, y_train, y_test = train_test_split(spooky_df['text_clean'].valu
                                                     stratify = spooky_df['author_encoded'].values)
 ```
 
+Par exemple, les textes d'EAP représentent 40 % des échantillons d'entraînement et de test : 
+
+```{python}
+print(100*y_train.tolist().count(0)/(len(y_train)))
+print(100*y_test.tolist().count(0)/(len(y_test)))
+```
+
+Aperçu du premier élément de `X_train` : 
 
 ```{python}
 X_train[0]
@@ -265,6 +277,10 @@ la répartition de notre corpus entre auteurs:
 
 ```{python, results = "hide"}
 pd.Series(le.inverse_transform(y_train)).value_counts().plot(kind='bar')
+```
+
+
+```{python, echo = FALSE}
 plt.savefig("repart.png", bbox_inches='tight')
 ```
 
@@ -272,13 +288,13 @@ plt.savefig("repart.png", bbox_inches='tight')
 knitr::include_graphics("repart.png")
 ```
 
-On observe une petite asymétrie : les passages des livres d'Edgar Allen Poe sont plus nombreux dans notre corpus d'entraînement, ce qui peut être problématique dans le cadre d'une tâche de classification.
+On observe une petite asymétrie : les passages des livres d'Edgar Allen Poe sont plus nombreux que ceux des autres auteurs dans notre corpus d'entraînement, ce qui peut être problématique dans le cadre d'une tâche de classification.
 L'écart n'est pas dramatique, mais on essaiera d'en tenir compte dans l'analyse en choisissant une métrique d'évaluation pertinente. 
 
 ## Mots les plus fréquemment utilisés par chaque auteur
 
 On va supprimer les *stopwords* pour réduire le bruit dans notre jeu
-de données
+de données.
 
 ```{python}
 # Suppression des stop words
@@ -291,7 +307,7 @@ nuages de mots déjà vue à plusieurs reprises.
 
 Vous pouvez essayer de faire vous-même les nuages ci-dessous
 ou cliquer sur la ligne ci-dessous pour afficher le code ayant
-généré les figures:
+généré les figures :
 
 {{< spoiler text="Cliquer pour afficher le code" >}}
 
@@ -356,13 +372,18 @@ pour que l'information contenue soit exploitable dans un modèle de classificati
 ## Démarche
 
 Comme nous nous intéressons plus à l'effet de la vectorisation qu'à la tâche de classification en elle-même,
-nous allons utiliser un algorithme de classification simple (un SVM linéaire), avec des paramètres non fine-tunés.
+nous allons utiliser un algorithme de classification simple (un SVM linéaire), avec des paramètres non fine-tunés (c'est-à-dire des paramètres pas nécessairement choisis pour être les meilleurs de tous).
 
-Ce modèle est connu pour être très performant sur les tâches de classification de texte, et nous fournira donc une bonne *baseline*. Cela nous permettra également de comparer de manière objective l'impact des méthodes de vectorisation sur la performance finale.
+```{python}
+clf = LinearSVC(max_iter=10000, C=0.1)
+```
 
-On va utiliser au maximum les objets de type pipeline de `sklearn`,
-qui permettent de réaliser des analyses reproductibles
-et de fine-tuner proprement les différents hyperparamètres.
+Ce modèle est connu pour être très performant sur les tâches de classification de texte, et nous fournira donc un bon modèle de référence (*baseline*). Cela nous permettra également de comparer de manière objective l'impact des méthodes de vectorisation sur la performance finale.
+
+<!-- KA : dit plus bas. -->
+<!-- On va utiliser au maximum les objets de type pipeline de `sklearn`, -->
+<!-- qui permettent de réaliser des analyses reproductibles -->
+<!-- et de fine-tuner proprement les différents hyperparamètres. -->
 
 Pour les deux premières méthodes de vectorisation
 (basées sur des fréquences et fréquences relatives des mots),
@@ -383,13 +404,9 @@ moyenne harmonique de la précision et du rappel,
 qui donne un poids équilibré aux deux métriques, tout en pénalisant fortement le cas où l'une des deux est faible.
 Précisément, on retient le `score F1 *micro-averaged*` :
 les contributions des différentes classes à prédire sont agrégées,
-puis on calcule le `score F1` sur ces données aggrégées.
+puis on calcule le `score F1` sur ces données agrégées.
 L'avantage de ce choix est qu'il permet de tenir compte des différences
 de fréquences des différentes classes.
-
-```{python}
-clf = LinearSVC(max_iter=10000, C=0.1)
-```
 
 ## Pipeline de prédiction
 
@@ -494,7 +511,7 @@ d'aborder des sujets semblables.
 
 Pourtant, une vectorisation de type comptage ou TF-IDF
 ne permet pas de saisir cette similarité :
-le calcul d'une mesure de similarité (norme euclidienne ou similarité cosine)
+le calcul d'une mesure de similarité (norme euclidienne ou similarité cosinus)
 entre les deux vecteurs ne prendra en compte la similarité des deux concepts, puisque les mots utilisés sont différents.
 
 A l'inverse, un modèle `word2vec` bien entraîné va capter
@@ -540,6 +557,9 @@ C'est lié à la taille très restreinte du corpus sur lequel on entraîne le mo
 qui ne permet pas de réaliser des associations toujours pertinentes.
 
 
+L'*embedding* (la représentation vectorielle) de chaque document correspond à la moyenne des *word-embeddings* des mots qui le composent : 
+
+
 ```{python}
 def get_mean_vector(w2v_vectors, words):
     words = [word for word in words if word in w2v_vectors]
@@ -576,7 +596,7 @@ c'est généralement une mauvaise idée d'entraîner son propre modèle `word2ve
 
 Heureusement, des modèles pré-entraînés sur de très gros corpus sont disponibles.
 Ils permettent de réaliser du *transfer learning*,
-c'est à dire de bénéficier de la performance d'un modèle qui a été entraîné sur une autre tâche ou bien un autre corpus.
+c'est-à-dire de bénéficier de la performance d'un modèle qui a été entraîné sur une autre tâche ou bien sur un autre corpus.
 
 L'un des modèles les plus connus pour démarrer est le `glove_model` de
 `Gensim` (Glove pour _Global Vectors for Word Representation_)[^1]:
@@ -587,12 +607,14 @@ L'un des modèles les plus connus pour démarrer est le `glove_model` de
 
 [^1]: Jeffrey Pennington, Richard Socher, and Christopher D. Manning. 2014. _GloVe: Global Vectors for Word Representation_. 
 
+On peut le charger directement grâce à l'instruction suivante : 
+
 ```{python, results = "hide"}
 glove_model = gensim.downloader.load('glove-wiki-gigaword-200')
 ```
 
 Par exemple, la représentation vectorielle de roi est l'objet
-multidimensionnel suivant;
+multidimensionnel suivant :
 
 ```{python}
 glove_model['king']
@@ -617,7 +639,7 @@ glove_model.most_similar(positive = ['king', 'woman'], negative = ['man'])
 Vous pouvez vous référer à [ce tutoriel](https://jalammar.github.io/illustrated-word2vec/)
 pour en découvrir plus sur `Word2Vec`.
 
-Faisons notre apprentissage par transfert:
+Faisons notre apprentissage par transfert :
 
 ```{python}
 cv_w2vec_transfert = fit_w2v_avg(glove_model)
@@ -641,10 +663,8 @@ perfs = pd.DataFrame(
 perfs
 ```
 
-La cause est cette fois certainement dans la manière dont on exploite
-les *embeddings* :
-afin d'obtenir une représentation vectorielle pour chaque document,
-on moyennise les vecteurs des différents mots compris dans un document.
+Les performences limitées du modèle *Word2Vec* sont cette fois certainement dues à la manière dont
+les *word-embeddings* sont exploités : ils sont moyennés pour décrire chaque document. 
 
 Cela a plusieurs limites : 
 
@@ -659,9 +679,10 @@ traditionnels évoquées précédemment.
 
 Cette fois, les mots n'ont plus de représentation vectorielle fixe,
 celle-ci est calculée dynamiquement en fonction des mots du voisinage, et ainsi de suite.
-Cela permet de tenir compte de la structure spatiale des phrases
+Cela permet de tenir compte de la structure des phrases
 et de tenir compte du fait que le sens d'un mot est fortement dépendant des mots
-qui l'entourent (ex : dans les phrases "le président Macron" et "le camembert Président" le mot président n'a pas du tout le même rôle).
+qui l'entourent. 
+Par exemple, dans les expressions "le président Macron" et "le camembert Président" le mot président n'a pas du tout le même rôle.
 
 Ces *embeddings* sont produits par des architectures très complexes,
 de type Transformer (`BERT`, etc.).
@@ -707,15 +728,15 @@ On peut avancer plusieurs raisons :
 - le `TF-IDF` est un modèle simple, mais toujours très performant
 (on parle de _"tough-to-beat baseline"_).
 - la classification d'auteurs est une tâche très particulière et très ardue,
-qui ne fait pas justice aux *embeddings*. Comme on l'a dit précédemment, ces derniers se révèlent particulièrement pertinent lorsqu'il est question de similarité sémantique entre des textes (_clustering_, etc.).
+qui ne fait pas justice aux *embeddings*. Comme on l'a dit précédemment, ces derniers se révèlent particulièrement pertinents lorsqu'il est question de similarité sémantique entre des textes (_clustering_, etc.).
 
 Dans le cas de notre tâche de classification, il est probable que
 certains mots (noms de personnage, noms de lieux) soient suffisants pour classifier de manière pertinente,
-ce que ne permettent pas de capter les *embeddings*.
+ce que ne permettent pas de capter les *embeddings* qui accordent à tous les mots la même importance.
 
-## Exercices
+## Aller plus loin
 
-- Nous avons entraîné différents modèles sur le set d'entraînement par validation croisée, mais nous n'avons toujours pas utilisé le set de test que nous avons mis de côté au début. Réaliser la prédiction sur les données de test, et vérifier si l'on obtient le même classement des méthodes de vectorisation.
+- Nous avons entraîné différents modèles sur l'échantillon d'entraînement par validation croisée, mais nous n'avons toujours pas utilisé l'échantillon test que nous avons mis de côté au début. Réaliser la prédiction sur les données de test, et vérifier si l'on obtient le même classement des méthodes de vectorisation.
 - Faire un *vrai* split train/test : faire l'entraînement avec des textes de certains auteurs, et faire la prédiction avec des textes d'auteurs différents. Cela permettrait de neutraliser la présence de noms de lieux, de personnages, etc.
 - Comparer avec d'autres algorithmes de classification qu'un SVM
 - (Avancé) : fine-tuner le modèle d'embeddings contextuels sur la tâche de classification
