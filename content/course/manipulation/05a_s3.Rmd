@@ -185,27 +185,37 @@ s3.get_file_info(fs.FileSelector('projet-relevanc', recursive=True))
 
 {{% /panel %}}
 
+{{% panel name="Snakemake" %}}
+
+La logique de `Snakemake` est, quant à elle,
+plus proche de celle de `boto3`. Seuls les noms
+d'arguments changent
+
+Si on a des jetons d'accès à jour et dans les variables d'environnement
+adéquates:
+
+```{python, eval=FALSE}
+from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
+S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
+```
+
+
+{{% /panel %}}
+
 
 {{< /panelset >}}
 
 
-### boto3
-
-Avec `boto3`, on créé d'abord un client puis on exécute des requêtes dessus.
-Pour initialiser un client, il suffit, en supposant que l'url du dépôt S3 est
-`"https://minio.lab.sspcloud.fr"`, de faire:
-
-```{python, eval = FALSE}
-import boto3
-s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
-```
-
 Il se peut que la connexion à ce stade soit refusée (HTTP error 403).
 Cela peut provenir 
 d'une erreur dans l'URL utilisé. Cependant, cela reflète plus généralement
-des paramètres d'authentification erronés. Dans ce cas, il est plus fiable
-de les fournir à `boto3.client`
+des paramètres d'authentification erronés.
 
+
+{{< panelset class="choice" >}}
+{{% panel name="boto3" %}}
+
+Les paramètres d'authentification sont des arguments supplémentaires:
 
 ```{python, eval = FALSE}
 import boto3
@@ -214,6 +224,25 @@ s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr",
                   aws_secret_access_key=access_key, 
                   aws_session_token = token)
 ```
+
+{{% /panel %}}
+
+{{% panel name="S3FS" %}}
+
+La logique est la même, seuls les noms d'arguments diffèrent
+
+```{python, eval=FALSE}
+import s3fs
+fs = s3fs.S3FileSystem(
+  client_kwargs={'endpoint_url': 'https://'+'minio.lab.sspcloud.fr'},
+  key = key_id, secret = access_key,
+  token = token)
+```
+
+{{% /panel %}}
+
+{{< /panelset >}}
+
 
 {{% panel status="note" title="Notes" icon="fa fa-comment" %}}
 Dans le SSP-cloud, 
@@ -226,11 +255,20 @@ datalab (service VSCode, Jupyter...),
 il faut remplacer l'url par `http://minio.lab.sspcloud.fr`
 {{% /panel %}}
 
+## Lister les fichiers
+
 S'il n'y a pas d'erreur à ce stade, c'est que la connexion est bien effective.
 Pour le vérifier, on peut essayer de faire la liste des fichiers disponibles
-dans un `bucket` auquel on désire accéder. Par exemple, on peut vouloir
+dans un `bucket` auquel on désire accéder.
+
+Par exemple, on peut vouloir
 tester l'accès aux bases `FILOSOFI` (données de revenu localisées disponibles
-sur <https://www.insee.fr>) au sein du bucket `donnees-insee`. Pour cela,
+sur <https://www.insee.fr>) au sein du bucket `donnees-insee`. 
+
+{{< panelset class="choice" >}}
+{{% panel name="boto3" %}}
+
+Pour cela,
 la méthode `list_objects` offre toutes les options nécessaires:
 
 ```{python, eval=FALSE}
@@ -238,28 +276,9 @@ for key in s3.list_objects(Bucket='donnees-insee', Prefix='FILOSOFI')['Contents'
     print(key['Key'])
 ```
 
-### s3fs
+{{% /panel %}}
 
-La logique est identique avec `s3fs`. 
-
-Si on a des jetons d'accès à jour et dans les variables d'environnement
-adéquates:
-
-```{python, eval=FALSE}
-import s3fs
-fs = s3fs.S3FileSystem(
-  client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
-```
-
-Sinon, on ajoute les crédits d'authentification:
-
-```{python, eval=FALSE}
-import s3fs
-fs = s3fs.S3FileSystem(
-  client_kwargs={'endpoint_url': 'https://'+'minio.lab.sspcloud.fr'},
-  key = key_id, secret = access_key,
-  token = token)
-```
+{{% panel name="S3FS" %}}
 
 Pour lister les fichiers, c'est la méthode `ls` (celle-ci ne liste pas par
 défaut les fichiers de manière récursive comme `boto3`):
@@ -267,6 +286,16 @@ défaut les fichiers de manière récursive comme `boto3`):
 ```{python, eval = FALSE}
 fs.ls("donnees-insee")
 ```
+
+
+{{% /panel %}}
+
+
+{{< /panelset >}}
+
+### s3fs
+
+
 
 ## Télécharger un fichier depuis s3 pour l'enregistrer en local
 
