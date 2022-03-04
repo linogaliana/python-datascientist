@@ -104,22 +104,6 @@ système de fichier local. En arrière-plan, `snakemake`
 va utiliser `boto3` pour communiquer avec le système
 de stockage
 
-```{python, eval = FALSE}
-from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
-S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
-bucket = "mon-bucket"
-
-rule ma_super_regle_s3:
-    input:
-        fichier = S3.remote(f'{bucket}/moninput.csv')
-    output:
-        fichier=S3.remote(f'{bucket}/monoutput.csv')
-    run:
-        import pandas as pd
-        df = pd.read_csv(input.fichier)
-        df.sample(10).to_csv(output.fichier)
-```
-
 
 ## Connexion à un bucket
 
@@ -290,34 +274,74 @@ fs.ls("donnees-insee")
 
 {{% /panel %}}
 
+{{% panel name="Arrow" %}}
+
+```{python, eval = FALSE}
+from pyarrow import fs
+s3 = fs.S3FileSystem(endpoint_override='http://'+'minio.lab.sspcloud.fr')
+s3.get_file_info(fs.FileSelector('donnees-insee', recursive=True))
+```
+
+{{% /panel %}}
 
 {{< /panelset >}}
-
-### s3fs
-
 
 
 ## Télécharger un fichier depuis s3 pour l'enregistrer en local
 
-### boto3
+Cette méthode n'est en général pas recommandée car, comme on va le voir
+par la suite, il est possible de lire à la volée des fichiers. Cependant,
+télécharger un fichier depuis le _cloud_ pour l'écrire sur le disque
+local peut parfois être utile. Par exemple, lorsqu'il est nécessaire
+de dézipper un fichier. 
+
+{{< panelset class="choice" >}}
+{{% panel name="boto3" %}}
 
 ```{python, eval = FALSE}
 s3.download_file('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv", 'data.csv')
 ```
 
-### s3fs
+{{% /panel %}}
 
-TO BE COMPLETED
+{{% panel name="S3FS" %}}
+
+__TO BE COMPLETED__
+
+{{% /panel %}}
+
+{{% panel name="Snakemake" %}}
+
+```{python, eval = FALSE}
+from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
+S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
+bucket = "mon-bucket"
+
+rule ma_super_regle_s3:
+    input:
+        fichier = S3.remote(f'{bucket}/moninput.csv')
+    output:
+        fichier='mon_dossier_local/monoutput.csv'
+    run:
+        import pandas as pd
+        df = pd.read_csv(input.fichier)
+        df.to_csv(output.fichier)
+```
+
+{{% /panel %}}
+
+{{< /panelset >}}
 
 
 ## Lire un fichier directement
 
 La méthode précédente n'est pas optimale. En effet, l'un des intérêts des API
-est qu'on peut traiter un fichier sur s3 comme s'il s'agissait d'un fichier
+est qu'on peut traiter un fichier sur `s3` comme s'il s'agissait d'un fichier
 sur son PC. Cela est d'ailleurs une manière plus sécurisée de procéder puisqu'on
-décrypte les données à la volée. 
+lit les données à la volée, sans les écrire dans un filesystem local. 
 
-### boto3
+{{< panelset class="choice" >}}
+{{% panel name="boto3" %}}
 
 ```{python, eval = FALSE}
 obj = s3.get_object(Bucket='donnees-insee', Key="FILOSOFI/2014/FILOSOFI_COM.csv")
@@ -325,7 +349,9 @@ df = pd.read_csv(obj['Body'], sep = ";")
 df.head(2)
 ```
 
-### s3fs
+{{% /panel %}}
+
+{{% panel name="S3FS" %}}
 
 Le code suivant devrait permettre d'effectuer la même opération avec `s3fs`
 
@@ -337,14 +363,54 @@ df = pd.read_csv(fs.open('{}/{}'.format('donnees-insee', "FILOSOFI/2014/FILOSOFI
 df.head(2)
 ```
 
+{{% /panel %}}
+
+{{% panel name="Arrow" %}}
+
+`Arrow` 
+
+```{python}
+from pyarrow import fs, csv
+
+s3 = fs.S3FileSystem(endpoint_override='http://'+'minio.lab.sspcloud.fr')
+
+with s3.open_input_file("donnees-insee/FILOSOFI/2014/FILOSOFI_COM.csv") as file:
+    df = csv.read_csv(file, parse_options=csv.ParseOptions(delimiter=";")).to_pandas()
+
+df.head(2)
+```
+
+{{% /panel %}}
+
+{{< /panelset >}}
+
+
 ## Uploader un fichier
 
-### boto3
+{{< panelset class="choice" >}}
+{{% panel name="boto3" %}}
 
 ```{python, eval = FALSE}
 s3.upload_file(file_name, bucket, object_name)
 ```
 
-### s3fs
+{{% /panel %}}
 
-TO BE COMPLETED
+{{% panel name="S3FS" %}}
+
+__TO BE COMPLETED__
+
+{{% /panel %}}
+
+{{% panel name="Arrow" %}}
+
+__TO BE COMPLETED__
+
+{{% /panel %}}
+
+{{< /panelset >}}
+
+
+## Pour aller plus loin
+
+- [La documentation sur MinIO du SSPCloud](https://docs.sspcloud.fr/onyxia-guide/stockage-de-donnees)
