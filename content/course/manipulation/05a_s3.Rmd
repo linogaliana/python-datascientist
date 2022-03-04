@@ -66,13 +66,16 @@ Le SSP cloud
 
 ## Comment faire avec Python ?
 
+### Les librairies principales
+
 L'interaction entre ce système distant de fichiers et une session locale de Python
 est possible grâce à des API. Les deux principales librairies sont les suivantes:
 
-* [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
-* [s3fs](https://s3fs.readthedocs.io/en/latest/)
+* [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html), une librairie créée et maintenue par Amazon ;
+* [s3fs](https://s3fs.readthedocs.io/en/latest/), une librairie qui permet d'interagir avec les fichiers stockés à l'instar d'un filesystem classique.
 
-Elles offrent toutes deux la possibilité de se connecter depuis `Python`,
+
+Ces deux librairies offrent toutes deux la possibilité de se connecter depuis `Python`,
 à un dépôt de fichiers distant, de lister les fichiers disponibles dans un
 *bucket*, d'en télécharger un ou plusieurs ou de faire de l'*upload*
 
@@ -83,6 +86,40 @@ SSP-cloud
 
 Personnellement, j'ai une petite préférence pour `boto3` que je trouve plus
 intuitif.
+
+### Quelques cas spéciaux
+
+La librairie ultra-performante [`arrow`](https://arrow.apache.org/docs/python/)
+propose également un accès à des fichiers sur 
+S3 comme s'ils étaient disponibles sur un _filesystem_
+local. Un exemple, assez court, est disponible 
+[dans la documentation officielle](https://arrow.apache.org/docs/python/filesystems.html#s3)
+
+Les utilisateurs de
+[`snakemake`](https://snakemake.readthedocs.io/en/stable/snakefiles/remote_files.html)
+peuvent également 
+lire ou écrire des tables intermédiaires sur `S3`
+comme s'ils utilisaient un
+système de fichier local. En arrière-plan, `snakemake`
+va utiliser `boto3` pour communiquer avec le système
+de stockage
+
+```{python, eval = FALSE}
+from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
+S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
+bucket = "mon-bucket"
+
+rule ma_super_regle_s3:
+    input:
+        fichier = S3.remote(f'{bucket}/moninput.csv')
+    output:
+        fichier=S3.remote(f'{bucket}/monoutput.csv')
+    run:
+        import pandas as pd
+        df = pd.read_csv(input.fichier)
+        df.sample(10).to_csv(output.fichier)
+```
+
 
 ## Connexion à un bucket
 
