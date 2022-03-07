@@ -32,7 +32,7 @@ l’aide d’un ou de plusieurs jeu(s) de données.
 
 Il faut donc dans un premier temps se pencher sur la recherche de problématisation et de contextualisation. Nous vous recommandons de prendre un sujet qui vous intéresse pour intéresser également le lecteur.
 
-{{% panel status="hint" title="Exemples de sujets des années précédentes" icon="fa fa-lightbulb" %}}
+{{% box status="hint" title="Exemples de sujets des années précédentes" icon="fa fa-lightbulb" %}}
 * Pourquoi les employés quittent l’entreprise ?
 * Quelles primes d’insécurité pour les emplois temporaires ?
 * Que peut-on dire des derniers mots d’un condamné à mort ?
@@ -42,7 +42,7 @@ Il faut donc dans un premier temps se pencher sur la recherche de problématisat
 * Analyse de sentiments sur les compagnies aériennes à partir de tweets
 * Qu’est ce que votre assiette dit de vous ?
 * Titanic : l’inégalité face au naufrage
-{{% /panel %}}
+{{% /box %}}
 
 Trois dimensions doivent être présentes dans le projet.
 Pour chacune de ces parties, il est possible d’aller plus ou moins loin. Il est recommandé d’aller loin sur au moins une des 3 dimensions.
