@@ -5,6 +5,7 @@ if (file.exists("~/.Rprofile")) {
 options(blogdown.new_bundle = TRUE)
 options(blogdown.hugo.version = "0.83.0")
 options(blogdown.method = 'markdown')
+options(blogdown.knit.on_save = FALSE)
 
 
 reminder_jupyter <- function(file = "./content/getting-started/06_rappels_classes.Rmd",
