@@ -92,12 +92,12 @@ intuitif.
 
 La librairie ultra-performante [`arrow`](https://arrow.apache.org/docs/python/)
 propose également un accès à des fichiers sur 
-S3 comme s'ils étaient disponibles sur un _filesystem_
+`S3` comme s'ils étaient disponibles sur un _filesystem_
 local. Un exemple, assez court, est disponible 
 [dans la documentation officielle](https://arrow.apache.org/docs/python/filesystems.html#s3)
 
 Les utilisateurs de
-[`snakemake`](https://snakemake.readthedocs.io/en/stable/snakefiles/remote_files.html)
+[`Snakemake`](https://snakemake.readthedocs.io/en/stable/snakefiles/remote_files.html)
 peuvent également 
 lire ou écrire des tables intermédiaires sur `S3`
 comme s'ils utilisaient un
@@ -105,6 +105,11 @@ système de fichier local. En arrière-plan, `snakemake`
 va utiliser `boto3` pour communiquer avec le système
 de stockage
 
+Un outil très performant utilisant la ligne de commande est également 
+disponible. Son nom est `mc` pour
+[`Minio Client`](https://docs.min.io/docs/minio-client-complete-guide.html).
+Il propose les mêmes
+opérations que la ligne de commande linux mais avec un système distant.
 
 ## Connexion à un bucket
 
@@ -258,7 +263,7 @@ Par exemple, on peut vouloir
 tester l'accès aux bases `FILOSOFI` (données de revenu localisées disponibles
 sur <https://www.insee.fr>) au sein du bucket `donnees-insee`. 
 
-{{< tabs tabTotal="4" >}}
+{{< tabs tabTotal="5" >}}
 {{% tab tabName="boto3" %}}
 
 Pour cela,
@@ -293,6 +298,16 @@ s3.get_file_info(fs.FileSelector('donnees-insee', recursive=True))
 
 {{% /tab %}}
 
+
+{{% tab tabName="mc" %}}
+
+```{shell, eval = FALSE}
+mc ls -r
+```
+
+{{% /tab %}}
+
+
 {{< /tabs >}}
 
 
@@ -304,7 +319,7 @@ télécharger un fichier depuis le _cloud_ pour l'écrire sur le disque
 local peut parfois être utile (par exemple, lorsqu'il est nécessaire
 de dézipper un fichier). 
 
-{{< tabs tabTotal="3" >}}
+{{< tabs tabTotal="4" >}}
 {{% tab tabName="boto3" %}}
 
 On utilise cette fois la méthode `download_file`
@@ -336,12 +351,19 @@ rule ma_super_regle_s3:
     output:
         fichier='mon_dossier_local/monoutput.csv'
     run:
-        import pandas as pd
-        df = pd.read_csv(input.fichier)
-        df.to_csv(output.fichier)
+        shell("cp {input[0]} {output[0]}")
 ```
 
 {{% /tab %}}
+
+{{% tab tabName="mc" %}}
+
+```{python, eval = FALSE}
+mc cp "donnees-insee/FILOSOFI/2014/FILOSOFI_COM.csv" 'data.csv'
+```
+
+{{% /tab %}}
+
 
 {{< /tabs >}}
 
@@ -353,7 +375,7 @@ est qu'on peut traiter un fichier sur `S3` comme s'il s'agissait d'un fichier
 sur son PC. Cela est d'ailleurs une manière plus sécurisée de procéder puisqu'on
 lit les données à la volée, sans les écrire dans un filesystem local. 
 
-{{< tabs tabTotal="3" >}}
+{{< tabs tabTotal="4" >}}
 {{% tab tabName="boto3" %}}
 
 ```{python, eval = FALSE}
@@ -374,6 +396,24 @@ df = pd.read_csv(fs.open('{}/{}'.format('donnees-insee', "FILOSOFI/2014/FILOSOFI
                  )
 
 df.head(2)
+```
+
+{{% /tab %}}
+
+{{% tab tabName="Snakemake" %}}
+
+```{python, eval = FALSE}
+from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
+S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
+bucket = "mon-bucket"
+
+rule ma_super_regle_s3:
+    input:
+        fichier = S3.remote(f'{bucket}/moninput.csv')
+    run:
+        import pandas as pd
+        df = pd.read_csv(input.fichier)
+        # PLUS D'OPERATIONS
 ```
 
 {{% /tab %}}
@@ -401,7 +441,7 @@ df.head(2)
 
 ## Uploader un fichier
 
-{{< tabs tabTotal="4" >}}
+{{< tabs tabTotal="5" >}}
 {{% tab tabName="boto3" %}}
 
 ```{python, eval = FALSE}
@@ -438,13 +478,20 @@ rule ma_super_regle_s3:
     output:
         fichier=S3.remote(f'{bucket}/monoutput.csv')
     run:
-        import pandas as pd
-        df = pd.read_csv(input.fichier)
-        df.to_csv(output.fichier)
+        shell("cp output.fichier input.fichier")
 ```
 
 
 {{% /tab %}}
+
+{{% tab tabName="mc" %}}
+
+```{python, eval = FALSE}
+mc cp 'data.csv' "MONBUCKET/monoutput.csv"
+```
+
+{{% /tab %}}
+
 
 {{< /tabs >}}
 
