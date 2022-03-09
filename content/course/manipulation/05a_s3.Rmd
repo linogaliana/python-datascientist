@@ -198,7 +198,7 @@ d'une erreur dans l'URL utilisé. Cependant, cela reflète plus généralement
 des paramètres d'authentification erronés.
 
 
-{{< tabs tabTotal="3" >}}
+{{< tabs tabTotal="4" >}}
 {{% tab tabName="boto3" %}}
 
 Les paramètres d'authentification sont des arguments supplémentaires:
@@ -223,6 +223,24 @@ fs = s3fs.S3FileSystem(
   client_kwargs={'endpoint_url': 'https://'+'minio.lab.sspcloud.fr'},
   key = key_id, secret = access_key,
   token = token)
+```
+
+{{% /tab %}}
+
+{{% tab tabName="Arrow" %}}
+
+Tout est en argument cette fois:
+
+```{python, eval=FALSE}
+from pyarrow import fs
+
+s3 = fs.S3FileSystem(
+    access_key = key_id,
+    secret_key = access_key,
+    session_token = token,
+    endpoint_override = 'https://'+'minio.lab.sspcloud.fr',
+    scheme = "https"
+    )
 ```
 
 {{% /tab %}}
@@ -420,18 +438,35 @@ rule ma_super_regle_s3:
 
 {{% tab tabName="Arrow" %}}
 
-`Arrow` est une librairie qui permet de lire des `CSV` (il est néanmoins
-beaucoup plus pratique d'utiliser le format `parquet` avec `arrow`)
+`Arrow` est une librairie qui permet de lire des `CSV`.
+Il est néanmoins
+beaucoup plus pratique d'utiliser le format `parquet` avec `arrow`. 
+Dans un premier temps, on configure le _filesystem_ avec les 
+fonctionalités d'`Arrow` (cf. précédemment). 
 
 ```{python}
-from pyarrow import fs, csv
+from pyarrow import fs
 
 s3 = fs.S3FileSystem(endpoint_override='http://'+'minio.lab.sspcloud.fr')
+```
+
+Pour lire un csv, on fera:
+
+```{python, eval = FALSE}
+from pyarrow import csv
 
 with s3.open_input_file("donnees-insee/FILOSOFI/2014/FILOSOFI_COM.csv") as file:
-  df = csv.read_csv(file, parse_options=csv.ParseOptions(delimiter=";")).to_pandas()
+    df = csv.read_csv(file, parse_options=csv.ParseOptions(delimiter=";")).to_pandas()
 
 df.head(2)
+```
+
+Pour un fichier au format parquet, on privilégiera:
+
+```{python, eval = FALSE}
+#bucket = ""
+parquet_file=""
+df = pq.ParquetDataset(f'{bucket}/{parquet_file}', filesystem=s3).read_pandas().to_pandas()
 ```
 
 {{% /tab %}}
