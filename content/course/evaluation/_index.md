@@ -104,7 +104,7 @@ Le projet doit être réalisé en groupe de deux, voire trois.
 | Projet | Auteurs | URL projet <a href="https://github.com" class="github"><i class="fab fa-github"></i></a> | Tags |
 |--------|---------|------------|------|
 | GPS vélo intégrant les bornes Vélib, les accidents, la congestion et la météo | Vinciane Desbois ; Imane Fares ; Romane Gajdos | https://github.com/ImaneFa/Projet_Python | Vélib ; Pistes cyclables ; Accidents ; Folium|
-
+| Analyse de sentiments sur les vaccins COVID administrés en France | KOAGNE FONGUIENG Florette ; KONKOBO Idrissa | https://github.com/kidrissa/projetpy | API ; NLP ; Wordcloud ; Modélisation prédictive|
 <!---
 -----Suivre ce modèle------
 | Prédiction du prix des carottes | Bugs Bunny ; Daffy Duck | https://github.com/TheAlgorithms/Python | Prédiction ; Machine Learning ; Alimentation |
