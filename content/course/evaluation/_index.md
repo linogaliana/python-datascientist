@@ -106,6 +106,7 @@ Le projet doit être réalisé en groupe de deux, voire trois.
 | GPS vélo intégrant les bornes Vélib, les accidents, la congestion et la météo | Vinciane Desbois ; Imane Fares ; Romane Gajdos | https://github.com/ImaneFa/Projet_Python | Vélib ; Pistes cyclables ; Accidents ; Folium|
 | Quiz Generator | Adrien Servière ; Mélissa Tamine | https://github.com/taminemelissa/quiz-generator | Machine Learning ; Natural Language Processing ; Question Generation ; Word2Vec |
 | Analyse de sentiments sur les vaccins COVID administrés en France | KOAGNE FONGUIENG Florette ; KONKOBO Idrissa | https://github.com/kidrissa/projetpy | API ; NLP ; Wordcloud ; Modélisation prédictive|
+| Estimation de l'empreinte carbone d'une recette de cuisine | Jean-Baptiste Laval ; Hadrien Lolivier ; Sirine Louati | https://github.com/sirinelouati/Plat_CO2 | Scrapping ; Dashboard ; Empreinte carbone ; Alimentation |
 
 <!---
 -----Suivre ce modèle------
