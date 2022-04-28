@@ -138,4 +138,4 @@ def print_badges(
         split=split,
         onyxia_only=onyxia_only)
 
-    return badges
+    print(badges)
