@@ -11,7 +11,7 @@ jobs:
   blogdown:
     name: Render-Blog
     runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
+    container: linogaliana/python-datascientist-vstudio:quarto
     steps:
       - uses: actions/checkout@v2
         with:
@@ -19,40 +19,27 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{github.event.pull_request.head.repo.full_name}}
-      - name: Install rmarkdown
-        env:
-          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
-        run: |
-          Rscript -e 'remotes::install_github("yihui/xfun")'
-          Rscript -e 'remotes::install_github("yihui/knitr")'
-          Rscript -e 'install.packages(c("rmarkdown", "here"))'
-      - name: install hugo
-        run: Rscript -e 'blogdown::install_hugo("0.83.0", force = TRUE)'
-      - name: Install Python
-        run: |
-          Rscript -e 'print(blogdown:::hugo_version())'
-          Rscript -e "install.packages(c('remotes', 'reticulate'))"
-          Rscript -e "install.packages(c('here'))"
-      - shell: bash -l {0}
+      - shell: bash
         run: |
           conda info
           conda list
       - name: Build to md
         run: |
-          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
-          cat diff.txt
-          Rscript -e 'source("./build/build_light.R")'
+          quarto render content --to hugo
+          #git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
+          #cat diff.txt
+          #Rscript -e 'source("./build/build_light.R")'
       - name: Clean files with Python function
         run: |
-         rm -rf "./temp"
-         mkdir -p temp
-         mkdir -p notebooks
-         pip install matplotlib wordcloud nltk
-         python build/cleanmd.py
-         python build/wc_website.py
+         #rm -rf "./temp"
+         #mkdir -p temp
+         #mkdir -p notebooks
+         #pip install matplotlib wordcloud nltk
+         #python build/cleanmd.py
+         #python build/wc_website.py
       - name: Render blog
         run: |
-          Rscript -e 'source("./build/netlify.R")'
+          #Rscript -e 'source("./build/netlify.R")'
       - name: Install npm
         if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: actions/setup-node@v2          
@@ -76,113 +63,98 @@ jobs:
           path: public/
       - name: Convert in ipynb with Jupytext
         run: |
-         pip install jupytext
-         cd ./temp
-         for i in $(find . -type f \( -iname "*.Rmd" \)); do \
-            j="${i%.Rmd}.md" ;
-            echo "$j" ;
-            if [ -e $j ]
-            then
-              echo "Converting $j"; \
-              #jupytext --to py --execute "$i"
-              jupytext --to ipynb "$j" ;
-              k="${j%.md}.ipynb" ;
-            fi            
-         done
-         mkdir -p ../notebooks
-         cp -R . ../notebooks
-         cd ..
-      - uses: actions/upload-artifact@v2
-        with:
-          name: Notebooks
-          path: temp/
-      - name: Commit new notebooks
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        env:
-          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-         git config user.name 'github-actions[bot]'
-         git config user.email 'github-actions[bot]@users.noreply.github.com'
-         # git config user.email github-actions@github.com
-         #git checkout ${BRANCHE_REF}
-         git status
-         git add notebooks/**/*.ipynb;
-         git commit -m "Automated changes";
-         git pull
-         git push
-  corrections:
-    runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - name: Install rmarkdown
-        env:
-          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
-        run: |
-          Rscript -e 'remotes::install_github("yihui/xfun")'
-          Rscript -e 'remotes::install_github("yihui/knitr")'
-          Rscript -e 'install.packages(c("rmarkdown"))'
-      - name: Install Python
-        run: |
-          Rscript -e "install.packages(c('remotes', 'reticulate'))"
-          Rscript -e "install.packages(c('here'))"
-      - shell: bash -l {0}
-        run: |
-          conda info
-          conda list
-      - name: Modif Rmd echo status
-        run: |
-         python build/modifmd.py
-      - name: Build to md
-        run: |
-          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
-          cat diff.txt
-          Rscript -e 'source("./build/build_light.R")'
-      - name: Clean files with Python function
-        run: |
-         rm -rf "./temp"
-         mkdir -p temp
-         mkdir -p corrections
-         python build/cleanmd.py
-      - name: Convert in ipynb with Jupytext
-        run: |
-         pip install jupytext
-         cd ./temp
-         for i in $(find . -type f \( -iname "*.Rmd" \)); do \
-            j="${i%.Rmd}.md" ;
-            echo "$j" ;
-            if [ -e $j ]
-            then
-              echo "Converting $j"; \
-              #jupytext --to py --execute "$i"
-              jupytext --to ipynb "$j" ;
-              k="${j%.md}.ipynb" ;
-            fi            
-         done
-         mkdir -p ../corrections
-         cp -R . ../corrections
-         cd ..
-      - uses: actions/upload-artifact@v2
-        with:
-          name: Corrections
-          path: corrections/
-      - name: Commit new notebooks
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        env:
-          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-         git config user.name 'github-actions[bot]'
-         git config user.email 'github-actions[bot]@users.noreply.github.com'
-         # git config user.email github-actions@github.com
-         #git checkout ${BRANCHE_REF}
-         git status
-         git add corrections/**/*.ipynb;
-         git commit -m "Automated changes";
-         git pull
-         git push
+         quarto render content --to ipynb
+#      - uses: actions/upload-artifact@v2
+#        with:
+#          name: Notebooks
+#          path: temp/
+#      - name: Commit new notebooks
+#        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+#        env:
+#          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
+#        run: |
+#         git config user.name 'github-actions[bot]'
+#         git config user.email 'github-actions[bot]@users.noreply.github.com'
+#         # git config user.email github-actions@github.com
+#         #git checkout ${BRANCHE_REF}
+#         git status
+#         git add notebooks/**/*.ipynb;
+#         git commit -m "Automated changes";
+#         git pull
+#         git push
+#  corrections:
+#    runs-on: ubuntu-latest
+#    container: linogaliana/python-datascientist:latest
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          submodules: true
+#          fetch-depth: 0
+#          ref: ${{ github.event.pull_request.head.ref }}
+#          repository: ${{github.event.pull_request.head.repo.full_name}}
+#      - name: Install rmarkdown
+#        env:
+#          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
+#        run: |
+#          Rscript -e 'remotes::install_github("yihui/xfun")'
+#          Rscript -e 'remotes::install_github("yihui/knitr")'
+#          Rscript -e 'install.packages(c("rmarkdown"))'
+#      - name: Install Python
+#        run: |
+#          Rscript -e "install.packages(c('remotes', 'reticulate'))"
+#          Rscript -e "install.packages(c('here'))"
+#      - shell: bash -l {0}
+#        run: |
+#          conda info
+#          conda list
+#      - name: Modif Rmd echo status
+#        run: |
+#         python build/modifmd.py
+#      - name: Build to md
+#        run: |
+#          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
+#          cat diff.txt
+#          Rscript -e 'source("./build/build_light.R")'
+#      - name: Clean files with Python function
+#        run: |
+#         rm -rf "./temp"
+#         mkdir -p temp
+#         mkdir -p corrections
+#         python build/cleanmd.py
+#      - name: Convert in ipynb with Jupytext
+#        run: |
+#         pip install jupytext
+#         cd ./temp
+#         for i in $(find . -type f \( -iname "*.Rmd" \)); do \
+#            j="${i%.Rmd}.md" ;
+#            echo "$j" ;
+#            if [ -e $j ]
+#            then
+#              echo "Converting $j"; \
+#              #jupytext --to py --execute "$i"
+#              jupytext --to ipynb "$j" ;
+#              k="${j%.md}.ipynb" ;
+#            fi            
+#         done
+#         mkdir -p ../corrections
+#         cp -R . ../corrections
+#         cd ..
+#      - uses: actions/upload-artifact@v2
+#        with:
+#          name: Corrections
+#          path: corrections/
+#      - name: Commit new notebooks
+#        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+#        env:
+#          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
+#        run: |
+#         git config user.name 'github-actions[bot]'
+#         git config user.email 'github-actions[bot]@users.noreply.github.com'
+#         # git config user.email github-actions@github.com
+#         #git checkout ${BRANCHE_REF}
+#         git status
+#         git add corrections/**/*.ipynb;
+#         git commit -m "Automated changes";
+#         git pull
+#         git push
 
