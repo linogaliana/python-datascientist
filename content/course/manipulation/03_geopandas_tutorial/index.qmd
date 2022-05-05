@@ -1,15 +1,4 @@
 ---
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .Rmd
-      format_name: rmarkdown
-      format_version: '1.2'
-      jupytext_version: 1.6.0
-  kernelspec:
-    display_name: Python 3
-    language: python
-    name: python3
 title: "Données spatiales: découverte de geopandas"
 date: 2020-07-09T13:00:00Z
 draft: false
@@ -30,16 +19,21 @@ summary: |
   de manipuler des données géographiques complexe de manière simple.
 ---
 
-```{r setup, include=FALSE}
-dir_path <- gsub(here::here(), "..", here::here("course","manipulation"))
-knitr::knit_hooks$set(
-  plot = function(x, options) modif_plot(x, options, dir_path = dir_path)
-)
+
+```{python}
+#| echo: false
+#| output: 'asis'
+#| include: true
+#| eval: true
+
+import sys
+sys.path.insert(1, '../../../../') #insert the utils module
+from utils import print_badges
+
+#print_badges(__file__)
+print_badges("content/course/manipulation/03_geopandas_tutorial.qmd")
 ```
 
-```{r, echo = FALSE, results = 'asis', include = TRUE, eval = TRUE}
-print_badges()
-```
 
 Dans ce tutoriel, nous allons utiliser:
 
@@ -64,7 +58,7 @@ Il peut servir de pendant à celui-ci pour l'utilisateur de `R`.
 
 Quelques installations préalables sont nécessaires : 
 
-```{python, eval=FALSE, echo=TRUE}
+```python
 !pip install pandas fiona shapely pyproj rtree # à faire obligatoirement en premier pour utiliser rtree ou pygeos pour les jointures spatiales
 !pip install contextily
 !pip install geopandas
@@ -162,44 +156,24 @@ Il est également possible d'utiliser l'une des [API de l'IGN](https://api.gouv.
 mais ces dernières ne sont pas encore très documentées pour des utilisateurs
 de `Python`.
 
-Nous choisirons la deuxième option (import depuis datagouv)
-car les premières données sont
-compressés au format `.7z`, ce qui n'est pas pratique à dézipper avec
-`python` (format propriétaire).
+Nous allons utiliser le package `pynsee` qui propose un module dédié à la récupération de fonds de carte officiels pour valoriser des données
+d'open data. Une précédente version de ce cours utilisait les données de 
+`data.gouv`, elle est reportée en annexe
 
 L'inconvénient est que les arrondissements
 parisiens ne sont pas présents dans le fichier proposé sur `data.gouv`. Il
 faut donc utiliser une source complémentaire, issue de l'*opendata* de la 
 Mairie de Paris.
 
-Les données des limites administratives demandent donc un peu de travail pour être
-importées car elles sont zippées (mais c'est un bon exercice !). Le code suivant, dont les 
-détails apparaîtront plus clairs après la lecture de la partie
-*[webscraping](webscraping)* permet de :
 
-1. Télécharger les données avec `requests` dans un dossier temporaire
-2. Les dézipper avec le module `zipfile`
+```{python}
+#| output: false
 
-La fonction suivante automatise un peu le processus :
-
-```{python download_unzip def}
-import requests
-import tempfile
-import zipfile
-
-url = 'https://www.data.gouv.fr/fr/datasets/r/07b7c9a2-d1e2-4da6-9f20-01a7b72d4b12'
-temporary_location = tempfile.gettempdir()
-
-def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
-  myfile = requests.get(url)
-  open("{}/{}.zip".format(dirname, destname), 'wb').write(myfile.content)
-  with zipfile.ZipFile("{}/{}.zip".format(dirname, destname), 'r') as zip_ref:
-      zip_ref.extractall(dirname + '/' + destname)
-```
-
-```{python apply download_unzip, results = "hide"}
-download_unzip(url)
-communes = gpd.read_file(temporary_location + "/borders/communes-20190101.json")
+from pynsee.geodata import get_geodata
+communes = gpd.GeoDataFrame(
+  get_geodata('ADMINEXPRESS-COG-CARTO.LATEST:commune')
+)
+communes = communes.rename({"insee_com": 'insee'}, axis = 'columns')
 ```
 
 ```{python}
@@ -221,7 +195,8 @@ On peut ainsi représenter Paris pour se donner une idée de la nature
 du shapefile utilisé :
 
 ```{python}
-paris = communes[communes.insee.str.startswith("75")]
+paris = communes.loc[communes['insee'].str.startswith("75")]
+paris = paris.set_crs("2154")
 
 fig,ax = plt.subplots(figsize=(10, 10))
 paris.plot(ax = ax, alpha=0.5, edgecolor='blue')
@@ -230,13 +205,11 @@ ax.set_axis_off()
 ax
 ```
 
-```{python, echo = FALSE, include = FALSE}
+```{python}
+#| echo: false
 plt.tight_layout(pad=0, h_pad = 0)
-plt.savefig('map_paris1.png', bbox_inches='tight')
-```
-
-```{r, echo = FALSE}
-knitr::include_graphics("map_paris1.png")
+plt.show()
+#plt.savefig('map_paris1.png', bbox_inches='tight')
 ```
 
 
@@ -245,10 +218,14 @@ ce qui est limitant pour une analyse focalisée sur Paris. On va donc les
 récupérer sur le site d'open data de la ville de Paris et les substituer 
 à Paris :
 
-```{python, results = "hide"}
+```{python}
+#| echo: true
+#| include: false
+
 arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
 arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
 arrondissements['insee'] = arrondissements['insee'].astype(str)
+arrondissements = arrondissements.to_crs(2154)
 communes = communes[~communes.insee.str.startswith("75")].append(arrondissements)
 ```
 
@@ -256,7 +233,7 @@ En refaisant la carte ci-dessus, on obtient bien, cette fois, le résultat
 espéré
 
 ```{python}
-paris = communes[communes.insee.str.startswith("75")]
+paris = communes.loc[communes.insee.str.startswith("75")]
 
 fig,ax = plt.subplots(figsize=(10, 10))
 
@@ -266,13 +243,11 @@ ax.set_axis_off()
 ax
 ```
 
-```{python, echo = FALSE, include = FALSE}
+```{python}
+#| echo: false
 plt.tight_layout(pad=0, h_pad = 0)
-plt.savefig('map_paris2.png', bbox_inches='tight')
-```
-
-```{r, echo = FALSE}
-knitr::include_graphics("map_paris2.png")
+plt.show()
+#plt.savefig('map_paris2.png', bbox_inches='tight')
 ```
 
 
@@ -288,7 +263,10 @@ disponibles [sur le site d'open data de la ville de Paris](https://opendata.pari
 requêtables directement par l'url
 <https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
+
 velib_data = 'https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr'
 stations = gpd.read_file(velib_data)
 ```
@@ -299,7 +277,10 @@ communes['dep'] = communes.insee.str[:2]
 
 On peut se rassurer en affichant les données sur la carte des communes d'Île-de-France.
 
-```{python, include = FALSE}
+```{python}
+#| include: false
+#| echo: true
+
 fig,ax = plt.subplots(figsize=(10, 10))
 stations.sample(200).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
 communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
@@ -309,13 +290,10 @@ ax.set_axis_off()
 ax
 ```
 
-```{python, echo = FALSE, include = FALSE}
+```{python}
 plt.tight_layout(pad=0, h_pad = 0)
-plt.savefig('map1.png', bbox_inches='tight')
-```
-
-```{r, echo = FALSE}
-knitr::include_graphics("map1.png")
+plt.show()
+#plt.savefig('map1.png', bbox_inches='tight')
 ```
 
 
@@ -325,7 +303,10 @@ Découvrez ci-dessous par étape les différentes lignes de commandes permettant
 :one:
 Afficher le nuage de points de 200 stations vélibs prises au hasard
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
+
 fig,ax = plt.subplots(figsize=(10, 10))
 stations.sample(200).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
 #communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
@@ -335,21 +316,22 @@ stations.sample(200).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
 ax
 ```
 
-```{python, echo = FALSE, include = FALSE}
+```{python}
+#| echo: false
+
 plt.tight_layout(pad=0, h_pad = 0)
 plt.show()
-plt.savefig('map2aa.png', bbox_inches='tight')
-```
-
-```{r, echo = FALSE, include = FALSE}
-knitr::include_graphics("map2aa.png")
+#plt.savefig('map2aa.png', bbox_inches='tight')
 ```
 
 
 :two:
 Ajouter à cette couche, en dessous, les contours des communes
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
+
 fig,ax = plt.subplots(figsize=(10, 10))
 stations.sample(200).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
 communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
@@ -359,14 +341,11 @@ communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, ed
 ax
 ```
 
-```{python, echo = FALSE, include = FALSE}
+```{python}
+#| echo: false
 plt.tight_layout(pad=0, h_pad = 0)
 plt.show()
-plt.savefig('map2a.png', bbox_inches='tight')
-```
-
-```{r, echo = FALSE, include = FALSE}
-knitr::include_graphics("map2a.png")
+#plt.savefig('map2a.png', bbox_inches='tight')
 ```
 
 
@@ -374,7 +353,10 @@ knitr::include_graphics("map2a.png")
 Ajouter un fond de carte de type *open street map* grâce au package
 `contextily`
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
+
 fig,ax = plt.subplots(figsize=(10, 10))
 stations.sample(200).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
 communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
@@ -384,20 +366,22 @@ ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stame
 ax
 ```
 
-```{python, echo = FALSE, include = FALSE}
-plt.tight_layout(pad=0, h_pad = 0)
-plt.savefig('map3a.png', bbox_inches='tight')
-```
+```{python}
+#| echo: true
 
-```{r, echo = FALSE}
-knitr::include_graphics("map3a.png")
+plt.tight_layout(pad=0, h_pad = 0)
+plt.show()
+#plt.savefig('map3a.png', bbox_inches='tight')
 ```
 
 :four:
 Ne reste plus qu'à retirer l'axe des coordonnées, qui n'est pas très 
 esthétique. Pour cela: 
 
-```{python, include = FALSE, eval = FALSE}
+```{python}
+#| include: false
+#| echo: true
+
 fig,ax = plt.subplots(figsize=(10, 10))
 stations.sample(200).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
 communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
@@ -453,15 +437,11 @@ ax.set_axis_off()
 ax
 ```
 
-```{python, include = FALSE}
+```{python}
+#| echo: false
 plt.tight_layout(pad=0, h_pad = 0)
-plt.savefig('dissolve1.png', bbox_inches='tight')
+#plt.savefig('dissolve1.png', bbox_inches='tight')
 ```
-
-```{r, echo = FALSE}
-knitr::include_graphics("dissolve1.png")
-```
-
 
 ## Opérations sur les géométries
 
@@ -519,15 +499,13 @@ ax.set_axis_off()
 ax
 ```
 
-```{python, echo = FALSE, include = FALSE}
+```{python}
+#| echo: false
 plt.tight_layout(pad=0, h_pad = 0)
-plt.savefig('map2.png', bbox_inches='tight')
+plt.show()
+#plt.savefig('map2.png', bbox_inches='tight')
 ```
 
-
-```{r, echo=FALSE}
-knitr::include_graphics("map2.png")
-```
 
 
 # Gérer le système de projection
@@ -554,11 +532,7 @@ sujet, notamment l'image suivante qui montre bien le principe d'une projection:
 La Terre peut ainsi être représentée de multiple manière, ce qui n'est pas neutre sur la manière de se représenter
 certains continents. En particulier, avec la projection Mercator, l'Afrique apparaît beaucoup moins vaste qu'elle ne l'est en réalité
 
-```{r, echo = FALSE}
-knitr::include_graphics('truesize.png')
-```
-
-
+![](truesize.png)
 *Exemple de reprojection de pays depuis le site [thetruesize.com](https://thetruesize.com/)* 
 
 Les projections sont très nombreuses et certaines peuvent avoir une [forme suprenante](https://imgs.xkcd.com/comics/map_projections.png)
@@ -590,9 +564,9 @@ Dans le cas particulier de production de carte avec un fond `openstreetmaps` ou 
 
 La définition du système de projection se fait de la manière suivante (:warning: avant de le faire, se souvenir de l'avertissement !):
 
-```{python, eval = FALSE}
+~~~python
 communes = communes.set_crs(2154)
-```
+~~~
 
 Alors que la reprojection (projection Albers: 5070) s'obtient de la manière suivante:
 
@@ -602,19 +576,13 @@ communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').to_crs(5070).pl
 ax
 ```
 
-```{python, include = FALSE}
+```{python}
+#| echo: false
 ax.set_axis_off()
 ax
-```
-
-```{python, echo = FALSE, include = FALSE}
 plt.tight_layout(pad=0, h_pad = 0)
-plt.savefig('reproj1.png', bbox_inches='tight')
-```
-
-
-```{r, echo = FALSE}
-knitr::include_graphics("reproj1.png")
+plt.show()
+#plt.savefig('reproj1.png', bbox_inches='tight')
 ```
 
 On le voit, cela modifie totalement la représentation de l'objet dans l'espace.
@@ -622,7 +590,7 @@ Clairement, cette projection n'est pas adaptée aux longitudes et latitudes fran
 C'est normal, il s'agit d'une projection adaptée au continent 
 nord-américain (et encore, pas dans son ensemble !).
 
-```{python, eval = TRUE}
+```{python}
 world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 
 fig,ax = plt.subplots(figsize=(10, 10))
@@ -631,15 +599,14 @@ ax
 ```
 
 
-```{python, echo = FALSE, include = FALSE}
+```{python}
+#| echo: false
+
 plt.tight_layout(pad=0, h_pad = 0)
-plt.savefig('reproj2.png', bbox_inches='tight')
+plt.show()
+#plt.savefig('reproj2.png', bbox_inches='tight')
 ```
 
-
-```{r, echo = FALSE}
-knitr::include_graphics("reproj2.png")
-```
 
 
 # Joindre des données
@@ -685,5 +652,42 @@ Les jointures spatiales peuvent être très gourmandes en ressources (car il peu
 - Il est parfois possible d'écrire une fonction qui réduit la taille du problème. Exemple: vous voulez déterminer dans quelle commune se situe un logement dont vous connaissez les coordonnées et le département; vous pouvez écrire une fonction qui réalise pour chaque département une jointure spatiale entre les logements situés dans ce département et les communes de ce département, puis empiler les 101 tables de sorties.
 {{% /box %}}
 
+
+## Annexe
+
+### Récupération des données depuis datagouv
+
+Les données des limites administratives demandent donc un peu de travail pour être
+importées car elles sont zippées (mais c'est un bon exercice !). Le code suivant, dont les 
+détails apparaîtront plus clairs après la lecture de la partie
+*[webscraping](webscraping)* permet de :
+
+1. Télécharger les données avec `requests` dans un dossier temporaire
+2. Les dézipper avec le module `zipfile`
+
+La fonction suivante automatise un peu le processus :
+
+```{python}
+import requests
+import tempfile
+import zipfile
+
+url = 'https://www.data.gouv.fr/fr/datasets/r/0e117c06-248f-45e5-8945-0e79d9136165'
+temporary_location = tempfile.gettempdir()
+
+def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
+  myfile = requests.get(url)
+  open("{}/{}.zip".format(dirname, destname), 'wb').write(myfile.content)
+  with zipfile.ZipFile("{}/{}.zip".format(dirname, destname), 'r') as zip_ref:
+      zip_ref.extractall(dirname + '/' + destname)
+```
+
+```{python}
+#| output: false
+#| eval: false
+
+download_unzip(url)
+communes = gpd.read_file(temporary_location + "/borders/communes-20190101.json")
+```
 
 
