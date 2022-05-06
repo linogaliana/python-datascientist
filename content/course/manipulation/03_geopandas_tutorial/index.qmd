@@ -170,11 +170,11 @@ Mairie de Paris.
 #| output: false
 
 from pynsee.geodata import get_geodata
-communes = gpd.GeoDataFrame(
+shp_communes = gpd.GeoDataFrame(
   get_geodata('ADMINEXPRESS-COG-CARTO.LATEST:commune')
 )
-communes = communes.rename({"insee_com": 'insee'}, axis = 'columns')
-communes = communes.set_crs(2154)
+shp_communes = shp_communes.rename({"insee_com": 'insee'}, axis = 'columns')
+shp_communes = shp_communes.set_crs(3857)
 ```
 
 ```{python}
@@ -225,7 +225,7 @@ récupérer sur le site d'open data de la ville de Paris et les substituer
 arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
 arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
 arrondissements['insee'] = arrondissements['insee'].astype(str)
-arrondissements = arrondissements.to_crs(2154)
+arrondissements = arrondissements.to_crs(3857)
 communes = communes[~communes.insee.str.startswith("75")].append(arrondissements)
 ```
 
@@ -269,7 +269,7 @@ requêtables directement par l'url
 
 velib_data = 'https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr'
 stations = gpd.read_file(velib_data)
-stations = stations.to_crs(2154)
+stations = stations.to_crs(3857)
 ```
 
 ```{python}
@@ -292,11 +292,14 @@ ax
 ```
 
 ```{python}
+#| echo: false
+
 plt.tight_layout(pad=0, h_pad = 0)
 plt.show()
-#plt.savefig('map1.png', bbox_inches='tight')
+plt.savefig('map1.png', bbox_inches='tight')
 ```
 
+![](map1.png)
 
 Découvrez ci-dessous par étape les différentes lignes de commandes permettant d'afficher cette carte complète,
 étape par étape:
@@ -322,8 +325,10 @@ ax
 
 plt.tight_layout(pad=0, h_pad = 0)
 plt.show()
-#plt.savefig('map2aa.png', bbox_inches='tight')
+plt.savefig('map2aa.png', bbox_inches='tight')
 ```
+
+![](map2aa.png)
 
 
 :two:
@@ -346,9 +351,10 @@ ax
 #| echo: false
 plt.tight_layout(pad=0, h_pad = 0)
 plt.show()
-#plt.savefig('map2a.png', bbox_inches='tight')
+plt.savefig('map2a.png', bbox_inches='tight')
 ```
 
+![](map2a.png)
 
 :three:
 Ajouter un fond de carte de type *open street map* grâce au package
@@ -368,12 +374,14 @@ ax
 ```
 
 ```{python}
-#| echo: true
+#| echo: false
 
 plt.tight_layout(pad=0, h_pad = 0)
 plt.show()
-#plt.savefig('map3a.png', bbox_inches='tight')
+plt.savefig('map3a.png', bbox_inches='tight')
 ```
+
+![](map3a.png)
 
 :four:
 Ne reste plus qu'à retirer l'axe des coordonnées, qui n'est pas très 
@@ -411,13 +419,13 @@ stations.describe()
 Pour connaître les plus grands départements:
 
 ```{python}
-communes.groupby('dep').sum().sort_values('surface', ascending = False)
+shp_communes.groupby('dep').sum().sort_values('surface', ascending = False)
 ```
 
 ou les plus grandes communes de France métropolitaine :
 
 ```{python}
-communes[communes.dep != "97"].sort_values('surface', ascending = False)
+shp_communes[shp_communes.dep != "97"].sort_values('surface', ascending = False)
 ```
 
 
@@ -433,7 +441,7 @@ attribus avec la méthode `dissolve`:
 
 ```{python}
 fig,ax = plt.subplots(figsize=(10, 10))
-communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').plot(ax = ax, column = "surface")
+shp_communes[shp_communes.dep != "97"].dissolve(by='dep', aggfunc='sum').plot(ax = ax, column = "surface")
 ax.set_axis_off()
 ax
 ```
@@ -447,20 +455,19 @@ plt.tight_layout(pad=0, h_pad = 0)
 ## Opérations sur les géométries
 
 {{% box status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
-Les données sont en système de coordonnées WGS 84 ou pseudo-Mercator (epsg: `4326`) et ne sont pas projetées. C'est un format approprié lorsqu'il s'agit d'utiliser un fonds
+Les données sont en système de coordonnées WGS 84 ou pseudo-Mercator (epsg: `3857`) et ne sont pas projetées. C'est un format approprié lorsqu'il s'agit d'utiliser un fonds
 de carte openstreetmap, stamen, google maps, etc.
 
 Mais ce n'est pas un
 format sur lequel on désire faire des calculs car les distances sont faussées sans utiliser de projection. D'ailleurs, geopandas refusera certaines opérations
-sur des données dont le crs est `4326`. On reprojete ainsi les données 
+sur des données dont le crs est `3857`. On reprojete ainsi les données 
 dans la projection officielle pour la métropole, le Lambert 93
 (epsg: 2154).
 {{% /box %}}
 
 
 ```{python}
-#| eval: false
-communes = communes.to_crs(2154)
+communes = shp_communes.to_crs(2154)
 stations = stations.to_crs(2154)
 ```
 
@@ -477,7 +484,6 @@ avec la méthode `area` (et diviser par $10^6$ pour avoir des $km^2$ au lieu
 des $m^2$):
 
 ```{python}
-#| eval: false
 communes['superficie'] = communes.area.div(10**6)
 communes
 ```
@@ -506,7 +512,6 @@ ax
 #| echo: false
 plt.tight_layout(pad=0, h_pad = 0)
 plt.show()
-#plt.savefig('map2.png', bbox_inches='tight')
 ```
 
 
@@ -578,6 +583,7 @@ fig,ax = plt.subplots(figsize=(10, 10))
 communes[communes.dep != "97"].dissolve(by='dep', aggfunc='sum').to_crs(5070).plot(ax = ax)
 ax
 ```
+
 
 ```{python}
 #| echo: false
