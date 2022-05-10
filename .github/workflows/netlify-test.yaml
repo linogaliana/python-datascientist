@@ -36,15 +36,11 @@ jobs:
           hugo -D --themesDir themes -t github.com
       - name: Clean files with Python function
         run: |
-         #rm -rf "./temp"
-         #mkdir -p temp
-         #mkdir -p notebooks
+         rm -rf "./temp"
+         mkdir -p temp
          #pip install matplotlib wordcloud nltk
-         #python build/cleanmd.py
-         #python build/wc_website.py
-      - name: Render blog
-        run: |
-          #Rscript -e 'source("./build/netlify.R")'
+         python build/cleanmd.py
+         python build/wc_website.py
       - name: Install npm
         if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: actions/setup-node@v2          
@@ -66,13 +62,32 @@ jobs:
         with:
           name: Website
           path: public/
+  enonces:
+    name: Render-Blog
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist-vstudio:quarto
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Configure safe.directory  # Workaround for actions/checkout#760
+        run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+      - shell: bash
+        run: |
+          conda info
+          conda list
       - name: Convert in ipynb with Jupytext
         run: |
          quarto render content --to ipynb
-#      - uses: actions/upload-artifact@v2
-#        with:
-#          name: Notebooks
-#          path: temp/
+         mkdir -p notebooks
+         find ./ -name '*.ipynb' -exec cp -prv '{}' '/notebooks/' ';'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Notebooks
+          path: temp/
 #      - name: Commit new notebooks
 #        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
 #        env:
