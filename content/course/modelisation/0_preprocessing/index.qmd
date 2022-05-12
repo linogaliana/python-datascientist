@@ -1,15 +1,4 @@
 ---
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .Rmd
-      format_name: rmarkdown
-      format_version: '1.2'
-      jupytext_version: 1.6.0
-  kernelspec:
-    display_name: Python 3
-    language: python
-    name: python3
 title: "Préparation des données pour construire un modèle"
 date: 2020-10-15T13:00:00Z
 draft: false
@@ -36,16 +25,18 @@ summary: |
   moins fastidieux. 
 ---
 
-```{r setup, include=FALSE}
-dir_path <- gsub(here::here(), "..", here::here("course","modelisation"))
-knitr::knit_hooks$set(
-  plot = function(x, options) modif_plot(x, options, dir_path = dir_path)
-)
-knitr::opts_chunk$set(echo = FALSE)
-```
+```{python}
+#| echo: false
+#| output: 'asis'
+#| include: true
+#| eval: true
 
-```{r, echo = FALSE, results = 'asis', include = TRUE, eval = TRUE}
-print_badges()
+import sys
+sys.path.insert(1, '../../../../') #insert the utils module
+from utils import print_badges
+
+#print_badges(__file__)
+print_badges("content/course/modelisation/0_preprocessing.qmd")
 ```
 
 
@@ -97,7 +88,9 @@ par comté x année avec en colonnes les résultats de chaque candidat dans cet 
 
 Si vous ne faites pas l'exercice 1, pensez à charger les données en executant la fonction `get_data.py` :
 
-```{python, echo = TRUE}
+```{python}
+#| echo: true
+
 #!pip install geopandas
 
 import requests
@@ -114,7 +107,8 @@ Ce code introduit une base nommée `votes` dans l'environnement. Il s'agit d'une
 base rassemblant les différentes sources. Elle a l'aspect
 suivant:
 
-```{python, echo = FALSE, include = FALSE}
+```{python}
+#| echo: false
 votes.head()
 ```
 
@@ -122,7 +116,11 @@ votes.head()
 La carte choroplèthe suivante permet de visualiser rapidement les résultats
 (l'Alaska et Hawaï ont été exclus). 
 
-```{python, warning = FALSE, echo=TRUE, message = FALSE}
+```{python}
+#| warning: false
+#| echo: true
+#| message: false
+
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -139,13 +137,10 @@ plt.axis('off')
 # plt.show()
 ```
 
-```{python, warning = FALSE, echo=FALSE, message = FALSE, include = FALSE}
-plt.savefig('map_vote.png', bbox_inches='tight')
+```{python}
+ax.get_figure()
 ```
 
-```{r}
-knitr::include_graphics("map_vote.png")
-```
 
 Les cartes choroplèthes peuvent donner une impression fallacieuse ayant servi 
 de justification pour contester les résultats du vote. En effet, un biais
@@ -167,7 +162,10 @@ En l'occurrence, on peut utiliser `plotly` pour tenir compte de la population:
 
 La Figure a été obtenue avec le code suivant:
 
-```{python, message = FALSE, echo=TRUE, warning = FALSE, results = "hide"}
+```{python}
+#| message: false
+#| warning: false
+#| output: false
 import plotly
 import plotly.graph_objects as go
 import pandas as pd
@@ -216,7 +214,8 @@ fig_plotly.update_layout(
 ```
 
 
-```{python, include = FALSE}
+```{python}
+#| include: false
 fig_plotly.write_json("people_vote.json")
 ```
 
@@ -259,34 +258,40 @@ df2 = votes.set_index("GEOID").loc[: , ["winner", "votes_gop",
 #| echo: false
 
 # 2. Matrice de corrélation graphique
-sns.heatmap(df2.drop("winner", axis = 1).corr(), cmap='coolwarm', annot=True, fmt=".2f")
-plt.savefig('correlation_matrix2.png', bbox_inches='tight')
+g1 = sns.heatmap(df2.drop("winner", axis = 1).corr(), cmap='coolwarm', annot=True, fmt=".2f")
 
 ## Construction directement avec pandas également possible
-df2.drop("winner", axis = 1).corr().style.background_gradient(cmap='coolwarm').set_precision(2)
-
+g2 = df2.drop("winner", axis = 1).corr().style.background_gradient(cmap='coolwarm').set_precision(2)
 ```
 
-Elle aura l'aspect suivant:
+La matrice construite avec `seaborn` aura un aspect comme suit:
 
-```{r, echo = FALSE}
-knitr::include_graphics('correlation_matrix2.png')
+```{python}
+g1.figure.get_figure()
 ```
+
+Alors que celle construite directement avec `pandas`
+ressemblera plutôt à ce tableau :
+
+```{python}
+g2
+```
+
 
 3. Choisir quelques variables (pas plus de 4 ou 5) et représenter une matrice de nuages de points
 
-```{python scatter_matrix, warning = FALSE, message = FALSE}
+```{python}
 #| include: false
 #| echo: false
 
 # 3. Matrice de nuages de points
 ax = pd.plotting.scatter_matrix(df2, figsize = (15,15))
 ax
-plt.savefig('scatter_matrix.png', bbox_inches='tight')
 ```
 
-```{r, echo = FALSE}
-knitr::include_graphics("scatter_matrix.png")
+```{python}
+#| echo: false
+ax
 ```
 
 
@@ -334,9 +339,8 @@ est une tâche d'apprentissage (on apprend des paramètres d'une structure
 de données) qui est réutilisable pour un jeu de données à la structure
 similaire:
 
-```{r, echo = FALSE}
-knitr::include_graphics("scikit_predict.png")
-```
+![](scikit_predict.png)
+
 
 
 ### Standardisation
@@ -355,7 +359,7 @@ La **normalisation** consiste à modifier les données de manière à avoir une 
 
 1. Standardiser la variable `Median_Household_Income_2019` (ne pas écraser les valeurs !) et regarder l'histogramme avant/après normalisation.
 
-```{python standardisation, message = FALSE, warning = FALSE}
+```{python}
 #| include: false
 #| echo: false
 
@@ -365,11 +369,12 @@ df2['y_standard'] = preprocessing.scale(df2['Median_Household_Income_2019'])
 f, axes = plt.subplots(2, figsize=(10, 10))
 sns.distplot(df2["Median_Household_Income_2019"] , color="skyblue", ax=axes[0])
 sns.distplot(df2["y_standard"] , color="olive", ax=axes[1])
-plt.savefig('standardisation.png', bbox_inches='tight')
+#plt.savefig('standardisation.png', bbox_inches='tight')
 ```
 
-```{r, echo=FALSE}
-knitr::include_graphics("standardisation.png")
+```{python}
+#| echo: false
+ax
 ```
 
 *Note : On obtient bien une distribution centrée à zéro et on pourrait vérifier que la variance empirique soit bien égale à 1. On pourrait aussi vérifier que ceci est vrai également quand on transforme plusieurs colonnes à la fois.*
@@ -421,11 +426,12 @@ col_pos = df2.columns.get_loc("Median_Household_Income_2019")
 f, axes = plt.subplots(2, figsize=(10, 10))
 sns.distplot(X1[:,col_pos] , color="skyblue", ax=axes[0])
 sns.distplot(X2[:,col_pos] , color="olive", ax=axes[1])
-plt.savefig('standardisation2.png', bbox_inches='tight')
+#plt.savefig('standardisation2.png', bbox_inches='tight')
 ```
 
-```{r, echo = FALSE}
-knitr::include_graphics("standardisation2.png")
+```{python}
+#| echo: false
+axes
 ```
 
 
@@ -465,12 +471,12 @@ X1 = scaler.transform(df2.dropna(how = "any").head(1000))
 f, axes = plt.subplots(2, figsize=(10, 10))
 sns.distplot(df2["Median_Household_Income_2019"] , color="skyblue", ax=axes[0])
 sns.distplot(X1[:,col_pos] , color="olive", ax=axes[1])
-plt.savefig('normalisation.png', bbox_inches='tight')
-
+#plt.savefig('normalisation.png', bbox_inches='tight')
 ```
 
-```{r, echo = FALSE}
-knitr::include_graphics("normalisation.png")
+```{python}
+#| echo: false
+axes
 ```
 
 
