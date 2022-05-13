@@ -1,15 +1,4 @@
 ---
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .Rmd
-      format_name: rmarkdown
-      format_version: '1.2'
-      jupytext_version: 1.6.0
-  kernelspec:
-    display_name: Python 3
-    language: python
-    name: python3
 title: "Sélection de variables : une introduction"
 date: 2020-10-15T13:00:00Z
 draft: false
@@ -35,16 +24,18 @@ summary: |
 ---
 
 
-```{r setup, include=FALSE}
-dir_path <- gsub(here::here(), "..", here::here("course","modelisation"))
-knitr::knit_hooks$set(
-  plot = function(x, options) modif_plot(x, options, dir_path = dir_path)
-)
-knitr::opts_chunk$set(echo = FALSE)
-```
+```{python}
+#| echo: false
+#| output: 'asis'
+#| include: true
+#| eval: true
 
-```{r, echo = FALSE, results = 'asis', include = TRUE, eval = TRUE}
-print_badges()
+import sys
+sys.path.insert(1, '../../../../') #insert the utils module
+from utils import print_badges
+
+#print_badges(__file__)
+print_badges("content/course/modelisation/4_featureselection.qmd")
 ```
 
 
@@ -60,7 +51,7 @@ est disponible [sur Github](https://github.com/linogaliana/python-datascientist/
 Le code 
 est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py).
 
-```{python, echo = TRUE, include=TRUE}
+```{python}
 #!pip install geopandas
 
 import requests
@@ -132,7 +123,7 @@ Avant de se lancer dans les exercices, on va éliminer quelques colonnes redonda
 celles qui concernent les votes des partis concurrents (forcément très
 corrélés au vote Républicain...)  :
 
-```{python, echo = TRUE}
+```{python}
 df2 = votes.loc[:,~votes.columns.str.endswith(
   ('_democrat','_green','_other', 'per_point_diff', 'per_dem')
   )]
@@ -142,7 +133,7 @@ df2 = votes.loc[:,~votes.columns.str.endswith(
 
 **Exercice 1 : Premier LASSO**
 
-```{python, echo = TRUE}
+```{python}
 # packages utiles
 import numpy as np
 from sklearn.svm import LinearSVC
@@ -164,7 +155,7 @@ les variables non numériques en numériques)
 * Remplacer les valeurs infinies par des NaN
 * Standardiser les variables avec `StandardScaler`
 
-```{python, warning = FALSE}
+```{python}
 #| include: false
 #| echo: false
 
@@ -182,7 +173,7 @@ df2[col_names] = features
 
 2. On cherche toujours à prédire la variable `per_gop`. Créez un échantillon d'entraînement et un échantillon test. 
 
-```{python, warning = FALSE}
+```{python}
 #| include: false
 #| echo: false
 
@@ -198,7 +189,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 Les variables sélectionnées sont :
 
-```{python, warning = FALSE}
+```{python}
 #| include: true
 #| echo: false
 
@@ -219,7 +210,7 @@ Par ailleurs, on sélectionne des variables redondantes. Une phase plus approfon
 
 4. Montrer que les variables sélectionnées sont parfois très corrélées. 
 
-```{python, warning = FALSE}
+```{python}
 #| include: false
 #| echo: false
 
@@ -229,17 +220,15 @@ corr = df2[features_selec].corr()
 plt.figure()
 p = corr.style.background_gradient(cmap='coolwarm', axis=None).set_precision(2)
 p
-plt.savefig("correlationvar.png")
 ```
 
-```{r}
-knitr::include_graphics("correlationvar.png")
-```
+![](correlationvar.png)
+
 
 
 5. Comparer la performance de ce modèle parcimonieux avec celle d'un modèle avec plus de variables 
 
-```{python, warning = FALSE}
+```{python}
 #| include: false
 #| echo: false
 
@@ -264,7 +253,7 @@ print("rsq_nonparci : ", rsq_nonparci)
 
 ```
 
-```{python, warning = FALSE}
+```{python}
 #| include: false
 #| echo: false
 
@@ -284,7 +273,7 @@ print("rsq_nonparci : ", rsq_nonparci)
 6. Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
 varie (parcourir $\alpha \in [0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0]$ ). 
 
-```{python lassoplot}
+```{python}
 #| include: false
 #| echo: false
 
@@ -301,12 +290,10 @@ print(nb_non_zero)
 sns.set_style("whitegrid")
 plt.figure()
 p = sns.lineplot(y=nb_non_zero, x=alpha_for_path).set(title = r"Number variables and regularization parameter ($\alpha$)", xlabel=r'$\alpha$', ylabel='Nb. de variables')
-p
-plt.savefig("lassoplot.png")
 ```
 
 ```{r}
-knitr::include_graphics("lassoplot.png")
+p.figure.get_figure()
 ```
 
 On voit que plus alpha est élevé, moins le modèle sélectionne de variables.
@@ -322,7 +309,9 @@ il convient d'effectuer une validation croisée afin de choisir le modèle pour
 lequel les variables qui passent la phase de sélection permettent de mieux
 prédire le résultat Républicain.
 
-```{python, echo=TRUE, include=FALSE}
+```{python}
+#| include: false
+#| echo: true
 from sklearn.linear_model import LassoCV
 
 df3 = df2.select_dtypes(include=np.number)
@@ -336,11 +325,12 @@ df3_scale = scaler.fit(df3).transform(df3)
 lcv = LassoCV(alphas=my_alphas ,normalize=False,fit_intercept=False,random_state=0,cv=5).fit(np.delete(df3_scale, yindex, axis = 1), df3_scale[:,yindex])
 ```
 
-```{python lcv}
+```{python}
 print("alpha optimal :", lcv.alpha_)
 ```
 
-```{python, warning = FALSE, include = FALSE}
+```{python}
+#| include: false
 lasso2 = Lasso(fit_intercept=True, alpha = lcv.alpha_).fit(X_train,y_train)
 features_selec2 = df2.select_dtypes(include=np.number).drop("per_gop", axis = 1).columns[np.abs(lasso2.coef_)>0].tolist()
 ```
@@ -348,7 +338,7 @@ features_selec2 = df2.select_dtypes(include=np.number).drop("per_gop", axis = 1)
 
 Les variables sélectionnées sont : 
 
-```{python lcv_features}
+```{python}
 print(features_selec2)
 ```
 
@@ -359,7 +349,8 @@ nlasso = sum(np.abs(lasso2.coef_)>0)
 print(nlasso)
 ```
 
-```{python, results = "asis", echo = FALSE}
+```{python}
+#| output: asis
 print("Cela correspond à un modèle avec {} variables sélectionnées.".format(int(nlasso)))
 ```
 
