@@ -1,15 +1,4 @@
 ---
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .Rmd
-      format_name: rmarkdown
-      format_version: '1.2'
-      jupytext_version: 1.6.0
-  kernelspec:
-    display_name: Python 3
-    language: python
-    name: python3
 title: "Premier pas vers l'industrialisation avec les pipelines scikit"
 date: 2020-10-20T13:00:00Z
 draft: false
@@ -31,15 +20,18 @@ summary: |
 ---
 
 
-```{r setup, include=FALSE}
-dir_path <- gsub(here::here(), "..", here::here("course","modelisation"))
-knitr::knit_hooks$set(
-  plot = function(x, options) modif_plot(x, options, dir_path = dir_path)
-)
-```
+```{python}
+#| echo: false
+#| output: 'asis'
+#| include: true
+#| eval: true
 
-```{r, echo = FALSE, results = 'asis', include = TRUE, eval = TRUE}
-print_badges()
+import sys
+sys.path.insert(1, '../../../../') #insert the utils module
+from utils import print_badges
+
+#print_badges(__file__)
+print_badges("content/course/modelisation/6_pipeline.qmd")
 ```
 
 # Pourquoi utiliser les pipelines ?
@@ -120,7 +112,8 @@ estimators = [('reduce_dim', PCA()), ('clf', SVC())]
 pipe = Pipeline(estimators)
 ```
 
-```{python, echo = FALSE}
+```{python}
+#| echo: false
 from sklearn.utils import estimator_html_repr
 ```
 
@@ -131,20 +124,23 @@ Il est pratique de visualiser un *pipeline* sous forme de DAG.
 Pour cela, dans un notebook, on utilise la configuration
 suivante:
 
-```{python, eval = FALSE}
+~~~python
+#| eval: false
 from sklearn import set_config
 set_config(display='diagram') 
-```
+~~~
 
 {{% /box %}}
 
-```{python, eval = FALSE}
+~~~python
 pipe
-```
+~~~
 
 {{< rawhtml >}}
 
-```{python, echo = FALSE, results = "asis"}
+```{python}
+#| output: asis
+#| echo: false
 print(estimator_html_repr(pipe))
 ```
 
@@ -165,7 +161,9 @@ grid_search = GridSearchCV(pipe, param_grid=param_grid)
 
 {{< rawhtml >}}
 
-```{python, echo = FALSE, results = "asis"}
+```{python}
+#| output: asis
+#| echo: false
 print(estimator_html_repr(grid_search))
 ```
 
@@ -216,18 +214,20 @@ on va créer une variable de surface qui agrège les différentes informations
 de surface disponibles dans le jeu de données. En effet, les variables
 en question sont très corrélées les unes entre elles :
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
 corr = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].corr()
 fig, ax = plt.subplots(1)
-sns.heatmap(corr, ax=ax, 
+g = sns.heatmap(corr, ax=ax, 
             xticklabels=corr.columns.values,
             yticklabels=corr.columns.values, cmap='coolwarm', annot=True, fmt=".2f")
-plt.savefig('correlation_matrix_dvf.png', bbox_inches='tight')
+g
 ```
 
 
-```{r, echo = FALSE}
-knitr::include_graphics('correlation_matrix_dvf.png')
+```{python}
+g.figure.get_figure()
 ```
 
 
@@ -386,13 +386,15 @@ sur données réelles dont les types divergent.
 On peut visualiser le graphe et ainsi se représenter la manière dont
 ce _pipeline_ opère:
 
-```{python, eval=FALSE}
+~~~python
 pipe
-```
+~~~
 
 {{< rawhtml >}}
 
-```{python, echo = FALSE, results = "asis"}
+```{python}
+#| output: asis
+#| echo: false
 print(estimator_html_repr(pipe))
 ```
 
@@ -403,7 +405,9 @@ Maintenant, il ne reste plus qu'à estimer notre modèle sur l'ensemble
 d'entraînement. C'est très simple avec un _pipeline_ : il suffit d'utiliser
 de mettre à jour le _pipeline_ avec la méthode `fit`
 
-```{python fit randomforest, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
 pipe.fit(X_train, y_train)
 ```
 
@@ -443,7 +447,9 @@ de la mesure d'impureté[^3]
 [^3]: Extrait de [ce blog](https://mljar.com/blog/feature-importance-in-random-forest/):
 Gini importance (or mean decrease impurity), which is computed from the Random Forest structure. Let’s look how the Random Forest is constructed. It is a set of Decision Trees. Each Decision Tree is a set of internal nodes and leaves. In the internal node, the selected feature is used to make decision how to divide the data set into two separate sets with similars responses within. The features for internal nodes are selected with some criterion, which for classification tasks can be gini impurity or infomation gain, and for regression is variance reduction. We can measure how each feature decrease the impurity of the split (the feature with highest decrease is selected for internal node). For each feature we can collect how on average it decreases the impurity. The average over all trees in the forest is the measure of the feature importance. 
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
 importances = pipe['randomforest'].feature_importances_
 std = np.std([tree.feature_importances_ for tree in pipe['randomforest'].estimators_], axis=0)
 
@@ -460,9 +466,7 @@ fig.tight_layout()
 plt.savefig("varimportance.png")
 ```
 
-```{r, echo = FALSE}
-knitr::include_graphics("varimportance.png")
-```
+![](varimportance.png)
 
 On voit donc que deux variables déterminantes sont des effets fixes
 géographiques (qui servent à ajuster de la différence de prix entre
@@ -504,14 +508,16 @@ print("Le RMSE sur le jeu de test est {:,}".format(
 Le RMSE n'est pas très bon. Pour comprendre pourquoi, représentons
 notre nuage de point des valeurs observées et prédites:
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
+
 g = sns.relplot(data = compar, x = 'obs', y = 'pred', color = "royalblue", alpha = 0.8)
 g.set(ylim=(0, 2e6), xlim=(0, 2e6),
       title='Evaluating estimation error on test sample',
       xlabel='Observed values',
       ylabel='Predicted values')
 g.ax.axline(xy1=(0, 0), slope=1, color="red", dashes=(5, 2))
-plt.savefig('predict1.png', bbox_inches='tight')
 ```
 
 C'est très décevant. La prédiction a trop peu de variabilité pour capturer
@@ -519,8 +525,8 @@ la variance des prix observée. Cela vient du fait que les variables
 ayant de l'importance dans la prédiction sont principalement des effets fixes,
 qui ne permettent donc qu'une variabilité limitée.
 
-```{r, echo = FALSE}
-knitr::include_graphics('predict1.png')
+```{python}
+g.figure.get_figure()
 ```
 
 
@@ -581,7 +587,10 @@ forme de liste (comme pour l'argument `max_depth` ci-dessous) ou
 sous forme d'`array` (comme pour l'argument `n_estimators`) ce qui est
 souvent pratique pour générer un criblage d'un intervalle avec `np.linspace`.
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
+
 import numpy as np
 from sklearn.model_selection import GridSearchCV
 
@@ -602,14 +611,17 @@ print("Elapsed time : {} seconds", int(end_time - start_time))
 
 {{< rawhtml >}}
 
-```{python, echo = FALSE, results = "asis"}
+```{python}
+#| output: asis
+#| echo: false
 print(estimator_html_repr(grid_search))
 ```
 
 {{< /rawhtml >}}
 
 
-```{python, echo=FALSE}
+```{python}
+#| echo: false
 print("Elapsed time : {} seconds", int(end_time - start_time))
 ```
 
@@ -622,14 +634,16 @@ grid_search.best_params_
 
 On pourra aussi ré-utiliser le modèle optimal de la manière suivante:
 
-```{python, eval = FALSE}
+~~~python
 grid_search.best_estimator_
-```
+~~~
 
 
 {{< rawhtml >}}
 
-```{python, echo = FALSE, results = "asis"}
+```{python}
+#| output: asis
+#| echo: false
 print(estimator_html_repr(grid_search.best_estimator_))
 ```
 
@@ -644,7 +658,9 @@ perf_random_forest = pd.DataFrame(grid_search.cv_results_)
 
 Regardons les résultats moyens pour chaque valeur des hyperparamètres:
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
 fig, ax = plt.subplots(1)
 g = sns.lineplot(data = perf_random_forest, ax = ax,
              x = "param_randomforest__n_estimators",
@@ -654,12 +670,12 @@ g.set(xlabel='Number of estimators', ylabel='Mean score on test sample')
 g
 plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0,
            title='Depth of trees')
-plt.savefig("perfCV.png")
 ```
 
 
-```{r, echo=FALSE}
-knitr::include_graphics("perfCV.png")
+```{python}
+#| echo: false
+g.figure.get_figure()
 ```
 
 Globalement, à profondeur d'arbre donnée, le nombre d'arbres change
@@ -673,7 +689,9 @@ Maintenant, il nous reste à re-entraîner le modèle avec ces nouveaux
 paramètres sur l'ensemble du jeu de *train* et l'évaluer sur l'ensemble
 du jeu de *test*:
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
 pipe_optimal = grid_search.best_estimator_
 pipe_optimal.fit(X_train, y_train)
 
@@ -692,7 +710,9 @@ print("Le RMSE sur le jeu de test est {:,}".format(
 
 Et si on regarde la qualité en prédiction:
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
 g = sns.relplot(data = compar, x = 'obs', y = 'pred', color = "royalblue", alpha = 0.8)
 g.set(ylim=(0, 2e6), xlim=(0, 2e6),
       title='Evaluating estimation error on test sample',
@@ -700,11 +720,10 @@ g.set(ylim=(0, 2e6), xlim=(0, 2e6),
       ylabel='Predicted values')
 g.ax.axline(xy1=(0, 0), slope=1, color="red", dashes=(5, 2))
 g
-plt.savefig("predCV.png")
 ```
 
-```{r, echo=FALSE}
-knitr::include_graphics("predCV.png")
+```{python}
+g.figure.get_figure()
 ```
 
 On obtient plus de variance dans la prédiction, c'est déjà un peu mieux.
@@ -717,7 +736,9 @@ pertinente était le prix ou une transformation de celle-ci
 
 {{< spoiler text="Cliquer pour afficher le code" >}}
 
-```{python, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
 features_names=pipe_optimal['preprocessor'].get_feature_names_out()
 importances = pipe_optimal['randomforest'].feature_importances_
 std = np.std([tree.feature_importances_ for tree in pipe_optimal['randomforest'].estimators_], axis=0)
@@ -735,9 +756,7 @@ fig.tight_layout()
 plt.savefig("varimportance2.png")
 ```
 
-```{r}
-knitr::include_graphics("varimportance2.png")
-```
+![](varimportance2.png)
 
 {{< /spoiler >}}
 
