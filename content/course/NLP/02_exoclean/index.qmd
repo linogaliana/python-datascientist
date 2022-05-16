@@ -1,15 +1,4 @@
 ---
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .Rmd
-      format_name: rmarkdown
-      format_version: '1.2'
-      jupytext_version: 1.6.0
-  kernelspec:
-    display_name: Python 3
-    language: python
-    name: python3
 title: "Nettoyer un texte: approche bag-of-words (exercices)"
 date: 2020-10-29T13:00:00Z
 draft: false
@@ -32,16 +21,18 @@ summary: |
   précedemment
 ---
 
-```{r setup, include=FALSE}
-dir_path <- gsub(here::here(), "..", here::here("course","NLP"))
-knitr::opts_chunk$set(echo = FALSE)
-knitr::knit_hooks$set(
-  plot = function(x, options) modif_plot(x, options, dir_path = dir_path)
-)
-```
+```{python}
+#| echo: false
+#| output: 'asis'
+#| include: true
+#| eval: true
 
-```{r, echo = FALSE, results = 'asis', include = TRUE, eval = TRUE}
-print_badges()
+import sys
+sys.path.insert(1, '../../../../') #insert the utils module
+from utils import print_badges
+
+#print_badges(__file__)
+print_badges("content/course/NLP/02_exoclean.qmd")
 ```
 
 
@@ -103,19 +94,21 @@ Il faudra également installer les librairies `gensim` et `pywaffle`
 {{% box status="warning" title="Attention" icon="fa fa-exclamation-triangle" %}}
 Comme dans la [partie précédente](#nlp), il faut télécharger quelques éléments pour que `NTLK` puisse fonctionner correctement. Pour cela, faire :
 
-```{python, eval = FALSE}
+~~~{python}
 import nltk
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('genesis')
 nltk.download('wordnet')
-```
+~~~
 {{% /box %}}
 
 
 La liste des modules à importer est assez longue, la voici :
 
-```{python, echo = TRUE, results = "hide"}
+```{python}
+#| include: false
+#| echo: true
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -206,7 +199,7 @@ train = train.set_index('ID')
 
 Si vous ne faites pas l'exercice 1, pensez à charger les données en executant la fonction `get_data.py` :
 
-```{python, echo = TRUE}
+```{python}
 import requests
 
 url = 'https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/course/NLP/get_data.py'
@@ -227,24 +220,24 @@ Le jeu de données met ainsi en regard un auteur avec une phrase qu'il a écrite
 train.head()
 ```
 
-```{python, echo = FALSE}
+```{python}
+#| echo: false
 sampsize = train.shape[0]
 ```
 
 
 On peut se rendre compte que les extraits des 3 auteurs ne sont pas forcément équilibrés dans le jeu de données. Il faudra en tenir compte dans la prédiction. 
 
-```{python, echo=TRUE, eval=TRUE, include=FALSE}
+```{python}
+#| include: false
+#| echo: true
 fig = plt.figure()
-sns.barplot(x=['Edgar Allen Poe', 'Mary W. Shelley', 'H.P. Lovecraft'], y=train['Author'].value_counts())
+g = sns.barplot(x=['Edgar Allen Poe', 'Mary W. Shelley', 'H.P. Lovecraft'], y=train['Author'].value_counts())
+g
 ```
 
-```{python, echo=FALSE, eval=TRUE}
-plt.savefig("wordfreq.png", bbox_inches='tight')
-```
-
-```{r, echo = FALSE}
-knitr::include_graphics("wordfreq.png")
+```{python}
+g.figure.get_figure()
 ```
 
 
@@ -324,11 +317,12 @@ def graph_occurrence(word, train_data):
     return fig
 
 fig = graph_occurrence("fear", train)
-plt.savefig("fear.png", bbox_inches='tight')
+#plt.savefig("fear.png", bbox_inches='tight')
 ```
 
-```{r}
-knitr::include_graphics("fear.png")
+```{python}
+#| echo: false
+fig.get_figure()
 ```
 
 3. Refaire l'analyse avec le mot *"horror"*. 
@@ -339,11 +333,11 @@ knitr::include_graphics("fear.png")
 
 #3. Graphe d'occurences avec le mot horror
 fig = graph_occurrence("horror", train)
-plt.savefig("horror.png", bbox_inches='tight')
 ```
 
-```{r}
-knitr::include_graphics("horror.png")
+```{python}
+#| echo: false
+fig.get_figure()
 ```
 
 La peur est ainsi plus évoquée par Mary Shelley
@@ -387,12 +381,11 @@ for i in range(len(n_topics)):
 
     ax.imshow(wordcloud)
     ax.axis('off')
-
-plt.savefig('wordcloud1.png', bbox_inches='tight')
 ```
 
-```{r}
-knitr::include_graphics("wordcloud1.png")
+```{python}
+#| echo: false
+fig.get_figure()
 ```
 
 
@@ -416,12 +409,11 @@ index=count_words.index)
 count_words = count_words.reset_index()
 g = sns.FacetGrid(count_words, row="Author")
 g.map_dataframe(sns.barplot, x="word", y="count")
-
-plt.savefig('wordcount1.png', bbox_inches='tight')
 ```
 
-```{r}
-knitr::include_graphics("wordcount1.png")
+```{python}
+#| echo: false
+g.figure.get_figure()
 ```
 
 On voit ici que ce sont des mots communs, comme *"the"*, *"of"*, etc. sont très
@@ -456,7 +448,7 @@ Prenons les résultats de l'exercice précédent et enrichissons les du rang et 
 
 <!-- source : https://stackoverflow.com/questions/23377108/pandas-percentage-of-total-with-groupby -->
 
-```{python, echo = TRUE, eval = FALSE}
+```{python}
 count_words = pd.DataFrame({'counter' : train
     .groupby('Author')
     .apply(lambda s: ' '.join(s['Text']).split())
@@ -474,24 +466,22 @@ count_words = count_words.assign(
 )
 ```
 
-```{python, echo = TRUE, eval = FALSE}
+```{python}
+#| include: false
+#| echo: true
 g = sns.lmplot(y = "freq", x = "rank", hue = 'Author', data = count_words, fit_reg = False)
 g.set(xscale="log", yscale="log")
 g
 ```
 
-```{python, include = FALSE}
-plt.savefig('zipf.png', bbox_inches='tight')
-```
-
-```{r}
-knitr::include_graphics("zipf.png")
+```{python}
+g.figure.get_figure()
 ```
 
 
-```{python, echo = TRUE, eval = FALSE}
+```{python}
+#| output: asis
 import statsmodels.api as sm
-
 
 exog = sm.add_constant(np.log(count_words['rank'].astype(float)))
 
@@ -526,7 +516,8 @@ Plutôt que de faire soi-même ce travail de nettoyage, avec des fonctions mal o
 
 Repartir de `train`, notre jeu de données d'entraînement. Pour rappel, `train` a la structure suivante:
 
-```{python, echo=FALSE}
+```{python}
+#| echo: false
 train.head(2)
 ```
 
@@ -572,7 +563,9 @@ sur notre `DataFrame` grâce à `apply`, sans le diviser.
 
 Ce petit nettoyage permet d'arriver à un texte plus intéressant en termes d'analyse lexicale. Par exemple, si on reproduit l'analyse précédente... :
 
-```{python, echo=TRUE, include=FALSE}
+```{python}
+#| include: false
+#| echo: true
 train_clean["Text"] = train_clean['tokenized'].apply(lambda s: " ".join(map(str, s)))
 
 n_topics = ["HPL","EAP","MWS"]
@@ -588,13 +581,11 @@ for i in range(len(n_topics)):
 fig
 ```
 
-```{python, echo=FALSE}
-plt.savefig('wordcloud2.png', bbox_inches='tight')
+```{python}
+#| echo: false
+fig.get_figure()
 ```
 
-```{r}
-knitr::include_graphics("wordcloud2.png")
-```
 
 Pour aller plus loin dans l'harmonisation d'un texte, il est possible de
 mettre en place les classes d'équivalence développées dans la 
@@ -613,7 +604,7 @@ modèle. En l'occurrence, un `WordNetLemmatizer`  (WordNet est une base
 lexicographique ouverte). Par exemple, les mots *"women"*, *"daughters"*
 et *"leaves"* seront ainsi lemmatisés de la manière suivante :
 
-```{python, echo = TRUE}
+```{python}
 from nltk.stem import WordNetLemmatizer
 lemm = WordNetLemmatizer()
 
@@ -637,7 +628,7 @@ nltk.download('wordnet')
 On va se restreindre au corpus d'Edgar Allan Poe et repartir de la base de données
 brute :
 
-```{python, echo = TRUE}
+```{python}
 eap_clean = train[train["Author"] == "EAP"]
 eap_clean = ' '.join(eap_clean['Text'])
 #Tokenisation naïve sur les espaces entre les mots => on obtient une liste de mots
@@ -691,7 +682,8 @@ tfs = tfidf.fit_transform(train['Text'])
 
 2. Après avoir construit la matrice de documents x terms avec le code suivant, rechercher les lignes où les termes ayant la structure `abandon` sont non-nuls. 
 
-```{python, echo = FALSE, include = FALSE}
+```{python}
+#| echo: false
 feature_names = tfidf.get_feature_names()
 corpus_index = [n for n in list(tfidf.vocabulary_.keys())]
 import pandas as pd
@@ -772,7 +764,9 @@ On va, rapidement, regarder dans quel contexte apparaît le mot `fear` dans
 l'oeuvre d'Edgar Allan Poe (EAP). Pour cela, on transforme d'abord
 le corpus EAP en tokens `nltk` : 
 
-```{python, echo = TRUE, include=FALSE}
+```{python}
+#| include: false
+#| echo: true
 eap_clean = train_clean[train_clean["Author"] == "EAP"]
 eap_clean = ' '.join(eap_clean['Text'])
 #Tokenisation naïve sur les espaces entre les mots => on obtient une liste de mots
@@ -803,7 +797,7 @@ apparaissent le plus fréquemment ensemble. Parmi toutes les paires de deux mots
 
 Vous aurez besoin des fonctions ` BigramCollocationFinder.from_words` et `BigramAssocMeasures.likelihood_ratio` : 
 
-```{python, echo=TRUE}
+```{python}
 from nltk.collocations import BigramCollocationFinder
 from nltk.metrics import BigramAssocMeasures
 ```
@@ -867,7 +861,7 @@ collocations_word("fear")
 
 Si on mène la même analyse pour le terme *love*, on remarque que de manière logique, on retrouve bien des sujets généralement accolés au verbe :
 
-```{python, echo = FALSE}
+```{python}
 collocations_word("love")
 ```
 
