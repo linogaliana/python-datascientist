@@ -14,7 +14,7 @@ from nltk.corpus import stopwords
 nltk.download('stopwords')
 stop_words = set(stopwords.words('french'))
 
-list_files = glob.glob("./temp/course/**/*.Rmd", recursive=True)
+list_files = glob.glob("./content/**/*.qmd", recursive=True)
 
 
 book_mask = np.array(PIL.Image.open("./build/python_black.png"))
