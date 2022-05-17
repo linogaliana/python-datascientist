@@ -41,18 +41,19 @@ def keep_text_within_shortword(shortcode):
     return re.sub(re.compile("(\{\{).*(\}\}\\n)|(\\n\{\{).*(\}\})"),"",shortcode)
 
 def clean_file(text):
-    text = " ".join(text).lower()
+    text_s = text.split("\n")
+    text_s = [line for line in text_s if not line.strip().startswith('#|')]
+    text = " ".join(text_s).lower()
     s = keep_text_within_shortword(text)
-    # REMOVE R CHUNKS ------
-    s = re.sub(r'(?s)(```\{r)(.*?)(```)', "", s)
+    s = re.sub(r'(?s)(---)(.*?)(---)', "", s) #remove header
+    s = re.sub(r"```\{python\}","", s) #remove python chunk header
     s = re.sub(r'`', '', s)
     return s
 
 list_content = [read_file(fl) for fl in list_files]
 
-corpus = clean_file(text = list_content)
-
-corpus = corpus.split(" ")
+corpus = [clean_file(text = files) for files in list_content]
+corpus = " ".join(corpus).split(" ")
 corpus = [w for w in corpus if not w in stop_words]
 #corpus = [word for word in corpus if word.isalpha()]
 corpus = " ".join(corpus)
@@ -63,5 +64,3 @@ plt.imshow(make_wordcloud(corpus), interpolation='bilinear')
 plt.axis("off")
 plt.tight_layout()
 plt.savefig('./content/home/word.png', bbox_inches='tight', pad_inches = 0, dpi=199)
-
-
