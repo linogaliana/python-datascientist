@@ -14,7 +14,7 @@ def reminder_badges(
     notebook = re.sub(
         "(.Rmd|.qmd)",
         ".ipynb",
-        "content/01_toto.Rmd"
+        source_file
     )
 
     if notebook == "":
