@@ -134,6 +134,9 @@ def inject_shortcode(status, title, icon, inner):
     x += '</div></div>'
     return x
 
+
+
+
 #def identify_replace_shortcode(shortcode):
     # groups = re.findall(r'(status=|title=|icon=)"(.+?)"', shortcode)
     # essai = inject_shortcode("exercise","Exercise (pour ceux ayant envie de tester leurs connaissances en pandas)", "fas fa-pencil-alt", "grere" )
