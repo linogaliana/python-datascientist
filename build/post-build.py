@@ -1,3 +1,5 @@
+import glob
+
 def read_file(filename):
     with open(filename, 'r', encoding='utf-8') as f:
         text = f.readlines()
@@ -16,7 +18,10 @@ def write_file(filename, content):
     with open(filename, 'w') as f:
         f.write(content)
 
+def clean_write_file(fl):
+    content = read_file(fl)
+    content = replace_shortcode_tabs(content)
+    write_file(fl, content)
 
-content = read_file('./content/course/manipulation/05a_s3/index.md')
-content = replace_shortcode_tabs(content)
-write_file('./content/course/manipulation/05a_s3/index.md', content)
+list_files = glob.glob("./content/**/*.md", recursive=True)
+[clean_write_file(fl) for fl in list_files]
