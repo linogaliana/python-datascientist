@@ -1,6 +1,7 @@
 import shutil
 import glob
 import sys
+import os
 
 direction = sys.argv[1]
 print(direction)
@@ -20,6 +21,10 @@ def hack_name(fl, direction):
 corresp = {f: hack_name(f, direction) for f in list_files}
 print(corresp)
 
-
+internal_dirs = [os.path.dirname(value) for value in corresp.values()]
+internal_dirs = list(set(internal_dirs))
+[os.makedirs(path, exist_ok=True) for path in internal_dirs]
 
 [shutil.copy2(key, value) for key, value in corresp.items()]
+
+print("Done !")
