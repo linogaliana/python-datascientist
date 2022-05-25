@@ -59,18 +59,20 @@ def cleanfile(filename, root_dir = None, show_code = False, hide_all_code = True
     # s = re.sub(r"(\{\{[^}]+}\})", "", new_text)
     s = keep_text_within_shortword(new_text)
     # REMOVE R CHUNKS ------
-    s = re.sub(r'(?s)(```\{r)(.*?)(```)', "", s)
+    # s = re.sub(r'(?s)(```\{r)(.*?)(```)', "", s)
     # PRINT ALL PYTHON CODE FOR CORRECTIONS
-    if show_code is True:
-      s = override_echo_FALSE(s)
-    if hide_all_code:
-      s = re.sub(r'(?s)(```\{python)(.*?)(```)', "", s)
+    #if show_code is True:
+      #s = override_echo_FALSE(s)
+    #if hide_all_code:
+      #s = re.sub(r'(?s)(```\{python)(.*?)(```)', "", s)
     # EXTRACT AND CLEAN HEADER ----------
     yaml, text = s.split('---\n', 2)[1:]
-    yaml_jupytext, yaml_rmd = yaml.split('title:')
-    yaml_rmd_title, yaml_rmd_other = yaml_rmd.split('date:')
-    new_md = "---\n" + yaml_jupytext.rstrip() + "\n---\n" + \
-             "# " + yaml_rmd_title.replace('"', '').replace("'", "") + \
+    title_search = re.search('title: "(.*)"', s)
+    if title_search:
+        title = "#" + title_search.group(1)
+    else:
+        title = ""
+    new_md = title.replace('"', '').replace("'", "") + \
              "\n" + text
     # WRITE IN TEMPORARY LOCATION --------------
     write_dest = os.path.join(root_dir, "temp" + os.sep + filename)
@@ -131,6 +133,9 @@ def inject_shortcode(status, title, icon, inner):
     x += '<p>{}</p>'.format(inner)
     x += '</div></div>'
     return x
+
+
+
 
 #def identify_replace_shortcode(shortcode):
     # groups = re.findall(r'(status=|title=|icon=)"(.+?)"', shortcode)
