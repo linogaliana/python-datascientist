@@ -16,6 +16,8 @@ def reminder_badges(
         ".ipynb",
         source_file
     )
+    notebook = notebook.replace("content","notebooks")
+
 
     if notebook == "":
         github_link = 'https://github.com/linogaliana/python-datascientist'
@@ -49,7 +51,7 @@ def reminder_badges(
     if type == "md":
         nbviewer_link = "[![nbviewer]"\
             "(https://img.shields.io/badge/Visualize-nbviewer-blue?logo=Jupyter)]"\
-            f"(\"{nbviewer_link}\")"
+            f"({nbviewer_link})"
     else:
         nbviewer_link = f'<a href="{nbviewer_link}" target="_blank" rel="noopener">'\
             '<img src="https://img.shields.io/badge/Visualize-nbviewer-blue?logo=Jupyter" alt="nbviewer"></a>'
@@ -62,7 +64,7 @@ def reminder_badges(
     if type == "md":
         onyxia_link = "[![Onyxia]"\
             "(https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&color=yellow?logo=Python)]"\
-            f"(\"{onyxia_link_launcher}\")"
+            f"({onyxia_link_launcher})"
     else:
         onyxia_link = f'<a href="{onyxia_link_launcher}" target="_blank" rel="noopener">'\
             '<img src="https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&amp;color=yellow?logo=Python" alt="Onyxia"></a>'
