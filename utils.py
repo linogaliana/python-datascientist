@@ -16,7 +16,7 @@ def reminder_badges(
         ".ipynb",
         source_file
     )
-    notebook = notebook.replace("content","notebooks")
+    notebook = notebook.replace("content", "notebooks")
 
 
     if notebook == "":

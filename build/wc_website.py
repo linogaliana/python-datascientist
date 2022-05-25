@@ -58,9 +58,14 @@ corpus = [w for w in corpus if not w in stop_words]
 #corpus = [word for word in corpus if word.isalpha()]
 corpus = " ".join(corpus)
 
+
+path = './content/home/word.png'
+
 fig = plt.figure()
 
 plt.imshow(make_wordcloud(corpus), interpolation='bilinear')
 plt.axis("off")
 plt.tight_layout()
-plt.savefig('./content/home/word.png', bbox_inches='tight', pad_inches = 0, dpi=199)
+plt.savefig(path, bbox_inches='tight', pad_inches = 0, dpi=199)
+
+print(f"Output written : {path}")
