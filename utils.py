@@ -16,7 +16,7 @@ def reminder_badges(
         ".ipynb",
         source_file
     )
-    notebook = notebook.replace("content", "notebooks")
+    notebook = re.sub(r"content", "notebooks", notebook)
 
 
     if notebook == "":
@@ -127,12 +127,7 @@ def print_badges(
     onyxia_only=False,
     split=4):
 
-    fpath = fpath.rsplit("content/", maxsplit = 1)[1]
-
-    fpath = re.sub(
-        "content",
-        "notebooks",
-        fpath)
+    #fpath = fpath.rsplit("content/", maxsplit = 1)[1]
 
     badges = reminder_badges(
         fpath,
