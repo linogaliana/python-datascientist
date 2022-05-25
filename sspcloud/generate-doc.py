@@ -83,12 +83,12 @@ if __name__ == "__main__":
         if section_md["chapters"]:
             for chapter in section_md["chapters"]:
                 # Build chapter block if notebook exists
-                MD_PATH = os.path.join(PROJECT_DIR, "content", "course", section, f"{chapter}.Rmd")
+                MD_PATH = os.path.join(PROJECT_DIR, "content", "course", section, chapter, "index.qmd")
 
                 if os.path.isfile(MD_PATH):
                     name, abstract = extract_metadata_md(MD_PATH)
 
-                    init_args = urllib.parse.quote(f"{section} {chapter}")
+                    init_args = urllib.parse.quote(f"{section} {chapter}.ipynb")
                     launcher_url = LAUNCHER_TMPLT.format(init_args=init_args)
 
                     chapter_doc = generate_block(name=name,
