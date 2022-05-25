@@ -1,0 +1,647 @@
+---
+title: "Retour sur numpy"
+date: 2020-07-16T13:00:00Z
+draft: false
+weight: 10
+tags:
+  - numpy
+categories:
+  - Tutoriel
+slug: "numpy"
+type: book
+summary: |
+  numpy constitue la brique de base de l'écosystème de la data-science en
+  Python. Toutes les librairies de manipulation de données, de modélisation
+  et de visualisation reposent, de manière plus ou moins directe, sur numpy.
+  Il est donc indispensable d'avoir quelques notions sur ce package avant
+  d'aller plus loin.
+---
+
+Pour essayer les exemples présents dans ce tutoriel : 
+
+```{python}
+#| echo: false
+#| output: 'asis'
+#| include: true
+#| eval: true
+
+import sys
+sys.path.insert(1, '../../../../') #insert the utils module
+from utils import print_badges
+
+#print_badges(__file__)
+print_badges("content/course/manipulation/01_numpy.qmd")
+```
+
+
+Il est recommandé de régulièrement se référer à
+la [cheatsheet numpy](https://www.datacamp.com/community/blog/python-numpy-cheat-sheet) et à la
+[doc officielle](https://numpy.org/doc/stable/) en cas de doute
+sur une fonction. 
+
+Dans ce chapitre, on ne dérogera pas à la convention qui s'est imposée
+d'importer `numpy` de la
+manière suivante:
+
+```{python import np}
+import numpy as np
+```
+
+Si les scripts suivants sont exécutés dans un `notebook`, il est recommandé d'utiliser les paramètres suivants
+pour contrôler le rendu
+
+~~~python
+from IPython.core.interactiveshell import InteractiveShell
+InteractiveShell.ast_node_interactivity = "all"
+~~~
+
+
+## Le concept d'array
+
+Le concept central de `NumPy` (`Numerical Python`) est
+l'**`array`** qui est un tableau de données multidimensionnel.
+
+L'array numpy peut être unidimensionnel et s'apparenter à un vecteur (1d-array),
+bidimensionnel et ainsi s'apparenter à une matrice (2d-array) ou, de manière plus générale, 
+prendre la forme d'un objet
+multidimensionnel (Nd-array). 
+
+Les tableaux simples (uni ou bi-dimensionnels) sont faciles à se représenter et seront particulièrement
+utilisés dans le paradigme des DataFrames mais 
+la possibilité d'avoir des objets multidimensionnels permettra d'exploiter des
+structures très complexes.
+
+Un DataFrame sera construit à partir d'une collection
+d'array uni-dimensionnels (les variables de la table), ce qui permettra d'effectuer des opérations cohérentes
+(et optimisées) avec le type de la variable.
+
+
+Par rapport à une liste,
+
+* un *array* ne peut contenir qu'un type de données (`integer`, `string`, etc.),
+ contrairement à une liste.
+* les opérations implémentées par `numpy` seront plus efficaces et demanderont moins
+de mémoire
+
+
+
+Les données géographiques constitueront une construction un peu plus complexe qu'un `DataFrame` traditionnel. 
+La dimension géographique prend la forme d'un tableau plus profond, au moins bidimensionnel
+(coordonnées d'un point). 
+
+
+## Créer un array
+
+On peut créer un `array` de plusieurs manières. Pour créer un `array` à partir d'une liste,
+il suffit d'utiliser la méthode `array`:
+
+```{python}
+np.array([1,2,5])
+```
+
+Il est possible d'ajouter un argument `dtype` pour contraindre le type du *array*:
+
+```{python}
+np.array([["a","z","e"],["r","t"],["y"]], dtype="object")
+```
+
+
+Il existe aussi des méthodes pratiques pour créer des array:
+
+* séquences logiques : `np.arange` (suite) ou `np.linspace` (interpolation linéaire entre deux bornes)
+* séquences ordonnées: _array_ rempli de zéros, de 1 ou d'un nombre désiré : `np.zeros`, `np.ones` ou `np.full`
+* séquences aléatoires: fonctions de génération de nombres aléatoires: `np.rand.uniform`, `np.rand.normal`, etc. 
+* tableau sous forme de matrice identité: `np.eye`
+
+
+```{python}
+np.arange(0,10)
+np.arange(0,10,3)
+np.linspace(0, 1, 5)
+np.zeros(10, dtype=int)
+np.ones((3, 5), dtype=float)
+np.full((3, 5), 3.14)
+np.eye(3)
+```
+
+
+{{% box status="exercise" title="Exercise 1" icon="fas fa-pencil-alt" %}}
+
+Générer:
+
+* $X$ une variable aléatoire, 1000 répétitions d'une loi $U(0,1)$
+* $Y$ une variable aléatoire, 1000 répétitions d'une loi normale de moyenne nulle et de variance égale à 2
+* Vérifier la variance de $Y$ avec `np.var`
+
+{{% /box %}}
+
+
+```{python}
+#| include: false
+
+# Correction
+X = np.random.uniform(0,1,1000)
+Y = np.random.normal(0,np.sqrt(2),1000)
+
+np.var(Y)
+```
+
+## Indexation et slicing
+
+### Logique dans le cas d'un array unidimensionnel
+
+La structure la plus simple imaginable est l'array unidimensionnel:
+
+```{python}
+x = np.arange(10)
+print(x)
+```
+
+L'indexation est dans ce cas similaire à celle d'une liste: 
+
+* le premier élément est 0
+* le énième élément est accessible à la position $n-1$
+
+La logique d'accès aux éléments est ainsi la suivante:
+
+~~~python
+x[start:stop:step]
+~~~
+
+Avec un *array* unidimensionnel, l'opération de *slicing* (garder une coupe du *array*) est très simple. 
+Par exemple, pour garder les *K* premiers éléments d'un *array*, on fera:
+
+~~~python
+x[:(K-1)]
+~~~
+
+En l'occurrence, on sélectionne le K$^{eme}$ élément en utilisant
+
+~~~python
+x[K-1]
+~~~
+
+Pour sélectionner uniquement un élément, on fera ainsi:
+
+```{python}
+x = np.arange(10)
+x[2]
+```
+
+Les syntaxes qui permettent de sélectionner des indices particuliers d'une liste fonctionnent également
+avec les arrays.
+
+{{% box status="exercise" title="Exercise 2" icon="fas fa-pencil-alt" %}}
+
+* Sélectionner les éléments 0,3,5
+* Sélectionner les éléments pairs
+* Sélectionner tous les éléments sauf le premier
+* Sélectionner les 5 premiers éléments
+
+{{% /box %}}
+
+
+```{python}
+#| include: false
+
+# Correction
+x[[0,3,5]]
+x[::2]
+x[-0]
+x[:5]
+# x2[0,:] # La première ligne
+```
+
+### Sur la performance
+
+Un élément déterminant dans la performance de `numpy` par rapport aux listes, lorsqu'il est question de 
+*slicing* est qu'un array ne renvoie pas une
+copie de l'élément en question (copie qui coûte de la mémoire et du temps) mais simplement une vue de celui-ci.
+
+Lorsqu'il est nécessaire d'effectuer une copie, par exemple pour ne pas altérer l'array sous-jacent, on peut 
+utiliser la méthode `copy`:
+
+~~~python
+x_sub_copy = x[:2, :2].copy()
+~~~
+
+-----
+
+
+### Filtres logiques
+
+
+Il est également possible, et plus pratique, de sélectionner des données à partir de conditions logiques
+(opération qu'on appelle un *boolean mask*)
+Cette fonctionalité servira principalement à 
+effectuer des opérations de filtre sur les données.
+
+Pour des opérations de comparaison simples, les comparateurs logiques peuvent être suffisants. 
+Ces comparaisons fonctionnent aussi sur les tableaux multidimensionnels grâce au
+*broadcasting* sur lequel nous reviendrons :
+
+```python
+x = np.arange(10)
+x2 = np.array([[-1,1,-2],[-3,2,0]])
+print(x)
+print(x2)
+```
+
+```python
+x==2
+x2<0
+```
+
+Pour sélectionner les observations relatives à la condition logique,
+il suffit d'utiliser la logique de *slicing* de `numpy` qui fonctionne avec les conditions logiques
+
+{{% box status="exercise" title="Exercise 3" icon="fas fa-pencil-alt" %}}
+
+Soit 
+
+```{python}
+x = np.random.normal(size=10000)
+```
+
+1. Ne conserver que les valeurs dont la valeur absolue est supérieure à 1.96
+2. Compter le nombre de valeurs supérieures à 1.96 en valeur absolue et leur proportion dans l'ensemble
+3. Sommer les valeurs absolues de toutes les observations supérieures (en valeur absolue) à 1.96
+et rapportez les à la somme des valeurs de `x` (en valeur absolue) 
+
+{{% /box %}}
+
+
+```{python}
+#| include: false
+
+# Correction
+x = np.random.normal(size=10000)
+
+x2 = x[np.abs(x)>=1.96]
+
+print(x2.size)
+print(x2.size/x.size)
+np.sum(np.abs(x2))/np.sum(np.abs(x))
+```
+
+Lorsque c'est possible, il est recommandé d'utiliser les fonctions logiques de `numpy` (optimisées et 
+qui gèrent bien la dimension). Parmi elles, on peut retrouver:
+
+* `count_nonzero`
+* `isnan`
+* `any` ; `all` ; notamment avec l'argument `axis`
+* `np.array_equal` pour vérifier, élément par élément, l'égalité
+
+{{% box status="exercise" title="Exercise 4" icon="fas fa-pencil-alt" %}}
+
+Soit
+
+```{python}
+x = np.random.normal(0, size=(3, 4))
+```
+
+un *array* multidimensionnel et
+
+```{python}
+y = np.array([np.nan, 0, 1])
+```
+
+un *array* unidimensionnel présentant une valeur manquante. 
+
+1. Utiliser `count_nonzero` sur `y`
+2. Utiliser `isnan` sur `y` et compter le nombre de valeurs non NaN
+3. Vérifier que `x` comporte au moins une valeur positive dans son ensemble, en parcourant les lignes puis les colonnes. 
+
+Note : Jetez un oeil à ce que correspond le paramètre `axis` dans `numpy` en vous documentant sur internet. Par exemple [ici](https://www.sharpsightlabs.com/blog/numpy-axes-explained/).
+
+{{% /box %}}
+
+
+
+```{python}
+#| include: false
+
+# Correction
+x = np.random.normal(0, size=(3, 4))
+y = np.array([np.nan, 0, 1])
+
+print(x)
+print(y)
+# 1. Utiliser `count_nonzero` sur `y`
+print(np.count_nonzero(y))
+# 2. Utiliser `isnan` sur `y` et compter le nombre de valeurs non NaN
+print(np.isnan(y))
+print(np.sum(np.isnan(y)))
+# 3. Vérifier que `x` comporte au moins une valeur positive dans son ensemble, en parcourant les lignes puis les colonnes
+print(np.any(x>0))
+print(np.any(x>0, axis = 0))
+print(np.any(x>0, axis = 1))
+
+```
+
+## Manipuler un array
+
+Dans cette section, on utilisera un array multidimensionnel:
+
+```{python}
+x = np.random.normal(0, size=(3, 4))
+```
+
+### Statistiques sur un array
+
+Pour les statistiques descriptives classiques, `numpy` propose un certain nombre de fonctions déjà implémentées,
+qui peuvent être combinées avec l'argument `axis`
+
+{{% box status="exercise" title="Exercise 5" icon="fas fa-pencil-alt" %}}
+
+1. Faire la somme de tous les éléments d'un `array`, des éléments en ligne et des éléments en colonne. Vérifier
+la cohérence
+2. Ecrire une fonction `statdesc` pour renvoyer les valeurs suivantes : moyenne, médiane, écart-type, minimum et maximum.
+L'appliquer sur `x` en jouant avec l'argument axis
+
+{{% /box %}}
+
+
+```{python}
+#| include: false
+
+# Correction
+x.sum()
+x.sum(axis = 0)
+x.sum(axis = 1)
+# check coherence
+x.sum(axis = 0).sum()
+x.sum(axis = 1).sum()
+```
+
+```{python}
+#| include: false
+
+# Correction
+
+def statdesc(x, axis = None):
+    """
+    Statistiques agrégées sur un array numpy
+
+    :param x: Numpy array
+    :param axis: Numpy dimension that should be used
+    :return: A numpy array with mean, median, sd, min and max
+    """
+
+    return np.array([
+        np.mean(x, axis = axis),
+        np.median(x, axis = axis),
+        np.std(x, axis = axis),
+        np.min(x, axis = axis),
+        np.max(x, axis = axis)
+        ])
+
+statdesc(x)
+statdesc(x, axis = 0)
+statdesc(x, axis = 1)
+```
+
+
+### Fonctions de manipulation
+
+Voici quelques fonctions pour modifier un array, 
+
+| Opération | Implémentation |
+|-----------|----------------|
+| Applatir un array | `x.flatten()` (méthode) |
+| Transposer un array | `x.T` (méthode) ou `np.transpose(x)` (fonction) |
+| Ajouter des éléments à la fin | `np.append(x, [1,2])` |
+| Ajouter des éléments à un endroit donné (aux positions 1 et 2) | `np.insert(x, [1,2], 3)` |
+| Supprimer des éléments (aux positions 0 et 3) | `np.delete(x, [0,3])` |
+
+Pour combiner des array, on peut utiliser, selon les cas, 
+les fonctions `np.concatenate`, `np.vstack` ou la méthode `.r_` (concaténation *rowwise*). 
+`np.hstack` ou la méthode `.column_stack` ou `.c_` (concaténation *column-wise*)
+
+```{python}
+x = np.random.normal(size = 10)
+```
+
+Pour ordonner un array, on utilise `np.sort`
+
+```{python}
+x = np.array([7, 2, 3, 1, 6, 5, 4])
+
+np.sort(x)
+```
+
+Si on désire faire un ré-ordonnement partiel pour trouver les _k_ valeurs les plus petites d'un `array` sans les ordonner, on utilise `partition`:
+
+```{python}
+np.partition(x, 3)
+```
+
+
+
+## Broadcasting
+
+Le *broadcasting* désigne un ensemble de règles permettant
+d'appliquer des opérations sur des tableaux de dimensions différentes. En pratique, 
+cela consiste généralement à appliquer une seule opération à l'ensemble des membres d'un tableau `numpy`. 
+
+La différence peut être comprise à partir de l'exemple suivant. Le *broadcasting* permet
+de transformer le scalaire `5` en *array* de dimension 3:
+
+```{python}
+a = np.array([0, 1, 2])
+
+b = np.array([5, 5, 5])
+
+a + b
+a + 5
+```
+
+Le *broadcasting* peut être très pratique pour effectuer de manière efficace des opérations sur des données à
+la structure complexe. Pour plus de détails, se rendre
+[ici](https://jakevdp.github.io/PythonDataScienceHandbook/02.05-computation-on-arrays-broadcasting.html) ou [ici](https://stackoverflow.com/questions/47435526/what-is-the-meaning-of-axis-1-in-keras-argmax).
+
+## Une application: programmer ses propres k-nearest neighbors
+
+<!----
+L'idée de cet exercice vient de
+[là](https://jakevdp.github.io/PythonDataScienceHandbook/02.08-sorting.html#Example:-k-Nearest-Neighbors). 
+------>
+
+{{% box status="exercise" title="Exercise (un peu corsé)" icon="fas fa-pencil-alt" %}}
+
+1. Créer `X` un tableau à deux dimensions (i.e. une matrice) comportant 10 lignes
+et 2 colonnes. Les nombres dans le tableau sont aléatoires.
+2. Importer le module `matplotlib.pyplot` sous le nom `plt`. Utiliser
+`plt.scatter` pour représenter les données sous forme de nuage de points. 
+3. Constuire une matrice 10x10 stockant, à l'élément $(i,j)$, la distance euclidienne entre les points $X[i,]$ et $X[j,]$. Pour cela, il va falloir jouer avec les dimensions en créant des tableaux emboîtés à partir par des appels à `np.newaxis` :
+  + En premier lieu, utiliser `X1 = X[:, np.newaxis, :]` pour transformer la matrice en tableau emboîté. Vérifier les dimensions
+  + Créer `X2` de dimension `(1, 10, 2)` à partir de la même logique
+  + En déduire, pour chaque point, la distance avec les autres points pour chaque coordonnées. Elever celle-ci au carré
+  + A ce stade, vous devriez avoir un tableau de dimension `(10, 10, 2)`. La réduction à une matrice s'obtient en sommant sur le dernier axe. Regarder dans l'aide de `np.sum` comme effectuer une somme sur le dernier axe. 
+  + Enfin, appliquer la racine carrée pour obtenir une distance euclidienne en bonne et due forme. 
+4. Vérifier que les termes diagonaux sont bien nuls (distance d'un point à lui-même...)
+5. Il s'agit maintenant de classer, pour chaque point, les points dont les valeurs sont les plus similaires. Utiliser `np.argsort` pour obtenir, pour chaque ligne, le classement des points les plus proches
+6. On va s'intéresser aux k-plus proches voisins. Pour le moment, fixons k=2. Utiliser `argpartition` pour réordonner chaque ligne de manière à avoir les 2 plus proches voisins de chaque point d'abord et le reste de la ligne ensuite
+7. Utiliser le morceau de code ci-dessous
+
+~~~python
+plt.scatter(X[:, 0], X[:, 1], s=100)
+
+# draw lines from each point to its two nearest neighbors
+K = 2
+
+for i in range(X.shape[0]):
+    for j in nearest_partition[i, :K+1]:
+        # plot a line from X[i] to X[j]
+        # use some zip magic to make it happen:
+        plt.plot(*zip(X[j], X[i]), color='black')
+~~~
+
+pour représenter graphiquement le réseau de plus proches voisins
+
+{{% /box %}}
+
+
+```{python}
+#| include: false
+#| echo: false
+
+# Correction
+
+# 1. Definition de X
+X = np.random.rand(10, 2)
+
+# 2. Nuage de points. 
+import matplotlib.pyplot as plt
+print(X[:,0])
+print(X[:,1])
+plt.scatter(X[:, 0], X[:, 1], s=100)
+```
+
+
+```{python}
+#| include: false
+#| echo: false
+
+fig = plt.figure()
+plt.scatter(X[:, 0], X[:, 1], s=100)
+fig
+plt.savefig("scatter_numpy.png", bbox_inches='tight')
+```
+
+Pour la question 2, vous devriez obtenir un graphique ayant cet aspect :
+
+![](scatter_numpy.png)
+
+```{python}
+#| include: false
+#| echo: false
+
+# 3. Construire la matrice des distances euclidiennes
+print(X.shape)
+X1 = X[:, np.newaxis, :]
+print("dimension X1 : ", X1.shape)
+X2 = X[np.newaxis, :,:]
+print("dimension X2 : ", X2.shape)
+dist1 = (X1 - X2) ** 2
+print("dimension dist1 : ", dist1.shape)
+dist = np.sqrt(np.sum((X1 - X2) ** 2, axis=-1))
+print("dimension dist : ", dist.shape)
+
+# 4. Vérif termes diagonaux 
+print(dist)
+print(dist.diagonal())
+
+#5. Classer avec np.argsort 
+np.argsort(dist)
+
+#6. 2ppv
+K = 2
+nearest_partition = np.argpartition(dist, K + 1, axis=1)
+print(nearest_partition) # Ne pas oublier que le plus proche voisin d'un point est lui-même !
+
+#7. Tester le bout de code
+# Each point in the plot has lines drawn to its two nearest neighbors.
+fig = plt.figure()
+for i in range(X.shape[0]):
+    for j in nearest_partition[i, :K+1]:
+        # plot a line from X[i] to X[j]
+        # use some zip magic to make it happen:
+        plt.plot(*zip(X[j], X[i]), color='black')
+fig
+plt.savefig("knn.png", bbox_inches='tight')
+```
+
+Le résultat de la question 7 est le suivant: 
+
+![](knn.png)
+
+Ai-je inventé cet exercice corsé ? Pas du tout, il [vient de là](https://jakevdp.github.io/PythonDataScienceHandbook/02.08-sorting.html#Example:-k-Nearest-Neighbors). Mais, si je vous l'avais indiqué immédiatement, auriez-vous cherché à répondre aux questions ?
+
+Par ailleurs, il ne serait pas une bonne idée de généraliser cet algorithme à de grosses données. La complexité de notre approche est $O(N^2)$. L'algorithme implémenté par Scikit-learn est
+en $O[NlogN]$.
+
+De plus, le calcul de distances matricielles en utilisant la puissance des cartes graphiques serait plus rapide. A cet égard, la librairie [faiss](https://github.com/facebookresearch/faiss) offre des performances beaucoup plus satisfaisantes que celles que permettraient `numpy` sur ce problème précis.
+
+<!-----
+## Restructuration, concaténation et division
+
+* Pour restructurer un `array`, c'est-à-dire changer ses dimensions, le plus simple est d'utiliser la méthode `reshape`. Par exemple, pour 
+
+np.reshape
+np.concatenate
+np.split, np.hsplit, and np.vsplit
+----->
+
+## Exercices supplémentaires
+
+* Simulations de variables aléatoires ;
+* TCL ;
+* Pagerank
+
+```{python, eval = FALSE, echo = FALSE}
+"""PageRank algorithm with explicit number of iterations.
+
+Returns
+-------
+ranking of nodes (pages) in the adjacency matrix
+
+"""
+
+import numpy as np
+
+def pagerank(M, num_iterations: int = 100, d: float = 0.85):
+    """PageRank: The trillion dollar algorithm.
+
+    Parameters
+    ----------
+    M : numpy array
+        adjacency matrix where M_i,j represents the link from 'j' to 'i', such that for all 'j'
+        sum(i, M_i,j) = 1
+    num_iterations : int, optional
+        number of iterations, by default 100
+    d : float, optional
+        damping factor, by default 0.85
+
+    Returns
+    -------
+    numpy array
+        a vector of ranks such that v_i is the i-th rank from [0, 1],
+        v sums to 1
+
+    """
+    N = M.shape[1]
+    v = np.random.rand(N, 1)
+    v = v / np.linalg.norm(v, 1)
+    M_hat = (d * M + (1 - d) / N)
+    for i in range(num_iterations):
+        v = M_hat @ v
+    return v
+
+M = np.array([[0, 0, 0, 0, 1],
+              [0.5, 0, 0, 0, 0],
+              [0.5, 0, 0, 0, 0],
+              [0, 1, 0.5, 0, 0],
+              [0, 0, 0.5, 1, 0]])
+v = pagerank(M, 100, 0.85)
+```
