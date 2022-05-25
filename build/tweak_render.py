@@ -13,3 +13,5 @@ config['project']['render'] = lines
 
 with open('_quarto.yml', 'w') as outfile:
     yaml.dump(config, outfile, default_flow_style=False)
+
+print("Done")
