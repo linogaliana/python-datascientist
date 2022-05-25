@@ -10,51 +10,47 @@ jobs:
   blogdown:
     name: Render-Blog
     runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
-    if: "!contains(github.event.commits[0].message, '[skip ci]')"
+    container: linogaliana/python-datascientist-vstudio:quarto
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           submodules: true
-      - name: Install rmarkdown
-        env:
-          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
-        run: |
-          Rscript -e 'remotes::install_github("yihui/xfun")'
-          Rscript -e 'remotes::install_github("yihui/knitr")'
-          Rscript -e 'install.packages(c("rmarkdown", "here"))'
-      - name: install hugo
-        run: Rscript -e 'blogdown::install_hugo("0.83.0", force = TRUE)'
-      - name: Install Python
-        run: |
-          Rscript -e 'print(blogdown:::hugo_version())'
-          Rscript -e "install.packages(c('remotes', 'reticulate'))"
-          Rscript -e "install.packages(c('here'))"
-      - shell: bash -l {0}
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Configure safe.directory  # Workaround for actions/checkout#760
+        run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+      - shell: bash
         run: |
           conda info
           conda list
-      - name: Render blog
+      - name: Build to md
         run: |
-          Rscript -e 'source("./build/build.R")'
-      - name: Create
+          quarto render --to hugo
+          mv content/course/manipulation/index.md content/course/manipulation/_index.md
+          mv content/course/visualisation/index.md content/course/visualisation/_index.md
+          mv content/course/modelisation/index.md content/course/modelisation/_index.md
+          #git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
+          #cat diff.txt
+          #Rscript -e 'source("./build/build_light.R")'
+          hugo mod graph
+          hugo -D --themesDir themes -t github.com
+      - name: Clean files with Python function
         run: |
-         rm -rf "./temp"
-         mkdir -p temp
-         mkdir -p notebooks
          pip install matplotlib wordcloud nltk
-         python build/cleanmd.py
          python build/wc_website.py
-      - name: Render blog
+         python build/post-build.py
+      - name: Copy notebooks in dedicated directory
         run: |
-          Rscript -e 'source("./build/netlify.R")'
+         mkdir -p notebooks
+         python build/move_files.py notebooks
       - name: Install npm
-        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: actions/setup-node@v2          
         with:
           node-version: '12'        
       - name: Deploy to Netlify
-        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         # NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID added in the repo's secrets
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
@@ -63,6 +59,7 @@ jobs:
         run: |
           npm init -y
           npm install --unsafe-perm=true netlify-cli -g
+          netlify init
           netlify deploy --prod --dir="public" --message "Deploy master"
       - uses: actions/upload-artifact@v1
         with:

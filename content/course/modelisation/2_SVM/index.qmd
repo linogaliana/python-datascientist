@@ -1,0 +1,317 @@
+---
+title: "Classification: premier modèle avec les SVM"
+date: 2020-10-15T13:00:00Z
+draft: false
+weight: 30
+slug: SVM
+tags:
+  - scikit
+  - machine learning
+  - US elections
+  - classification
+  - SVM
+categories:
+  - Exercice
+type: book
+summary: |
+  La classification permet d'attribuer une classe d'appartenance (label)
+  discrète à des données à partir de certaines variables explicatives
+  (features). Les algorithmes sont nombreux. L'un des plus intuitifs et
+  les plus fréquemment rencontrés est le SVM (*support vector machine*).
+  Ce chapitre illustre les enjeux de la classification à partir de
+  ce modèle.
+---
+
+```{python}
+#| echo: false
+#| output: 'asis'
+#| include: true
+#| eval: true
+
+import sys
+sys.path.insert(1, '../../../../') #insert the utils module
+from utils import print_badges
+
+#print_badges(__file__)
+print_badges("content/course/modelisation/2_SVM.qmd")
+```
+
+
+Pour illustrer le travail d'exploration des données nécessaire avant de construire un modèle de Machine Learning, nous allons partir du même jeu de données que précédemment,
+c'est-à-dire les résultats des élections US 2020 présentés dans l'[introduction
+de cette partie](https://linogaliana-teaching.netlify.app/modelisation/): les données de vote aux élections présidentielles US
+croisées à des variables socio-démographiques.
+Le code 
+est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py).
+
+
+```{python}
+#!pip install geopandas
+
+import requests
+
+url = 'https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/course/modelisation/get_data.py'
+r = requests.get(url, allow_redirects=True)
+open('getdata.py', 'wb').write(r.content)
+
+import getdata
+votes = getdata.create_votes_dataframes()
+```
+
+Dans ce TD, nous aurons besoin des packages suivants:
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+```
+
+## La méthode des SVM (Support Vector Machines)
+
+L'une des méthodes de *Machine Learning* les plus utilisées en classification est les SVM. Il s'agit de trouver, dans un système de projection adéquat (noyau ou *kernel*), les paramètres de l'hyperplan (en fait d'un hyperplan à marges maximales) séparant les classes de données: 
+
+![](https://scikit-learn.org/stable/_images/sphx_glr_plot_iris_svc_001.png)
+
+{{% box status="hint" title="Formalisation mathématique" icon="fa fa-lightbulb" %}}
+On peut, sans perdre de généralité, supposer que le problème consiste à supposer l'existence d'une loi de probabilité $\mathbb{P}(x,y)$ ($\mathbb{P} \to \{-1,1\}$) qui est inconnue. Le problème de discrimination
+vise à construire un estimateur de la fonction de décision idéale qui minimise la probabilité d'erreur, autrement dit $\theta = \arg\min_\Theta \mathbb{P}(h_\theta(X) \neq y |x)$
+
+Les SVM les plus simples sont les SVM linéaires. Dans ce cas, on suppose qu'il existe un séparateur linéaire qui permet d'associer chaque classe à son signe:
+
+$$
+h_\theta(x) = \text{signe}(f_\theta(x)) ; \text{ avec } f_\theta(x) = \theta^T x + b
+$$
+avec $\theta \in \mathbb{R}^p$ et $w \in \mathbb{R}$. 
+
+![](https://en.wikipedia.org/wiki/File:SVM_margin.png)
+
+Lorsque des observations sont linéairement séparables, il existe une infinité de frontières de décision linéaire séparant les deux classes. Le "meilleur" choix est de prendre la marge maximale permettant de séparer les données. La distance entre les deux marges est $\frac{2}{||\theta||}$. Donc maximiser cette distance entre deux hyperplans revient à minimiser $||\theta||^2$ sous la contrainte $y_i(\theta^Tx_i + b) \geq 1$. 
+
+
+Dans le cas non linéairement séparable, la *hinge loss* $\max\big(0,y_i(\theta^Tx_i + b)\big)$ permet de linéariser la fonction de perte:
+
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Hinge_loss_vs_zero_one_loss.svg/1024px-Hinge_loss_vs_zero_one_loss.svg.png)
+
+ce qui donne le programme d'optimisation suivant:
+
+$$
+\frac{1}{n} \sum_{i=1}^n \max\big(0,y_i(\theta^Tx_i + b)\big) + \lambda ||\theta||^2
+$$
+
+La généralisation au cas non linéaire implique d'introduire des noyaux transformant l'espace de coordonnées des observations.
+
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Kernel_Machine.svg/1920px-Kernel_Machine.svg.png)
+
+{{% /box %}}
+
+
+## Exercice
+
+{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+
+**Exercice 1 : Premier algorithme de classification**
+
+```{python}
+# packages utiles
+from sklearn import svm
+import sklearn.metrics
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+```
+
+1. Créer une variable *dummy* appelée `y` dont la valeur vaut 1 quand les républicains l'emportent. 
+
+
+```{python}
+#| include: false
+#| echo: false
+
+# 1. Création de la dummy y de victoire des républicains
+votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
+```
+
+2. En utilisant la fonction prête à l'emploi nommée `train_test_split` de la librairie `sklearn.model_selection`,
+créer des échantillons de test (20 % des observations) et d'estimation (80 %) avec comme *features*: `'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"` et comme *label* la variable `y`. 
+
+
+> A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel()
+
+*Note : Pour éviter ce warning à chaque fois que vous estimez votre modèle, vous pouvez utiliser `DataFrame[['y']].values.ravel()` plutôt que `DataFrame[['y']]` lorsque vous constituez vos échantillons.*
+
+
+```{python}
+#| include: false
+#| echo: false
+
+#2. Création des échantillons d'entraînement et de validation
+xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
+
+df = votes[["y"] + xvars]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    df[xvars],
+    df[['y']].values.ravel(), test_size=0.2, random_state=0
+)
+#X_train.head()
+#y_test
+     
+```
+
+
+3. Entraîner un classifieur SVM avec comme paramètre de régularisation `C = 1`. Regarder les mesures de performance suivante : `accuracy`, `f1`, `recall` et `precision`.
+
+
+```{python}
+#| include: false
+#| echo: false
+
+# 3. Entraînement du modèle et performances
+clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+
+sc_accuracy = sklearn.metrics.accuracy_score(y_pred, y_test)
+sc_f1 = sklearn.metrics.f1_score(y_pred, y_test)
+sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
+sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
+
+#print(sc_accuracy)
+#print(sc_f1)
+#print(sc_recall)
+#print(sc_precision)
+```
+
+Le classifieur avec `C = 1` devrait avoir les performances suivantes:
+
+```{python}
+#| output: asis
+out = pd.DataFrame.from_dict({"Accuracy": [sc_accuracy], "Recall": [sc_recall],
+                        "Precision": [sc_precision], "F1": [sc_f1]}, orient = "index", columns = ["Score"])
+print(out.to_markdown())
+```
+
+4. Vérifier la matrice de confusion : vous devriez voir que malgré des scores en apparence pas si mauvais, il y a un problème notable. 
+
+
+```{python}
+#| include: false
+#| echo: false
+
+# 4. Matrice de confusion
+sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
+
+#Réponse : Notre classifieur manque totalement les labels 0, qui sont minoritaires.
+#Une raison possible ? L'échelle des variables: le revenu a une
+#distribution qui peut écraser celle des autres variables,
+#dans un modèle linéaire. Il faut donc, a minima, 
+#standardiser les variables.
+
+plt.savefig("confusion_matrix.png")
+```
+
+![](confusion_matrix.png)
+
+5. Refaire les questions précédentes avec des variables normalisées. Le résultat est-il différent ?
+
+
+```{python}
+#| include: false
+#| echo: false
+
+# 5. Refaire les questions précédentes avec des variables normalisées.
+import sklearn.preprocessing as preprocessing
+
+X = df[xvars]
+y = df[['y']]
+scaler = preprocessing.StandardScaler().fit(X)
+X = scaler.transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y.values.ravel(), test_size=0.2, random_state=0
+)
+
+clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
+
+#Réponse : Non, standardiser les variables n'apporte pas de gain
+# Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables. 
+# C'est pour cette raison que l'étape de sélection de variable est cruciale.
+
+plt.savefig("confusion_matrix2.png")
+```
+
+![](confusion_matrix2.png)
+
+
+6. Changer de variables *x*. Utiliser uniquement le résultat passé du vote démocrate et le revenu (`votes_gop` et `Median_Household_Income_2019`). Regarder les résultats, notamment la matrice de confusion. 
+
+Le nouveau classifieur avec devrait avoir les performances suivantes :
+
+```{python}
+#| output: asis
+out = pd.DataFrame.from_dict({"Accuracy": [sc_accuracy], "Recall": [sc_recall],
+                        "Precision": [sc_precision], "F1": [sc_f1]}, orient = "index", columns = ["Score"])
+print(out.to_markdown())
+```
+
+
+
+
+```{python}
+#| include: false
+#| echo: false
+
+# 6. Refaire les questions en changeant la variable X.
+votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
+df = votes[["y", "share_2016_republican", 'Median_Household_Income_2019']]
+tempdf = df.dropna(how = "any")
+
+X = votes[['share_2016_republican', 'Median_Household_Income_2019']]
+y = tempdf[['y']]
+scaler = preprocessing.StandardScaler().fit(X)
+X = scaler.transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y.values.ravel(), test_size=0.2, random_state=0
+)
+
+clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+
+sc_accuracy = sklearn.metrics.accuracy_score(y_pred, y_test)
+sc_f1 = sklearn.metrics.f1_score(y_pred, y_test)
+sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
+sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
+
+#print(sc_accuracy)
+#print(sc_f1)
+#print(sc_recall)
+#print(sc_precision)
+
+sklearn.metrics.plot_confusion_matrix(clf, X_test, y_test)
+# On obtient un résultat beaucoup plus cohérent.
+
+plt.savefig("confusion_matrix3.png")
+```
+
+![](confusion_matrix3.png)
+
+
+7. [OPTIONNEL] Faire une 5-fold validation croisée pour déterminer le paramètre *C* idéal. 
+
+```{python}
+# TODO : correction à rédiger.
+```
+
+{{% /box %}}
+
+
+
+
+
+
+
+
+
+

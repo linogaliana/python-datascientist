@@ -1,0 +1,1127 @@
+---
+title: "Webscraping avec python"
+date: 2020-09-08T13:00:00Z
+draft: false
+weight: 60
+slug: webscraping
+tags:
+  - webscraping
+  - BeautifulSoup
+categories:
+  - Exercice
+type: book
+summary: |
+  Python permet de facilement récupérer une page web pour en extraire des
+  données à restructurer. Le webscraping, que les Canadiens nomment
+  "moissonnage du web", est une manière de plus en plus utilisée de
+  récupérer des données en temps réel. 
+---
+
+```{python}
+#| echo: false
+#| output: 'asis'
+#| include: true
+#| eval: true
+
+import sys
+sys.path.insert(1, '../../../../') #insert the utils module
+from utils import print_badges
+
+#print_badges(__file__)
+print_badges("content/course/manipulation/04_webscraping_TP.qmd")
+```
+
+Le [webscraping](https://fr.wikipedia.org/wiki/Web_scraping) désigne les techniques d'extraction du contenu des sites internet. C'est une pratique très utile pour toute personne souhaitant travailler sur des informations disponibles en ligne, mais n'existant pas forcément sous la forme d'un tableau *Excel*.
+
+Ce TP vous présente comment créer et exécuter des robots afin de recupérer rapidement des informations utiles à vos projets actuels ou futurs.
+
+Le *webscraping* a un certain nombre d'enjeux en termes de légalité, qui ne seront pas enseignés dans ce cours mais dans un cours de 3A à l'ENSAE. En particulier, la CNIL a publié en 2020 de nouvelles directives sur le *webscraping* reprécisant que toute donnée ne peut être réutilisée à l'insu de la personne à laquelle ces données appartiennent. 
+
+Enfin, il est à noter que ce notebook est très fortement inspiré et réadapté à partir de [celui de Xavier Dupré](http://www.xavierdupre.fr/app/ensae_teaching_cs/helpsphinx/notebooks/TD2A_Eco_Web_Scraping.html), l'ancien professeur de la matière.
+
+
+# Un détour par le Web : comment fonctionne un site ?
+
+Même si ce TP ne vise pas à faire un cours de web, il vous faut néanmoins certaines bases sur la manière dont un site internet fonctionne afin de comprendre comment sont structurées les informations sur une page.
+
+Un site Web est un ensemble de pages codées en *HTML* qui permet de décrire à la fois le contenu et la forme d'une page *Web*.
+
+Pour voir cela, ouvrez n'importe quelle page web et faites un clic-droit dessus. 
+- Sous `Chrome` <i class="fab fa-chrome"></i> : Cliquez ensuite sur "Affichez le code source de la page" (<kbd>CTRL</kbd>+<kbd>U</kbd>) ;
+- Sous `Firefox` <i class="fab fa-firefox"></i> : "Code source de la page" (<kbd>CTRL</kbd>+<kbd>MAJ</kbd>+<kbd>K</kbd>) ;
+- Sous `Edge` <i class="fab fa-edge"></i> : "Affichez la page source" (<kbd>CTRL</kbd>+<kbd>U</kbd>) ;
+- Sous `Safari` <i class="fab fa-safari"></i> : voir comment faire [ici](https://fr.wikihow.com/voir-le-code-source)
+
+
+## Les balises
+
+
+Sur une page web, vous trouverez toujours à coup sûr des éléments comme ``<head>``, ``<title>``, etc. Il  s'agit des codes qui vous permettent de structurer le contenu d'une page *HTML* et qui s'appellent des **balises**. 
+Citons, par exemple, les balises ``<p>``, ``<h1>``, ``<h2>``, ``<h3>``, ``<strong>`` ou ``<em>``.
+Le symbole ``< >`` est une balise : il sert à indiquer le début d'une partie. Le symbole ``</ >`` indique la fin de cette partie. La plupart des balises vont par paires, avec une *balise ouvrante* et une *balise fermante* (par exemple ``<p>`` et ``</p>``).
+
+### Exemple : les balise des tableaux
+
+| Balise      | Description                        |
+|-------------|------------------------------------|
+| `<table>`   | Tableau                            |
+| `<caption>` | Titre du tableau                   |
+| `<tr>`      | Ligne de tableau                   |
+| `<th>`      | Cellule d'en-tête                  |
+| `<td>`      | Cellule                            |
+| `<thead>`   | Section de l'en-tête du tableau    |
+| `<tbody>`   | Section du corps du tableau        |
+| `<tfoot>`   | Section du pied du tableau         |
+
+
+**Application : un tableau en HTML**
+
+Le code *HTML* du tableau suivant
+
+```{html}
+<table>
+<caption> Le Titre de mon tableau </caption>
+
+   <tr>
+      <th>Prénom</th>
+      <th>Nom</th>
+      <th>Profession</th>
+   </tr>
+   <tr>
+      <td>Mike </td>
+      <td>Stuntman</td>
+      <td>Cascadeur</td>
+   </tr>
+   <tr>
+      <td>Mister</td>
+      <td>Pink</td>
+      <td>Gangster</td>
+   </tr>
+</table>
+```
+
+Donnera dans le navigateur :
+
+<table>
+<caption> Le Titre de mon tableau </caption>
+
+   <tr>
+      <th>Prénom</th>
+      <th>Nom</th>
+      <th>Profession</th>
+   </tr>
+   <tr>
+      <td>Mike </td>
+      <td>Stuntman</td>
+      <td>Cascadeur</td>
+   </tr>
+   <tr>
+      <td>Mister</td>
+      <td>Pink</td>
+      <td>Gangster</td>
+   </tr>
+</table>
+
+
+### Parent et enfant
+
+Dans le cadre du langage HTML, les termes de parent (*parent*) et enfant (*child*) servent à désigner des élements emboîtés les uns dans les autres. Dans la construction suivante, par exemple :
+
+```html
+< div> 
+    < p>
+       bla,bla
+    < /p>
+< /div>
+```
+
+Sur la page web, cela apparaitra de la manière suivante : 
+
+<div> 
+    <p>
+       bla,bla
+    </p>
+</div>
+
+
+On dira que l'élément ``<div>`` est le parent de l'élément ``<p>`` tandis que l'élément ``<p>`` est l'enfant de l'élément ``<div>``.
+
+
+
+*Mais pourquoi apprendre ça pour "scraper", me direz-vous ?*
+
+Parce que, pour bien récupérer les informations d'un site internet, il faut pouvoir comprendre sa structure et donc son code HTML. Les fonctions python qui servent au scraping sont principalement construites pour vous permettre de naviguer entre les balises.
+
+
+# Scraper avec python: le package `BeautifulSoup`
+
+## Les packages disponibles
+
+Nous allons essentiellement utiliser le package [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) pour ce cours, mais d'autres packages existent (Selenium, Scrapy...). Il s'utilise souvent en conjonction avec
+[urllib](https://docs.python.org/3/library/urllib.html#module-urllib).
+
+`BeautifulSoup` sera suffisant quand vous voudrez travailler sur des pages HTML statiques. Dès que les informations que vous recherchez sont générées via l'exécution de scripts [Javascript](https://fr.wikipedia.org/wiki/JavaScript), il vous faudra passer par des outils comme [Selenium](https://selenium-python.readthedocs.io/).
+
+De même, si vous ne connaissez pas l'URL, il faudra passer par un framework comme [Scrapy](https://scrapy.org/), qui passe facilement d'une page à une autre ("crawl"). Scrapy est plus complexe à manipuler que BeautifulSoup : si vous voulez plus de détails, rendez-vous sur la page du [tutoriel Scrapy](https://doc.scrapy.org/en/latest/intro/tutorial.html).
+
+Le *webscraping* est un domaine où la reproductibilité est compliquée à mettre en oeuvre. Une page *web* évolue
+potentiellement régulièrement et d'une page web à l'autre, la structure peut
+être très différente ce qui rend certains codes difficilement exportables.
+Par conséquent, la meilleure manière d'avoir un programme fonctionnel est
+de comprendre la structure d'une page web et dissocier les éléments exportables
+à d'autres cas d'usages des requêtes *ad hoc*. 
+
+{{< tweet 1474353569780355074 >}}
+
+
+```{python}
+import urllib
+import bs4
+import pandas
+from urllib import request
+```
+
+## Récupérer le contenu d'une page HTML
+
+On va commencer doucement. Prenons une page wikipedia, par exemple celle de la Ligue 1 de football : [Championnat de France de football 2019-2020](https://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020). On va souhaiter récupérer la liste des équipes, ainsi que les url des pages Wikipedia de ces équipes.
+
+```{python}
+# Etape 1 : se connecter à la page wikipedia et obtenir le code source
+
+url_ligue_1 = "https://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020"
+    
+request_text = request.urlopen(url_ligue_1).read()
+# print(request_text[:1000])    
+```
+
+```{python}
+type(request_text)
+```
+
+```{python}
+# Etape 2 : utiliser le package BeautifulSoup
+# qui "comprend" les balises contenues dans la chaine de caractères renvoyée par la fonction request
+
+page = bs4.BeautifulSoup(request_text, "lxml")
+
+#print(page)
+```
+
+Si on print l'objet, page créée avec BeautifulSoup, on voit que ce n'est plus une chaine de caractères mais bien une page HTML avec des balises. On peut à présent chercher des élements à l'intérieur de ces balises.
+
+## La méthode `find`
+
+Par exemple, si on veut connaître le titre de la page, on utilise la méthode ``.find`` et on lui demande *"title"*
+
+```{python}
+print(page.find("title"))
+```
+
+La methode ``.find`` ne renvoie que la première occurence de l'élément. 
+
+Pour vous en assurer vous pouvez :
+- copier le bout de code source obtenu, 
+- le coller  dans une cellule de votre notebook
+- et passer la cellule en "Markdown"
+
+
+La cellule avec le copier-coller du code source donne : 
+
+```{python}
+print(page.find("table"))
+```
+
+ce qui est le texte source permettant de générer le tableau suivant:
+
+```{python}
+#| echo: false
+#| output: asis
+print(page.find("table"))
+```
+
+
+## La méthode `findAll`
+
+Pour trouver toutes les occurences, on utilise ``.findAll()``.
+
+```{python}
+print("Il y a", len(page.findAll("table")), "éléments dans la page qui sont des <table>")
+```
+
+
+# Exercice guidé : obtenir la liste des équipes de Ligue 1
+
+Dans le premier paragraphe de la page "Participants", on a le tableau avec les résultats de l'année. 
+
+
+{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+Le but est de récupérer les informations contenues dans ce tableau. 
+
+Pour cela, nous allons procéder en 6 étapes:
+
+1. Trouver le tableau
+2. Récupérer chaque ligne du table
+3. Nettoyer les sorties en ne gardant que le texte sur une ligne
+4. Généraliser sur toutes les lignes
+5. Récupérer les entêtes du tableau
+6. Finalisation du tableau
+
+{{% /box %}}
+
+:one:
+Trouver le tableau
+
+```{python}
+#| output: asis
+
+# on identifie le tableau en question : c'est le premier qui a cette classe "wikitable sortable"
+tableau_participants = page.find('table', {'class' : 'wikitable sortable'})
+
+print(tableau_participants)
+```
+
+:two:
+Récupérer chaque ligne du tableau
+
+```{python}
+table_body = tableau_participants.find('tbody')
+
+# on recherche toutes les lignes du tableau avec la balise "tr"
+rows = table_body.find_all('tr')
+
+# on obtient une liste où chaque élément est une des lignes du tableau
+
+# par exemple la première ligne va correspondre aux entêtes de colonne
+print(rows[0])
+```
+
+```{python}
+# par exemple la seconde ligne va correspondre à la ligne du premier club présent dans le tableau
+
+print(rows[1])
+```
+
+:three:
+Nettoyer les sorties en ne gardant que le texte sur une ligne
+
+
+On va utiliser l'attribut `text` afin de se débarasser de toute la couche de HTML qu'on obtient à l'étape 2.
+
+Un exemple sur la ligne du premier club :
+- on commence par prendre toutes les cellules de cette ligne, avec la balise `td`.
+- on fait ensuite une boucle sur chacune des cellules et on ne garde que le texte de la cellule avec l'attribut `text`.
+- enfin, on applique la méthode `strip()` pour que le texte soit bien mis en forme (sans espace inutile etc).
+
+
+```{python}
+cols = rows[1].find_all('td')
+print(cols[0])
+print(cols[0].text.strip())
+```
+
+```{python}
+for ele in cols : 
+    print(ele.text.strip())
+```
+
+:four:
+Généraliser sur toutes les lignes
+
+```{python}
+for row in rows:
+    cols = row.find_all('td')
+    cols = [ele.text.strip() for ele in cols]
+    print(cols)
+```
+
+On a bien réussi à avoir les informations contenues dans le tableau des participants du championnat.
+Mais la première ligne est étrange : c'est une liste vide ... 
+
+Il s'agit des en-têtes : elles sont reconnues par la balise `th` et non `td`. 
+
+On va mettre tout le contenu dans un dictionnaire, pour le transformer ensuite en DataFrame pandas : 
+
+```{python}
+#| code-overflow: wrap
+
+dico_participants = dict()
+for row in rows:
+    cols = row.find_all('td')
+    cols = [ele.text.strip() for ele in cols]
+    if len(cols) > 0 : 
+        dico_participants[cols[0]] = cols[1:]
+dico_participants
+```
+
+```{python}
+data_participants = pandas.DataFrame.from_dict(dico_participants,orient='index')
+data_participants.head()
+```
+
+
+:five:
+Récupérer les entêtes du tableau
+
+```{python}
+for row in rows:
+    cols = row.find_all('th')
+    print(cols)
+    if len(cols) > 0 : 
+        cols = [ele.get_text(separator=' ').strip().title() for ele in cols]
+        columns_participants = cols
+```
+
+```{python}
+columns_participants
+```
+
+```{python}
+#| include: false
+#| echo: false
+#| eval: false
+
+# KA : j'ai enlevé car je ne suis pas sûre que ce soit utile ? Sinon remettre et indiquer pourquoi ça l'est ?
+import re
+    
+columns_participants = [re.sub('\[ (\d+) \] ?', '', nom_col) for nom_col in columns_participants]
+columns_participants
+```
+
+:six: Finalisation du tableau 
+
+```{python}
+data_participants.columns = columns_participants[1:]
+```
+
+```{python}
+data_participants.head()
+```
+
+
+## Pour aller plus loin
+
+### Récupération des localisations des stades
+
+Essayez de comprendre pas à pas ce qui est fait dans les étapes qui suivent (la récupération d'informations supplémentaires en naviguant dans les pages des différents clubs). 
+
+```{python}
+import urllib
+import pandas as pd
+import bs4 
+
+division=[]
+equipe=[]
+stade=[]
+latitude_stade=[]        
+longitude_stade=[]     
+
+def dms2dd(degrees, minutes, seconds, direction):
+    dd = float(degrees) + float(minutes)/60 + float(seconds)/(60*60);
+    if direction == 'S' or direction == 'O':
+        dd *= -1
+    return dd;
+
+url_list=["http://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020", "http://fr.wikipedia.org/wiki/Championnat_de_France_de_football_de_Ligue_2_2019-2020"]
+
+for url_ligue in url_list :
+       
+    print(url_ligue)
+    sock = urllib.request.urlopen(url_ligue).read() 
+    page=bs4.BeautifulSoup(sock)
+
+# Rechercher les liens des équipes dans la liste disponible sur wikipedia 
+
+    for team in page.findAll('span' , {'class' : 'toponyme'}) :  
+        
+        # Indiquer si c'est de la ligue 1 ou de la ligue 2
+        
+        if url_ligue==url_list[0] :
+            division.append("L1")
+        else :
+            division.append("L2")
+
+       # Trouver le nom et le lien de l'équipe
+            
+        if team.find('a')!=None :
+            team_url=team.find('a').get('href')
+            name_team=team.find('a').get('title')
+            equipe.append(name_team)
+            url_get_info = "http://fr.wikipedia.org"+team_url
+            print(url_get_info)
+ 
+       # aller sur la page de l'équipe
+           
+            search = urllib.request.urlopen(url_get_info).read()
+            search_team=bs4.BeautifulSoup(search)
+
+       # trouver le stade             
+            compteur = 0
+            for stadium in search_team.findAll('tr'):
+                for x in stadium.findAll('th' , {'scope' : 'row'} ) :
+                    if x.contents[0].string=="Stade" and compteur == 0:
+                        compteur = 1
+                        # trouver le lien du stade et son nom
+                        url_stade=stadium.findAll('a')[1].get('href')
+                        name_stadium=stadium.findAll('a')[1].get('title')
+                        stade.append(name_stadium)
+                        url_get_stade = "http://fr.wikipedia.org"+url_stade
+                        print(url_get_stade)
+                        
+                        # Aller sur la page du stade et trouver ses coodronnées géographiques
+                        
+                        search_stade = urllib.request.urlopen(url_get_stade).read()
+                        soup_stade=bs4.BeautifulSoup(search_stade) 
+                        kartographer = soup_stade.find('a',{'class': "mw-kartographer-maplink"})
+                        if kartographer == None :
+                          latitude_stade.append(None)
+                          longitude_stade.append(None) 
+                        else :
+                            for coordinates in kartographer :
+                                print(coordinates)
+                                liste =   coordinates.split(",")          
+                                latitude_stade.append(str(liste[0]).replace(" ", "") + "'")
+                                longitude_stade.append(str(liste[1]).replace(" ", "") + "'")
+                            
+
+dict = {'division' : division , 'equipe': equipe, 'stade': stade, 'latitude': latitude_stade, 'longitude' : longitude_stade}
+data = pd.DataFrame(dict)
+data = data.dropna()
+```
+
+```{python}
+data.head(5)
+```
+
+On va transformer les coordonnées en degrés en coordonnées numériques
+afin d'être en mesure de faire une carte
+
+```{python}
+import re
+
+def dms2dd(degrees, minutes, seconds, direction):
+    dd = float(degrees) + float(minutes)/60 + float(seconds)/(60*60);
+    if direction in ('S', 'O'):
+        dd *= -1
+    return dd
+
+def parse_dms(dms):
+    parts = re.split('[^\d\w]+', dms)
+    lat = dms2dd(parts[0], parts[1], parts[2], parts[3])
+    #lng = dms2dd(parts[4], parts[5], parts[6], parts[7])
+    return lat
+```
+
+```{python}
+data['latitude'] = data['latitude'].apply(parse_dms)
+data['longitude'] = data['longitude'].apply(parse_dms)
+```
+
+Tous les éléments sont en place pour faire une belle carte à ce stade. On
+va utilisee `folium` pour celle-ci, qui est présenté dans la partie
+[visualisation](#cartotp).
+
+### Carte des stades avec `folium` {#cartes-stades-ligue1}
+
+```{python}
+#| echo: true
+#| output: false
+
+#!pip install geopandas
+import geopandas as gpd
+from pathlib import Path
+import folium
+
+gdf = gpd.GeoDataFrame(
+    data, geometry=gpd.points_from_xy(data.longitude, data.latitude))
+
+Path("leaflet").mkdir(parents=True, exist_ok=True)
+
+center = gdf[['latitude', 'longitude']].mean().values.tolist()
+sw = gdf[['latitude', 'longitude']].min().values.tolist()
+ne = gdf[['latitude', 'longitude']].max().values.tolist()
+
+m = folium.Map(location = center, tiles='Stamen Toner')
+
+# I can add marker one by one on the map
+for i in range(0,len(gdf)):
+    folium.Marker([gdf.iloc[i]['latitude'], gdf.iloc[i]['longitude']], popup=gdf.iloc[i]['stade']).add_to(m) 
+
+m.fit_bounds([sw, ne])
+```
+
+```{python}
+#| eval: true
+
+# Afficher la carte
+m
+```
+
+```{python}
+#| include: false
+#| eval: false
+map = m._repr_html_()
+```
+
+La carte obtenue doit ressembler à la suivante:
+
+```{python}
+#| echo: false
+#| output: asis
+#| eval: false
+print(map)
+```
+
+
+# Exercice 1 : Les pokémons (version non guidée)
+
+{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+Pour cet exercice, nous vous demandons d'obtenir différentes informations sur les pokémons à partir du site internet [pokemondb.net](http://pokemondb.net/pokedex/national). 
+
+1. les informations personnelles des ``893`` pokemons sur le site internet [pokemondb.net](http://pokemondb.net/pokedex/national). Les informations que nous aimerions obtenir au final dans un DataFrame  sont celles contenues dans 4 tableaux :
+
+- Pokédex data
+- Training
+- Breeding
+- Base stats
+
+2. Nous aimerions que vous récupériez également les images de chacun des pokémons et que vous les enregistriez dans un dossier  
+
+* Petit indice : utilisez les modules request et [shutil](https://docs.python.org/3/library/shutil.html)
+* Pour cette question, il faut que vous cherchiez de vous même certains éléments, tout n'est pas présent dans le TD.
+
+{{% /box %}}
+
+Pour la question 1, l'objectif est d'obtenir le code source d'un tableau comme
+celui qui suit
+(Pokemon [Nincada](http://pokemondb.net/pokedex/nincada).)
+
+<div class="grid-col span-md-6 span-lg-4">
+<h2>Pokédex data</h2>
+<table class="vitals-table">
+<tbody>
+<tr>
+<th>National №</th>
+<td><strong>290</strong></td>
+</tr>
+<tr>
+<th>Type</th>
+<td>
+<a class="type-icon type-bug" href="/type/bug">Bug</a> <a class="type-icon type-ground" href="/type/ground">Ground</a> </td>
+</tr>
+<tr>
+<th>Species</th>
+<td>Trainee Pokémon</td>
+</tr>
+<tr>
+<th>Height</th>
+<td>0.5&nbsp;m (1′08″)</td>
+</tr>
+<tr>
+<th>Weight</th>
+<td>5.5&nbsp;kg (12.1&nbsp;lbs)</td>
+</tr>
+<tr>
+<th>Abilities</th>
+<td><span class="text-muted">1. <a href="/ability/compound-eyes" title="The Pokémon's accuracy is boosted.">Compound Eyes</a></span><br><small class="text-muted"><a href="/ability/run-away" title="Enables a sure getaway from wild Pokémon.">Run Away</a> (hidden ability)</small><br></td>
+</tr>
+<tr>
+<th>Local №</th>
+<td>042 <small class="text-muted">(Ruby/Sapphire/Emerald)</small><br>111 <small class="text-muted">(X/Y — Central Kalos)</small><br>043 <small class="text-muted">(Omega Ruby/Alpha Sapphire)</small><br>104 <small class="text-muted">(Sword/Shield)</small><br></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+<div class="grid-col span-md-12 span-lg-4">
+<div class="grid-row">
+<div class="grid-col span-md-6 span-lg-12">
+<h2>Training</h2>
+<table class="vitals-table">
+<tbody>
+<tr>
+<th>EV yield</th>
+<td class="text">
+1 Defense </td>
+</tr>
+<tr>
+<th>Catch rate</th>
+<td>255 <small class="text-muted">(33.3% with PokéBall, full HP)</small></td>
+</tr>
+<tr>
+<th>Base <a href="/glossary#def-friendship">Friendship</a></th>
+<td>70 <small class="text-muted">(normal)</small></td>
+</tr>
+<tr>
+<th>Base Exp.</th>
+<td>53</td>
+</tr>
+<tr>
+<th>Growth Rate</th>
+<td>Erratic</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="grid-col span-md-6 span-lg-12">
+<h2>Breeding</h2>
+<table class="vitals-table">
+<tbody>
+<tr>
+<th>Egg Groups</th>
+<td>
+<a href="/egg-group/bug">Bug</a> </td>
+</tr>
+<tr>
+<th>Gender</th>
+<td><span class="text-blue">50% male</span>, <span class="text-pink">50% female</span></td> </tr>
+<tr>
+<th><a href="/glossary#def-eggcycle">Egg cycles</a></th>
+<td>15 <small class="text-muted">(3,599–3,855 steps)</small>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div class="grid-col span-md-12 span-lg-8">
+<div id="dex-stats"></div>
+<h2>Base stats</h2>
+<div class="resp-scroll">
+<table class="vitals-table">
+<tbody>
+<tr>
+<th>HP</th>
+<td class="cell-num">31</td>
+<td class="cell-barchart">
+<div style="width:17.22%;" class="barchart-bar barchart-rank-2 "></div>
+</td>
+<td class="cell-num">172</td>
+<td class="cell-num">266</td>
+</tr>
+<tr>
+<th>Attack</th>
+<td class="cell-num">45</td>
+<td class="cell-barchart">
+<div style="width:25.00%;" class="barchart-bar barchart-rank-2 "></div>
+</td>
+<td class="cell-num">85</td>
+<td class="cell-num">207</td>
+</tr>
+<tr>
+<th>Defense</th>
+<td class="cell-num">90</td>
+<td class="cell-barchart">
+<div style="width:50.00%;" class="barchart-bar barchart-rank-4 "></div>
+</td>
+<td class="cell-num">166</td>
+<td class="cell-num">306</td>
+</tr>
+<tr>
+<th>Sp. Atk</th>
+<td class="cell-num">30</td>
+<td class="cell-barchart">
+<div style="width:16.67%;" class="barchart-bar barchart-rank-2 "></div>
+</td>
+<td class="cell-num">58</td>
+<td class="cell-num">174</td>
+</tr>
+<tr>
+<th>Sp. Def</th>
+<td class="cell-num">30</td>
+<td class="cell-barchart">
+<div style="width:16.67%;" class="barchart-bar barchart-rank-2 "></div>
+</td>
+<td class="cell-num">58</td>
+<td class="cell-num">174</td>
+</tr>
+<tr>
+<th>Speed</th>
+<td class="cell-num">40</td>
+<td class="cell-barchart">
+<div style="width:22.22%;" class="barchart-bar barchart-rank-2 "></div>
+</td>
+<td class="cell-num">76</td>
+<td class="cell-num">196</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<th>Total</th>
+<td class="cell-total"><b>266</b></td>
+<th class="cell-barchart"></th>
+<th>Min</th>
+<th>Max</th>
+</tr>
+</tfoot>
+</table>
+</div>
+</div>
+
+
+# Exercice 1 : Les pokémons (version guidée)
+
+{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+
+Pour cet exercice, nous vous demandons d'obtenir différentes informations sur les pokémons à partir du site internet [pokemondb.net](http://pokemondb.net/pokedex/national). 
+
+## Etape 1
+
+Nous souhaitons tout d'abord obtenir les informations personnelles des ``893`` pokemons sur [pokemondb.net](http://pokemondb.net/pokedex/national). Les informations que nous aimerions obtenir au final pour les pokemons sont celles contenues dans 4 tableaux :
+
+- Pokédex data
+- Training
+- Breeding
+- Base stats
+
+Plus haut est disponible un exemple.
+
+Pour cela, le code devra être divisé en plusieurs étapes : 
+
+1. Trouvez la page principale du site et la transformez en un objet intelligible pour votre code. Les fonctions suivantes vous seront utiles :
+- `urllib.request.Request`
+- `urllib.request.urlopen`
+- `bs4.BeautifulSoup`
+
+Pour ce site, par rapport à tout à l'heure,
+il faudra ajouter un paramètre supplémentaire à la fonction `Request`:
+
+~~~python
+urllib.request.Request( www.sitequinousintéresse.com ,headers={'User-Agent': 'Mozilla/5.0'})
+~~~
+
+```{python}
+#| include: false
+#| show: false
+
+# 1. trouver la page principale du site et la transformer en un objet intelligible pour votre code.
+import urllib
+import bs4
+import collections
+import pandas as pd
+
+# pour le site que nous utilisons, le user agent de python 3 n'est pas  bien passé :
+# on le change donc pour celui de Mozilla
+
+req = urllib.request.Request('http://pokemondb.net/pokedex/national',
+                             headers={'User-Agent': 'Mozilla/5.0'})
+html = urllib.request.urlopen(req).read()
+page = bs4.BeautifulSoup(html, "lxml")
+#page.findAll('span', {'class': 'infocard-lg-img'})
+```
+
+2. Créez une fonction qui permet de récupérer la page d'un pokémon à partir de son nom.
+
+```{python}
+#| include: false
+#| show: false
+
+# 2. Créez une fonction qui permet de récupérer la page d'un pokémon à partir de son nom
+#https://pokemondb.net/pokedex/bulbasaur
+
+def get_page(pokemon_name):
+    url_pokemon = 'http://pokemondb.net/pokedex/'+ pokemon_name
+    req = urllib.request.Request(url_pokemon, headers = {'User-Agent' : 'Mozilla/5.0'})
+    html = urllib.request.urlopen(req).read()
+    return bs4.BeautifulSoup(html, "lxml")
+
+#get_page("bulbasaur")
+```
+
+3. A partir de la page de `bulbasaur`, obtenez les 4 tableaux qui nous intéressent :
+- on va chercher l'élément suivant : `('table', { 'class' : "vitals-table"})`
+- puis stocker ses éléments dans un dictionnaire
+
+```{python}
+#| include: false
+#| show: false
+
+# 3. A partir de la page de Bulbasaur, obtenir les 4 tableaux qui nous intéressent et les stocker dans un dictionnaire
+#https://pokemondb.net/pokedex/bulbasaur
+
+## On explore un peu
+page_pokemon = get_page("bulbasaur")
+
+indice_tableau = 0 #premier tableau : 0
+print("\n tableau", indice_tableau+1, " : deux premières lignes")
+tableau_1 = page_pokemon.findAll('table', { 'class' : "vitals-table"})[indice_tableau] 
+for elements in tableau_1.find('tbody').findChildren(['tr'])[0:2]:  #Afficher les 2 éléments du tableau
+    print(elements.findChild('th'))
+    print(elements.findChild('td'))
+print("\n\n\n")
+
+## On automatise : fonction pour stocker dans un dictionnaire
+def get_cara_pokemon(pokemon_name):
+    page = get_page(pokemon_name)
+    data = collections.defaultdict()
+    for table in page.findAll('table', { 'class' : "vitals-table"})[0:4] :
+        table_body = table.find('tbody')
+        for rows in table_body.findChildren(['tr']) :
+            if len(rows) > 1 : # attention aux tr qui ne contiennent rien
+                column = rows.findChild('th').getText()
+                cells = rows.findChild('td').getText()
+                cells = cells.replace('\t','').replace('\n',' ')
+                data[column] = cells
+                data['name'] = pokemon_name
+    return data
+```
+
+Vous devriez obtenir une liste de caractéristiques proche de celle-ci
+(la structure est ici en dictionnaire, ce qui est pratique)
+
+```{python}
+#| echo: false
+get_cara_pokemon("bulbasaur")
+```
+
+4. Récupérez par ailleurs la liste de noms des pokémons qui nous permettra de faire une boucle par la suite. Combien trouvez-vous de pokémons ? 
+
+```{python}
+#| include: false
+#| show: false
+
+# 4. Récupérez la liste de noms des pokémons
+liste_pokemon =[]
+for pokemon in page.findAll('span', {'class': 'infocard-lg-img'}) :
+    pokemon = pokemon.find('a').get('href').replace("/pokedex/",'')
+    liste_pokemon.append(pokemon)
+print(len(liste_pokemon)) #898
+liste_pokemon[0:10]
+```
+
+5. Ecrire une fonction qui récupère l'ensemble des informations sur les dix premiers pokémons de la liste et les intègre dans un data.frame
+
+```{python}
+#| include: false
+#| show: false
+
+
+# 5. Informations sur les dix premiers pokémons de la liste intégrées dans un data.frame
+items = []
+for pokemon in liste_pokemon[0:10] :
+    item = get_cara_pokemon(pokemon)
+    items.append(item)
+df = pd.DataFrame(items)
+```
+
+```{python}
+#| echo: false
+df.head()
+```
+
+
+## Etape 2
+
+Nous aimerions que vous récupériez également les images des 5 premiers pokémons et que vous les enregistriez dans un dossier  
+
+Idée : Utilisez les modules `request` et [`shutil`](https://docs.python.org/3/library/shutil.html)
+
+_pour cette question, il faut que vous cherchiez de vous même certains éléments, tout n'est pas présent dans le TD_.
+
+```{python}
+#| include: false
+#| echo: false
+
+# Correction de l'étape 2
+import shutil
+import requests
+import os
+import matplotlib.pyplot as plt
+import skimage.io as imio
+
+nb_pokemons = 5
+fig, ax = plt.subplots(1, nb_pokemons, figsize=(12,4))
+for indice_pokemon in range(0,nb_pokemons) :
+    pokemon = liste_pokemon[indice_pokemon]
+    url = "https://img.pokemondb.net/artwork/{}.jpg".format(pokemon)
+    response = requests.get(url, stream=True)
+    with open('{}.jpg'.format(pokemon), 'wb') as out_file:
+        shutil.copyfileobj(response.raw, out_file)
+    name = pokemon + ".jpg"  
+    img = imio.imread(name)
+    ax[indice_pokemon].imshow(img)  
+    ax[indice_pokemon].get_xaxis().set_visible(False)
+    ax[indice_pokemon].get_yaxis().set_visible(False)
+```
+
+```{python}
+#| echo: false
+#plt.savefig('pokemon.png', bbox_inches='tight')
+plt.show()
+```
+
+{{% /box %}}
+
+
+# Exercice supplémentaire [BONUS]
+
+{{% box status="exercise" title="Les ministres sur wikipédia" icon="fas fa-pencil-alt" %}}
+
+Scraper la liste des ministres français depuis wikipedia. Faire une graphique qui représente la distribution de leur âge.
+
+Si vous avez une solution satisfaisante, n'hésitez pas à la soumettre
+sur <a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-github"></i></a>
+(car je n'ai pas encore testé...)
+
+{{% /box %}}
+
+
+# `Selenium` : mimer le comportement d'un utilisateur internet
+
+
+Jusqu'à présent, nous avons raisonné comme si nous connaissions toujours l'url qui nous intéresse. De plus, les pages que nous visitons sont "statiques", elles ne dépendent pas d'une action ou d'une recherche de l'internaute. 
+
+Nous allons voir à présent comment nous en sortir pour remplir des champs sur un site web et récupérer ce qui nous intéresse. 
+
+L'avantage du package [Selenium](https://pypi.python.org/pypi/selenium) est d'obtenir des informations du site qui ne sont pas dans le code html mais qui apparaissent uniquement à la suite de l'exécution de script javascript en arrière plan. 
+
+Selenium se comporte comme un utilisateur lambda sur internet : il clique sur des liens, il remplit des formulaires etc. Dans cet exemple, nous allons essayer de aller sur le site de [Bing Actualités](https://www.bing.com/news) et entrer dans la barre de recherche un sujet donné (Trump). 
+
+L'installation de `selenium` nécessite d'avoir chromium qui est un 
+navigateur Google Chrome minimaliste. 
+La version de [chromedriver](https://sites.google.com/a/chromium.org/chromedriver/) doit être ``>= 2.36`` et dépend de la version de Chrome que vous avez sur votre poste.
+
+~~~python
+!pip install selenium
+
+# Sur votre poste  
+# télécharger le chrome driver https://chromedriver.storage.googleapis.com/index.html?path=85.0.4183.83/
+
+# Sur google colab 
+# https://stackoverflow.com/questions/51046454/how-can-we-use-selenium-webdriver-in-colab-research-google-com
+!apt-get update # to update ubuntu to correctly run apt install
+!apt install chromium-chromedriver
+!cp /usr/lib/chromium-browser/chromedriver /usr/bin
+import sys
+sys.path.insert(0,'/usr/lib/chromium-browser/chromedriver')
+~~~
+
+~~~python
+import selenium
+path_to_web_driver = "chromedriver"
+~~~
+
+On va sur le site de Bing Actualités, et on lui indique le mot clé que nous souhaitons chercher. 
+
+Dans cet exemple, on va voir que l'ordinateur va ouvrir une nouvelle fenêtre.
+
+~~~python
+import time
+
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument('--headless')
+chrome_options.add_argument('--no-sandbox')
+#chrome_options.add_argument('--verbose') 
+#chrome_options.add_argument('--disable-dev-shm-usage')
+
+browser = webdriver.Chrome(executable_path=path_to_web_driver,
+                           options=chrome_options)
+
+browser.get('https://www.bing.com/news')
+
+# on cherche l'endroit où on peut remplir un formulaire
+# en utilisant les outils du navigateur > inspecter les éléments de la page
+# on voit que la barre de recherche est un élement du code appelé 'q' comme query
+# on lui demande de chercher cet élément
+
+search = browser.find_element_by_name('q')
+print(search)
+print([search.text, search.tag_name, search.id])
+
+# on envoie à cet endroit le mot qu'on aurait tapé dans la barre de recherche
+search.send_keys("Trump")
+
+search_button = browser.find_element_by_xpath("//input[@id='sb_form_go']")
+
+#search_button = browser.find_element_by_id('search_button_homepage')
+ 
+search_button.click()
+
+# on appuie sur le bouton "Entrée" Return en anglais
+#search.send_keys(Keys.RETURN)
+~~~
+
+~~~python
+png = browser.get_screenshot_as_png()
+~~~
+
+~~~python
+from IPython.display import Image
+Image(png, width='500')
+~~~
+
+On extrait les résultats.
+
+~~~python
+from selenium.common.exceptions import StaleElementReferenceException
+links = browser.find_elements_by_xpath("//div/a[@class='title'][@href]")
+
+results = []
+for link in links:
+    try:
+        url = link.get_attribute('href')
+    except StaleElementReferenceException as e:
+        print("Issue with '{0}' and '{1}'".format(url, link))
+        print("It might be due to slow javascript which produces the HTML page.")
+    results.append(url)
+
+len(results)
+~~~
+
+~~~python
+# on a une pause de 10 secondes pour aller voir ce qui se passe sur la page internet
+# on demande de quitter le navigateur quand tout est fini
+browser.quit()
+~~~
+
+~~~python
+print(results)
+~~~
+
+## Utiliser selenium pour jouer à 2048
+
+Dans cet exemple, on utilise le module pour que python appuie lui même sur les touches du clavier afin de jouer à 2048.
+
+Note : ce bout de code ne donne pas une solution à 2048, il permet juste de voir ce qu'on peut faire avec selenium
+
+~~~python
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+
+# on ouvre la page internet du jeu 2048
+
+browser = webdriver.Chrome(executable_path=path_to_web_driver,
+                           options=chrome_options)
+browser.get('https://play2048.co//')
+
+# Ce qu'on va faire : une boucle qui répète inlassablement la même chose : haut / droite / bas / gauche
+
+# on commence par cliquer sur la page pour que les touches sachent 
+browser.find_element_by_class_name('grid-container').click()
+grid = browser.find_element_by_tag_name('body')
+
+# pour savoir quels coups faire à quel moment, on crée un dictionnaire
+direction = {0: Keys.UP, 1: Keys.RIGHT, 2: Keys.DOWN, 3: Keys.LEFT}
+count = 0
+
+while True:
+    try: # on vérifie que le bouton "Try again" n'est pas là - sinon ça veut dire que le jeu est fini
+        retryButton = browser.find_element_by_link_text('Try again')
+        scoreElem = browser.find_element_by_class_name('score-container')
+        break
+    except:
+        #Do nothing.  Game is not over yet
+        pass
+    # on continue le jeu - on appuie sur la touche suivante pour le coup d'après
+    count += 1
+    grid.send_keys(direction[count % 4]) 
+    time.sleep(0.1)
+
+print('Score final : {} en {} coups'.format(scoreElem.text, count))    
+browser.quit()
+~~~
