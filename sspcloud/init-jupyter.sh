@@ -14,7 +14,7 @@ git clone --depth 1 $REPO_URL $CLONE_DIR
 
 # Put relevant notebook in formation dir
 mkdir $FORMATION_DIR
-cp ${COURSE_DIR}/${SECTION}/${CHAPTER}.ipynb ${FORMATION_DIR}/
+cp ${COURSE_DIR}/${SECTION}/${CHAPTER} ${FORMATION_DIR}/
 
 # Give write permissions
 chown -R jovyan:users $FORMATION_DIR
@@ -23,4 +23,4 @@ chown -R jovyan:users $FORMATION_DIR
 rm -r $CLONE_DIR
 
 # Open the relevant notebook when starting Jupyter Lab
-echo "c.LabApp.default_url = '/lab/tree/formation/${CHAPTER}.ipynb'" >> /home/jovyan/.jupyter/jupyter_server_config.py
+echo "c.LabApp.default_url = '/lab/tree/formation/${CHAPTER}'" >> /home/jovyan/.jupyter/jupyter_server_config.py

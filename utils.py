@@ -12,7 +12,7 @@ def reminder_badges(
         type = type[0]
 
     notebook = re.sub(
-        "(.Rmd|.qmd)",
+        r"(.Rmd|.qmd)",
         ".ipynb",
         source_file
     )
