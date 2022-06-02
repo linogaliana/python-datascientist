@@ -31,5 +31,5 @@ def clean_write_file(fl):
     content = tweak_js_plotly(content)
     write_file(fl, content)
 
-list_files = glob.glob("./content/**/*.md", recursive=True)
+list_files = glob.glob("./content/course/*.md", recursive=True)
 [clean_write_file(fl) for fl in list_files if not fl.endswith("_index.md")]
