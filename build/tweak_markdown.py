@@ -28,9 +28,8 @@ def write_file(filename, content):
 
 def clean_write_file(fl):
     content = read_file(fl)
-    content = replace_shortcode_tabs(content)
     content = tweak_js_plotly(content)
     write_file(fl, content)
 
 list_files = glob.glob("./content/**/*.md", recursive=True)
-[clean_write_file(fl) for fl in list_files]
+[clean_write_file(fl) for fl in list_files if not fl.endswith("_index.mq")]
