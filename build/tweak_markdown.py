@@ -1,5 +1,6 @@
 import glob
 import re
+
 def read_file(filename):
     with open(filename, 'r', encoding='utf-8') as f:
         text = f.readlines()
@@ -28,6 +29,7 @@ def write_file(filename, content):
 def clean_write_file(fl):
     content = read_file(fl)
     content = replace_shortcode_tabs(content)
+    content = tweak_js_plotly(content)
     write_file(fl, content)
 
 list_files = glob.glob("./content/**/*.md", recursive=True)
