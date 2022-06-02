@@ -27,7 +27,8 @@ def write_file(filename, content):
 
 def clean_write_file(fl):
     content = read_file(fl)
-    content = replace_shortcode_tabs(content)
+    if not fl.endswith("_index.md"):
+        content = replace_shortcode_tabs(content)
     write_file(fl, content)
 
 list_files = glob.glob("./content/**/*.md", recursive=True)
