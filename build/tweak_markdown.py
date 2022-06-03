@@ -23,7 +23,7 @@ def tweak_js_plotly(content):
 
 
 def write_file(filename, content):
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding = "utf-8") as f:
         f.write(content)
 
 def clean_write_file(fl):
