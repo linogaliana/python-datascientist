@@ -28,8 +28,14 @@ def write_file(filename, content):
 
 def clean_write_file(fl):
     content = read_file(fl)
-    content = tweak_js_plotly(content)
-    write_file(fl, content)
+    if re.search(
+        r'<script type="text/javascript">\n([\S\s]*)</script>\n',
+        content) is not None:
+        print("plotly detected")
+        content = tweak_js_plotly(content)
+        write_file(fl, content)
+    else:
+        print("nothing to do")
 
 list_files = glob.glob("./content/course/**/*.md", recursive=True)
 print(list_files)
