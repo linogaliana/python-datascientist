@@ -5,7 +5,7 @@ def read_file(filename):
     with open(filename, 'r', encoding='utf-8') as f:
         text = f.readlines()
         f.close()
-    new_text = " ".join([line for line in text])
+    new_text = "".join([line for line in text])
     s = new_text
     return s
 
@@ -23,7 +23,7 @@ def tweak_js_plotly(content):
 
 
 def write_file(filename, content):
-    with open(filename, 'w', encoding = "utf-8") as f:
+    with open(filename, 'w', encoding="utf-8") as f:
         f.write(content)
 
 def clean_write_file(fl):
