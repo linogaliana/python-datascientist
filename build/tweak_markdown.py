@@ -28,14 +28,20 @@ def write_file(filename, content):
 
 def clean_write_file(fl):
     content = read_file(fl)
-    if re.search(
-        r'<script type="text/javascript">\n([\S\s]*)</script>\n',
-        content) is not None:
-        print("plotly detected")
-        content = tweak_js_plotly(content)
-        write_file(fl, content)
+    add_text = '\n\n<script src="https://d3js.org/d3.v7.min.js"></script>\n<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>'
+    yaml, text = content.split('---\n', 2)[1:]
+    if re.search("plotly: true", yaml) is not None:
+        print(f"Tweaking {fl}")
+        content = "---\n"+ yaml + "---\n" \
+            + add_text+"\n"+text
     else:
         print("nothing to do")
+#    if re.search(
+#        r'<script type="text/javascript">\n([\S\s]*)</script>\n',
+#        content) is not None:
+#        print("plotly detected")
+#        content = tweak_js_plotly(content)
+    write_file(fl, content)
 
 list_files = glob.glob("./content/course/**/*.md", recursive=True)
 print(list_files)
