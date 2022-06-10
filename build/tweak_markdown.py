@@ -16,7 +16,7 @@ def replace_shortcode_tabs(content):
 
 def tweak_js_plotly(content):
     content2 = re.sub(
-        r'<script type="text/javascript">\n([\S\s]*)</script>\n',
+        r'<script type="text/javascript">\n\s*window([\S\s]*)</script>\n',
         '',
         content)
     return content2
@@ -32,16 +32,16 @@ def clean_write_file(fl):
     add_text = '\n\n<script src="https://d3js.org/d3.v7.min.js"></script>\n<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>'
     yaml, text = content.split('---\n', 2)[1:]
     if re.search("plotly: true", yaml) is not None:
-        print(f"Tweaking {fl}")
+        print(f"Tweaking {fl} using YAML header")
         content = "---\n"+ yaml + "---\n" \
             + add_text+"\n"+text
     else:
         print(f"File {fl}: nothing to do")
-#    if re.search(
-#        r'<script type="text/javascript">\n([\S\s]*)</script>\n',
-#        content) is not None:
-#        print("plotly detected")
-#        content = tweak_js_plotly(content)
+    if re.search(
+        r'<script type="text/javascript">\n\s*window.P([\S\s]*)</script>\n',
+        content) is not None:
+        print("quarto added plotly detected: removed")
+        content = tweak_js_plotly(content)
     write_file(fl, content)
 
 list_files = glob.glob("./content/course/**/index.md", recursive=True)
