@@ -8,6 +8,7 @@ with open('diff') as f:
 
 lines = [l for l in lines if l.endswith('.qmd') ]
 lines += [f"content/course/{dir}/index.qmd" for dir in ["manipulation","visualisation","modelisation"]]
+lines += [f"content/course/index.qmd"]
 
 config['project']['render'] = lines
 
