@@ -38,11 +38,6 @@ jobs:
           python build/tweak_markdown.py
           hugo mod graph
           hugo -D --themesDir themes -t github.com
-      - name: Copy notebooks in dedicated directory
-        run: |
-         python build/post-build.py
-         mkdir -p notebooks
-         python build/move_files.py notebooks
       - name: Install npm
         if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: actions/setup-node@v2          
@@ -68,21 +63,48 @@ jobs:
         with:
           name: Website
           path: public/
+  enonces:
+    name: Render-Blog
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist-vstudio:quarto
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Configure safe.directory  # Workaround for actions/checkout#760
+        run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+      - shell: bash
+        run: |
+          conda info
+          conda list
+      - name: Convert in ipynb with Jupytext
+        run: |
+         git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff
+         python build/tweak_render.py
+         quarto render content --to ipynb
+         mkdir -p notebooks
+         python build/move_files.py notebooks
       - uses: actions/upload-artifact@v2
         with:
-          name: Notebooks
+          name: Enonces
           path: notebooks/
-      - name: Commit new notebooks
+      - name: Commit new c
         if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         env:
           BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
         run: |
          git config user.name 'github-actions[bot]'
          git config user.email 'github-actions[bot]@users.noreply.github.com'
+         # git config user.email github-actions@github.com
+         #git checkout ${BRANCHE_REF}
          git status
          find notebooks -type f -name "*.ipynb" | xargs git add
          git commit -m "Automated changes";
          git pull
+         git push
          git push
   corrections:
     name: Render-Blog
