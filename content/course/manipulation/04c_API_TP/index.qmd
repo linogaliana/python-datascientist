@@ -791,6 +791,22 @@ print("![]({url})".format(url = url_image))
 
 ## Requêter une API de l'Ademe pour obtenir des diagnostics energétiques
 
+Le diagnostic de performance énergétique (DPE)
+renseigne sur la performance énergétique d’un logement ou d’un bâtiment,
+en évaluant sa consommation d’énergie et son impact en terme d’émissions de gaz à effet de serre.
+
+Les données des performances énergétiques des bâtiments sont 
+mises à disposition par l'[Ademe](https://data.ademe.fr/datasets/dpe-france).
+Comme ces données sont relativement
+volumineuses, une API peut être utile lorsqu'on ne s'intéresse
+qu'à un sous-champ des données.
+Une documentation et un espace de test de l'API sont disponibles
+sur le site [API GOUV](https://api.gouv.fr/documentation/api_dpe_logements).
+
+Supposons qu'on désire récupérer une centaine de valeurs pour la commune
+de Villieu-Loyes-Mollon dans l'Ain (code Insee 01450).
+On peut utiliser `requests` et `pandas` pour récupérer les données:
+
 ```{python}
 import requests
 import pandas as pd
@@ -809,8 +825,15 @@ df = pd.json_normalize(wb["results"])
 dpe = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs = 4326)
 dpe = dpe.dropna(subset = ['longitude', 'latitude'])
 
+dpe.head(2)
+```
 
-palette = sns.color_palette("Reds", 8)
+Essayons de représenter sur une carte ces DPE avec les
+années de construction des logements. 
+Avec `folium`, on obtient la carte interactive suivante:
+
+```{python}
+palette = sns.color_palette("coolwarm", 8)
 
 # convert in number
 dpe['color'] = [ord(dpe.iloc[i]['classe_consommation_energie'].lower()) - 96 for i in range(len(dpe))]
@@ -840,3 +863,8 @@ m.fit_bounds([sw, ne])
 m
 ```
 {{< /rawhtml >}}
+
+On remarque un problème dans les données: un logement qui n'a
+rien à voir avec les autres. Il faudrait donc idéalement
+nettoyer un peu le jeu de données pour filtrer en fonction de
+limites géographiques. 
