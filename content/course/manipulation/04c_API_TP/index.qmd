@@ -222,16 +222,23 @@ géographiques :
 import pandas as pandas
 import geopandas as gpd
 
-df = pd.json_normalize(wb["results"])
+def get_dpe_from_url(url):
 
-dpe = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs = 4326)
-dpe = dpe.dropna(subset = ['longitude', 'latitude'])
+    req = requests.get(url)
+    wb = req.json()
+    df = pd.json_normalize(wb["results"])
 
+    dpe = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs = 4326)
+    dpe = dpe.dropna(subset = ['longitude', 'latitude'])
+
+    return dpe
+
+dpe = get_dpe_from_url(url_api)
 dpe.head(2)
 ```
 
 Essayons de représenter sur une carte ces DPE avec les
-années de construction des logements. 
+années de construction des logements.
 Avec `folium`, on obtient la carte interactive suivante:
 
 ```{python}
@@ -240,25 +247,31 @@ import folium
 
 palette = sns.color_palette("coolwarm", 8)
 
-# convert in number
-dpe['color'] = [ord(dpe.iloc[i]['classe_consommation_energie'].lower()) - 96 for i in range(len(dpe))]
-dpe = dpe.loc[dpe['color']<=7]
-dpe['color'] = [palette.as_hex()[x] for x in dpe['color']]
+def interactive_map_dpe(dpe):
+
+    # convert in number
+    dpe['color'] = [ord(dpe.iloc[i]['classe_consommation_energie'].lower()) - 96 for i in range(len(dpe))]
+    dpe = dpe.loc[dpe['color']<=7]
+    dpe['color'] = [palette.as_hex()[x] for x in dpe['color']]
 
 
-center = dpe[['latitude', 'longitude']].mean().values.tolist()
-sw = dpe[['latitude', 'longitude']].min().values.tolist()
-ne = dpe[['latitude', 'longitude']].max().values.tolist()
+    center = dpe[['latitude', 'longitude']].mean().values.tolist()
+    sw = dpe[['latitude', 'longitude']].min().values.tolist()
+    ne = dpe[['latitude', 'longitude']].max().values.tolist()
 
-m = folium.Map(location = center, tiles='Stamen Toner')
+    m = folium.Map(location = center, tiles='Stamen Toner')
 
-# I can add marker one by one on the map
-for i in range(0,len(dpe)):
-    folium.Marker([dpe.iloc[i]['latitude'], dpe.iloc[i]['longitude']],
-                  popup=f"Année de construction: {dpe.iloc[i]['annee_construction']}, <br>DPE: {dpe.iloc[i]['classe_consommation_energie']}",
-                  icon=folium.Icon(color="black", icon="home", icon_color = dpe.iloc[i]['color'])).add_to(m)
+    # I can add marker one by one on the map
+    for i in range(0,len(dpe)):
+        folium.Marker([dpe.iloc[i]['latitude'], dpe.iloc[i]['longitude']],
+                    popup=f"Année de construction: {dpe.iloc[i]['annee_construction']}, <br>DPE: {dpe.iloc[i]['classe_consommation_energie']}",
+                    icon=folium.Icon(color="black", icon="home", icon_color = dpe.iloc[i]['color'])).add_to(m)
 
-m.fit_bounds([sw, ne])
+    m.fit_bounds([sw, ne])
+
+    return m
+
+interactive_map_dpe(dpe)
 ```
 
 {{< rawhtml >}}
@@ -274,8 +287,49 @@ rien à voir avec les autres. Il faudrait donc idéalement
 nettoyer un peu le jeu de données pour filtrer en fonction de
 limites géographiques. 
 
+Un des paramètres qui peut permettre ceci est `geo_distance`.
+Pour commencer, on va tricher un petit peu pour déterminer 
+les longitudes et latitudes de départ. Idéalement, on 
+récupérerait le découpage de la commune et utiliserait, par 
+exemple, le centroid de cette commune. Cela nécessite
+néanmoins l'appel à une autre API que nous n'avons
+pour le moment pas décrite. Nous allons donc
+nous contenter d'utiliser les longitudes et latitudes
+du point médian et fixer un rayon de plusieurs kilomètres
+pour exclure les points aberrants. 
 
+```{python}
+x_median = dpe['longitude'].median()
+y_median = dpe['latitude'].median()
+```
 
+La documentation nous informe du format à utiliser:
+
+> Le format est 'lon,lat,distance'. La distance optionnelle (0 par défaut) et est exprimée en mètres.
+
+```{python}
+param_distance = f'{x_median},{y_median},1000'
+```
+
+Notre requête devient ainsi:
+
+```{python}
+url_api = f"{api_root}?page=1&after=10&format=json&q_mode=simple&qs=code_insee_commune_actualise" + "%3A%22" + f"{code_commune}" + "%22" + f"&size={size}&select=" + "%2A&sampling=neighbors" + f"&geodistance={param_distance}"
+print(url_api)
+```
+
+```{python}
+dpe_geo_filter = get_dpe_from_url(url_api)
+m_geo_filter = interactive_map_dpe(dpe)
+```
+
+{{< rawhtml >}}
+```{python}
+#| echo : false
+# Afficher la carte
+m_geo_filter
+```
+{{< /rawhtml >}}
 
 ## Un catalogue incomplet d'API existantes
 
@@ -856,9 +910,12 @@ Avec l'API de la Banque mondiale, voici comme s'écrit une requête :
 
 > http://api.worldbank.org/v2/countries?incomeLevel=LMC
 
-1. Le point d'entrée est l'URL <http://api.worldbank.org/v2>
+1. Le point d'entrée est l'URL <http://api.worldbank.org/v2>[^3]
 2. Un filtre est appliqué sur les pays (`countries?`) afin de ne conserver
 que celles telles que `incomeLevel=LMC` (*"Lower middle income"*)
+
+[^3]: Cette API utilise un protocole HTTP qui est de moins en moins utilisé. Il
+est recommandé de privilégier les protocoles HTTPS, plus sécurisés. 
 
 En cliquant sur le lien, le site renvoie des données en XML,
 qui ressemblent pas mal à ce qu'on a vu plus tôt avec le scraping : une structure avec des balises qui s'ouvrent et qui se ferment.
@@ -871,14 +928,6 @@ Avec l'API de la banque mondiale, on va utiliser le module `requests` et sa mét
 ```{python}
 import requests
 req = requests.get('http://api.worldbank.org/v2/countries?incomeLevel=LMC')
-req
-```
-
-Prenons par exemple les 1000 premiers caractères du résultat :
-
-```{python}
-#| output: asis
-print(req.content[:1000])
 ```
 
 
@@ -903,28 +952,6 @@ import requests
 import pandas as pd
 
 req = requests.get('http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json')
-```
-
-A nouveau, les premiers caractères sont les suivants:
-
-```{python}
-#| output: asis
-print(req.content[:1000])
-```
-
-Cela ressemble déjà plus à un dictionnaire `Python`[^1].
-
-[^1]: Le JSON est un format très apprécié dans le domaine du *big data*
-car il permet de stocker de manière intelligente des données
-de structures diverses. Il 
-s'agit d'un des formats privilégiés du paradigme No-SQL pour lequel
-cet [excellent cours](http://b3d.bdpedia.fr/) propose plus de détails
-
-Ici, il n'est même pas nécessaire en première approche 
-d'utiliser le package `json`, l'information
-étant déjà tabulée dans l'écho renvoyé (on a la même information pour tous les pays):
-
-```{python}
 wb = req.json()
 wb = pd.json_normalize(wb[1])
 wb.head(5)
