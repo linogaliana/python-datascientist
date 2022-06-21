@@ -102,8 +102,10 @@ avec restrictions d'accès.
 Voici les éléments importants à avoir en tête sur les requêtes (j'emprunte encore
 à [`utilitR`](https://www.book.utilitr.org/api.html)):
 
-* Le __point d’entrée__ d’un service offert par une API se présente sous la forme d’une URL (adresse web). Chaque service proposé par une API a sa propre URL. Par exemple, dans le cas de l’OpenFood Facts,
-l'URL à utiliser pour obtenir des informations sur un produit particulier (l'identifiant `737628064502`) estg https://world.openfoodfacts.org/api/v0/product/737628064502.json
+* Le __point d’entrée__ d’un service offert par une API se présente sous la forme d’une URL (adresse web).
+Chaque service proposé par une API a sa propre URL. Par exemple, dans le cas de l’OpenFood Facts,
+l'URL à utiliser pour obtenir des informations sur un produit particulier (l'identifiant `737628064502`)
+est https://world.openfoodfacts.org/api/v0/product/737628064502.json
 * Cette URL doit être complétée avec différents paramètres qui précisent la requête (par exemple l’identifiant Siren). Ces paramètres viennent s’ajouter à l’URL, souvent à la suite de `?`. Chaque service proposé par une API a ses propres paramètres, détaillés dans la documentation. 
 * Lorsque l’utilisateur soumet sa requête, l’API lui renvoie une réponse structurée contenant l’ensemble des informations demandées. Le résultat envoyé par une API est majoritairement aux formats JSON ou XML (deux formats dans lesquels les informations sont hiérarchisées de manière emboitée). Plus rarement, certains services proposent une information sous forme plate (de type csv).
 
@@ -113,70 +115,75 @@ Du fait de la dimension hiérarchique des formats JSON ou XML, le résultat n’
 propose des options qui seront retranscrites automatiquement dans l'URL de 
 requête pour faciliter le travail sur les données Insee. 
 
+## Illustration avec une API de l'Ademe pour obtenir des diagnostics energétiques
 
-## Exemple avec l'API de la Banque Mondiale
+Le diagnostic de performance énergétique (DPE)
+renseigne sur la performance énergétique d’un logement ou d’un bâtiment,
+en évaluant sa consommation d’énergie et son impact en terme d’émissions de gaz à effet de serre.
 
-Avec l'API de la Banque mondiale, voici comme s'écrit une requête : 
+Les données des performances énergétiques des bâtiments sont 
+mises à disposition par l'[Ademe](https://data.ademe.fr/datasets/dpe-france).
+Comme ces données sont relativement
+volumineuses, une API peut être utile lorsqu'on ne s'intéresse
+qu'à un sous-champ des données.
+Une documentation et un espace de test de l'API sont disponibles
+sur le site [API GOUV](https://api.gouv.fr/documentation/api_dpe_logements)^[La documentation est également disponible [ici](https://koumoul.com/openapi-viewer/?proxy=false&hide-toolbar=true&url=https://koumoul.com/s/data-fair/api/v1/datasets/dpe-france/api-docs.json)].
 
-> http://api.worldbank.org/v2/countries?incomeLevel=LMC
+Supposons qu'on désire récupérer une centaine de valeurs pour la commune
+de Villieu-Loyes-Mollon dans l'Ain (code Insee 01450).
 
-1. Le point d'entrée est l'URL <http://api.worldbank.org/v2>
-2. Un filtre est appliqué sur les pays (`countries?`) afin de ne conserver
-que celles telles que `incomeLevel=LMC` (*"Lower middle income"*)
+L'API comporte plusieurs points d'entrée. Globalement, la racine 
+commune est:
 
-En cliquant sur le lien, le site renvoie des données en XML,
-qui ressemblent pas mal à ce qu'on a vu plus tôt avec le scraping : une structure avec des balises qui s'ouvrent et qui se ferment.
+> https://koumoul.com/data-fair/api/v1/datasets/dpe-france
 
+Ensuite, en fonction de l'API désirée, on va ajouter des éléments
+à cette racine. En l'occurrence, on va utiliser 
+l'API `field` qui permet de récupérer des lignes en fonction d'un
+ou plusieurs critères (pour nous, la localisation géographique):
 
-Pour obtenir la même information en `Python`, il faut revenir aux fondamentaux : on va avoir besoin du module `requests`. Suivant les API, nous avons soit besoin de rien de plus si nous parvenons directement à obtenir un json, soit devoir utiliser un *parser* comme `BeautifulSoup` dans le cas contraire. 
+L'exemple donné dans la documentation technique est 
 
-Avec l'API de la banque mondiale, on va utiliser le module `requests` et sa méthode `get` : on lui donne l'url de l'API qui nous intéresse, on lui demande d'en faire un json et le tour est *en apparence* joué.
+> GET https://koumoul.com/data-fair/api/v1/datasets/dpe-france/values/{field}
+
+ce qui en python se traduira par l'utilisation de la méthode `get` du
+package `request`
+sur un url dont la structure est la suivante:
+
+- il commencera par `https://koumoul.com/data-fair/api/v1/datasets/dpe-france/values/` ;
+- il sera ensuite suivi par des paramètres de recherche? Le champ `{field}` 
+commande ainsi généralement par un `?` qui permet ensuite de spécifier des paramètres
+sous la forme `nom_parameter=value`
+
+A la lecture de la documentation, les premiers paramètres qu'on désire:
+
+- Le nombre de pages, ce qui nous permet d'obtenir un certain nombre d'échos. On
+va seulement récupérer 10 pages ce qui correspond à une centaine d'échos. On va
+néanmoins préciser qu'on veut 100 échos
+- Le format de sortie. On va privilégier le `JSON` qui est un format standard dans le
+monde des API. `Python` offre beaucoup de flexibilité grâce à l'un de
+ses objets de base, à savoir le dictionnaire (type `dict`), pour manipuler de tels 
+fichiers
+- Le code commune des données qu'on désire obtenir. Comme on l'a évoqué,
+on va récupérer les données dont le code commune est `01450`. D'après la doc, 
+il convient de passer le code commune sous le format:
+`code_insee_commune_actualise:{code_commune}`. Pour éviter tout risque de 
+mauvais formatage, on va utiliser `%3A%` pour signifier `:`
+- D'autres paramètres annexes, suggérés par la documentation
+
+Cela nous donne ainsi un URL dont la structure est la suivante:
 
 ```{python}
-import requests
-req = requests.get('http://api.worldbank.org/v2/countries?incomeLevel=LMC')
-req
+code_commune="01450"
+size = 100
+api_root="https://koumoul.com/data-fair/api/v1/datasets/dpe-france/lines"
+url_api = f"{api_root}?page=1&after=10&format=json&q_mode=simple&qs=code_insee_commune_actualise" + "%3A%22" + f"{code_commune}" + "%22" + f"&size={size}&select=" + "%2A&sampling=neighbors"
 ```
 
-Prenons par exemple les 1000 premiers caractères du résultat :
+Si vous introduisez cet URL dans votre navigateur, vous devriez aboutir
+sur un `JSON` non formaté[^1]. En `Python`,
+on peut utiliser `requests` pour récupérer les données[^2]:
 
-```{python}
-#| output: asis
-print(req.content[:1000])
-```
-
-
-Quand on regarde de plus près, on voit que les informations suivantes apparaissent : 
- 
-* Code du pays
-* Nom du pays
-* Région
-* Classification en termes de revenus
-* Les types de prêt pour ces pays
-* La capitale
-* Longitude
-* Latitude
-
-Le format XML est fortement balisé, ce qui n'est pas très pratique. 
-En utilisant désormais un autre URL, on obtient un JSON, plus pratique pour travailler : 
-
-> http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json
-
-```{python}
-import requests
-import pandas as pd
-
-req = requests.get('http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json')
-```
-
-A nouveau, les premiers caractères sont les suivants:
-
-```{python}
-#| output: asis
-print(req.content[:1000])
-```
-
-Cela ressemble déjà plus à un dictionnaire `Python`[^1].
 
 [^1]: Le JSON est un format très apprécié dans le domaine du *big data*
 car il permet de stocker de manière intelligente des données
@@ -184,38 +191,146 @@ de structures diverses. Il
 s'agit d'un des formats privilégiés du paradigme No-SQL pour lequel
 cet [excellent cours](http://b3d.bdpedia.fr/) propose plus de détails
 
+[^2]: Suivant les API, nous avons soit besoin de rien de plus si nous parvenons directement à obtenir un json, soit devoir utiliser un *parser* comme `BeautifulSoup` dans le cas contraire. Ici, le JSON peut être formaté relativement aisément. 
+
+```{python}
+import requests
+import pandas as pd
+
+req = requests.get(url_api)
+wb = req.json()
+```
+
+Prenons par exemple les 1000 premiers caractères du résultat, pour se donner
+une idée du résultat et se convaincre que notre filtre au niveau
+communal est bien passé :
+
+```{python}
+#| output: asis
+print(req.content[:1000])
+```
+
+
 Ici, il n'est même pas nécessaire en première approche 
 d'utiliser le package `json`, l'information
 étant déjà tabulée dans l'écho renvoyé (on a la même information pour tous les pays):
+On peut donc se contenter de `pandas` pour transformer nos données en 
+`DataFrame` et `geopandas` pour convertir en données
+géographiques :
 
 ```{python}
-wb = req.json()
-wb = pd.json_normalize(wb[1])
-wb.head(5)
+import pandas as pandas
+import geopandas as gpd
+
+def get_dpe_from_url(url):
+
+    req = requests.get(url)
+    wb = req.json()
+    df = pd.json_normalize(wb["results"])
+
+    dpe = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs = 4326)
+    dpe = dpe.dropna(subset = ['longitude', 'latitude'])
+
+    return dpe
+
+dpe = get_dpe_from_url(url_api)
+dpe.head(2)
 ```
 
-Cependant, si on regarde la dimension de l'objet obtenu, on obtient un
-chiffre rond (50 lignes). Ceci est suspect et un petit tour dans la
-documentation de l'API nous apprendrait que c'est le nombre maximal de 
-retour possible. Il faut donc faire attention à la documentation et 
-ajouter un paramètre `page=2` pour rattraper les derniers échos: 
+Essayons de représenter sur une carte ces DPE avec les
+années de construction des logements.
+Avec `folium`, on obtient la carte interactive suivante:
 
 ```{python}
-wb2 = pd.json_normalize(
-    requests.get("http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json&page=2").json()[1]
-    )
-pd.concat([wb, wb2])
+import seaborn as sns
+import folium
+
+palette = sns.color_palette("coolwarm", 8)
+
+def interactive_map_dpe(dpe):
+
+    # convert in number
+    dpe['color'] = [ord(dpe.iloc[i]['classe_consommation_energie'].lower()) - 96 for i in range(len(dpe))]
+    dpe = dpe.loc[dpe['color']<=7]
+    dpe['color'] = [palette.as_hex()[x] for x in dpe['color']]
+
+
+    center = dpe[['latitude', 'longitude']].mean().values.tolist()
+    sw = dpe[['latitude', 'longitude']].min().values.tolist()
+    ne = dpe[['latitude', 'longitude']].max().values.tolist()
+
+    m = folium.Map(location = center, tiles='Stamen Toner')
+
+    # I can add marker one by one on the map
+    for i in range(0,len(dpe)):
+        folium.Marker([dpe.iloc[i]['latitude'], dpe.iloc[i]['longitude']],
+                    popup=f"Année de construction: {dpe.iloc[i]['annee_construction']}, <br>DPE: {dpe.iloc[i]['classe_consommation_energie']}",
+                    icon=folium.Icon(color="black", icon="home", icon_color = dpe.iloc[i]['color'])).add_to(m)
+
+    m.fit_bounds([sw, ne])
+
+    return m
+
+m = interactive_map_dpe(dpe)
 ```
 
-Si on regarde l'information présente dans le DataFrame, on voit qu'elle se
-présente sous forme `lendingType.value`. C'est parce que `pandas` a 
-concaténé les différents niveaux de notre dictionnaire. Si on désire
-s'en assurer, on peut regarder sur un exemple:
+{{< rawhtml >}}
+```{python}
+#| echo : false
+# Afficher la carte
+m
+```
+{{< /rawhtml >}}
+
+On remarque un problème dans les données: un logement qui n'a
+rien à voir avec les autres. Il faudrait donc idéalement
+nettoyer un peu le jeu de données pour filtrer en fonction de
+limites géographiques. 
+
+Un des paramètres qui peut permettre ceci est `geo_distance`.
+Pour commencer, on va tricher un petit peu pour déterminer 
+les longitudes et latitudes de départ. Idéalement, on 
+récupérerait le découpage de la commune et utiliserait, par 
+exemple, le centroid de cette commune. Cela nécessite
+néanmoins l'appel à une autre API que nous n'avons
+pour le moment pas décrite. Nous allons donc
+nous contenter d'utiliser les longitudes et latitudes
+du point médian et fixer un rayon de plusieurs kilomètres
+pour exclure les points aberrants. 
 
 ```{python}
-req.json()[1][0]['incomeLevel']['value'] == wb.loc[0, 'incomeLevel.value'] 
+x_median = dpe['longitude'].median()
+y_median = dpe['latitude'].median()
 ```
 
+La documentation nous informe du format à utiliser:
+
+> Le format est 'lon,lat,distance'. La distance optionnelle (0 par défaut) et est exprimée en mètres.
+
+```{python}
+param_distance = f'{x_median},{y_median},1000'
+print(param_distance)
+```
+
+Notre requête devient ainsi:
+
+```{python}
+url_api = f"{api_root}?page=1&after=10&format=json&q_mode=simple&qs=code_insee_commune_actualise" + "%3A%22" + f"{code_commune}" + "%22" + f"&size={size}&select=" + "%2A&sampling=neighbors" + f"&geodistance={param_distance}"
+print(url_api)
+```
+
+```{python}
+dpe_geo_filter = get_dpe_from_url(url_api)
+m_geo_filter = interactive_map_dpe(dpe)
+```
+
+{{< rawhtml >}}
+```{python}
+#| echo : false
+# Afficher la carte
+m_geo_filter
+```
+{{< /rawhtml >}}
 
 ## Un catalogue incomplet d'API existantes
 
@@ -788,3 +903,79 @@ print("![]({url})".format(url = url_image))
 ```
 
 {{% /box %}}
+
+
+## Exemple avec l'API de la Banque Mondiale
+
+Avec l'API de la Banque mondiale, voici comme s'écrit une requête : 
+
+> http://api.worldbank.org/v2/countries?incomeLevel=LMC
+
+1. Le point d'entrée est l'URL <http://api.worldbank.org/v2>[^3]
+2. Un filtre est appliqué sur les pays (`countries?`) afin de ne conserver
+que celles telles que `incomeLevel=LMC` (*"Lower middle income"*)
+
+[^3]: Cette API utilise un protocole HTTP qui est de moins en moins utilisé. Il
+est recommandé de privilégier les protocoles HTTPS, plus sécurisés. 
+
+En cliquant sur le lien, le site renvoie des données en XML,
+qui ressemblent pas mal à ce qu'on a vu plus tôt avec le scraping : une structure avec des balises qui s'ouvrent et qui se ferment.
+
+
+Pour obtenir la même information en `Python`, il faut revenir aux fondamentaux : on va avoir besoin du module `requests`. Suivant les API, nous avons soit besoin de rien de plus si nous parvenons directement à obtenir un json, soit devoir utiliser un *parser* comme `BeautifulSoup` dans le cas contraire. 
+
+Avec l'API de la banque mondiale, on va utiliser le module `requests` et sa méthode `get` : on lui donne l'url de l'API qui nous intéresse, on lui demande d'en faire un json et le tour est *en apparence* joué.
+
+```{python}
+import requests
+req = requests.get('http://api.worldbank.org/v2/countries?incomeLevel=LMC')
+```
+
+
+Quand on regarde de plus près, on voit que les informations suivantes apparaissent : 
+ 
+* Code du pays
+* Nom du pays
+* Région
+* Classification en termes de revenus
+* Les types de prêt pour ces pays
+* La capitale
+* Longitude
+* Latitude
+
+Le format XML est fortement balisé, ce qui n'est pas très pratique. 
+En utilisant désormais un autre URL, on obtient un JSON, plus pratique pour travailler : 
+
+> http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json
+
+```{python}
+import requests
+import pandas as pd
+
+req = requests.get('http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json')
+wb = req.json()
+wb = pd.json_normalize(wb[1])
+wb.head(5)
+```
+
+Cependant, si on regarde la dimension de l'objet obtenu, on obtient un
+chiffre rond (50 lignes). Ceci est suspect et un petit tour dans la
+documentation de l'API nous apprendrait que c'est le nombre maximal de 
+retour possible. Il faut donc faire attention à la documentation et 
+ajouter un paramètre `page=2` pour rattraper les derniers échos: 
+
+```{python}
+wb2 = pd.json_normalize(
+    requests.get("http://api.worldbank.org/v2/countries?incomeLevel=LMC&format=json&page=2").json()[1]
+    )
+pd.concat([wb, wb2]).head(5)
+```
+
+Si on regarde l'information présente dans le DataFrame, on voit qu'elle se
+présente sous forme `lendingType.value`. C'est parce que `pandas` a 
+concaténé les différents niveaux de notre dictionnaire. Si on désire
+s'en assurer, on peut regarder sur un exemple:
+
+```{python}
+req.json()[1][0]['incomeLevel']['value'] == wb.loc[0, 'incomeLevel.value'] 
+```
