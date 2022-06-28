@@ -12,12 +12,7 @@ categories:
 slug: elastic-geo
 type: book
 summary: |
-  ElasticSearch est un moteur de recherche extrêmement rapide et flexible. 
-  Cette technologie s'est imposée dans le domaine du traitement des 
-  données textuelles. L'API Python permet d'intégrer cette 
-  technologie dans des processus Python afin de les accélérer. Ce chapitre
-  présente cette intégration d'Elastic avec l'exemple de la recherche
-  dans les données alimentaires de l'OpenFood Facts Database 
+  TO BE COMPLETED 
 ---
 
 
@@ -52,6 +47,14 @@ pip install elasticsearch==8.2.0
 
 # Introduction
 
+## Objectif
+
+Ce chapitre vise à approfondir les éléments présentés sur Elastic précédemment. L'idée
+est de se placer dans un contexte opérationnel où on reçoit des informations
+sur des entreprises telles que l'adresse et la localisation et qu'on 
+désire associer à des données administratives considérées plus fliables. 
+
+
 ## Réplication de ce chapitre
 
 Comme le précédent, ce chapitre est plus exigeant en termes d'infrastructures que les précédents.
@@ -71,3 +74,113 @@ import pandas as pd
 ```
 
 
+## Sources
+
+Ce chapitre va utiliser plusieurs sources de diffusion de
+l'Insee:
+
+- Le stock des établissements présents dans les [données de diffusion Sirene](https://www.insee.fr/fr/information/3591226) ;
+- Les [données Sirene géolocalisées](https://www.data.gouv.fr/fr/datasets/geolocalisation-des-etablissements-du-repertoire-sirene-pour-les-etudes-statistiques/)
+
+
+# Constitution du référentiel administratif géolocalisé
+
+Dans un premier temps, on va combiner ensemble les différentes sources
+_open-data_ pour créer un référentiel fiable d'entreprises
+géolocalisées.
+
+La base d'entrée à utiliser est disponible sur
+[data.gouv](https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/)
+
+```{python}
+import requests
+import zipfile
+
+url_download = "https://www.data.gouv.fr/fr/datasets/r/0651fb76-bcf3-4f6a-a38d-bc04fa708576"
+req = requests.get(url_download)
+
+with open("sirene.zip",'wb') as f:
+  f.write(req.content)
+
+with zipfile.ZipFile("sirene.zip", 'r') as zip_ref:
+  zip_ref.extractall("sirene")
+```
+
+On va importer seulement les colonnes utiles et simplifier la structure
+pour être en mesure de ne garder que les informations qui nous
+intéressent (nom de l'entreprise, adresse, commune, code postal...)
+
+```{python}
+import pandas as pd
+import numpy as np
+
+list_cols = [
+  'siren', 'siret',
+  'activitePrincipaleRegistreMetiersEtablissement',
+  'complementAdresseEtablissement',
+  'numeroVoieEtablissement',
+  'typeVoieEtablissement',
+  'libelleVoieEtablissement',
+  'codePostalEtablissement',
+  'libelleCommuneEtablissement',
+  'codeCommuneEtablissement',
+  'etatAdministratifEtablissement',
+  'denominationUsuelleEtablissement',
+  'activitePrincipaleEtablissement'
+]
+
+df = pd.read_csv(
+  "siret/StockEtablissement_utf8.csv",
+  usecols = list_cols)
+
+df['numero'] = df['numeroVoieEtablissement']\
+  .replace('-', np.NaN).str.split().str[0]\
+  .str.extract('(\d+)', expand=False)\
+  .fillna("0").astype(int)
+
+df['numero'] = df['numero'].astype(str).replace("0","")
+
+df['adresse'] = df['numero'] + " " + \
+  df['typeVoieEtablissement'] + " " + \
+  df['libelleVoieEtablissement']
+
+df['adresse'] = df['adresse'].replace(np.nan, "")
+
+df = df.loc[df['etatAdministratifEtablissement'] == "A"]
+
+df.rename(
+  {"denominationUsuelleEtablissement": "denom",
+  "libelleCommuneEtablissement": "commune",
+  "codeCommuneEtablissement" : "code_commune",
+  "codePostalEtablissement": "code_postal"},
+  axis = "columns", inplace = True)
+
+df['ape'] = df['activitePrincipaleEtablissement'].str.replace("\.", "", regex = True)
+df['denom'] = df["denom"].replace(np.nan, "")
+
+df_siret = df.loc[:, ['siren', 'siret','adresse', 'ape', 'denom', 'commune', 'code_commune','code_postal']]
+df_siret['code_postal'] = df_siret['code_postal'].replace(np.nan, "0").astype(int).astype(str).replace("0","")
+```
+
+On importe ensuite les données géolocalisées
+
+```{python}
+import zipfile
+import shutil
+import os
+
+os.remove("siret.zip")
+shutil.rmtree('siret/')
+
+url_geoloc = "https://files.data.gouv.fr/insee-sirene-geo/GeolocalisationEtablissement_Sirene_pour_etudes_statistiques_utf8.zip"
+r = requests.get(url_geoloc)  
+
+with open('geoloc.zip', 'wb') as f:
+    f.write(r.content)
+
+df_geoloc = pd.read_csv(
+  "geoloc/GeolocalisationEtablissement_Sirene_pour_etudes_statistiques_utf8.csv",
+  usecols = ["siret", "epsg", "x_longitude", "y_latitude"] , sep = ";")
+
+df_geolocalized = df_siret.merge(df_geoloc, on = "siret") 
+```
