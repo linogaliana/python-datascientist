@@ -502,6 +502,58 @@ dfs = [import_by_decade(d) for d in [1970, 1980, 1990, 2000, 2010]]
 deces = pd.concat(dfs)
 ```
 
+
+```{python}
+year = 2021
+url_naissance = f"https://www.insee.fr/fr/statistiques/fichier/2540004/nat{year}_csv.zip"
+
+req = requests.get(url_naissance)
+
+with open(f"naissance_{year}.zip",'wb') as f:
+    f.write(req.content)
+
+with zipfile.ZipFile(f"naissance_{year}.zip", 'r') as zip_ref:
+    zip_ref.extractall(f"naissance_{year}")
+
+naissance = pd.read_csv(f"naissance_{year}/nat{year}.csv", sep = ";")
+naissance = naissance.dropna(subset = ['preusuel'] )
+```
+
+
+```{python}
+n_death = deces.loc[deces["prenom"] == "JEAN"].groupby('annee').agg({"nomprenom": "size"}).reset_index()
+n_death.rename({"nomprenom": "nombre"}, axis = "columns", inplace = True)
+naissance = naissance.loc[naissance["preusuel"] == "JEAN"].loc[naissance["annais"] != "XXXX"]
+naissance.rename({"annais": "annee"}, axis = "columns", inplace = True)
+n_death["annee"] = n_death["annee"].astype(int)
+naissance["annee"] = naissance["annee"].astype(int)
+```
+
+```{python}
+table_complete = pd.concat([
+  n_death.assign(source = "death"),
+  naissance.assign(source = "birth")
+])
+table_complete = table_complete.loc[table_complete["annee"]>1970]
+```
+
+```{python}
+import seaborn as sns
+import matplotlib
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+
+fig= plt.figure()
+
+def animate(i):
+    table_complete = df.iloc[:int(i+1)] 
+    graph = sns.pointplot(x="nombre", y="annee", hue="source", data=data, markers=["o", "x"], linestyles=["-", "--"])
+    return graph
+
+ani = matplotlib.animation.FuncAnimation(fig, animate, frames=len(table_complete.index),interval=700,repeat=True)
+plt.show()
+```
+
 # Exercices supplémentaires
 
 https://plotly.com/python/v3/3d-network-graph/
