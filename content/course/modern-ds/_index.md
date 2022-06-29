@@ -12,7 +12,19 @@ summary: |
 type: book
 ---
 
-TO BE COMPLETED
+Les parties précédentes étaient très tournées sur l'acquisition
+de compétences minimales dans chaque domaine de l'analyse de données.
+Cette partie propose des éléments plus avancés mais plus représentatifs
+du travail quotidien du _data-scientist_. Cette partie 
+présente la manière dont `Python` peut être utilisé dans une architecture
+moderne de type _cloud_. Elle illustre la manière dont `Python` peut
+servir de couteau-suisse faisant l'interface entre différents
+langages plus efficaces ou plusieurs types de données. 
+
+- S3
+- Elastic
+- Spark
+- Pipelines
 
 ## Contenu de la partie
 
