@@ -1,0 +1,542 @@
+---
+title: "Lire des données depuis s3"
+date: 2020-07-09T15:00:00Z
+draft: false
+weight: 70
+slug: readS3
+type: book
+tags:
+  - S3
+  - boto3
+categories:
+  - Tutoriel
+summary: |
+  Dans les entreprises et administrations, un nombre croissant 
+  d'infrastructure se basent sur des Cloud, qui sont des sessions 
+  non persistentes où les données ne sont pas stockées dans les mêmes
+  serveurs que les machines qui exécutent du code. L'une des technologies
+  dominantes dans le domaine est un système de stockage nommé S3,
+  développé par Amazon. 
+  Python, à travers les packages boto3 et s3fs,
+  permet d'utiliser ce système de stockage distant comme si on
+  accédait à des fichiers depuis son poste personnel. 
+eval: false
+---
+
+```{python}
+#| echo: false
+#| output: 'asis'
+#| include: true
+#| eval: true
+
+import sys
+sys.path.insert(1, '../../../../') #insert the utils module
+from utils import print_badges
+
+#print_badges(__file__)
+print_badges("content/course/NLP/05a_s3.qmd")
+```
+
+## Qu'est-ce que le système de stockage S3 ?
+
+Dans les entreprises et administrations, un nombre croissant de données sont
+disponibles depuis un système de stockage
+nommé `S3`. 
+Le système S3 (*Simple Storage System*) est un système de stockage développé
+par Amazon et qui est maintenant devenu une référence pour le stockage en ligne.
+Il s'agit d'une architecture à la fois
+sécurisée (données cryptées, accès restreints) et performante.
+
+Le concept central du système S3 est le *bucket*.
+Un *bucket* est un espace (privé ou partagé) où on peut stocker une
+arborescence de fichiers. Pour accéder aux fichiers figurant
+dans un *bucket* privé, il fournit des jetons d'accès (l'équivalent d'un mot de passe)
+reconnus par le serveur de stockage. On peut alors lire et écrire dans le *bucket*.
+
+Le SSP cloud 
+[![Onyxia](https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&color=yellow?logo=Python)](https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter?onyxia.friendlyName=%C2%ABpython-datascientist%C2%BB&resources.requests.memory=%C2%AB4Gi%C2%BB) repose par exemple sur cette infrastructure technique. 
+
+
+## Comment faire avec Python ?
+
+### Les librairies principales
+
+L'interaction entre ce système distant de fichiers et une session locale de Python
+est possible grâce à des API. Les deux principales librairies sont les suivantes:
+
+* [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html), une librairie créée et maintenue par Amazon ;
+* [s3fs](https://s3fs.readthedocs.io/en/latest/), une librairie qui permet d'interagir avec les fichiers stockés à l'instar d'un filesystem classique.
+
+
+Ces deux librairies offrent toutes deux la possibilité de se connecter depuis `Python`,
+à un dépôt de fichiers distant, de lister les fichiers disponibles dans un
+*bucket*, d'en télécharger un ou plusieurs ou de faire de l'*upload*
+
+{{% box status="note" title="Note" icon="fa fa-comment" %}}
+Les exemples suivants seront réplicables pour les utilisateurs de la plateforme
+SSP-cloud
+{{% /box %}}
+
+Personnellement, j'ai une petite préférence pour `boto3` que je trouve plus
+intuitif.
+
+### Quelques cas spéciaux
+
+La librairie ultra-performante [`arrow`](https://arrow.apache.org/docs/python/)
+propose également un accès à des fichiers sur 
+`S3` comme s'ils étaient disponibles sur un _filesystem_
+local. Un exemple, assez court, est disponible 
+[dans la documentation officielle](https://arrow.apache.org/docs/python/filesystems.html#s3)
+
+Les utilisateurs de
+[`Snakemake`](https://snakemake.readthedocs.io/en/stable/snakefiles/remote_files.html)
+peuvent également 
+lire ou écrire des tables intermédiaires sur `S3`
+comme s'ils utilisaient un
+système de fichier local. En arrière-plan, `snakemake`
+va utiliser `boto3` pour communiquer avec le système
+de stockage
+
+Un outil très performant utilisant la ligne de commande est également 
+disponible. Son nom est `mc` pour
+[`Minio Client`](https://docs.min.io/docs/minio-client-complete-guide.html).
+Il propose les mêmes
+opérations que la ligne de commande linux mais avec un système distant.
+
+## Connexion à un bucket
+
+Par la suite, on va utiliser des alias pour les trois valeurs suivantes, qui servent
+à s'authentifier. 
+
+```python
+key_id = 'MY_KEY_ID'
+access_key = 'MY_ACCESS_KEY'
+token = "MY_TOKEN"
+```
+
+Ces valeurs peuvent être également disponibles dans 
+les variables d'environnement de `Python`. Comme il s'agit d'une information
+d'authentification personnelle, il ne faut pas stocker les vraies valeurs de ces
+variables dans un projet, sous peine de partager des traits d'identité sans le
+vouloir lors d'un partage de code. 
+
+{{< tabs tabTotal="4" >}}
+{{% tab tabName="boto3" %}}
+
+Avec `boto3`, on créé d'abord un client puis on exécute des requêtes dessus.
+Pour initialiser un client, il suffit, en supposant que l'url du dépôt S3 est
+`"https://minio.lab.sspcloud.fr"`, de faire:
+
+```python
+import boto3
+s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
+```
+
+
+{{% /tab %}}
+{{% tab tabName="S3FS" %}}
+
+La logique est identique avec `s3fs`. 
+
+Si on a des jetons d'accès à jour et dans les variables d'environnement
+adéquates:
+
+```python
+import s3fs
+fs = s3fs.S3FileSystem(
+  client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
+```
+
+
+{{% /tab %}}
+{{% tab tabName="Arrow" %}}
+
+La logique d'`Arrow` est proche de celle de `s3fs`. Seuls les noms
+d'arguments changent
+
+Si on a des jetons d'accès à jour et dans les variables d'environnement
+adéquates:
+
+```python
+from pyarrow import fs
+s3 = fs.S3FileSystem(endpoint_override="http://"+"minio.lab.sspcloud.fr")
+```
+
+{{% /tab %}}
+
+{{% tab tabName="Snakemake" %}}
+
+La logique de `Snakemake` est, quant à elle,
+plus proche de celle de `boto3`. Seuls les noms
+d'arguments changent
+
+Si on a des jetons d'accès à jour et dans les variables d'environnement
+adéquates:
+
+```python
+from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
+S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
+```
+
+{{% /tab %}}
+{{< /tabs >}}
+
+
+
+Il se peut que la connexion à ce stade soit refusée (`HTTP error 403`).
+Cela peut provenir 
+d'une erreur dans l'URL utilisé. Cependant, cela reflète plus généralement
+des paramètres d'authentification erronés.
+
+
+{{< tabs tabTotal="4" >}}
+{{% tab tabName="boto3" %}}
+
+Les paramètres d'authentification sont des arguments supplémentaires:
+
+```python
+import boto3
+s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr",
+                  aws_access_key_id=key_id, 
+                  aws_secret_access_key=access_key, 
+                  aws_session_token = token)
+```
+
+{{% /tab %}}
+
+{{% tab tabName="S3FS" %}}
+
+La logique est la même, seuls les noms d'arguments diffèrent
+
+```python
+import s3fs
+fs = s3fs.S3FileSystem(
+  client_kwargs={'endpoint_url': 'https://'+'minio.lab.sspcloud.fr'},
+  key = key_id, secret = access_key,
+  token = token)
+```
+
+{{% /tab %}}
+
+{{% tab tabName="Arrow" %}}
+
+Tout est en argument cette fois:
+
+```python
+from pyarrow import fs
+
+s3 = fs.S3FileSystem(
+    access_key = key_id,
+    secret_key = access_key,
+    session_token = token,
+    endpoint_override = 'https://'+'minio.lab.sspcloud.fr',
+    scheme = "https"
+    )
+```
+
+{{% /tab %}}
+
+{{% tab tabName="Snakemake" %}}
+
+La logique est la même, seuls les noms d'arguments diffèrent
+
+```python
+from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
+S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'), access_key_id=key_id, secret_access_key=access_key)
+```
+
+{{% /tab %}}
+
+
+{{< /tabs >}}
+
+
+{{% box status="note" title="Notes" icon="fa fa-comment" %}}
+Dans le SSP-cloud, 
+lorsque l'initialisation du service `Jupyter` du SSP-cloud est récente
+(moins de 12 heures), il est possible d'utiliser
+automatiquement les jetons stockés automatiquement à la création du dépôt. 
+
+Si on désire accéder aux données du SSP-cloud depuis une session python du
+datalab (service VSCode, Jupyter...),
+il faut remplacer l'url par `http://minio.lab.sspcloud.fr`
+{{% /box %}}
+
+## Lister les fichiers
+
+S'il n'y a pas d'erreur à ce stade, c'est que la connexion est bien effective.
+Pour le vérifier, on peut essayer de faire la liste des fichiers disponibles
+dans un `bucket` auquel on désire accéder.
+
+Par exemple, on peut vouloir
+tester l'accès aux bases `FILOSOFI` (données de revenu localisées disponibles
+sur <https://www.insee.fr>) au sein du bucket `donnees-insee`. 
+
+{{< tabs tabTotal="5" >}}
+{{% tab tabName="boto3" %}}
+
+Pour cela,
+la méthode `list_objects` offre toutes les options nécessaires:
+
+```python
+for key in s3.list_objects(Bucket='donnees-insee', Prefix='FILOSOFI')['Contents']:
+    print(key['Key'])
+```
+
+{{% /tab %}}
+
+{{% tab tabName="S3FS" %}}
+
+Pour lister les fichiers, c'est la méthode `ls` (celle-ci ne liste pas par
+défaut les fichiers de manière récursive comme `boto3`):
+
+```{python, eval = FALSE}
+fs.ls("donnees-insee")
+```
+
+
+{{% /tab %}}
+
+{{% tab tabName="Arrow" %}}
+
+```python
+from pyarrow import fs
+s3 = fs.S3FileSystem(endpoint_override='http://'+'minio.lab.sspcloud.fr')
+s3.get_file_info(fs.FileSelector('donnees-insee', recursive=True))
+```
+
+{{% /tab %}}
+
+
+{{% tab tabName="mc" %}}
+
+```shell
+mc ls -r
+```
+
+{{% /tab %}}
+
+
+{{< /tabs >}}
+
+
+## Télécharger un fichier depuis s3 pour l'enregistrer en local
+
+Cette méthode n'est en général pas recommandée car, comme on va le voir
+par la suite, il est possible de lire à la volée des fichiers. Cependant,
+télécharger un fichier depuis le _cloud_ pour l'écrire sur le disque
+local peut parfois être utile (par exemple, lorsqu'il est nécessaire
+de dézipper un fichier). 
+
+{{< tabs tabTotal="4" >}}
+{{% tab tabName="boto3" %}}
+
+On utilise cette fois la méthode `download_file`
+
+```python
+s3.download_file('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv", 'data.csv')
+```
+
+{{% /tab %}}
+
+{{% tab tabName="S3FS" %}}
+
+```python
+fs.download('donnees-insee/FILOSOFI/2014/FILOSOFI_COM.csv','test.csv')
+```
+
+{{% /tab %}}
+
+{{% tab tabName="Snakemake" %}}
+
+```python
+from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
+S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
+bucket = "mon-bucket"
+
+rule ma_super_regle_s3:
+    input:
+        fichier = S3.remote(f'{bucket}/moninput.csv')
+    output:
+        fichier='mon_dossier_local/monoutput.csv'
+    run:
+        shell("cp {input[0]} {output[0]}")
+```
+
+{{% /tab %}}
+
+{{% tab tabName="mc" %}}
+
+```{python, eval = FALSE}
+mc cp "donnees-insee/FILOSOFI/2014/FILOSOFI_COM.csv" 'data.csv'
+```
+
+{{% /tab %}}
+
+
+{{< /tabs >}}
+
+
+## Lire un fichier directement
+
+La méthode précédente n'est pas optimale. En effet, l'un des intérêts des API
+est qu'on peut traiter un fichier sur `S3` comme s'il s'agissait d'un fichier
+sur son PC. Cela est d'ailleurs une manière plus sécurisée de procéder puisqu'on
+lit les données à la volée, sans les écrire dans un filesystem local. 
+
+{{< tabs tabTotal="4" >}}
+{{% tab tabName="boto3" %}}
+
+```python
+obj = s3.get_object(Bucket='donnees-insee', Key="FILOSOFI/2014/FILOSOFI_COM.csv")
+df = pd.read_csv(obj['Body'], sep = ";")
+df.head(2)
+```
+
+{{% /tab %}}
+
+{{% tab tabName="S3FS" %}}
+
+Le code suivant devrait permettre d'effectuer la même opération avec `s3fs`
+
+```python
+df = pd.read_csv(fs.open('{}/{}'.format('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv"),
+                         mode='rb')
+                 )
+
+df.head(2)
+```
+
+{{% /tab %}}
+
+{{% tab tabName="Snakemake" %}}
+
+```python
+from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
+S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
+bucket = "mon-bucket"
+
+rule ma_super_regle_s3:
+    input:
+        fichier = S3.remote(f'{bucket}/moninput.csv')
+    run:
+        import pandas as pd
+        df = pd.read_csv(input.fichier)
+        # PLUS D'OPERATIONS
+```
+
+{{% /tab %}}
+
+{{% tab tabName="Arrow" %}}
+
+`Arrow` est une librairie qui permet de lire des `CSV`.
+Il est néanmoins
+beaucoup plus pratique d'utiliser le format `parquet` avec `arrow`. 
+Dans un premier temps, on configure le _filesystem_ avec les 
+fonctionalités d'`Arrow` (cf. précédemment). 
+
+```{python}
+from pyarrow import fs
+
+s3 = fs.S3FileSystem(endpoint_override='http://'+'minio.lab.sspcloud.fr')
+```
+
+Pour lire un csv, on fera:
+
+```python
+from pyarrow import csv
+
+with s3.open_input_file("donnees-insee/FILOSOFI/2014/FILOSOFI_COM.csv") as file:
+    df = csv.read_csv(file, parse_options=csv.ParseOptions(delimiter=";")).to_pandas()
+
+df.head(2)
+```
+
+Pour un fichier au format parquet, on privilégiera:
+
+```python
+import pyarrow.parquet as pq
+#bucket = ""
+#parquet_file=""
+df = pq.ParquetDataset(f'{bucket}/{parquet_file}', filesystem=s3).read_pandas().to_pandas()
+```
+
+{{% /tab %}}
+
+{{< /tabs >}}
+
+
+## Uploader un fichier
+
+{{< tabs tabTotal="5" >}}
+{{% tab tabName="boto3" %}}
+
+```python
+s3.upload_file(file_name, bucket, object_name)
+```
+
+{{% /tab %}}
+
+{{% tab tabName="S3FS" %}}
+
+```python
+fs.upload(bucket + "/" + file_name)
+```
+
+
+{{% /tab %}}
+
+{{% tab tabName="Arrow" %}}
+
+Supposons que `df` soit un `pd.DataFrame` 
+Dans un système local, on convertirait
+en table `Arrow` puis on écrirait en `parquet`
+([voir la documentation officielle](https://arrow.apache.org/docs/python/parquet.html#reading-and-writing-single-files)).
+Quand on est sur un système `S3`, il s'agit seulement d'ajouter
+notre connexion à `S3` dans l'argument `filesystem`
+([voir la page sur ce sujet dans la documentation Arrow](https://arrow.apache.org/docs/python/filesystems.html#filesystem-s3))
+
+```python
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+table = pa.Table.from_pandas(df)
+pq.write_table(table, f"{bucket}/{path}", filesystem=s3)
+```
+
+{{% /tab %}}
+
+{{% tab tabName="Snakemake" %}}
+
+```python
+from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
+S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
+bucket = "mon-bucket"
+
+rule ma_super_regle_s3:
+    input:
+        fichier='mon_dossier_local/moninput.csv'
+    output:
+        fichier=S3.remote(f'{bucket}/monoutput.csv')
+    run:
+        shell("cp output.fichier input.fichier")
+```
+
+
+{{% /tab %}}
+
+{{% tab tabName="mc" %}}
+
+```python
+mc cp 'data.csv' "MONBUCKET/monoutput.csv"
+```
+
+{{% /tab %}}
+
+
+{{< /tabs >}}
+
+
+## Pour aller plus loin
+
+- [La documentation sur MinIO du SSPCloud](https://docs.sspcloud.fr/onyxia-guide/stockage-de-donnees)
