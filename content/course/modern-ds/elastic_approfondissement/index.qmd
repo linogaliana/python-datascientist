@@ -89,10 +89,26 @@ Dans un premier temps, on va combiner ensemble les différentes sources
 _open-data_ pour créer un référentiel fiable d'entreprises
 géolocalisées.
 
-La base d'entrée à utiliser est disponible sur
+## Importer la base déjà créée
+
+Les données à utiliser pour constuire une base Sirene géolocalisée
+sont trop volumineuses pour les serveurs mis à disposition
+gratuitement par `Github` pour la compilation de ce site web.
+Nous proposons ainsi une version déjà construite, stockée
+dans l'espace de mise à disposition du SSP Cloud. Ce fichier est
+au format `parquet` et est ouvert à
+tous, même pour les personnes ne disposant pas d'un compte. 
+Le code ayant construit cette base est présenté ci-dessous.
+
+Pour importer cette base
+
+## Reproduire la construction de la base
+
+La première base d'entrée à utiliser est disponible sur
 [data.gouv](https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/)
 
 ```{python}
+#| eval: false
 import requests
 import zipfile
 
@@ -111,6 +127,7 @@ pour être en mesure de ne garder que les informations qui nous
 intéressent (nom de l'entreprise, adresse, commune, code postal...)
 
 ```{python}
+#| eval: false
 import pandas as pd
 import numpy as np
 
@@ -165,12 +182,13 @@ df_siret['code_postal'] = df_siret['code_postal'].replace(np.nan, "0").astype(in
 On importe ensuite les données géolocalisées
 
 ```{python}
+#| eval: false
 import zipfile
 import shutil
 import os
 
-os.remove("siret.zip")
-shutil.rmtree('siret/')
+#os.remove("sirene.zip")
+#shutil.rmtree('sirene/')
 
 url_geoloc = "https://files.data.gouv.fr/insee-sirene-geo/GeolocalisationEtablissement_Sirene_pour_etudes_statistiques_utf8.zip"
 r = requests.get(url_geoloc)  
@@ -178,9 +196,42 @@ r = requests.get(url_geoloc)
 with open('geoloc.zip', 'wb') as f:
     f.write(r.content)
 
+with zipfile.ZipFile("geoloc.zip", 'r') as zip_ref:
+  zip_ref.extractall("geoloc")
+
 df_geoloc = pd.read_csv(
   "geoloc/GeolocalisationEtablissement_Sirene_pour_etudes_statistiques_utf8.csv",
   usecols = ["siret", "epsg", "x_longitude", "y_latitude"] , sep = ";")
+```
 
+Il ne reste plus qu'à associer les deux jeux de données
+
+```{python}
+#| eval: false
 df_geolocalized = df_siret.merge(df_geoloc, on = "siret") 
+df_geolocalized['code_commune'] = df_geolocalized['code_commune'].astype(str) 
+```
+
+Si vous avez accès à un espace de stockage cloud de type 
+`S3`, il est possible d'utiliser `pyarrow` pour enregister
+cette base. Afin de l'enregistrer dans un espace de stockage
+public, nous allons l'enregistrer dans un dossier `diffusion`[^1]
+
+[^1]: Le SSP-Cloud, dont la technologie de stockage repose sur 
+MinIO permet de partager des fichiers dans des espaces publics
+ou privés. Par construction, les fichiers enregistrés dans un dossier
+nommé `diffusion` seront publics. 
+
+```{python}
+#| eval: false
+from pyarrow import fs
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+bucket = "lgaliana"
+path = "diffusion/sirene_geolocalized.parquet"
+
+s3 = fs.S3FileSystem(endpoint_override="http://"+"minio.lab.sspcloud.fr")
+
+table = pa.Table.from_pandas(df_geolocalized)
 ```
