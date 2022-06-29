@@ -460,6 +460,48 @@ Alors qu'avec le thème sombre (question 2), on obtient :
 
 {{< chart data="plotly2" >}}
 
+# Réaliser une animation avec `Python`
+
+Téléchargement fichier décès
+
+```{python}
+import shutil
+import requests
+import zipfile
+import os
+import glob
+import pandas as pd
+
+def import_by_decade(decennie = 1970):
+
+    url = f"https://www.insee.fr/fr/statistiques/fichier/4769950/deces-{decennie}-{decennie+9}-csv.zip"
+
+    req = requests.get(url)
+
+    with open(f"deces_{decennie}.zip",'wb') as f:
+        f.write(req.content)
+
+    with zipfile.ZipFile(f"deces_{decennie}.zip", 'r') as zip_ref:
+        zip_ref.extractall(f"deces_{decennie}")
+
+    csv_files = glob.glob(os.path.join(f"deces_{decennie}", "*.csv"))
+
+    df = [pd.read_csv(f, sep = ";", encoding="utf-8").assign(annee = f) for f in csv_files]
+    df = pd.concat(df)
+    df[['nom','prenom']] = df['nomprenom'].str.split("*", expand=True)
+    df['prenom'] = df['prenom'].str.replace("/","")
+    df['annee'] = df['annee'].str.rsplit("/").str[-1].str.replace("(Deces_|.csv|deces-)","").astype(int)
+
+    shutil.rmtree(f"deces_{decennie}")    
+    os.remove(f"deces_{decennie}.zip")
+
+    return df
+
+
+dfs = [import_by_decade(d) for d in [1970, 1980, 1990, 2000, 2010]]
+deces = pd.concat(dfs)
+```
+
 # Exercices supplémentaires
 
 https://plotly.com/python/v3/3d-network-graph/
