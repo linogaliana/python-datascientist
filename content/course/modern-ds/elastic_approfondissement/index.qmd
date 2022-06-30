@@ -253,3 +253,139 @@ s3 = fs.S3FileSystem(endpoint_override="http://"+"minio.lab.sspcloud.fr")
 
 table = pa.Table.from_pandas(df_geolocalized)
 ```
+
+
+# Connexion à ElasticSearch
+
+On va supposer que l'utilisateur dispose déjà d'un serveur Elastic
+fonctionnel mais désire créer un nouvel index. Si vous utilisez
+le SSPCloud, la démarche de création d'un service
+Elastic est disponible dans le chapitre précédent. 
+
+```{python}
+#| eval: false
+
+from elasticsearch import Elasticsearch
+HOST = 'elasticsearch-master'
+
+def elastic():
+    """Connection avec Elastic sur le data lab"""
+    es = Elasticsearch([{'host': HOST, 'port': 9200, 'scheme': 'http'}], http_compress=True, request_timeout=200)
+    return es
+
+es = elastic()
+es
+```
+
+```
+<Elasticsearch(['http://elasticsearch-master:9200'])>
+```
+
+# Indexation de notre base Sirène géolocalisée
+
+## Définition du mapping
+
+On va procéder par étape en essayant d'utiliser la structure la plus simple
+possible. 
+
+:one: On s'occupe d'abord de définir le _mapping_
+pour les variables textuelles. 
+
+```{python}
+string_var = ["adresse", "denom", "ape", "commune"]
+map_string = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+mapping_string = {l: map_string for l in string_var}
+```
+
+:two: Les variables catégorielles sont utilisées 
+par le biais du type `keyword`:
+
+```{python}
+# keywords
+keyword_var = ["siren","siret","code_commune","code_postal"]
+map_keywords = {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}}}
+mapping_keywords = {l: map_keywords for l in keyword_var}
+```
+
+:three: La nouveauté par rapport à la partie
+précédente est l'utilisation de la
+dimension géographique. `Elastic` propose
+le type `geo_point` pour cela. 
+
+```{python}
+# geoloc
+mapping_geoloc = {
+  "location": {
+    "type": "geo_point"
+    }
+}    
+```
+
+On collecte tout cela ensemble dans un 
+dictionnaire:
+
+```{python}
+# mapping
+mapping_elastic = {"mappings":
+  {"properties":
+    {**mapping_string, **mapping_geoloc, **mapping_keywords}
+  }
+}
+```
+
+Il est tout à fait possible de définir un _mapping_
+plus raffiné. Ici, on va privilégier
+l'utilisation d'un _mapping_ simple pour
+illustrer la recherche par distance
+géographique en priorité. 
+
+## Création de l'index
+
+Pour créer le nouvel index, on s'assure d'abord de ne pas
+déjà l'avoir créé et on passe le _mapping_ défini 
+précédemment.
+
+```{python}
+#| eval: false
+if es.indices.exists('sirene'):
+    es.indices.delete('sirene')
+
+es.indices.create(index = "sirene", body = mapping_elastic)   
+```
+
+## Indexation de la base géolocalisée
+
+Pour le moment, l'index est vide. Il convient de 
+le peupler. 
+
+Il est néanmoins nécessaire de créer le champ `location`
+au format attendu par elastic: `lat, lon` à partir
+de nos colonnes. 
+
+```{python}
+df_geolocalized['location'] = df_geolocalized['y_latitude'].astype(str) + ", " + df_geolocalized['x_longitude'].astype(str)
+```
+
+La fonction suivante permet de structurer chaque
+ligne du `DataFrame` telle qu'Elastic l'attend:
+
+```{python}
+def gen_dict_from_pandas(index_name, df):
+    '''
+    Lit un dataframe pandas Open Food Facts, renvoi un itérable = dictionnaire des données à indexer, sous l'index fourni
+    '''
+    for i, row in df.iterrows():
+        header= {"_op_type": "index","_index": index_name,"_id": i}
+        yield {**header,**row}
+```
+
+Enfin, on peut industrialiser l'indexation
+de notre `DataFrame` en faisant tourner de
+manière successive cette fonction:
+
+```{python}
+#| eval: false
+from elasticsearch.helpers import bulk, parallel_bulk
+from collections import deque
+deque(parallel_bulk(client=es, actions=gen_dict_from_pandas("sirene", df_geolocalized), chunk_size = 1000, thread_count = 4))
+```
