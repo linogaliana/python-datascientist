@@ -440,10 +440,96 @@ ObjectApiResponse({'count': 13059694, '_shards': {'total': 1, 'successful': 1, '
 
 # Recherche
 
+Pour se faciliter la création de cartes
+réactives, nous allons régulièrement
+utiliser la fonction suivante qui s'appuie
+sur un code déjà présenté dans un autre
+chapitre. 
+
+```{python}
+def plot_folium_sirene(df, yvar, xvar):
+
+    center = df[[yvar, xvar]].mean().values.tolist()
+    sw = df[[yvar, xvar]].min().values.tolist()
+    ne = df[[yvar, xvar]].max().values.tolist()
+
+    m = folium.Map(location = center, tiles='Stamen Toner')
+
+    # I can add marker one by one on the map
+    for i in range(0,len(df)):
+        folium.Marker(
+            [df.iloc[i][yvar], df.iloc[i][xvar]],
+            popup = df.iloc[i]["_source.denom"] + f'<br>(Score: {df.iloc[i]["_score"]:.2f})',
+            icon=folium.Icon(icon="home")
+        ).add_to(m)
+
+    m.fit_bounds([sw, ne])
+
+    return m
+```
+
+
+
+## Premier exemple de requête géographique
+
+```{python}
+ex1 = es.search(index = 'sirene', body = '''{
+  "query": {
+    "bool": {
+      "must":
+      { "match": { "denom":   "institut national de la statistique"}}
+      }
+  }
+}
+''')['hits']['hits']
+
+echo_insee = pd.json_normalize(ex1)
+echo_insee
+```
+
+On remarque déjà que les intitulés ne sont
+pas bons. Quand est-il de leurs localisations ?
+
+```{python}
+plot_folium_sirene(
+  echo_insee, yvar = "_source.y_latitude",
+  xvar = "_source.x_longitude")
+```
+
+Ce premier essai nous suggère qu'il est 
+nécessaire d'améliorer notre recherche.
+Plusieurs voies sont possibles:
+
+1. Améliorer le preprocessing de nos champs
+textuels en excluant, par exemple, les
+stopwords ; 
+2. Effectuer une restriction géographique
+pour mieux cibler l'ensemble de recherche
+3. Trouver une variable catégorielle jouant
+le rôle de variable de blocage[^1] pour
+mieux cibler les paires pertinentes
+
+[^1]: 
+
+Concernant la première piste, il aurait
+fallu mieux définir notre mapping pour
+autoriser des _analyzers_. A défaut, 
+nous pourrons
+utiliser `nltk` ou `spacy` pour transformer
+les champs textuels avant d'envoyer la requête. 
+Cette solution présente l'inconvénient 
+de ne pas formatter de la même manière l'ensemble
+indexé mais pourrait malgré tout améliorer la pertinence
+des recherches. 
+
+Concernant la deuxième piste, la restriction
+géographique, Elastic fournit une approche
+très efficace de ciblage géographique.
+
 ```{python}
 #| eval: false
 
-ex1 = es.search(index = 'sirus_2020', body = '''{
+ex2 = es.search(index = 'sirene', body = '''{
   "query": {
     "bool": {
       "must":
@@ -451,7 +537,7 @@ ex1 = es.search(index = 'sirus_2020', body = '''{
       ,
       "filter":
         {"geo_distance": {
-          "distance": "10km",
+          "distance": "5km",
           "location": {
             "lat": "48.8168",
             "lon": "2.3099"
@@ -462,7 +548,9 @@ ex1 = es.search(index = 'sirus_2020', body = '''{
   }
 }
 ''')['hits']['hits']
-ex1
+
+echo_insee = pd.json_normalize(ex1)
+echo_insee
 ```
 
 ```{python}
