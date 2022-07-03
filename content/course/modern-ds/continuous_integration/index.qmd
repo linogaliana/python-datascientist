@@ -264,8 +264,10 @@ Il s'agit d'un bon point de départ, à enrichir.
 Le fichier qui contrôle les instructions exécutées dans l'environnement `Actions`
 doit se trouver dans le dossier `.github/workflows/`
 (:warning: ne pas oublier le point au début du
-nom du dossier). Il doit être au format `YAML` avec une extension `.yml`.
-Il peut avoir n'importe quel nom mais mieux vaut lui donner un nom signifiant,
+nom du dossier). Il doit être au format `YAML` avec une extension `.yml`
+ou `.yaml`.
+Il peut avoir n'importe quel nom néanmoins il 
+vaut mieux lui donner un nom signifiant,
 par exemple `prod.yml` pour un fichier contrôlant une chaîne de production. 
 
 ### Lister les dépendances
@@ -275,19 +277,32 @@ environnement d'exécution car `Github` ne connaît pas la configuration `Python
 dont vous avez besoin.
 
 Il convient ainsi de lister les dépendances nécessaires dans un fichier
-`requirements.txt`, comme expliqué dans la partie
-[Bonnes pratiques](#bonnespratiques), ou un fichier `environment.yml`.
-Ce fichier fait la liste des dépendances à installer.
+`requirements.txt` (si on utilise un environnement virtuel)
+ou un fichier `environment.yml` (si on préfère
+utiliser un environnement conda).
+Bien que le principe sous-jacent soit légèrement différent,
+ces fichiers ont la même fonction: 
+permettre la création d'un environnement _ex-nihilo_
+avec un certain nombre de dépendances pré-installées[^4].
+
+[^4]: Sur la différence entre les environnements virtuels
+et les environnements conda, voir
+[cette partie](https://ensae-reproductibilite.netlify.app/portability/#les-environnements-virtuels-) de cours 
+plus avancé que nous donnons
+avec Romain Avouac sur la mise en production
+de projets _data-science_.
+
 Si on fait le choix de l'option `environment.yml`,
 le fichier prendra ainsi la forme
-suivante:
+suivante, à enrichir en fonction de la
+richesse de l'environnement souhaité. :
 
 ```yaml
 channels:
   - conda-forge
 
 dependencies:
-  - python
+  - python>=3.10
   - jupyter
   - jupytext
   - matplotlib
@@ -298,12 +313,113 @@ dependencies:
   - seaborn
 ```
 
-Le choix du *channel* `conda-forge` vise à contrôler le dépôt utilisé par
-`Anaconda`.
+Le même fichier sous le format `requirements.txt` aura
+la forme suivante:
+
+```python
+jupyter
+jupytext
+matplotlib
+nbconvert
+numpy
+pandas
+scipy
+seaborn
+```
+
+Sous leur apparente équivalence, au-delà de
+la question du formatage, ces fichiers ont
+deux différences principales :
+
+- la version minimale de `Python` est définie dans
+le fichier `environment.yml` alors qu'elle ne l'est
+pas dans un fichier `requirements.txt`. C'est
+parce que le second installe les dépendances dans
+un environnement déjà existant par ailleurs alors
+que le premier peut servir à créer l'environnement
+avec une certaine configuration de `Python` ;
+- le mode d'installation des _packages_ n'est pas le
+même. Avec un `environment.yml` on installera des
+packages via conda alors qu'avec un `requirements.txt`
+on privilégiera plutôt `pip`[^5].
+
+[^5]: Il est possible d'installer une partie des _packages_
+avec `pip` en définissant un champ `pip` dans le
+fichier `environment.yml`. Néanmoins, les concepteurs
+d'Anaconda recommandent d'être prudent avec cette méthode 
+qui présente certes l'avantage d'accélérer le temps de 
+création de l'environnement mais peut créer des 
+difficultés avec des librairies nécessitant d'autres
+langages système comme le `C`. 
+
+Dans le cas de l'environnement `conda`,
+le choix du *channel* `conda-forge` vise à contrôler le dépôt utilisé par
+`Anaconda`. 
+
+{{% box status="hint" title="Conseil" icon="fa fa-lightbulb" %}}
+La `conda forge` est un dépôt de _package_ alternatif
+au canal par défaut d'Anaconda qui est maintenu par
+l'équipe de développeurs officiels d'Anaconda. 
+Comme cette dernière cherche en priorité à 
+assurer la stabilité de l'écosystème `Anaconda`, 
+les versions de _package_ évoluent moins vite
+que le rythme voulu par les développeurs de
+_packages_. Pour cette raison, un dépôt
+alternatif, où les montées de version sont
+plus simples parce qu'elles dépendent des
+développeurs de chaque package, a émergé. 
+Il s'agit de la `conda forge`. Lorsqu'on
+désire utiliser des fonctionalités récentes
+de l'écosystème de la _data-science_,
+il est conseillé de l'utiliser. 
+{{% /box %}}
+
 
 Ne pas oublier de mettre ce fichier sous contrôle de version et de l'envoyer
 sur le dépôt par un `push`.
 
+### Créer un environnement reproductible dans Github Actions
+
+Deux approches sont possibles à ce niveau, selon le degré
+de reproductibilité désiré[^6]:
+
+- Créer l'environnement via une action existante. L'action
+[`conda-incubator/setup-miniconda@v2`](https://github.com/conda-incubator/setup-miniconda)
+est un bon point de départ.
+- Créer l'environnement dans une image `Docker`. 
+
+La deuxième solution permet de contrôler de manière
+beaucoup plus fine l'environnement dans lequel
+`Python` s'éxécutera ainsi que la manière dont
+l'environnement sera créé[^7]. Néanmoins, elle nécessite
+des connaissances plus poussées dans la principe
+de la conteneurisation qui peuvent être coûteuses
+à acquérir. Selon l'ambition du projet, notamment
+les réutilisation qu'il désire, 
+un _data-scientist_ pourra privilégier
+telle ou telle option. Les deux solutions sont présentées
+dans l'exemple fil-rouge du cours que nous
+donnons avec Romain Avouac
+(https://ensae-reproductibilite.netlify.app/application/).
+
+[^6]: Le point de vue que nous défendons avec
+Romain Avouac dans notre cours sur la reproductibilité
+est qu'il s'agit d'un _continuum_ dans lequel on investit
+plus ou moins en fonction de ses contraintes, de ses
+besoins, de ses compétences, du temps humain qu'on
+peut dédier à développer des output reproductibles
+et le temps gagné en développant une telle approche.
+Selon où on se trouve sur ce cursus, en fonction 
+des solutions déjà existantes qu'on peut trouver
+sur internet, on va plus ou moins raffiner
+notre intégration et nos déploiements
+continus. 
+
+[^7]: Par exemple, si l'environnement est de
+taille conséquente, cette approche permettra
+de privilégier [`mamba`](https://mamba.readthedocs.io/en/latest/),
+qui est beaucoup plus
+rapide que `conda` pour la création de l'environnement
 
 ### Tester un notebook `myfile.ipynb`
 
