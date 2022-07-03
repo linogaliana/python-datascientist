@@ -25,6 +25,8 @@ langages plus efficaces ou plusieurs types de données.
 - Elastic
 - Spark
 - Pipelines
+- Intégration continue
+- MLops
 
 ## Contenu de la partie
 
