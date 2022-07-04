@@ -4,11 +4,20 @@ date: 2020-10-14T13:00:00Z
 draft: false
 weight: 49
 slug: "modern-ds"
-icon: wand-sparkles
+icon: truck-fast
 icon_pack: fas
-#linktitle: "Partie 4: Natural Language Processing (NLP)"
 summary: |
-  Introduction aux outils et méthodes plus avancés
+  Après avoir abordé les différents champs de la 
+  data-science, nous pouvons maintenant
+  introduire à quelques outils et méthodes plus avancés
+  qui correspondent à des aspects plus à la pointe
+  du travail du data-scientist. Cette partie 
+  évoquera ainsi les infrastructures modernes de 
+  traitement de la donnée, les grands paradigmes
+  concernant les méthodes de travail ou les
+  outils à l'état de l'art pour gagner en 
+  efficacité ou améliorer la valorisation
+  d'un projet.
 type: book
 ---
 
@@ -21,12 +30,15 @@ moderne de type _cloud_. Elle illustre la manière dont `Python` peut
 servir de couteau-suisse faisant l'interface entre différents
 langages plus efficaces ou plusieurs types de données. 
 
-- S3
-- Elastic
-- Spark
-- Pipelines
-- Intégration continue
-- MLops
+Cette partie est __en cours de construction__ et présentera les 
+éléments suivants:
+
+- [X] S3
+- [X] Intégration continue
+- [ ] Elastic
+- [ ] Spark
+- [ ] Pipelines
+- [ ] MLops
 
 ## Contenu de la partie
 
