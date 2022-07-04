@@ -207,9 +207,7 @@ production qui propose les outils les plus efficaces pour répondre à un
 objectif en limitant les verrous techniques. 
 
 Par exemple, le *pipeline* de ce cours, disponible
-sur `Github`
-{{< githubrepo >}}
-propose une intrication des langages
+sur `Github` {{< githubrepo >}} propose une intrication des langages
 `Python` et `R` avec des technologies `Anaconda` (pour contrôler
 l'environnement `Python` comme expliqué dans les chapitres précédents)
 et `Javascript` (pour le déploiement d'un site web avec le service tiers
@@ -423,12 +421,119 @@ rapide que `conda` pour la création de l'environnement
 ### Tester un notebook `myfile.ipynb`
 
 Dans cette partie, on va supposer que le *notebook* à tester s'appelle `myfile.ipynb`
-et se trouve à la racine du dépôt.
+et se trouve à la racine du dépôt. Les
+dépendances pour l'exécuter sont
+listées dans un fichier `requirements.txt`.
 
 Le modèle suivant, expliqué en dessous, fournit un modèle de recette pour
-tester un notebook:
+tester un notebook :
 
-TO BE COMPLETED
+{{< tabs tabTotal="2" >}}
+{{% tab tabName="Environnement virtuel" %}}
+
+```yaml
+name: Test notebook execution using Github Actions
+
+on: [push]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+      - shell: bash
+        run: |
+          python --version
+    - name: Install dependencies
+      run:
+        pip install -r requirements.txt
+        pip install jupyter nbconvert
+    - name: Test jupyter from command line
+      run:
+        jupyter nbconvert --execute --to notebook --inplace myfile.ipynb
+    - uses: actions/upload-artifact@v3
+      with:
+        name: Notebook
+        path: myfile.ipynb
+        retention-days: 5
+```
+
+{{% /tab %}}
+{{% tab tabName="Environnement conda" %}}
+
+```yaml
+name: Test notebook execution using Github Actions
+
+on: [push]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Add conda to system path
+      run: |
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        echo $CONDA/bin >> $GITHUB_PATH
+    - name: Install dependencies
+      run: |
+        conda env update --file environment.yml --name base
+        conda install jupyter nbconvert
+    - name: Test jupyter from command line
+      run:
+        jupyter nbconvert --execute --to notebook --inplace myfile.ipynb
+    - uses: actions/upload-artifact@v3
+      with:
+        name: Notebook
+        path: myfile.ipynb
+        retention-days: 5
+```
+{{% /tab %}}
+{{< /tabs >}}
+
+Dans les deux cas, la démarche est la même:
+
+- on récupère les fichiers présents dans le dépôt
+(action `checkout`) ;
+- on installe `Python` ;
+- on installe les dépendances pour exécuter le code.
+Dans l'approche `conda`, il est également nécessaire
+de faire quelques configurations supplémentaires (notamment
+ajouter `conda` aux logiciels reconnus par la ligne
+de commande) ;
+- on teste le notebook en ligne de commande et remplace
+celui existant, sur la machine temporaire, par la version
+produite sur cet environnement neutre.
+- on rend possible le téléchargement du
+notebook produit automatiquement pendant 5 jours[^7]. Ceci
+repose sur les _artefacts_ qui sont un élément récupéré
+des machines temporaires qui n'existent plus dès que le
+code a fini d'être exécuté.  
+
+[^7]: Il est recommandé de ne pas garder la période de rétention
+des artefacts par défaut car celle-ci est assez longue (90 jours).
+Les _output_ pouvant être assez volumineux et expirant rapidement
+(en général ce qui nous intéresse est la dernière ou l'avant
+dernière version de l'_output), pour des raisons écologiques,
+il est recommandé de fixer des périodes courtes. Cela peut être
+fait directement dans le fichier configurant l'intégration
+continue comme ici ou dans les paramètres par défaut
+du dépôt pour que cette règle s'applique à toutes les 
+productions faites par intégration continue. 
+
+Ces actions sont exécutées à chaque interaction avec
+le dépôt distant (`push`), quelle que soit la 
+branche. 
 
 ## Annexe: la même approche avec `Travis`
 
