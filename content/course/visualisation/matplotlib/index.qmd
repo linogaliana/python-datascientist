@@ -460,11 +460,46 @@ Alors qu'avec le thème sombre (question 2), on obtient :
 
 {{< chart data="plotly2" >}}
 
-# Réaliser une animation avec `Python`
+# Exercices supplémentaires
 
-Téléchargement fichier décès
+Pour ces exercices, il est recommandé de s'inspirer
+des modèles présents dans la librairie
+de graphiques `Python` présentée
+dans https://www.python-graph-gallery.com/
+
+## Les lollipop chart
+
+Cet exercice permet de s'entraîner
+sur le fichier des naissances et des
+décès de l'Insee. Il s'inspire d'une
+excellente visualisation faite
+par [Jean Dupin](https://www.jdupin.com/)
+sur `Twitter`:
+
+{{< tweet 1539567143972487169 >}}
+
+Celle-ci est beaucoup plus raffinée que
+celle que l'animation que nous allons mettre en
+oeuvre. 
+
+Notre animation sera la suivante:
+
+![Animation](/animation.gif)
+
+### Récupération des données
+
+La récupération des données étant un peu complexe,
+le code est donné pour vous permettre de vous
+concentrer sur l'essentiel (si vous
+voulez vous exercer avec le package `requests`, 
+essayez de le faire vous-même).
+
+Les données des décès sont disponibles de manière 
+historique dans des zip pour chaque année.
 
 ```{python}
+#| results: hide
+
 import shutil
 import requests
 import zipfile
@@ -502,8 +537,12 @@ dfs = [import_by_decade(d) for d in [1970, 1980, 1990, 2000, 2010]]
 deces = pd.concat(dfs)
 ```
 
+Le fichier des naissances est plus simple à récupérer. 
+Voici le code pour l'obtenir:
 
 ```{python}
+#| results: hide
+
 year = 2021
 url_naissance = f"https://www.insee.fr/fr/statistiques/fichier/2540004/nat{year}_csv.zip"
 
@@ -519,40 +558,134 @@ naissance = pd.read_csv(f"naissance_{year}/nat{year}.csv", sep = ";")
 naissance = naissance.dropna(subset = ['preusuel'] )
 ```
 
+On peut enfin restructurer les `DataFrames` pour obtenir un
+seul jeu de données
 
 ```{python}
-n_death = deces.loc[deces["prenom"] == "JEAN"].groupby('annee').agg({"nomprenom": "size"}).reset_index()
-n_death.rename({"nomprenom": "nombre"}, axis = "columns", inplace = True)
-naissance = naissance.loc[naissance["preusuel"] == "JEAN"].loc[naissance["annais"] != "XXXX"]
-naissance.rename({"annais": "annee"}, axis = "columns", inplace = True)
-n_death["annee"] = n_death["annee"].astype(int)
-naissance["annee"] = naissance["annee"].astype(int)
+jean_naiss = naissance.loc[naissance['preusuel'] == "JEAN"].loc[:, ['annais', 'nombre']]
+jean_naiss = jean_naiss.rename({"annais": "annee"}, axis = "columns")
+jean_naiss = jean_naiss.groupby('annee').sum().reset_index()
+jean_deces = deces.loc[deces["prenom"] == "JEAN"]
+jean_deces = jean_deces.groupby('annee').size().reset_index()
+jean_deces.columns = ['annee', "nombre"]
+jean_naiss.columns = ['annee', "nombre"]
+df = pd.concat(
+    [
+        jean_deces.assign(source = "deces"),
+        jean_naiss.assign(source = "naissance")
+    ])
+df = df.loc[df_plot['annee'] != "XXXX"]
+df['annee']=df['annee'].astype(int)
+df = df.loc[df['annee'] > 1971]
+
+df.sample(3)
 ```
+
+
+## Représentation graphique
+
+Vous pouvez vous aider du modèle présent
+dans https://www.python-graph-gallery.com
+
+{{% box status="exercise" title="Exercice"
+icon="fas fa-pencil-alt" %}}
+
+Pour commencer, on va se concentrer sur la 
+production d'un seul graphique
+(décès ou naissance, vous choisissez)
+
+1. Créer un objet `df_plot` qui se restreint à une
+source
+2. Fixer une année sous le nom `max_year` (par exemple
+votre année de naissance). Elle servira ensuite de paramètre
+à une fonction
+3. Restreindre `df_plot` aux années antérieures à `max_year`
+4. Créer une variable `my_range` fixant la séquence des années
+entre la plus petite année du dataset et `max_year` (inclus)
+5. Créer un array numpy qui vaut `orange` lorsque l'observation
+en question est `max_year` et `skyblue` sinon
+6. Utiliser les fonctions adéquates de `matplotlib` pour créer
+le _lollipop chart_
+{{% /box %}}
+
+A ce stade, vous devriez avoir une version fonctionnelle
+qui peut servir de
+base à la généralisation. 
 
 ```{python}
-table_complete = pd.concat([
-  n_death.assign(source = "death"),
-  naissance.assign(source = "birth")
-])
-table_complete = table_complete.loc[table_complete["annee"]>1970]
+#| echo: false
+def plot_jean_year(df, max_year, savefig = True):
+    
+    fig, axes = plt.subplots(1, 2, sharey = True)
+
+    for x, source in enumerate(df.source.value_counts().index.values):        
+        df_plot = df.loc[df['source'] == source]
+        # Reorder it based on values:
+        ordered_df = df_plot.copy()#.sort_values(by='nombre')
+
+        ordered_df = ordered_df.loc[ordered_df['annee']<=max_year]
+        my_range=range(ordered_df.annee.min(), max_year + 1)
+        my_color=np.where(ordered_df['annee']==max_year, 'orange', 'skyblue')
+
+        # The horizontal plot is made using the hline() function
+        axes[x].hlines(y=my_range, xmin=0, xmax=ordered_df['nombre'], color = my_color, alpha=0.4)
+        axes[x].scatter(ordered_df['nombre'], my_range, color = my_color, alpha=1) 
+        axes[x].set_title(f'{source.upper()}',
+                    fontsize = 14)
+        axes[x].set_ylim([1972, 2016])
+        axes[x].set_xlim([0, 5000])
+        if savefig:
+          fig.savefig(f'figure_{max_year}.png', bbox_inches='tight')
 ```
+
+
+{{% box status="exercise" title="Exercice"
+icon="fas fa-pencil-alt" %}}
+
+
+1. A partir du code précédent, généraliser en utilisant
+une boucle `for` à partir du résultat de
+`enumerate(df.source.value_counts().index.values)` pour
+créer un graphique pour une année donnée de `maxyear`.
+Avant cette boucle, ne pas oublier de créer un objet
+`matplotlib` vide à remplir dans la boucle
+
+```python
+fig, axes = plt.subplots(1, 2, sharey = True)
+```
+
+2. Encapsuler ce code dans une fonction qui
+prend en argument un `DataFrame` et une
+année `max_year`
+
+Voici un exemple d'output pour `max_year = 2010`:
 
 ```{python}
-import seaborn as sns
-import matplotlib
-import matplotlib.animation as animation
-import matplotlib.pyplot as plt
-
-fig= plt.figure()
-
-def animate(i):
-    table_complete = df.iloc[:int(i+1)] 
-    graph = sns.pointplot(x="nombre", y="annee", hue="source", data=data, markers=["o", "x"], linestyles=["-", "--"])
-    return graph
-
-ani = matplotlib.animation.FuncAnimation(fig, animate, frames=len(table_complete.index),interval=700,repeat=True)
-plt.show()
+#| echo: false
+plot_jean_year(df, 2010, savefig = False)
 ```
+
+3. Pour créer une animation, on propose
+d'utiliser la solution présentée
+dans https://www.python-graph-gallery.com/animation/.
+et qui nécessite le logiciel `imagemagick`.
+Sauvegarder chaque itération dans un fichier
+dont le nom a la structure `figure_{year}.png`. 
+
+```{python}
+#| echo: false
+[plot_jean_year(df, t) for t in range(1972,2016)]
+```
+
+```{shell}
+#| echo: false
+convert -delay 15 figure_*.png animation.gif
+```
+
+{{% /box %}}
+
+
+
 
 # Exercices supplémentaires
 
