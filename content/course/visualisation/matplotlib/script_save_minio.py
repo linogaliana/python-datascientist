@@ -84,4 +84,3 @@ bucket = "lgaliana"
 table = pa.Table.from_pandas(df, preserve_index=False)
 pq.write_table(table, f'{bucket}/diffusion/prenoms.parquet', filesystem=s3)
 
-
