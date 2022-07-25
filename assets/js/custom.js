@@ -34,6 +34,7 @@ function addCopyButtons(clipboard) {
     });
 }
 
+/*
 if (navigator && navigator.clipboard) {
     addCopyButtons(navigator.clipboard);
 } else {
@@ -47,3 +48,4 @@ if (navigator && navigator.clipboard) {
 
     document.body.appendChild(script);
 }
+*/
