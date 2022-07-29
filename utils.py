@@ -135,4 +135,4 @@ def print_badges(
         split=split,
         onyxia_only=onyxia_only)
 
-    print(f"<p>{badges}</p>")
+    print(badges)
