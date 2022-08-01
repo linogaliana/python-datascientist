@@ -125,14 +125,13 @@ def reminder_badges(
 def print_badges(
     fpath,
     onyxia_only=False,
-    split=4):
-
-    #fpath = fpath.rsplit("content/", maxsplit = 1)[1]
-
-    badges = reminder_badges(
-        fpath,
-        type="md",
-        split=split,
-        onyxia_only=onyxia_only)
-
-    print(badges)
+    split=4,
+    type="md"):
+      
+      badges = reminder_badges(
+          fpath,
+          type=type,
+          split=split,
+          onyxia_only=onyxia_only)
+          
+      print(badges)
