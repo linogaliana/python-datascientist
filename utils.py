@@ -126,7 +126,7 @@ def print_badges(
     fpath,
     onyxia_only=False,
     split=4,
-    type="md"):
+    type="html"):
       
       badges = reminder_badges(
           fpath,
