@@ -10,13 +10,17 @@ content:
     # Folders to display content from
     folders:
       - course
+    #kinds:
+    #  - section
   filter_button:
     - name: All
       tag: '*'
     - name: Tutoriel
-      tag: 'Tutoriel'
+      category: 'Tutoriel'
     - name: Exercice
-      tag: 'Exercice'
+      category: 'Exercice'
+  sort_by: 'Title'
+  sort_ascending: false
 design:
   columns: '2'
   view: 3
