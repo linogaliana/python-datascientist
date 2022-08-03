@@ -28,6 +28,7 @@ def write_file(filename, content):
 
 def clean_write_file(fl):
     content = read_file(fl)
+    content = re.sub(r"(“|”)",'"',content)
     print(f"File: {fl}")
     add_text = '\n\n<script src="https://d3js.org/d3.v7.min.js"></script>\n<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>'
     yaml, text = content.split('---\n', 2)[1:]
