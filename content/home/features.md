@@ -1,7 +1,7 @@
 ---
 widget: featurette
 headless: true
-weight: 20
+weight: 30
 title: 
 subtitle: Un contenu riche, entièrement ouvert ✨
 feature:
