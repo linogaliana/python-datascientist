@@ -15,10 +15,12 @@ content:
   filter_button:
     - name: All
       tag: '*'
+    - name: Manipulation
+      tag: 'Manipulation'
     - name: Tutoriel
-      category: 'Tutoriel'
+      tag: 'Tutoriel'
     - name: Exercice
-      category: 'Exercice'
+      tag: 'Exercice'
   sort_by: 'Title'
   sort_ascending: false
 design:
