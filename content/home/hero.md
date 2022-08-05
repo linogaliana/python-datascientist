@@ -43,6 +43,5 @@ des codes sources est stocké sur [Github](https://github.com/linogaliana/python
 <br>
 <!----
 Pour citer:
-
 {{< cite page="/pythonDS" view="4" >}}
 ------>
