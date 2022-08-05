@@ -4,7 +4,7 @@ headless: true
 active: true
 weight: 20
 title: Thèmes en vrac
-subtitle: 'Pour découvrir Python de manière thématique'
+subtitle: 'Pour découvrir `Python` <a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-python"></i></a> de manière thématique'
 content:
   filters:
     # Folders to display content from
