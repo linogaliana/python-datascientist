@@ -3,8 +3,8 @@ widget: portfolio
 headless: true
 active: true
 weight: 20
-title: Thèmes principaux
-subtitle: ''
+title: Thèmes en vrac
+subtitle: 'Pour découvrir Python de manière thématique'
 content:
   filters:
     # Folders to display content from
@@ -15,10 +15,18 @@ content:
   filter_button:
     - name: All
       tag: '*'
+    - name: Manipulation
+      tag: 'Manipulation'
+    - name: Visualisation
+      tag: 'Visualisation'
+    - name: Modélisation
+      tag: 'Modelisation'
+    - name: NLP
+      tag: 'NLP'
     - name: Tutoriel
-      category: 'Tutoriel'
+      tag: 'Tutoriel'
     - name: Exercice
-      category: 'Exercice'
+      tag: 'Exercice'
   sort_by: 'Title'
   sort_ascending: false
 design:
