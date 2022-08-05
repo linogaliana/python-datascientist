@@ -3,8 +3,8 @@ widget: portfolio
 headless: true
 active: true
 weight: 20
-title: Thèmes principaux
-subtitle: ''
+title: Thèmes en vrac
+subtitle: 'Pour découvrir Python de manière thématique'
 content:
   filters:
     # Folders to display content from
