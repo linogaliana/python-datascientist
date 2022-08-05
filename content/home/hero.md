@@ -2,7 +2,7 @@
 widget: hero
 headless: true
 weight: 10
-title: Python pour les data-scientists et économistes
+title: Python pour la _data-science_ <a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-python"></i></a>
 hero_media: word.png
 design:
   background:
@@ -32,17 +32,17 @@ cta_alt:
 
 Ce site web rend public le contenu du cours de 
 deuxième année (Master 1) de l'ENSAE:
-[*Python pour les data-scientists et économistes*](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/)
-:snake:. 
+[*Python pour la data-science*](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/)
+<a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-python"></i></a>
 
-Le cours est structuré sous la forme du présent site web et de notebooks
-jupyter proposant des exercices plus approfondis. L'ensemble
+Tout est présent sur ce site _web_ ! Des `Notebooks Jupyter` peuvent être récupérés 
+pour s'exercer. L'ensemble
 des codes sources est stocké sur [Github](https://github.com/linogaliana/python-datascientist)
 <a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-github"></i></a>
 
+<br>
 <!----
 Pour citer:
 
 {{< cite page="/pythonDS" view="4" >}}
------>
-
+------>
