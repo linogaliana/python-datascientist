@@ -17,6 +17,10 @@ content:
       tag: '*'
     - name: Manipulation
       tag: 'Manipulation'
+    - name: Visualisation
+      tag: 'Visualisation'
+    - name: Modélisation
+      tag: 'Modelisation'
     - name: Tutoriel
       tag: 'Tutoriel'
     - name: Exercice
