@@ -21,6 +21,8 @@ content:
       tag: 'Visualisation'
     - name: Modélisation
       tag: 'Modelisation'
+    - name: NLP
+      tag: 'NLP'
     - name: Tutoriel
       tag: 'Tutoriel'
     - name: Exercice
