@@ -5,8 +5,8 @@ icon_pack: fab
 linktitle: "Introduction: mener un projet statistique avec Python"
 summary: |
   Cette introduction propose quelques éléments de
-  révision des concepts de base en Python et
-  présente l'écosystème Python que nous allons
+  révision des concepts de base en `Python` et
+  présente l'écosystème `Python` que nous allons
   découvrir tout au long de ce cours.
 title: Introduction
 slug: introduction
