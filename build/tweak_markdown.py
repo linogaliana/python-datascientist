@@ -46,10 +46,10 @@ def clean_write_file(fl):
     write_file(fl, content)
 
 
-
-list_files = glob.glob("./content/course/**/index.md", recursive=True)
-print(list_files)
-[clean_write_file(fl) for fl in list_files if not fl.endswith("_index.md")]
+if __name__ == '__main__':
+    list_files = glob.glob("./content/course/**/index.md", recursive=True)
+    print(list_files)
+    [clean_write_file(fl) for fl in list_files if not fl.endswith("_index.md")]
 
 
 
