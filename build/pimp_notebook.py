@@ -17,7 +17,7 @@ def change_box_markdown(fl):
     tweak_md = [corresp_boxes[re.search('status=\"(.*?)\"',l).group(1)] if l.startswith("{{% box") else l for l in list_rows]
     tweak_md = ["</div>" if l.startswith("{{% /box") else l for l in tweak_md]
     tweak_md = "\n".join(tweak_md)
-    write_file("test.qmd", tweak_md)
+    write_file(fl, tweak_md)
 
 
 list_files = glob.glob("./content/course/**/index.qmd", recursive=True)
