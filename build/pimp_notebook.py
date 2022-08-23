@@ -10,6 +10,7 @@ def change_box_markdown(fl):
     list_rows = content.split("\n")
     corresp_boxes = {
         "note": "<div class=\"alert alert-info\" role=\"alert\">\n",
+        "warning": "<div class=\"alert alert-danger\" role=\"alert\">\n",
         "danger": "<div class=\"alert alert-danger\" role=\"alert\">\n",
         "exercise": "<div class=\"alert alert-success\" role=\"alert\">\n",
         "hint": "<div class=\"alert alert-warning\" role=\"alert\">\n"}
