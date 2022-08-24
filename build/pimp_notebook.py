@@ -6,9 +6,9 @@ from tweak_markdown import read_file, write_file
 def transform_note_reference(re_find, content_note=False):
     num_note=re.findall(r'\d+', re_find.group())[0]
     if content_note is False:
-        note_html = f"<a name=\"cite_ref-{num_note}\"></a>[<sup>[{num_note}]</sup>](#cite_note-{num_note})"
+        note_html = f"<a name=\"cite_ref-{num_note}\"></a>[<sup>[{num_note}]</sup>](#cite_note-{num_note})" + "```"
     else: 
-        note_html = f"<a name=\"cite_note-{num_note}\"></a>{num_note}. [^](#cite_ref-{num_note})"
+        note_html = "```{=html}" +  f"<a name=\"cite_note-{num_note}\"></a>{num_note}. [^](#cite_ref-{num_note})"+ "```"
     return note_html
 
 
