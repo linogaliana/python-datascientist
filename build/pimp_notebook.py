@@ -32,16 +32,17 @@ def change_box_markdown(fl):
     list_match = list(p.finditer(tweak_md))
     for i in range(0, len(list_match)):
         m = list_match[i]
-        tweak_md = re.sub(m.group(0), transform_note_reference(m, content_note=True), tweak_md)
+        tweak_md = tweak_md.replace(m.group(0), transform_note_reference(m, content_note=True))
     # 2. REFERENCE TO THE FOOTNOTE
     p = re.compile("\[\^[0-9]+\]")
     list_match = list(p.finditer(tweak_md))
     for i in range(0, len(list_match)):
         m = list_match[i]
-        tweak_md = re.sub(m.group(0), transform_note_reference(m, content_note=False), tweak_md)
+        tweak_md = tweak_md.replace(m.group(0), transform_note_reference(m, content_note=False))
 
-write_file(fl, tweak_md)
+    write_file(fl, tweak_md)
 
-list_files = glob.glob("./content/course/**/index.qmd", recursive=True)
-print(list_files)
-[change_box_markdown(fl) for fl in list_files if not fl.endswith("_index.md")]
+if __name__ == '__main__':
+    list_files = glob.glob("./content/course/**/index.qmd", recursive=True)
+    print(list_files)
+    [change_box_markdown(fl) for fl in list_files if not fl.endswith("_index.md")]
