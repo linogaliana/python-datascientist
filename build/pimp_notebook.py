@@ -16,6 +16,10 @@ def change_box_markdown(fl):
     content = read_file(fl)
     content = re.sub(r"(“|”)",'"',content)
     print(f"File: {fl}")
+    # SPOILER !
+    list_rows = content.split("\n")
+    list_rows = [l.replace("{{< spoiler text=\"","::: {.cell .markdown}\n```{=html}\n<details>\n<summary>").replace('\" >}}',"</summary>") if l.startswith("{{< spoiler") else l for l in list_rows]
+    list_rows = [l.replace("{{< /spoiler >}}", "</details>") if l.startswith("{{< /spoiler") else l for l in list_rows]
     # BOXES
     list_rows = content.split("\n")
     corresp_boxes = {
