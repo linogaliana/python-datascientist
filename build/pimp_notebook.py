@@ -33,13 +33,13 @@ def change_box_markdown(fl):
     for i in range(0, len(list_match)):
         m = list_match[i]
         tweak_md = tweak_md.replace(m.group(0), "")
-        tweak_md += "\n" + transform_note_reference(m, content_note=False)
+        tweak_md += "\n" + transform_note_reference(m, content_note=True)
     # 2. REFERENCE TO THE FOOTNOTE
     p = re.compile("\[\^[0-9]+\]")
     list_match = list(p.finditer(tweak_md))
     for i in range(0, len(list_match)):
         m = list_match[i]
-        tweak_md = tweak_md.replace(m.group(0), transform_note_reference(m, content_note=True))
+        tweak_md = tweak_md.replace(m.group(0), transform_note_reference(m, content_note=False))
 
     write_file(fl, tweak_md)
 
