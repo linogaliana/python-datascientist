@@ -22,7 +22,7 @@ def change_box_markdown(fl):
         "hint": "::: {.cell .markdown}\n```{=html}\n<div class=\"alert alert-warning\" role=\"alert\">\n```"}
     tweak_md = [corresp_boxes[re.search('status=\"(.*?)\"',l).group(1)] if l.startswith("{{% box") else l for l in list_rows]
     #tweak_md = [":::" if l.startswith("{{% /box") else l for l in tweak_md]
-    tweak_md = ["```{=html}\n</div>\n```" if l.startswith("{{% /box") else l for l in tweak_md]
+    tweak_md = ["```{=html}\n</div>\n```\n:::" if l.startswith("{{% /box") else l for l in tweak_md]
     tweak_md = "\n".join(tweak_md)
     write_file(fl, tweak_md)
 
