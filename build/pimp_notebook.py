@@ -8,7 +8,7 @@ def transform_note_reference(re_find, content_note=False):
     if content_note is False:
         note_html = f"<a name=\"cite_ref-{num_note}\"></a>[<sup>[{num_note}]</sup>](#cite_note-{num_note})"
     else: 
-        note_html = "```{=html}\n" +  f"<a name=\"cite_note-{num_note}\"></a>{num_note}. [^](#cite_ref-{num_note})"+ "\n```\n"
+        note_html = "```{=html}\n" +  f"<a name=\"cite_note-{num_note}\"></a>{num_note}. [^](#cite_ref-{num_note})"+ "\n```"
     return note_html
 
 
