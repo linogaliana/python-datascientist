@@ -6,9 +6,9 @@ from tweak_markdown import read_file, write_file
 def transform_note_reference(re_find, content_note=False):
     num_note=re.findall(r'\d+', re_find.group())[0]
     if content_note is False:
-        note_html = f"<a name=\"cite_ref-{num_note}\"></a>[<sup>[{num_note}]</sup>](#cite_note-{num_note})" + "```"
+        note_html = f"<a name=\"cite_ref-{num_note}\"></a>[<sup>[{num_note}]</sup>](#cite_note-{num_note})"
     else: 
-        note_html = "```{=html}\n" +  f"<a name=\"cite_note-{num_note}\"></a>{num_note}. [^](#cite_ref-{num_note})"+ "\n```\n"
+        note_html = "```{=html}\n" +  f"<a name=\"cite_note-{num_note}\"></a>{num_note}. [^](#cite_ref-{num_note})"+ "\n```"
     return note_html
 
 
@@ -38,7 +38,8 @@ def change_box_markdown(fl):
     list_match = list(p.finditer(tweak_md))
     for i in range(0, len(list_match)):
         m = list_match[i]
-        tweak_md = tweak_md.replace(m.group(0), transform_note_reference(m, content_note=False))
+        tweak_md = tweak_md.replace(m.group(0), "")
+        tweak_md += "\n" + transform_note_reference(m, content_note=False)
 
     write_file(fl, tweak_md)
 
