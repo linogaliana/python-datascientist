@@ -15,14 +15,14 @@ def change_box_markdown(fl):
 #        "exercise": "::: {.alert .alert-success}\n",
 #        "hint": "::: {.alert .alert-warning}\n"}
     corresp_boxes = {
-        "note": "<div class=\"alert alert-info\" role=\"alert\">",
-        "warning": "<div class=\"alert alert-danger\" role=\"alert\">",
-        "danger": "<div class=\"alert alert-danger\" role=\"alert\">",
-        "exercise": "<div class=\"alert alert-success\" role=\"alert\">",
-        "hint": "<div class=\"alert alert-warning\" role=\"alert\">"}
+        "note": "```{=html}\n<div class=\"alert alert-info\" role=\"alert\">",
+        "warning": "```{=html}\n<div class=\"alert alert-danger\" role=\"alert\">",
+        "danger": "```{=html}\n<div class=\"alert alert-danger\" role=\"alert\">",
+        "exercise": "```{=html}\n<div class=\"alert alert-success\" role=\"alert\">",
+        "hint": "```{=html}\n<div class=\"alert alert-warning\" role=\"alert\">"}
     tweak_md = [corresp_boxes[re.search('status=\"(.*?)\"',l).group(1)] if l.startswith("{{% box") else l for l in list_rows]
     #tweak_md = [":::" if l.startswith("{{% /box") else l for l in tweak_md]
-    tweak_md = ["</div>" if l.startswith("{{% /box") else l for l in tweak_md]
+    tweak_md = ["</div>\n```" if l.startswith("{{% /box") else l for l in tweak_md]
     tweak_md = "\n".join(tweak_md)
     write_file(fl, tweak_md)
 
