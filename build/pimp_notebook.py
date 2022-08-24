@@ -19,7 +19,7 @@ def change_box_markdown(fl):
     # SPOILER !
     list_rows = content.split("\n")
     list_rows = [l.replace("{{< spoiler text=\"","::: {.cell .markdown}\n```{=html}\n<details>\n<summary>").replace('\" >}}',"</summary>\n```\n") if l.startswith("{{< spoiler") else l for l in list_rows]
-    list_rows = [l.replace("{{< /spoiler >}}", "\n```{=html}</details>\n:::") if l.startswith("{{< /spoiler") else l for l in list_rows]
+    list_rows = [l.replace("{{< /spoiler >}}", "\n```{=html}\n</details>\n```\n:::") if l.startswith("{{< /spoiler") else l for l in list_rows]
     # BOXES
     corresp_boxes = {
         "note": "::: {.cell .markdown}\n```{=html}\n<div class=\"alert alert-info\" role=\"alert\">\n```",
