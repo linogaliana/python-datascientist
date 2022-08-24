@@ -30,10 +30,13 @@ def change_box_markdown(fl):
     # FOOTNOTES
     p = re.compile("\[\^[0-9]+\]:")
     list_match = list(p.finditer(tweak_md))
+    tweak_md = tweak_md + "\n::: {.cell .markdown}"
     for i in range(0, len(list_match)):
         m = list_match[i]
         tweak_md = tweak_md.replace(m.group(0), "")
-        tweak_md += "\n" + transform_note_reference(m, content_note=True)
+        tweak_md = tweak_md + "\n" + transform_note_reference(m, content_note=True)
+    tweak_md = tweak_md + "\n:::"
+
     # 2. REFERENCE TO THE FOOTNOTE
     p = re.compile("\[\^[0-9]+\]")
     list_match = list(p.finditer(tweak_md))
