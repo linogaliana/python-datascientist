@@ -28,13 +28,17 @@ def change_box_markdown(fl):
     tweak_md = ["```{=html}\n</div>\n```\n:::" if l.startswith("{{% /box") else l for l in tweak_md]
     tweak_md = "\n".join(tweak_md)
     # FOOTNOTES
+    p = re.compile("\[\^[0-9]+\]:")
+    list_match = list(p.finditer(tweak_md))
+    for i in range(0, len(list_match)):
+        m = list_match[i]
+        tweak_md = re.sub(m.group(0), transform_note_reference(m, content_note=True), tweak_md)
+    # 2. REFERENCE TO THE FOOTNOTE
     p = re.compile("\[\^[0-9]+\]")
     list_match = list(p.finditer(tweak_md))
-
-for m in list_match[::2]:
-    tweak_md = tweak_md[:m.start()] + transform_note_reference(m) + tweak_md[m.end():]
-for m in list_match[1::2]:
-    tweak_md = tweak_md[:m.start()] + transform_note_reference(m, content_note=True) + tweak_md[m.end():]
+    for i in range(0, len(list_match)):
+        m = list_match[i]
+        tweak_md = re.sub(m.group(0), transform_note_reference(m, content_note=False), tweak_md)
 
 write_file(fl, tweak_md)
 
