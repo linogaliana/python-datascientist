@@ -1,7 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 
-SECTION=$1
-CHAPTER=$2
+echo $1
+
+ABSPATH=$1
+RELPATH="${ABSPATH/notebooks\/course\//""}"
+echo $RELPATH
+IFS=/ read -r SECTION CHAPTER <<< $RELPATH
+
+echo $SECTION
+echo $CHAPTER
 
 WORK_DIR=/home/jovyan/work
 CLONE_DIR=${WORK_DIR}/repo-git
@@ -9,10 +16,12 @@ COURSE_DIR=${CLONE_DIR}/notebooks/course
 FORMATION_DIR=${WORK_DIR}/formation
 
 # Clone course repository
+rm -rf $CLONE_DIR
 REPO_URL=https://github.com/linogaliana/python-datascientist.git
 git clone --depth 1 $REPO_URL $CLONE_DIR
 
 # Put relevant notebook in formation dir
+rm -rf $FORMATION_DIR
 mkdir $FORMATION_DIR
 cp ${COURSE_DIR}/${SECTION}/${CHAPTER} ${FORMATION_DIR}/
 
