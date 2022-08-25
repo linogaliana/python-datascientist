@@ -61,7 +61,7 @@ def reminder_badges(
     onyxia_link_launcher = "https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter"\
         "?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB"\
         "&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB"\
-        f"&init.personalInitArgs=%C2%AB{section}%20{chapter}%C2%BB&security.allowlist.enabled=false"
+        f"&init.personalInitArgs=%C2%AB{section}/{chapter}%C2%BB&security.allowlist.enabled=false"
 
     if type == "md":
         onyxia_link = "[![Onyxia]"\
