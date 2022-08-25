@@ -1,7 +1,7 @@
 #!/bin/sh
 
-SECTION=$1
-CHAPTER=$2
+RELPATH="${$1/notebooks\/course\//""}"
+IFS=/ read -r SECTION CHAPTER <<< $RELPATH
 
 WORK_DIR=/home/jovyan/work
 CLONE_DIR=${WORK_DIR}/repo-git

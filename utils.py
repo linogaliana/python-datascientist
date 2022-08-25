@@ -1,5 +1,7 @@
 import re
 
+https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/jupyter?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB&init.personalInitArgs=%C2%ABnotebooks/course/manipulation%2002a_pandas_tutorial.ipynb%C2%BB&security.allowlist.enabled=false
+init.personalInitArgs=%C2%ABnotebooks/course/manipulation%2002a_pandas_tutorial.ipynb%C2%BB&security.allowlist.enabled=false
 
 def reminder_badges(
     source_file = "content/01_toto.Rmd",
