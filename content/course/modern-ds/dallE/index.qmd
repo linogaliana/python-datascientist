@@ -178,7 +178,139 @@ requise:
 !pip install --upgrade diffusers transformers scipy
 ~~~
 
-Enfin, on va suppose que le token est stocké dans une variable
-d'environnement `HF_PAT`. Cela évite d'écrire le token, qui 
-est un élément à garder secret, dans un notebook qu'on va
-potentiellement partager. 
+
+{{% box status="note" title="Remarque" icon="fa fa-lightbulb" %}}
+
+On va supposer que le _token_ est stocké dans une variable
+d'environnement `HF_PAT`. Cela évite d'écrire le _token_
+dans un notebook qu'on va
+potentiellement partager, alors que le token
+est un élément à garder secret. Pour l'importer
+dans la session `Python`:
+
+~~~
+import os
+HF_TOKEN = os.getenv('PATH')
+~~~
+
+Si vous n'avez pas la possibilité de rentrer le token dans les variables
+d'environnement, créez une cellule qui crée la variable
+`HF_TOKEN` et supprimez là de suite pour ne pas l'oublier avant
+de partager votre token. 
+
+{{% /box %}}
+
+
+# Générer une image
+
+On va créer l'image suivante: 
+
+> __"Chuck Norris fighting against Zeus on Mount Olympus in an epic Mortal Kombat scene"__
+
+Pas mal comme scénario, non ?! 
+
+{{% box status="note" title="Note" icon="fa fa-lightbulb" %}}
+
+Pour que les résultats soient reproductibles, et que vous
+obteniez la même image que moi,
+nous allons fixer
+la racine du générateur aléatoire. 
+
+Cela se fait de la manière suivante:
+
+```{python}
+#| eval: false
+generator = torch.Generator("cuda").manual_seed(123)
+```
+
+Si vous voulez vous amuser à explorer différents résultats
+pour un même texte, vous pouvez ne pas fixer de racine aléatoire.
+Dans ce cas, retirer l'argument `generator` des codes présentés
+ultérieurement. 
+
+{{% /box %}}
+
+Le code à utiliser est le suivant:
+
+```{python}
+#| eval: false
+import torch
+from torch import autocast
+from diffusers import StableDiffusionPipeline
+
+model_id = "CompVis/stable-diffusion-v1-4"
+device = "cuda"
+
+generator = torch.Generator("cuda").manual_seed(1024)
+
+pipe = StableDiffusionPipeline.from_pretrained(model_id, use_auth_token=TOKEN_HF, generator=generator)
+pipe = pipe.to(device)
+prompt = "Chuck Norris fighting against Zeus on Mount Olympus in an epic Mortal Kombat scene"
+
+with autocast("cuda"):
+    image = pipe(prompt, guidance_scale=7.5, generator = generator)["sample"][0]  
+
+   
+image.save("featured.png")
+```
+
+Qui peut être visualisé avec le code suivant, dans un `notebook`:
+
+```{python}
+#| eval: false
+from IPython.display import Image 
+pil_img = Image(filename="featured.png")
+display(pil_img)
+```
+
+![]("featured.png")
+
+C'est une représentation assez fidèle du
+pitch _"Chuck Norris fighting against Zeus on Mount Olympus in an epic Mortal Kombat scene"_
+
+En voici une autre que j'aime bien (mais malheureusement je ne peux la reproduire car je n'ai pas
+gardé en mémoire la racine l'ayant généré :sob:)
+
+![]("chuck.png")
+
+# Bonus
+
+Pour le plaisir, voici `PuppyMan`, le dernier né du Marvel Universe:
+![]("puppyman.png")
+
+
+```{python}
+#| eval: false
+import torch
+from torch import autocast
+from diffusers import StableDiffusionPipeline
+
+model_id = "CompVis/stable-diffusion-v1-4"
+device = "cuda"
+
+generator = torch.Generator("cuda").manual_seed(1024)
+
+pipe = StableDiffusionPipeline.from_pretrained(model_id, use_auth_token=TOKEN_HF, generator=generator)
+pipe = pipe.to(device)
+prompt = "In a new Marvel film we discover puppyman a very cute super hero"
+
+with autocast("cuda"):
+    image = pipe(prompt, guidance_scale=7.5, generator = generator)["sample"][0]  
+
+   
+image.save("puppyman.png")
+```
+
+
+```{python}
+#| eval: false
+pipe = StableDiffusionPipeline.from_pretrained(model_id, use_auth_token=TOKEN_HF, generator=generator)
+pipe = pipe.to(device)
+prompt = "In a new Marvel film we discover puppyman a very cute super hero"
+
+with autocast("cuda"):
+    image = pipe(prompt, guidance_scale=7.5, generator = generator)["sample"][0]  
+
+   
+image.save("puppyman.png")
+```
