@@ -1,0 +1,330 @@
+---
+title: "Génération d'images avec Python et DALL-E"
+date: 2022-08-26T13:00:00Z
+draft: false
+weight: 60
+slug: dalle
+tags:
+  - Deep Learning
+  - DallE
+  - Tutoriel
+  - Image
+  - Thèmes avancés
+categories:
+  - Tutoriel
+  - Avancé
+type: book
+summary: |
+  La _hype_ autour du
+  modèle de génération d'image `Dall-E` a amené 
+  une grande attention sur les modèles
+  autogénératifs de contenu. `Dall-E` est, à l'heure
+  actuelle, le modèle le plus célèbre de génération
+  d'image à partir de texte. Il est maintenant
+  possible de créer, depuis `Python` grâce à 
+  l'implémentation de [`StableDiffusion`](https://huggingface.co/CompVis/stable-diffusion-v1-4),
+  soit-même
+  ses propres images rigolotes.
+bibliography: ../../../../reference.bib
+---
+
+Pour tester les exemples présentés dans ce chapitre:
+
+::: {.cell .markdown}
+```{python}
+#| echo: false
+#| output: 'asis'
+#| include: true
+#| eval: true
+
+import sys
+sys.path.insert(1, '../../../../') #insert the utils module
+from utils import print_badges
+
+#print_badges(__file__)
+print_badges("content/course/modern-ds/dallE.qmd")
+```
+:::
+
+{{% box status="note" title="Remarque" icon="fa fa-lightbulb" %}}
+L'utilisation de ce tutoriel est assez exigeante en termes d'infrastructure
+car il est nécessaire de disposer de GPU.
+
+Bien qu'il en existe sur
+le _cloud_ du SSPCloud, je n'ai pas encore eu le temps de creuser la configuration
+à mettre en oeuvre pour répliquer ce chapitre.
+
+Pour le moment, il faudra
+se contenter de `Google Colab` pour tester ces exemples. La configuration
+à mettre en oeuvre pour tester ces exemples est présentée dans une autre
+boîte. 
+{{% /box %}}
+
+{{% box status="note" title="Utiliser des GPU sur `Colab`" icon="fa fa-lightbulb" %}}
+Par défaut, Colab n'utilise pas de GPU mais de la CPU. Il est donc nécessaire
+d'éditer les paramètres d'exécution du Notebook
+- Dans le menu `Exécution`, cliquer sur `Modifier le type d'exécution`
+- Sélectionner `GPU` sous `Accélérateur matériel`
+{{% /box %}}
+
+# Contexte
+
+La publication par l'organisation [Open AI](https://openai.com/) de
+son modèle de génération de contenu créatif [Dall-E-2](https://openai.com/dall-e-2/)
+(un jeu de mot mélangeant Dali et Wall-E) a créé un bruit inédit dans
+le monde de la _data-science_.
+Un compte twitter ([@Weird Dall-E Mini Generations](https://twitter.com/weirddalle))
+propose de nombreuses générations de contenu drôles ou incongrues. 
+Le bloggeur tech Casey Newton a pu parler d'une 
+[révolution créative dans le monde de l'IA](https://www.platformer.news/p/how-dall-e-could-power-a-creative).
+
+Voici par exemple l'une des productions possibles de DALL-E-2
+
+![](https://upload.wikimedia.org/wikipedia/commons/2/2b/A_Shiba_Inu_dog_wearing_a_beret_and_black_turtleneck_DALLE2.jpg)
+
+_"A Shiba Inu dog wearing a beret and black turtleneck"_
+
+Et voici un premier exemple de production humoristique faite à partir de Mini Dall-E, la version
+publique: 
+
+
+
+{{< tweet user="weirddalle" id="1556027692163760130" >}}
+
+Ainsi qu'un deuxième:
+
+{{< tweet user="weirddalle" id="1556573904600268801" >}}
+
+
+Dall-E-2 s'appuie sur des réseaux de neurone à différents niveaux :
+
+- le contenu de la phrase est analysé par un réseau de neurone similaire (mais bien sûr plus évolué) que 
+ceux que nous avons présenté dans la partie [NLP](#nlp)
+- les éléments importants de la phrase (recontextualisés) sont ensuite transformés en image à partir de
+modèles entraînés à reconnaître des images
+
+![](https://raw.githubusercontent.com/patrickvonplaten/scientific_images/master/stable_diffusion.png)
+
+Illustration du fonctionnement de ce type de générateur d'image (ici à partir de `Stable Diffusion`)
+
+Jusqu'à présent, l'inconvénient principal de `Dall-E`
+pour générer facilement du contenu
+était que le nombre de contenu pouvant être créé
+avec un accès gratuit était limité (50 crédits gratuits par mois).
+Depuis le 22 Août 2022, un générateur de contenu 
+similaire est disponible gratuitement,
+avec une licence plus permissive[^1]. Ce générateur, développé
+par une équipe de chercheurs [@Rombach_2022_CVPR], 
+s'appelle `Stable Diffusion` ([dépôt `Github` pour le code source](https://github.com/CompVis/stable-diffusion) et
+[dépôt `HuggingFace` pour le modèle mis à disposition](https://huggingface.co/CompVis/stable-diffusion-v1-4)[^2]).
+Un [excellent article de blog](https://huggingface.co/blog/stable_diffusion) décrit la démarche de `Stable Diffusion`.
+
+
+[^1]: Il est notamment possible de réutiliser l'image générée à des fins commerciales. En revanche, il est interdit de chercher à nuire à une personne. Pour cette raison, il est fréquent que les visages de personnes célèbres soient floutés pour éviter la création de contenu nuisant à leur réputation.
+
+[^2]: `Huggingface` est une plateforme de partage de modèles de type réseau de neurone. Les utilisateurs de réseaux de neurone peuvent
+ainsi mettre à disposition le résultat de leurs travaux sous forme d'API pour faciliter la réutilisation de leurs
+modèles ou réutiliser facilement des modèles, ce qui évite de les ré-entraîner (ce qui aurait un coût écologique non 
+négligeable comme expliqué dans le chapitre introductif).
+
+Les images générées par `Stable Diffusion` sont également impressionnantes:
+
+![](https://huggingface.co/blog/assets/98_stable_diffusion/stable_diffusion_12_1.png)
+
+
+# Comment réutiliser le modèle mis à disposition ?
+
+## Installation de `PyTorch`
+
+Pour installer `PyTorch`, la librairie de _Deep Learning_
+développée par `Meta`, il suffit de suivre les recommandations
+sur le [site web officiel](https://pytorch.org/).
+Dans un `Notebook`, cela prendra la forme suivante[^3]
+
+~~~python
+!conda install mamba
+!mamba install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
+~~~
+
+[^3]: Je propose ici d'utiliser `mamba` pour accélérer l'installation.
+Des éléments sur `mamba` sont disponibles dans l'introduction de ce cours.
+
+
+## Accès à `HuggingFace`
+
+La question - non négligeable - de l'accès à
+de la GPU mise à part,
+la réutilisation des modèles de `Stable Diffusion` est
+très facile car la documentation mise à disposition sur 
+`HuggingFace` est très bien faite.
+
+La première étape est de se créer un compte sur `HuggingFace`
+et se créer un _token_[^4]. Ce _token_ sera donné à l'API
+de `HuggingFace` pour s'authentifier. 
+
+[^4]: Comme les autres plateformes du monde de la _data-science_,
+`HuggingFace` a adopté l'utilisation standardisée des
+jetons (_token_) comme méthode d'authentification. Le jeton est
+comme un mot de passe sauf qu'il n'est pas inventé par l'utilisateur
+(ce qui permet qu'il ne soit pas partagé avec d'autres sites web potentiellement
+moins sécurisés), est révocable (date d'expiration ou choix de l'utilisateur)
+et dispose de droits moins importants qu'un
+mot de passe qui vous permet, potentiellement,
+de changer tous les paramètres de votre compte. Je recommande vivement l'utilisation
+d'un gestionnaire de mot de passe pour
+stocker vos _token_ (si vous utilisez `Git`, `Docker`, etc.
+vous en avez potentiellement beaucoup) plutôt que
+stocker ces jetons dans des fichiers non sécurisés. 
+
+L'API d'HuggingFace nécessite l'installation du
+package [`diffusers`](https://huggingface.co/docs/transformers/installation).
+Dans un `Notebook`, le code suivant permet d'installer la librairie
+requise:
+
+~~~python
+!pip install --upgrade diffusers transformers scipy
+~~~
+
+
+{{% box status="note" title="Remarque" icon="fa fa-lightbulb" %}}
+
+On va supposer que le _token_ est stocké dans une variable
+d'environnement `HF_PAT`. Cela évite d'écrire le _token_
+dans un notebook qu'on va
+potentiellement partager, alors que le token
+est un élément à garder secret. Pour l'importer
+dans la session `Python`:
+
+~~~
+import os
+HF_TOKEN = os.getenv('PATH')
+~~~
+
+Si vous n'avez pas la possibilité de rentrer le token dans les variables
+d'environnement, créez une cellule qui crée la variable
+`HF_TOKEN` et supprimez là de suite pour ne pas l'oublier avant
+de partager votre token. 
+
+{{% /box %}}
+
+
+# Générer une image
+
+On va créer l'image suivante: 
+
+> __"Chuck Norris fighting against Zeus on Mount Olympus in an epic Mortal Kombat scene"__
+
+Pas mal comme scénario, non ?! 
+
+{{% box status="note" title="Note" icon="fa fa-lightbulb" %}}
+
+Pour que les résultats soient reproductibles, et que vous
+obteniez la même image que moi,
+nous allons fixer
+la racine du générateur aléatoire. 
+
+Cela se fait de la manière suivante:
+
+```{python}
+#| eval: false
+generator = torch.Generator("cuda").manual_seed(123)
+```
+
+Si vous voulez vous amuser à explorer différents résultats
+pour un même texte, vous pouvez ne pas fixer de racine aléatoire.
+Dans ce cas, retirer l'argument `generator` des codes présentés
+ultérieurement. 
+
+{{% /box %}}
+
+Le code à utiliser est le suivant:
+
+```{python}
+#| eval: false
+import torch
+from torch import autocast
+from diffusers import StableDiffusionPipeline
+
+model_id = "CompVis/stable-diffusion-v1-4"
+device = "cuda"
+
+generator = torch.Generator("cuda").manual_seed(1024)
+
+pipe = StableDiffusionPipeline.from_pretrained(model_id, use_auth_token=TOKEN_HF, generator=generator)
+pipe = pipe.to(device)
+prompt = "Chuck Norris fighting against Zeus on Mount Olympus in an epic Mortal Kombat scene"
+
+with autocast("cuda"):
+    image = pipe(prompt, guidance_scale=7.5, generator = generator)["sample"][0]  
+
+   
+image.save("featured.png")
+```
+
+Qui peut être visualisé avec le code suivant, dans un `notebook`:
+
+```{python}
+#| eval: false
+from IPython.display import Image 
+pil_img = Image(filename="featured.png")
+display(pil_img)
+```
+
+![](featured.png)
+
+C'est une représentation assez fidèle du
+pitch _"Chuck Norris fighting against Zeus on Mount Olympus in an epic Mortal Kombat scene"_ :boom:.
+Y a un petit côté [_Les Dix Commandements_](https://fr.wikipedia.org/wiki/Les_Dix_Commandements_(film,_1956)#/media/Fichier:Charlton_Heston_in_The_Ten_Commandments_film_trailer.jpg) que j'aime bien. 
+
+
+En voici une autre que j'aime bien (mais malheureusement je ne peux la reproduire car je n'ai pas
+gardé en mémoire la racine l'ayant généré :sob:)
+
+![](chuck.png)
+
+Il est également possible de générer plusieurs images du même texte (voir
+la [note de blog](https://huggingface.co/blog/stable_diffusion) de l'équipe
+à l'origine de `Stable Diffusion`). Cependant, c'est assez exigeant en
+mémoire et cela risque d'être impossible sur `Colab` (y compris
+en réduisant le poids des vecteurs numériques comme proposé dans le _post_)
+
+
+# Bonus
+
+Pour le plaisir, voici `PuppyMan`, le dernier né du Marvel Universe:
+
+![](puppyman.png)
+
+
+```{python}
+#| eval: false
+import torch
+from torch import autocast
+from diffusers import StableDiffusionPipeline
+
+model_id = "CompVis/stable-diffusion-v1-4"
+device = "cuda"
+
+generator = torch.Generator("cuda").manual_seed(1024)
+
+pipe = StableDiffusionPipeline.from_pretrained(model_id, use_auth_token=TOKEN_HF, generator=generator)
+pipe = pipe.to(device)
+prompt = "In a new Marvel film we discover puppyman a new super hero that is half man half bulldog"
+
+with autocast("cuda"):
+    image = pipe(prompt, guidance_scale=7.5, generator = generator)["sample"][0]  
+
+   
+image.save("puppyman.png")
+```
+
+La moitié humain semble être son costume de super-héros, pas la bipédie.
+Mais le rendu 
+est quand même épatant !
+
+A vous de jouer :hugging_face:
+
+# Références
+
+::: {#refs}
+:::
