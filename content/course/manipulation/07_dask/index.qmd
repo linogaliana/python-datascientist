@@ -1,0 +1,291 @@
+---
+jupyter: python3
+---
+
+# Introduction à `dask` grâce aux données DVF. 
+
+La documentation complète sur `dask` se trouve sur <https://docs.dask.org/>. 
+
+Le projet requiert l'installation de dask 
+```
+pip install dask[complete]
+```
+## Pourquoi utiliser  `dask` ?
+On peut se référer à la page https://docs.dask.org/en/stable/why.html
+
+Plusieurs points sont mis en avant et son résumés ci-dessous: 
+- `dask` ressemble fortement en termes de syntaxe à `pandas`, `numpy`
+- `dask` peut être utilisé sur un ordinateur seul ou sur un cloud cluster. Peut traiter des bases de 100giga sur un ordinateur portable, voire 1TB sur un ordi fixe (sans même avoir besoin d'un cluster, et avec les machines appropriées)
+- `dask` utilisé sur une machine seule (et non sur un cloud cluster) requiert peu de temps d'installation (fait partie de la suite `Anaconda`)
+
+## Comment `dask` se compare à `Spark` ?
+- `Spark` est écrit en Scala, avec possibilité d'écrire notamment en `python` (via `Pyspark`). Il permet d'interagir avec du JVM
+ alors que `dask` est écrit en Python, et fonctionne bien avec Python. Il permet d'interagir avec du code C/C++ entre autres
+- l'installation de `Spark` est plus lourde que celle de `dask`
+- `Spark` est un projet Apache en lui-même alors que `dask` intervient comme une composante de l'univers `Python`
+- `Spark` est un peu plus vieux (2010 versus 2014 pour `dask`)
+- `Spark` permet de très bien faire des opérations classiques SQL et des ETLs, alors que `dask` permet de bien interagir avec `scikit-learn` et de faire de la modélisation. Pour faire du ML avec `Spark` il faut aller piocher dans `Spark MLLib`
+**Globalement, il faut retenir que `dask` comme `spark` ne sont intéressants que pour des données dont le traitement engendre des problèmes de RAM**.
+
+## Démonstration de quelques features de `dask`
+
+Nous allons utiliser les données DVF pour montrer quelques éléments clefs de `dask`.
+
+```{python}
+# Import dvf files 
+import pandas as pd
+import dask.dataframe as dd
+
+def import_dvf():
+    d_urls = {"2019" : 'https://www.data.gouv.fr/fr/datasets/r/3004168d-bec4-44d9-a781-ef16f41856a2',
+                 "2020" : "https://www.data.gouv.fr/fr/datasets/r/90a98de0-f562-4328-aa16-fe0dd1dca60f",
+                 "2021": "https://www.data.gouv.fr/fr/datasets/r/817204ac-2202-4b4a-98e7-4184d154d98c"}
+    dfs = {}
+    for k in d_urls.keys():
+        dfs[k] = pd.read_csv(d_urls[k], sep = "|", decimal=",")
+        dfs[k]["year"] = k
+    df = pd.concat(dfs).reset_index()
+    df = df.drop(["level_0", "level_1"], axis=1)
+    return df
+```
+
+```{python}
+# First we import data using pandas (then we will use dask to compare)
+dvf = import_dvf()
+```
+
+```{python}
+dvf.shape # 10 483 168 lignes, ici dvf est un pandas DataFrame qui tient en mémoire sur le sspcloud
+```
+
+```{python}
+dvf.head()
+```
+
+On peut créer une structure `dask` directement à partir d'un DataFrame  `pandas`. Ici on travaille sur un `DataFrame` d'environ 10M de lignes et 44 variables. Attention, `dask` ne peut créer un `dask DataFrame` à partir d'un `pandas DataFrame` multiindexé, dans ce cas il a fallu faire un `reset_index()` pour avoir un unique index. On aurait pu lire directement les csv dans un `dask DataFrame` avec le `read_csv` de `dask`. 
+
+```{python}
+dvf_dd = dd.from_pandas(dvf, npartitions=10) 
+```
+
+```{python}
+dvf_dd # n'affiche que la structure du dask DataFrame et en aucun cas le contenu du DataFrame comme le fait pandas, car les données du dask dataframe ne sont pas chargées en mémoire
+```
+
+On a ainsi la structure de notre `dask` `DataFrame`, soit ~10M de lignes, avec 44 colonnes en 10 partitions (donc environ 1M d'observations par partition). On peut accéder aux index que couvrent les partitions de la manière suivante:
+
+```{python}
+dvf_dd.divisions
+```
+
+Et on peut directement accéder à une partition grâce aux crochets []. 
+
+```{python}
+dvf_dd.partitions[0]
+```
+
+`dask` fait de la *"lazy evaluation"*, le résultat n'est calculé que si on le demande explicitement. Dans le cas, contraire, ce que l'on appelle un `dask` **task graph** est produit (on verra plus bas comment voir ce *graph*). 
+Pour demander explicitement le résultat d'un calcul, il faut utiliser `compute`. Par exemple, pour afficher le contenu des 100 premières lignes :
+
+```{python}
+dvf_dd.loc[0:100,:].compute()
+```
+
+Ce qui est pratique avec `dask.dataframe` c'est que de nombreuses méthodes sont semblables à celles de `pandas`. Par exemple, si l'on souhaite connaitre les types de locaux présents dans la base en 2019:
+
+```{python}
+dvf_dd.loc[:,"Type local"].value_counts().compute()
+```
+
+A titre de comparaison, comparons les temps de calculs entre `pandas` et `dask` ici:
+
+```{python}
+import timeit
+start_time = timeit.default_timer()
+dvf_dd.loc[:,"Type local"].value_counts().compute()
+print(timeit.default_timer() - start_time)
+```
+
+```{python}
+start_time = timeit.default_timer()
+dvf.loc[:,"Type local"].value_counts()
+print(timeit.default_timer() - start_time)
+```
+
+On se rend compte que le `pandas DataFrame` a un temps de calcul plus court, mais c'est parce que `dask` va nous servir avant tout à lire des bases dont le traitement excède notre RAM. Donc, cette comparaison n'existera tout simplement pas car le `pandas DataFrame` n'aura pas été chargé en RAM. **On voit dans cet exemple que lorsque le traitement du `DataFrame` tient en RAM, l'utilisation de `dask` est inutile**.
+
+Les méthodes dans `dask` peuvent etre chainées, comme dans `pandas`, par exemple, on pourra écrire: 
+
+```{python}
+mean_by_year = dvf_dd.loc[~dvf_dd["Surface terrain"].isna(),["Surface terrain", "year"]].groupby("year").mean()
+```
+
+```{python}
+mean_by_year.compute()
+```
+
+Afin de visualiser le *graph* de computation de `dask`, on peut utiliser `dask` de la manière suivante. On voit ainsi toutes les étapes que jusqu'ici `dask` n'a pas *executé* et qu'il va devoir exécuter pour calculer le résultat (`compute()`), en l'occurence l'étape `from_pandas()`, le `getitem`, `isna`, `inv` et `loc-series` qui résultent de nos filtres sur le `DataFrame`, et ensuite on voit les étapes de `groupby` et  que pour calculer la moyenne il convient de faire la somme et la division. Toutes ces étapes vont être effectuées quand on appelle `compute()` et pas avant (*lazy evaluation*).
+
+```{python}
+mean_by_year.dask # permet de visualiser le task graph pour obtenir le résultat
+```
+
+Afin de voir la structure du `dask DataFrame` on peut utilise la méthode `visualize()`:
+
+```{python}
+dvf_dd.visualize() # attention graphviz est requis
+```
+
+Il faut savoir que `dask` produit des `Array`, `Bag` et `DataFrames`, qui fonctionnent comme dans `numpy` et `pandas` (il est possible de créer d'autres structures ad hoc, cf plus loin). Intéressons nous tout d'abord au `dask` `DataFrame` qui est ce que l'on manipule depuis le début de ce notebook. On peut penser à un `dask DataFrame` comme à un ensemble de nombreux `pandas DataFrame` pouvant tenir en RAM séparé grâce à l'index. Une opération sur un `dask DataFrame` entraine autant d'opérations sur les multiples `pandas DataFrame`. Ces opérations se font potentiellement en parallèle en tenant compte de la mémoire disponible.  Le site de `dask` cite une règle qui est la suivante : *"Have 5 to 10 times as much RAM as the size of your dataset"*,Wes McKinney (2017) in *10 things I hate about pandas*. (size = size on the disk) <https://wesmckinney.com/blog/apache-arrow-pandas-internals/>
+
+Regardons la taille de notre base actuelle (on l'exporte en S3). 
+
+```{python}
+import s3fs
+
+def export2minio(filename, df_final):
+    endpoint = "https://" + os.environ["AWS_S3_ENDPOINT"]
+    fs = s3fs.S3FileSystem(client_kwargs={'endpoint_url': endpoint})
+    bucket = "radjerad/diffusion/dvf"
+    path_out = bucket + "/" + filename
+
+    with fs.open(path_out, 'w') as file_out:
+        df_final.to_csv(file_out, index=False, encoding="utf-8", sep=";")
+    return None
+```
+
+```{python}
+export2minio("dvf_2019_2021.csv", dvf) 
+```
+
+Le fichier fait 1,4 giga. Si l'on suit la règle du pouce donnée plus haut, on va avoir besoin d'une RAM d'au moins environ 7-14 gigas (en fonction de nos traitements). Donc c'est seulement si l'on est contraint en dessous de ce niveau de RAM qu'il va être intéressant de faire appel à `dask`.  
+
+A noter que certaines méthodes vont déclencher un `compute` directement, comme par exemple `len` ou `head`. 
+
+```{python}
+len(dvf_dd)
+```
+
+```{python}
+dvf_dd.head()
+```
+
+#### Problèmes de lecture dus à des types problématiques
+
+La méthode `read_csv` de `dask` va inférer les types du `DataFrame` à partir d'échantillon, et va les implémenter sur tout le `DataFrame` seulement au moment d'une étape `compute`. 
+Il peut donc y avoir des erreurs de types dûs à un échantillon ne prenant pas en compte certains cas particuliers, causant des erreurs dans la lecture du fichier. Dans ce cas (et comme de manière générale avec `pandas`), il peut être recommandé de faire appel au paramètre `dtype` de `read_csv` - qui est un `dict` - (la doc de `dask` nous dit aussi que l'on peut augmenter la taille de l'échantllon  `sample`).
+
+#### Utiliser `dask` avec le format parquet
+
+`dask` permet de lire le format parquet, et plus précisément d'utiliser des fonctionnalités spécifiques à ce format. La lecture et l'écriture en parquet reposent par défaut sur `pyarrow`. On peut aussi utiliser `fastparquet` et préciser dans la lecture/écriture ce que l'on souhaite des deux. 
+
+```{python}
+dvf_net = dvf.loc[:,[ 'Date mutation', 'Nature mutation', 'Valeur fonciere', 'Commune', 
+       'Code commune', 'Type local', 'Identifiant local', 'Surface reelle bati',
+       'Nombre pieces principales', 'Nature culture',
+       'Nature culture speciale', 'Surface terrain', 'year']]
+```
+
+```{python}
+dvf_net.to_parquet("../data/dvf/", partition_cols="year") # pour ceci il faut pyarrow, à noter que to_parquet fonctionne 
+# aussi sur les dask DataFrame, ici on partitionne selon l'année
+```
+
+```{python}
+dvf_dd = dd.read_parquet("../data/dvf/year=2019/", columns=["Date mutation", "Valeur fonciere"]) # On peut sélectionner directement les deux colonnes
+```
+
+```{python}
+dvf_dd.head()
+```
+
+#### A quoi sert `persist` ?
+
+Il est possible de garder une partie des données en mémoire avec `persist()`. Les données sont sauvegardées dans des objets appelés `Futures`. Cela peut être intéressant si un bloc particulier de données est utilisé dans plusieurs `compute` ou si l'on a besoin de voir ce qu'il y a à l'intérieur souvent. 
+
+```{python}
+dvf_dd_mem = dvf_dd.persist()
+```
+
+```{python}
+%%time
+dvf_dd_mem.head()
+```
+
+```{python}
+%%time
+dvf_dd.head()
+```
+
+On a bien un temps plus important avec le `dask DataFrame` initial, comparé avec celui sur lequel on a utilisé `persist`.
+
+Il existe un autre objet `dask`, les `Array` pour reprendre la logique de `numpy`. De la même manière qu'un `dask DataFrame` est en quelque sorte un ensemble de `pandas DataFrame`, un `dask Array` est un ensemble de `numpy Array` qui sont plus importants en taille que la RAM. On pourra utiliser les opérations courantes `numpy` avec `dask` de la même manière que le `dask DataFrame` réplique la logique du `pandas DataFrame`. 
+
+#### **Aller plus loin**: Utiliser le decorator `dask.delayed` pour paralléliser du code
+
+Il est possible de paralléliser des fonctions par exemple en utilisant le **decorator** `dask.delayed`. Cela permet de rendre les fonctions `lazy`, lorsque l'on appelle la fonction, un delayed object est construit, pour avoir le résultat il faut faire un `compute`. Pour aller plus loin: <https://tutorial.dask.org/03_dask.delayed.html>.
+
+```{python}
+import dask
+import time 
+# voici le resultat sans le decorator
+def aire_carre(longueur):
+    time.sleep(1)
+    return longueur**2
+
+def perimetre_carre(longueur):
+    time.sleep(1)
+    return 4*longueur
+
+def ajout_aire_perim(a, b):
+    return a + b
+start_time = timeit.default_timer()
+car1 = aire_carre(7)
+car2 = perimetre_carre(9)
+car3 = ajout_aire_perim(car1, car2)
+car3
+print(timeit.default_timer() - start_time)
+```
+
+```{python}
+@dask.delayed
+def aire_carre(longueur):
+    time.sleep(1)
+    return longueur**2
+
+@dask.delayed
+def perimetre_carre(longueur):
+    time.sleep(1)
+    return 4*longueur
+
+@dask.delayed
+def ajout_aire_perim(a, b):
+    return a + b
+```
+
+```{python}
+car1 = aire_carre(7)
+car2 = perimetre_carre(9)
+car3 = ajout_aire_perim(car1, car2)
+```
+
+Mais en fait rien n'a été calculé, si l'on souhaite le résultat, il faut appeler `compute`
+
+```{python}
+import timeit
+start_time = timeit.default_timer()
+car3.compute()
+print(timeit.default_timer() - start_time)
+```
+
+Ici l'intérêt est assez limité, mais on voit que l'on réduit quand même de 2 à 1 seconde le temps de calcul. Mais l'idée derrière est que l'on a transformé `car3` en un objet `Delayed`. Cela a généré un `task graph` permettant de paralléliser certaines opérations. Ici il est important de noter que les fonctions que l'on parallélise doivent mettre un certain temps, sinon il n'y aura pas de gain de performance (si on retire le `time.sleep` il n'y a pas de gain de performance car le fait de paralléliser rajoute en fait du temps vu que chaque fonction a un temps de calcul trop faible pour que la parallélisation soit intéressante).
+
+```{python}
+car3.visualize() # on peut visualiser le task graph et voir ce qui est fait en parallèle 
+```
+
+Il y a des exercices intéressants dans la doc de `dask` sur les objets `Delayed`, notamment sur la parallélisation de séquence de traitement de données. Ils donnent l'exemple d'un ensemble de csv ayant le même format dont on veut résumer un indicateur final. On peut appliquer le decorator à une fonction permettant de lire le csv, puis utiliser une boucle for pour lire le ficher et appliquer les traitements. Ensuite, il faudra appeler compute sur l'objet final que l'on souhaite.  
+
+Pour aller plus loin sur l'utilisation de `dask` sur un cluster voir <https://tutorial.dask.org/04_distributed.html>.
+
+
