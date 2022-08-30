@@ -246,7 +246,7 @@ sont connus, le `CSV` est intéressant. Cependant,
 si on désire accéder à un sous-ensemble
 de colonnes dans un fichier (ce qui est un cas d'usage plus fréquent
 pour les _data-scientists_), alors le `CSV` n'est pas le format le plus
-approprié
+approprié ;
 - mettre à jour la donnée est coûteux car cela implique de réécrire
 l'ensemble du fichier. Par exemple, si après une première
 analyse de la donnée,
@@ -270,7 +270,7 @@ La plupart des logiciels d'analyse de données proposent
 un format de fichier pour sauvegarder des bases de données. On
 peut citer le `.pickle` (`Python`), le `.rda` ou `.RData` (`R`),
 le `.dta` (`Stata`) ou le `.sas7bdat` (`SAS`). L'utilisation
-de ces formats est problématique car elle revient à se lier
+de ces formats est problématique car cela revient à se lier
 les mains pour l'analyse ultérieure des données, surtout
 lorsqu'il s'agit d'un format propriétaire (comme avec
 `SAS` ou `Stata`). Par exemple, `Python` ne
@@ -301,6 +301,7 @@ reviendrons dessus) :
 
 ```{python}
 #| echo: false
+#| eval: true
 from pyarrow import csv
 import io
 
@@ -403,33 +404,75 @@ de fichiers `parquet` avec `Python`[^3] Elle repose
 sur un type particulier de _dataframe_, le `pyarrow.Table`
 qui peut être utilisé en substitut ou en complément
 du `DataFrame` 
-de `pandas`. 
+de `pandas`. Il est recommandé de régulièrement
+consulter la documentation officielle de `pyarrow` 
+concernant [la lecture et écriture de fichiers](https://arrow.apache.org/docs/python/parquet.html) et celle relative
+aux [manipulations de données](https://arrow.apache.org/cookbook/py/data.html).
 
 [^3]: Elle permet aussi la lecture et l'écriture 
 de `.csv`.
 
 Pour illustrer les fonctionalités de `pyarrow`,
 repartons de notre CSV initial que nous allons
-enrichir d'une nouvelle variable numérique et que nous
+enrichir d'une nouvelle variable numérique
+et que nous
 allons 
-écrire au format `parquet`:
+convertir en objet `pyarrow` avant de l'écrire au format `parquet`:
 
 ```{python}
-from pyarrow import csv
+#| eval: true
+import pandas as pd
 import io
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 s = """
-nom ;profession
-Astérix ;
-Obélix ;Tailleur de menhir
-Assurancetourix ;Barde
+nom;cheveux;profession
+Astérix;blond;; 
+Obélix;roux;Tailleur de menhir
+Assurancetourix;blond;Barde
 """
 
 source = io.BytesIO(s.encode())
 
-df = csv.read_csv(source, parse_options = csv.ParseOptions(delimiter=";"))
-df
+df = pd.read_csv(source, sep = ";")
+df["taille"] = [155, 190, 175]
+table = pa.Table.from_pandas(df)
+
+table
+
+pq.write_table(table, 'example.parquet')
 ```
+
+
+{{% box status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+L'utilisation des noms `pa` pour `pyarrow` et `pq` pour
+`pyarrow.parquet` est une convention communautaire
+qu'il est recommandé de suivre.
+{{% /box %}}
+
+Pour importer et traiter ces données, on peut conserver
+les données sous le format `pyarrow.Table`
+ou transformer en `pandas.DataFrame`. La deuxième
+option est plus lente mais présente l'avantage
+de permettre ensuite d'appliquer toutes les
+manipulations offertes par l'écosystème
+`pandas` qui est généralement mieux connu que
+celui d'`Arrow`. 
+
+Supposons que ne s'intéresse qu'à la taille et à la couleur
+de cheveux de nos gaulois. Avec `pyarrow`, on pourra utiliser `pyarrow.compute` pour
+effectuer des opérations directement :
+
+```{python}
+table = pq.read_table('example.parquet', columns=['taille', 'cheveux'])
+
+import pyarrow.compute as pc
+table.group_by("cheveux").aggregate([("taille", "sum")])
+```
+
+
+
 
 # Le système de stockage `S3`
 
