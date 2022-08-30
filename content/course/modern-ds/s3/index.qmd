@@ -422,20 +422,20 @@ convertir en objet `pyarrow` avant de l'écrire au format `parquet`:
 ```{python}
 #| eval: true
 import pandas as pd
-import io
+from io import StringIO 
 import pyarrow as pa
 import pyarrow.parquet as pq
 
 s = """
 nom;cheveux;profession
-Astérix;blond;; 
+Astérix;blond;
 Obélix;roux;Tailleur de menhir
 Assurancetourix;blond;Barde
 """
 
-source = io.BytesIO(s.encode())
+source = StringIO(s)
 
-df = pd.read_csv(source, sep = ";")
+df = pd.read_csv(source, sep = ";", index_col=False)
 df["taille"] = [155, 190, 175]
 table = pa.Table.from_pandas(df)
 
@@ -462,16 +462,26 @@ celui d'`Arrow`.
 
 Supposons que ne s'intéresse qu'à la taille et à la couleur
 de cheveux de nos gaulois. Avec `pyarrow`, on pourra utiliser `pyarrow.compute` pour
-effectuer des opérations directement :
+effectuer des opérations directement sur une table
+`Arrow` :
 
 ```{python}
+#| eval: true
 table = pq.read_table('example.parquet', columns=['taille', 'cheveux'])
 
 import pyarrow.compute as pc
-table.group_by("cheveux").aggregate([("taille", "sum")])
+table.group_by("cheveux").aggregate([("taille", "mean")])
 ```
 
+La manière équivalente de procéder en passant
+par l'intermédiaire de `pandas` est
 
+```{python}
+#| eval: true
+table = pq.read_table('example.parquet', columns=['taille', 'cheveux'])
+
+table.to_pandas().groupby("cheveux")["taille"].mean()
+```
 
 
 # Le système de stockage `S3`
