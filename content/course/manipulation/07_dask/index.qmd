@@ -172,6 +172,9 @@ Sur disque, en sauvegardant en `CSV`, on
 obtient une base de 1.4GB. Si l'on suit la règle du pouce donnée plus haut, on va avoir besoin d'une RAM entre 7-14GB pour traiter la donnée, en fonction de nos traitements qui seront plus ou moins intensifs. Autrement dit, si on a moins de 8GB de RAM, il devient intéressant de faire appel à `dask`, sinon il vaut mieux privilégier `pandas` (sauf si on fait des
 traitements très intensifs en calculs).
 
+Il existe un autre objet `dask`, les `Array` pour reprendre la logique de `numpy`. De la même manière qu'un `dask.DataFrame` est en quelque sorte un ensemble de `pandas.DataFrame`, un `dask.Array` est un ensemble de `numpy.Array` qui sont plus importants en taille que la RAM. On pourra utiliser les opérations courantes `numpy` avec `dask` de la même manière que le `dask DataFrame` réplique la logique du `pandas DataFrame`. 
+
+
 
 {{% box status="hint" title="Conseil" icon="fa fa-lightbulb" %}}
 
@@ -232,16 +235,16 @@ dvf_dd.loc[:,"Type local"].value_counts().compute()
 A titre de comparaison, comparons les temps de calculs entre `pandas` et `dask` ici:
 
 ```{python}
-import timeit
-start_time = timeit.default_timer()
+import time
+start_time = time.time()
 dvf_dd.loc[:,"Type local"].value_counts().compute()
-print(timeit.default_timer() - start_time)
+print(f"{time.time() - start_time} seconds")
 ```
 
 ```{python}
-start_time = timeit.default_timer()
+start_time = time.time()
 dvf.loc[:,"Type local"].value_counts()
-print(timeit.default_timer() - start_time)
+print(f"{time.time() - start_time} seconds")
 ```
 
 On se rend compte que le `pandas.DataFrame` a un temps de calcul plus court, mais c'est parce que `dask` va nous servir avant tout à lire des bases dont le traitement excède notre RAM. Donc, cette comparaison n'existera tout simplement pas car le `pandas.DataFrame` n'aura pas été chargé en RAM. **On voit dans cet exemple que lorsque le traitement du `DataFrame` tient en RAM, l'utilisation de `Dask` est inutile**.
@@ -284,11 +287,11 @@ print(
 ```
 {{% /rawhtml %}}
 
-En l'occurence on voit l'enchainement des étapes
+En l'occurence on voit l'enchaînement des étapes
 `from_pandas()`, `getitem`, `isna`, `inv` et `loc-series` qui résultent de nos filtres sur le `DataFrame`. Ensuite,
 on voit les étapes de `groupby` et, enfin, pour calculer la moyenne il convient de faire la somme et la division. Toutes ces étapes vont être effectuées quand on appelle `compute()` et pas avant (*lazy evaluation*).
 
-Afin de voir la structure du `dask DataFrame` on peut utiliser la méthode `visualize()`
+Afin de voir la structure du `dask.DataFrame` on peut utiliser la méthode `visualize()`
 
 ```{python}
 dvf_dd.visualize() # attention graphviz est requis
@@ -333,8 +336,8 @@ l'écriture de `parquet` qui est `pyarrow` (faire `pip install pyarrow` si vous 
 dvf_net.to_parquet("dvf/", partition_cols="year")
 ```
 
-Un `DataFrame` partitionné prendra une structure du type
-de [celle-ci](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html#partition-discovery):
+Lorsqu'il est partitionné, le format `parquet` amène à une structure
+de fichiers similaire à [celle-ci](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html#partition-discovery):
 
 ```raw
 path
@@ -384,27 +387,32 @@ dvf_dd_mem = dvf_dd.persist()
 ```
 
 ```{python}
-%%time
+#| eval: false
+start_time = time.time()
 dvf_dd_mem.head()
+print(f"{time.time() - start_time} seconds")
 ```
 
 ```{python}
-%%time
+start_time = time.time()
 dvf_dd.head()
+print(f"{time.time() - start_time} seconds")
 ```
 
-On a bien un temps plus important avec le `dask DataFrame` initial, comparé avec celui sur lequel on a utilisé `persist`.
+On a bien un temps plus important avec le `dask DataFrame` initial, comparé avec celui sur lequel on a utilisé `persist`. L'opération qu'on réalise ici étant peu complexe, la différence n'est pas substantielle. Elle serait beaucoup plus marquée avec un jeu de données plus volumineux ou des étapes intensives en calcul. 
 
-Il existe un autre objet `dask`, les `Array` pour reprendre la logique de `numpy`. De la même manière qu'un `dask DataFrame` est en quelque sorte un ensemble de `pandas DataFrame`, un `dask Array` est un ensemble de `numpy Array` qui sont plus importants en taille que la RAM. On pourra utiliser les opérations courantes `numpy` avec `dask` de la même manière que le `dask DataFrame` réplique la logique du `pandas DataFrame`. 
 
-#### **Aller plus loin**: Utiliser le decorator `dask.delayed` pour paralléliser du code
+# Aller plus loin: Utiliser le decorator `dask.delayed` pour paralléliser du code
 
-Il est possible de paralléliser des fonctions par exemple en utilisant le **decorator** `dask.delayed`. Cela permet de rendre les fonctions `lazy`, lorsque l'on appelle la fonction, un delayed object est construit, pour avoir le résultat il faut faire un `compute`. Pour aller plus loin: <https://tutorial.dask.org/03_dask.delayed.html>.
+Il est possible de paralléliser des fonctions par exemple en utilisant le **decorator** `dask.delayed`. Cela permet de rendre les fonctions `lazy`. Cela signifie que lorsqu'on appelle la fonction, un `delayed object` est construit. Pour avoir le résultat, il faut faire un `compute`. Pour aller plus loin: <https://tutorial.dask.org/03_dask.delayed.html>.
+
+Prenons par exemple des fonctions permettant de calculer
+des aires et des périmètres. Comme il s'agit d'une opération
+très peu complexe, on ajoute un délai de calcul avec `time.sleep`
+pour que le _timer_ ne nous suggère pas que l'opération est
+instantanée. 
 
 ```{python}
-import dask
-import time 
-# voici le resultat sans le decorator
 def aire_carre(longueur):
     time.sleep(1)
     return longueur**2
@@ -415,13 +423,23 @@ def perimetre_carre(longueur):
 
 def ajout_aire_perim(a, b):
     return a + b
-start_time = timeit.default_timer()
+```
+
+Sans _timer_, c'est-à-dire de manière classique, 
+on ferait nos appels de fonctions de la
+manière suivante:
+
+```{python}
+start_time = time.time()
 car1 = aire_carre(7)
 car2 = perimetre_carre(9)
 car3 = ajout_aire_perim(car1, car2)
 car3
-print(timeit.default_timer() - start_time)
+print(time.time() - start_time)
 ```
+
+Avec le décorateur `dask.delayed`, on définit
+nos fonctions de la manière suivante:
 
 ```{python}
 @dask.delayed
@@ -439,30 +457,33 @@ def ajout_aire_perim(a, b):
     return a + b
 ```
 
+L'appel de fonctions est identique
+
 ```{python}
 car1 = aire_carre(7)
 car2 = perimetre_carre(9)
 car3 = ajout_aire_perim(car1, car2)
 ```
 
-Mais en fait rien n'a été calculé, si l'on souhaite le résultat, il faut appeler `compute`
+Cependant, en fait rien n'a été calculé, si l'on souhaite le résultat, il faut appeler `compute`:
 
 ```{python}
-import timeit
-start_time = timeit.default_timer()
+start_time = time.time()
 car3.compute()
-print(timeit.default_timer() - start_time)
+print(time.time() - start_time)
 ```
 
-Ici l'intérêt est assez limité, mais on voit que l'on réduit quand même de 2 à 1 seconde le temps de calcul. Mais l'idée derrière est que l'on a transformé `car3` en un objet `Delayed`. Cela a généré un `task graph` permettant de paralléliser certaines opérations. Ici il est important de noter que les fonctions que l'on parallélise doivent mettre un certain temps, sinon il n'y aura pas de gain de performance (si on retire le `time.sleep` il n'y a pas de gain de performance car le fait de paralléliser rajoute en fait du temps vu que chaque fonction a un temps de calcul trop faible pour que la parallélisation soit intéressante).
+Ici l'intérêt est assez limité, mais on voit que l'on réduit quand même de 2 à 1 seconde le temps de calcul. Mais l'idée derrière est que l'on a transformé `car3` en un objet `Delayed`. Cela a généré un `task graph` permettant de paralléliser certaines opérations.
+
+Ici il est important de noter que les fonctions que l'on parallélise doivent mettre un certain temps, sinon il n'y aura pas de gain de performance (si on retire le `time.sleep` il n'y a pas de gain de performance car le fait de paralléliser rajoute en fait du temps vu que chaque fonction a un temps de calcul trop faible pour que la parallélisation soit intéressante).
 
 ```{python}
 car3.visualize() # on peut visualiser le task graph et voir ce qui est fait en parallèle 
 ```
 
-Il y a des exercices intéressants dans la doc de `dask` sur les objets `Delayed`, notamment sur la parallélisation de séquence de traitement de données. Ils donnent l'exemple d'un ensemble de csv ayant le même format dont on veut résumer un indicateur final. On peut appliquer le decorator à une fonction permettant de lire le csv, puis utiliser une boucle for pour lire le ficher et appliquer les traitements. Ensuite, il faudra appeler compute sur l'objet final que l'on souhaite.  
+Il y a des exercices intéressants dans la doc de `Dask` sur les objets `Delayed`, notamment sur la parallélisation de séquence de traitement de données. Ils donnent l'exemple d'un ensemble de csv ayant le même format dont on veut résumer un indicateur final. On peut appliquer le decorator à une fonction permettant de lire le csv, puis utiliser une boucle `for` pour lire chaque fichier et appliquer les traitements. Ensuite, il faudra appeler `compute` sur l'objet final que l'on souhaite.  
 
-Pour aller plus loin sur l'utilisation de `dask` sur un cluster voir <https://tutorial.dask.org/04_distributed.html>.
+Pour aller plus loin sur l'utilisation de `Dask` sur un cluster voir <https://tutorial.dask.org/04_distributed.html>.
 
 
 # Remerciements
