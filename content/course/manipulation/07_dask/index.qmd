@@ -43,7 +43,7 @@ print_badges("content/course/manipulation/07_dask.qmd")
 :::
 
 
-La documentation complète sur `dask` se trouve sur <https://docs.dask.org/>. 
+La documentation complète sur `Dask` se trouve sur <https://docs.dask.org/>. 
 
 Le projet requiert l'installation de `dask`. Afin d'avoir
 la distribution complète on utilise la commande suivante:
@@ -98,39 +98,91 @@ def import_dvf():
 
 Dans un premier temps, on va utiliser `pandas` pour 
 importer nos données, ces dernières tenant en mémoire
-sur un ordinateur normalement doté en RAM
+sur un ordinateur normalement doté en RAM:
 
 ```{python}
 dvf = import_dvf()
-dvf.shape  # 10 483 168 lignes, ici dvf est un pandas DataFrame qui tient en mémoire sur le sspcloud
+dvf.shape
 dvf.head()
 ```
 
+Ici on travaille sur un `DataFrame` d'environ 10 millions de lignes et 44 variables. 
+L'objet `dvf` est un `pandas.DataFrame`
+qui tient en mémoire sur le SSP-Cloud. 
 
-On peut créer une structure `Dask` directement à partir d'un DataFrame  `pandas`. Ici on travaille sur un `DataFrame` d'environ 10M de lignes et 44 variables. Attention, `Dask` ne peut créer un `Dask.DataFrame` à partir d'un `pandas.DataFrame` multi-indexé. Dans ce cas il a fallu faire un `reset_index()` pour avoir un unique index.
-
-```{python}
-dvf_dd = dd.from_pandas(dvf, npartitions=10) 
-```
-
-```{python}
-dvf_dd # n'affiche que la structure du dask DataFrame et en aucun cas le contenu du DataFrame comme le fait pandas, car les données du dask dataframe ne sont pas chargées en mémoire
-```
-
-
-{{% box status="exercise" title="Exercice" icon="fa fa-comment" %}}
+{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
 
 On aurait pu lire directement les csv dans un `dask.DataFrame` avec le `read_csv` de `dask`. Comme exercice, vous pouvez essayer de le faire.
 
 {{% /box %}}
 
-On a ainsi la structure de notre `dask.DataFrame`, soit ~10M de lignes, avec 44 colonnes en 10 partitions (donc environ 1M d'observations par partition). On peut accéder aux index que couvrent les partitions de la manière suivante:
+
+On peut créer une structure `Dask` directement à partir d'un `DataFrame`  `pandas` avec la méthode `from_pandas`. 
+
+```{python}
+dvf_dd = dd.from_pandas(dvf, npartitions=10) 
+dvf_dd
+```
+
+Pour souligner la différence avec un `pandas.DataFrame`,
+l'affichage diffère. Seule la structure du `dask.DataFrame`
+est affichée et non son contenu car les données
+`dask` ne sont pas chargées en mémoire. 
+
+
+{{% box status="danger" title="warning" icon="fa fa-exclamation-triangle" %}}
+
+Attention, `Dask` ne peut créer un `Dask.DataFrame` à partir d'un `pandas.DataFrame` multi-indexé.
+
+Dans ce cas il a fallu faire un `reset_index()` pour avoir un unique index.
+
+{{% /box %}}
+
+On a ainsi la structure de notre `dask.DataFrame`, soit environ 10M de lignes, avec 44 colonnes en 10 partitions, soit environ 1M d'observations par partition. 
+`Dask`, comme `Spark` et en fait comme la plupart des _frameworks_ permettant de
+traiter des données plus volumineuses que la RAM disponible, 
+repose sur le principe du partitionnement et de la parallélisation
+des opérations. Les données ne sont jamais importées dans leur
+ensemble mais par bloc. Un plan des opérations à effectuer est
+ensuite appliquer sur chaque bloc (nous reviendrons
+sur ce principe), indépendamment. La particularité de `Dask`,
+par rapport à `Spark`, 
+est que chaque bloc est un `pandas.DataFrame`, ce qui 
+rend très facile l'application de manipulations de données
+traditionnelles sur des sources volumineuses:
+
+![](https://docs.dask.org/en/stable/_images/dask-dataframe.svg)
+
+{{% box status="hint" title="Conseil" icon="fa fa-lightbulb" %}}
+
+Le choix du nombre de partition (10) est arbitraire ici. Bien qu'on puisse
+trouver des règles du pouce pour fixer un nombre optimal de
+partitions, cela dépend de beaucoup de facteurs et, en pratique,
+rien ne remplace l'essai-erreur. Par exemple, [la documentation `Dask` recommande des blocs d'environ
+100MB](https://docs.dask.org/en/stable/dataframe-best-practices.html)
+ce qui peut convenir pour des ordinateurs à la RAM limitée mais n'a pas
+forcément de sens pour des machines ayant 16GB de RAM.
+Un nombre important de partition va permettre de faire des opérations
+sur des petits blocs de données, ce qui permettra de gagner en vitesse
+d'exécution. Le prix à payer est beaucoup _d'input/output_ car
+`Dask` va passer du temps à lire beaucoup de blocs de données et écrire
+des bases intermédiaires.
+
+{{% /box %}}
+
+On peut accéder aux index que couvrent les partitions de la manière suivante:
 
 ```{python}
 dvf_dd.divisions
 ```
 
-Et on peut directement accéder à une partition grâce aux crochets `[]`. 
+```{python}
+#| echo: false
+#| output: asis
+print(f"Autrement dit, la première partition couvrira les lignes {dvf_dd.divisions[0]} à {dvf_dd.divisions[1]}. La deuxième les lignes {dvf_dd.divisions[1]+1} à {dvf_dd.divisions[2]}, etc.")
+```
+
+Et on peut directement accéder à une partition grâce aux crochets `[]`:
 
 ```{python}
 dvf_dd.partitions[0]
