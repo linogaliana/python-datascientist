@@ -119,6 +119,9 @@ def reminder_badges(
     if type == "html":
         badges = f'<p class="badges">{badges}</p>'
 
+    if onyxia_only is True:
+        badges = onyxia_link
+
     return badges
 
 def print_badges(
