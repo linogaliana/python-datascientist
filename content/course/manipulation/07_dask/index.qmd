@@ -89,36 +89,51 @@ Nous allons utiliser les [données immobilières `DVF`](https://www.data.gouv.fr
 import pandas as pd
 import dask.dataframe as dd
 
-def import_dvf():
-    d_urls = {"2019" : 'https://www.data.gouv.fr/fr/datasets/r/3004168d-bec4-44d9-a781-ef16f41856a2',
-                 "2020" : "https://www.data.gouv.fr/fr/datasets/r/90a98de0-f562-4328-aa16-fe0dd1dca60f",
-                 "2021": "https://www.data.gouv.fr/fr/datasets/r/817204ac-2202-4b4a-98e7-4184d154d98c"}
-    dfs = {}
-    for k in d_urls.keys():
-        dfs[k] = pd.read_csv(d_urls[k], sep = "|", decimal=",")
-        dfs[k]["year"] = k
+d_urls = {
+    "2019" : 'https://www.data.gouv.fr/fr/datasets/r/3004168d-bec4-44d9-a781-ef16f41856a2',
+    "2020" : "https://www.data.gouv.fr/fr/datasets/r/90a98de0-f562-4328-aa16-fe0dd1dca60f",
+    "2021": "https://www.data.gouv.fr/fr/datasets/r/817204ac-2202-4b4a-98e7-4184d154d98c"
+}
+
+
+def import_dvf_one_year(year, dict_url = d_urls):
+    df = pd.read_csv(dict_url[year], sep = "|", decimal=",")
+    df["year"] = year
+    return df
+
+def import_dvf_all_years(dict_url = d_urls):
+    dfs = [import_dvf_one_year(y, dict_url) for y in dict_url.keys()]
     df = pd.concat(dfs).reset_index()
     df = df.drop(["level_0", "level_1"], axis=1)
     return df
 ```
 
 Dans un premier temps, on va utiliser `pandas` pour 
-importer nos données, ces dernières tenant en mémoire
-sur un ordinateur normalement doté en RAM:
+importer une année de données (millésime 2019), ces dernières tenant en mémoire
+sur un ordinateur normalement doté en RAM[^1]:
 
 ```{python}
-dvf = import_dvf()
+dvf = import_dvf_one_year("2019")
 dvf.shape
 dvf.head()
 ```
 
+[^1]: Ce site web est testé sur les serveurs d'intégration
+continue mis à disposition gratuitement par `Github`. Ces
+derniers sont des machines à la mémoire limitée. Il s'agit
+d'un bon exemple d'intérêt de `dask`: avec `pandas`, on ne
+peut tester les exemples sur les trois millésimes disponibles
+car la volumétrie accède la RAM disponible. 
+
 Ici on travaille sur un `DataFrame` d'environ 10 millions de lignes et 44 variables. 
 L'objet `dvf` est un `pandas.DataFrame`
-qui tient en mémoire sur le SSP-Cloud. 
+qui tient en mémoire sur le `SSP-Cloud` ou sur les serveurs utilisés
+pour construire ce site web. 
 
 {{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
 
-On aurait pu lire directement les csv dans un `dask.DataFrame` avec le `read_csv` de `dask`. Comme exercice, vous pouvez essayer de le faire.
+On aurait pu lire directement les csv dans un `dask.DataFrame` avec le `read_csv` de `dask`. Comme exercice, vous pouvez essayer de le faire
+pour une année (analogue de la fonction `import_dvf_one_year`) puis sur toutes les données (analogue de la fonction `import_dvf_all_years`).
 
 {{% /box %}}
 
