@@ -16,7 +16,7 @@ cta:
   icon: download
 cta_alt:
   url: course/
-  label: View Documentation
+  label: Découvrir le cours !
 # cta_note:
 #   label: >-
 #     <span class="js-github-release" data-repo="linogaliana/python-datascientist">
