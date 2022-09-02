@@ -87,7 +87,7 @@ if __name__ == "__main__":
                 if os.path.isfile(MD_PATH):
                     name, abstract = extract_metadata_md(MD_PATH)
 
-                    init_args = urllib.parse.quote(f"{section} {chapter}.ipynb")
+                    init_args = urllib.parse.quote(f"{section} {chapter}")
                     launcher_url = LAUNCHER_TMPLT.format(init_args=init_args)
 
                     chapter_doc = generate_block(name=name,
