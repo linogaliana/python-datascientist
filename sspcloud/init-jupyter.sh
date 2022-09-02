@@ -10,7 +10,7 @@ IFS=/ read -r SECTION CHAPTER <<< $RELPATH
 echo $SECTION
 echo $CHAPTER
 
-WORK_DIR=/home/jovyan/work
+WORK_DIR=/home/onyxia/work
 CLONE_DIR=${WORK_DIR}/repo-git
 COURSE_DIR=${CLONE_DIR}/notebooks/course
 FORMATION_DIR=${WORK_DIR}/formation
@@ -26,10 +26,11 @@ mkdir $FORMATION_DIR
 cp ${COURSE_DIR}/${SECTION}/${CHAPTER} ${FORMATION_DIR}/
 
 # Give write permissions
-chown -R jovyan:users $FORMATION_DIR
+chown -R onyxia:users $FORMATION_DIR
 
 # Remove course Git repository
 rm -r $CLONE_DIR
 
 # Open the relevant notebook when starting Jupyter Lab
-echo "c.LabApp.default_url = '/lab/tree/formation/${CHAPTER}'" >> /home/jovyan/.jupyter/jupyter_server_config.py
+jupyter server --generate-config
+echo "c.LabApp.default_url = '/lab/tree/formation/${CHAPTER}'" >> /home/onyxia/.jupyter/jupyter_server_config.py
