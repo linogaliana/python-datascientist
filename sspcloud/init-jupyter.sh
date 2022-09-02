@@ -1,36 +1,27 @@
 #!/bin/bash
 
-echo $1
+SECTION=$1
+CHAPTER=$2
 
-ABSPATH=$1
-RELPATH="${ABSPATH/notebooks\/course\//""}"
-echo $RELPATH
-IFS=/ read -r SECTION CHAPTER <<< $RELPATH
-
-echo $SECTION
-echo $CHAPTER
-
-WORK_DIR=/home/onyxia/work
-CLONE_DIR=${WORK_DIR}/repo-git
-COURSE_DIR=${CLONE_DIR}/notebooks/course
-FORMATION_DIR=${WORK_DIR}/formation
+WORK_DIR="/home/onyxia/work"
+CLONE_DIR="${WORK_DIR}/repo-git"
+COURSE_DIR="${CLONE_DIR}/notebooks/course"
 
 # Clone course repository
 rm -rf $CLONE_DIR
-REPO_URL=https://github.com/linogaliana/python-datascientist.git
+REPO_URL="https://github.com/linogaliana/python-datascientist.git"
 git clone --depth 1 $REPO_URL $CLONE_DIR
 
 # Put relevant notebook in formation dir
-rm -rf $FORMATION_DIR
 mkdir $FORMATION_DIR
-cp ${COURSE_DIR}/${SECTION}/${CHAPTER} ${FORMATION_DIR}/
+cp "${COURSE_DIR}/${SECTION}/${CHAPTER}.ipynb" "${WORK_DIR}"
 
 # Give write permissions
 chown -R onyxia:users $FORMATION_DIR
 
-# Remove course Git repository
-rm -r $CLONE_DIR
+# Remove useless repositories
+rm -r $CLONE_DIR ${WORK_DIR}/lost+found
 
 # Open the relevant notebook when starting Jupyter Lab
 jupyter server --generate-config
-echo "c.LabApp.default_url = '/lab/tree/formation/${CHAPTER}'" >> /home/onyxia/.jupyter/jupyter_server_config.py
+echo "c.LabApp.default_url = '/lab/tree/${CHAPTER}.ipynb'" >> /home/onyxia/.jupyter/jupyter_server_config.py
