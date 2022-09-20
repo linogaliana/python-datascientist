@@ -55,10 +55,13 @@ def reminder_badges(
         nbviewer_link = f'<a href="{nbviewer_link}" target="_blank" rel="noopener">'\
             '<img src="https://img.shields.io/badge/Visualize-nbviewer-blue?logo=Jupyter" alt="nbviewer"></a>'
 
-    onyxia_link_launcher = "https://datalab.sspcloud.fr/launcher/ide/jupyter"\
+    section_latest = section.rsplit("/", maxsplit=1)[-1]
+    chapter_no_extension=re.sub(".ipynb","", chapter)
+
+    onyxia_link_launcher = "https://datalab.sspcloud.fr/launcher/ide/jupyter-python"\
         "?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB"\
         "&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB"\
-        f"&init.personalInitArgs=%C2%AB{section}/{chapter}%C2%BB&security.allowlist.enabled=false"
+        f"&init.personalInitArgs=%C2%AB{section_latest}%20{chapter_no_extension}%C2%BB&security.allowlist.enabled=false"
 
     if type == "md":
         onyxia_link = "[![Onyxia]"\
