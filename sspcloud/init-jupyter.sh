@@ -3,6 +3,8 @@
 SECTION=$1
 CHAPTER=$2
 
+#FILE="notebooks/course/manipulation/01_numpy.ipynb"
+
 WORK_DIR="/home/onyxia/work"
 CLONE_DIR="${WORK_DIR}/repo-git"
 COURSE_DIR="${CLONE_DIR}/notebooks/course"
