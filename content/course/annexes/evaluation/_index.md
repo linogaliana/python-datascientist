@@ -1,6 +1,6 @@
 ---
 title: "Evaluation"
-date: 2020-09-07T13:00:00Z
+date: 2022-09-18T13:00:00Z
 draft: false
 weight: 90
 slug: evaluation
@@ -21,8 +21,8 @@ Résumé :
 * Les étudiants sont invités à proposer des sujets qui leur plaisent, à faire valider par le chargé de TD.
 * __Le projet doit utiliser `Git` et être disponible sous
 [github](https://github.com/) <a href="https://github.com" class="github"><i class="fab fa-github"></i></a> ou [gitlab](https://gitlab.com/)__ <a href="https://gitlab.com" class="gitlab"><i class="fab fa-gitlab"></i></a> (dépôt public ou dépôt privé à partager avec le chargé de TD)
-* La __date du rendu__ est fixée au : **jeudi 6 janvier 2022 23h59**
-* Le **XX janvier 2022**, auront lieu des __soutenances__
+* La __date du rendu__ est fixée au : **X décembre 2022 23h59**
+* Le **06 janvier 2023**, auront lieu des __soutenances__
  
 
 ## Attentes du projet
@@ -94,7 +94,7 @@ Le test à réaliser : faire tourner toutes les cellules de votre notebook et ne
 * Format du code (code propre et github) : 2 points
 * Soutenance : 4 points
 
-Le projet doit être réalisé en groupe de deux, voire trois. 
+Le projet doit être réalisé en groupe de trois, voire deux. 
 
 
 ## Projets menés par les étudiants
