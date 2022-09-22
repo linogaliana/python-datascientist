@@ -32,18 +32,6 @@ l’aide d’un ou de plusieurs jeu(s) de données.
 
 Il faut donc dans un premier temps se pencher sur la recherche de problématisation et de contextualisation. Nous vous recommandons de prendre un sujet qui vous intéresse pour intéresser également le lecteur.
 
-{{% box status="hint" title="Exemples de sujets des années précédentes" icon="fa fa-lightbulb" %}}
-* Pourquoi les employés quittent l’entreprise ?
-* Quelles primes d’insécurité pour les emplois temporaires ?
-* Que peut-on dire des derniers mots d’un condamné à mort ?
-* Comment améliorer la performance d’une équipe de NBA ?
-* Peut-on déduire le nombre de restaurant autour d’une station velib ?
-* Quels sont les déterminants des prix des concerts en ile de France ?
-* Analyse de sentiments sur les compagnies aériennes à partir de tweets
-* Qu’est ce que votre assiette dit de vous ?
-* Titanic : l’inégalité face au naufrage
-{{% /box %}}
-
 Trois dimensions doivent être présentes dans le projet.
 Pour chacune de ces parties, il est possible d’aller plus ou moins loin. Il est recommandé d’aller loin sur au moins une des 3 dimensions.
 
@@ -98,8 +86,6 @@ Le projet doit être réalisé en groupe de trois, voire deux.
 
 
 ## Projets menés par les étudiants
-
-### 2020-2021
 
 | Projet | Auteurs | URL projet <a href="https://github.com" class="github"><i class="fab fa-github"></i></a> | Tags |
 |--------|---------|------------|------|
