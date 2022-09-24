@@ -15,4 +15,4 @@ def clean_overwrite_file(fl):
     write_file(fl, content)
 
 if __name__ == '__main__':
-    [clean_overwrite_file(fl)]
+    [clean_overwrite_file(fl) for fl in list_files]
