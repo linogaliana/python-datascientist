@@ -12,6 +12,8 @@ def clean_overwrite_file(fl):
     content = read_file(fl)
     content = re.sub("#\|echo: false", "", content)
     content = re.sub("#\| echo: false", "", content)
+    content = re.sub("#\|include: false", "", content)
+    content = re.sub("#\| include: false", "", content)
     write_file(fl, content)
 
 if __name__ == '__main__':
