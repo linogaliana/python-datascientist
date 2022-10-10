@@ -454,7 +454,7 @@ stations.describe()
 ```
 
 Pour connaître les plus grands départements de France métropolitaine,
-procédons en trois étapes:
+procédons en deux étapes:
 
 1. Récupérons le contour des communes de France métropolitaine dans son ensemble
 grâce à `cartiflette`.
@@ -464,26 +464,26 @@ des contours communaux.
 2. Calculons la surface (méthode `area` sur un objet `GeoPandas.GeoDataFrame` ramenée en km², attention néamoins au système de projection comme cela est expliqué plus bas)
 
 ```{python}
-france = XXXXXXX
+from cartiflette.download import get_vectorfile_ign
+france = get_vectorfile_ign(level = "COMMUNE", field = "metropole")
 ```
 
 ```{python}
-shp_communes['dep'] = shp_communes['INSEE_DEP']
-shp_communes['surface'] = shp_communes.area.div(10**6)
+france['surface'] = france.area.div(10**6)
 ```
 
 Les plus grands départements s'obtiennent par une agrégation des
 surfaces communales :
 
 ```{python}
-shp_communes.groupby('dep').sum().sort_values('surface', ascending = False)
+france.groupby('INSEE_DEP').sum().sort_values('surface', ascending = False)
 ```
 
 Si on veut directement les plus
 grandes communes de France métropolitaine :
 
 ```{python}
-shp_communes[shp_communes.dep != "97"].sort_values('surface', ascending = False)
+france.sort_values('surface', ascending = False).head(10)
 ```
 
 Lors des étapes d'agrégation, `groupby` ne conserve pas les géométries. Autrement
@@ -494,19 +494,29 @@ la dimension géographique.
 Il est néanmoins possible d'aggréger à la fois les géométries et les 
 attribus avec la méthode `dissolve`: 
 
-
 ```{python}
 fig,ax = plt.subplots(figsize=(10, 10))
-shp_communes[shp_communes.dep != "97"].dissolve(by='dep', aggfunc='sum').plot(ax = ax, column = "surface")
+france.dissolve(by='INSEE_DEP', aggfunc='sum').plot(ax = ax, column = "surface")
 ax.set_axis_off()
 ax
 ```
+
+Pour produire cette carte, il serait néanmoins plus simple de directement
+récupérer les fonds officiels des départements plutôt que d'agréger les
+contours des communes:
+
+```{python}
+dep = get_vectorfile_ign(level = "DEPARTEMENT", field = "metropole")
+dep["area"] = dep.area
+dep.plot(column = "area")
+```
+
 
 ## Opérations sur les géométries
 
 {{% box status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
 Les données sont en système de coordonnées WGS 84 ou pseudo-Mercator (epsg: `4326`) et ne sont pas projetées. C'est un format approprié lorsqu'il s'agit d'utiliser un fonds
-de carte openstreetmap, stamen, google maps, etc.
+de carte `OpenStreetMap`, `Stamen`, `Google Maps`, etc.
 
 Mais ce n'est pas un
 format sur lequel on désire faire des calculs car les distances sont faussées sans utiliser de projection. D'ailleurs, `geopandas` refusera certaines opérations
@@ -524,10 +534,10 @@ stations = stations.to_crs(2154)
 
 Outre la représentation graphique simplifiée,
 sur laquelle nous reviendrons ultérieurement, l'intérêt principal d'utiliser
-`geopandas` est l'existence de méthodes efficaces pour
+`GeoPandas` est l'existence de méthodes efficaces pour
 manipuler la dimension spatiale. Un certain nombre proviennent du 
 package
-[shapely](https://shapely.readthedocs.io/en/latest/manual.html#general-attributes-and-methods). 
+[`Shapely`](https://shapely.readthedocs.io/en/latest/manual.html#general-attributes-and-methods). 
 
 Par exemple, on peut recalculer la taille d'une commune ou d'arrondissement
 avec la méthode `area` (et diviser par $10^6$ pour avoir des $km^2$ au lieu
@@ -563,8 +573,6 @@ ax
 plt.tight_layout(pad=0, h_pad = 0)
 plt.show()
 ```
-
-
 
 # Gérer le système de projection
 
@@ -626,7 +634,7 @@ La définition du système de projection se fait de la manière suivante (:warni
 communes = communes.set_crs(2154)
 ~~~
 
-Alors que la reprojection (projection Albers : 5070) s'obtient de la manière suivante :
+Alors que la reprojection (projection Albers : `5070`) s'obtient de la manière suivante :
 
 ```{python}
 fig,ax = plt.subplots(figsize=(10, 10))
@@ -666,6 +674,16 @@ plt.show()
 #plt.savefig('reproj2.png', bbox_inches='tight')
 ```
 
+L'une des déformations les mieux connue est celle provoquée par la projection `Mercator`. 
+Dans les cartes qui reposent sur cette projection, le Groënland paraît avoir
+la même surface que l'Amérique du Sud. Pourtant, cette dernière est 8 fois 
+plus grande. 
+Il existe de nombreuses représentations possibles du monde, plus ou moins 
+alambiquées. Par exemple,
+la [projection de Spillhaus](https://storymaps.arcgis.com/stories/756bcae18d304a1eac140f19f4d5cb3d)
+propose de centrer la vue sur les océans et non une terre. C'est pour
+cette raison qu'on parle parfois de monde tel que vu par les poissons
+à son propos. 
 
 
 # Joindre des données
