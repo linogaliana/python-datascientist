@@ -317,20 +317,29 @@ stations = gpd.read_file(velib_data)
 stations.crs
 ```
 
-```{python}
-shp_communes['dep'] = shp_communes.insee.str[:2]
-```
+Les données sont dans le système de projection WGS84 qui est celui du
+système GPS. Celui-ci s'intègre bien avec les fonds de carte 
+`Stamen`, `OpenStreetMap` ou `Google Maps`. En toute rigueur, si on
+désire effectuer certains calculs géométriques (mesurer des surfaces...), il est
+nécessaire de re-projeter les données dans un système qui préserve la géométrie
+(c'est le cas du Lambert 93). 
 
-On peut se rassurer en affichant les données sur la carte des communes d'Île-de-France.
+Pour avoir une intuition de la localisation des stations, et notamment de la
+densité hétérogène de celles-ci, 
+on peut afficher les données sur la carte des communes
+de la petite couronne. Il s'agit donc d'enrichir la carte
+précédente d'une couche supplémentaire, à savoir la localisation
+des stations. Au passage, on va utiliser un fond de carte
+plus esthétique:
 
 ```{python}
 #| echo: true
 
 fig,ax = plt.subplots(figsize=(10, 10))
-stations.sample(200).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
-shp_communes[shp_communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
+stations.sample(200).to_crs(3857).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
+shp_communes.to_crs(3857).plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
+ctx.add_basemap(ax, source = ctx.providers.Stamen.Watercolor)
 ax.set_axis_off()
 ```
 
@@ -355,12 +364,7 @@ Afficher le nuage de points de 200 stations vélibs prises au hasard
 #| echo: true
 
 fig,ax = plt.subplots(figsize=(10, 10))
-stations.sample(200).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
-#communes[communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
-#                                                           color = None)
-#ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
-# ax.set_axis_off()
-# ax
+stations.sample(200).to_crs(3857).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
 ```
 
 ```{python}
@@ -378,11 +382,9 @@ Ajouter à cette couche, en-dessous, les contours des communes
 
 fig,ax = plt.subplots(figsize=(10, 10))
 stations.sample(200).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
-shp_communes[shp_communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
+stations.sample(200).to_crs(3857).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
+shp_communes.to_crs(3857).plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-#ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
-# ax.set_axis_off()
-# ax
 ```
 
 ```{python}
@@ -400,12 +402,10 @@ Ajouter un fond de carte de type *open street map* grâce au package
 #| echo: true
 
 fig,ax = plt.subplots(figsize=(10, 10))
-stations.sample(200).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
-shp_communes[shp_communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
+stations.sample(200).to_crs(3857).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
+shp_communes.to_crs(3857).plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
-# ax.set_axis_off()
-ax
+ctx.add_basemap(ax, source = ctx.providers.Stamen.Watercolor)
 ```
 
 ```{python}
@@ -423,10 +423,11 @@ esthétique.
 #| echo: true
 
 fig,ax = plt.subplots(figsize=(10, 10))
-stations.sample(200).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
-shp_communes[shp_communes['dep'].isin(['75','92','93','94'])].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
+fig,ax = plt.subplots(figsize=(10, 10))
+stations.sample(200).to_crs(3857).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
+shp_communes.to_crs(3857).plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Watercolor)
+ctx.add_basemap(ax, source = ctx.providers.Stamen.Watercolor)
 ax.set_axis_off()
 ax
 ```
@@ -441,8 +442,8 @@ ax.get_figure()
 
 ## Opérations sur les attributs
 
-Toutes les opérations possibles sur un objet `pandas` le sont également
-sur un objet `geopandas`. Pour manipuler les données, et non la géométrie,
+Toutes les opérations possibles sur un objet `Pandas` le sont également
+sur un objet `GeoPandas`. Pour manipuler les données, et non la géométrie,
 on parlera d'opérations sur les attributs. 
 
 Par exemple, si on désire 
@@ -455,10 +456,10 @@ stations.describe()
 Pour connaître les plus grands départements, créons d'abord les deux variables en question :
 
 * le département (deux premiers chiffres du code Insee)
-* la surface (méthode `area` sur un objet `geopandas.GeoDataFrame` ramenée en km², attention néamoins au système de projection comme cela est expliqué plus bas)
+* la surface (méthode `area` sur un objet `GeoPandas.GeoDataFrame` ramenée en km², attention néamoins au système de projection comme cela est expliqué plus bas)
 
 ```{python}
-shp_communes['dep'] = shp_communes.insee.str[:2]
+shp_communes['dep'] = shp_communes['INSEE_DEP']
 shp_communes['surface'] = shp_communes.area.div(10**6)
 ```
 
