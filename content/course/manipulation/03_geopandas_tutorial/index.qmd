@@ -38,19 +38,14 @@ print_badges("content/course/manipulation/03_geopandas_tutorial.qmd")
 
 Dans ce tutoriel, nous allons utiliser les données suivantes :
 
-<!----
-* [Réseau de pistes cyclables de la ville de Paris](https://opendata.paris.fr/explore/dataset/reseau-cyclable/table/?disjunctive.typologie_simple&disjunctive.bidirectionnel&disjunctive.statut&disjunctive.sens_velo&disjunctive.voie&disjunctive.arrdt&disjunctive.bois&disjunctive.position&disjunctive.circulation&disjunctive.piste&disjunctive.couloir_bus&disjunctive.type_continuite&disjunctive.reseau&basemap=jawg.streets&location=12,48.85943,2.3493)
------->
-
-* [Localisations des stations velib](https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
-* [Carte des limites administratives françaises](https://www.data.gouv.fr/fr/datasets/decoupage-administratif-communal-francais-issu-d-openstreetmap/)
-* [Arrondissements parisiens](https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
-
-<!-- Lien de la partie visualiser ne fonctionne pas -->
+* [Localisations des stations velib](https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr) ;
+* [fonds de carte `AdminExpress`](https://geoservices.ign.fr/adminexpress) à
+travers un package `Python` nommé [`cartiflette`](https://github.com/InseeFrLab/cartogether)
+facilitant la récupération de cette source. 
 
 La représentation des données, notamment la cartographie, est présentée plus
 amplement dans la partie [visualiser](#visualiser). Quelques méthodes
-pour faire rapidement des cartes seront présentées ici,mais
+pour faire rapidement des cartes seront présentées ici, mais
 l'objet de ce chapitre porte davantage sur la manipulation des données géographiques.
 
 Ce tutoriel s'inspire beaucoup d'un autre tutoriel que j'ai fait pour
@@ -79,7 +74,8 @@ import matplotlib.pyplot as plt
 
 # Données spatiales: quelle différence avec des données traditionnelles ?
 
-**Le terme "données spatiales" désigne les données qui portent sur les caractéristiques géographiques des objets (localisation, contours, liens)**. Les caractéristiques géographiques des objets sont décrites à l'aide d'un **système de coordonnées**
+**Le terme "données spatiales" désigne les données qui portent sur les caractéristiques géographiques des objets (localisation, contours, liens)**.
+Les caractéristiques géographiques des objets sont décrites à l'aide d'un **système de coordonnées**
 qui permettent une représentation dans un espace euclidien ($(x,y)$).
 Le passage de l'espace réel (la Terre, qui est une sphère) à l'espace plan
 se fait grâce à un **système de projection**. Voici quelques exemples
@@ -143,75 +139,75 @@ La table de données (attributs) est stockée dans un fichier séparé des
 données spatiales. En faisant `geopandas.read_file("monfichier.shp")`, le
 package fait lui-même le lien entre les observations et leur représentation spatiale ;
 * _geopackage_ (`.gpkg`) : ce (relativement) nouveau format **libre** en un seul fichier également (lui recommandé par l'OGC) vise progressivement à se substituer au shapefile. Il est par exemple le format par défaut dans QGIS. 
-* _geojson_ (`.json`) : ce format, non préconisé par l'OGC est largement utilisé pour le développement web comme dans la librairie `leaflet`. La dimension spatiale est stockée dans le même fichier que les attributs. Ces fichiers sont généralement beaucoup plus légers que les *shapefiles* mais possèdent des limites s'agissant de gros jeux de données. 
+* _geojson_ (`.json`) : ce format, non préconisé par l'OGC est largement utilisé pour le développement web
+comme dans la librairie `leaflet.js`.
+La dimension spatiale est stockée dans le même fichier que les attributs.
+Ces fichiers sont généralement beaucoup plus légers que les *shapefiles* mais possèdent des limites s'agissant de gros jeux de données. 
 
 Cette [page](https://si.ecrins-parcnational.com/blog/2020-02-geojson-shapefile-geopackage.html) compare plus en détail ces trois types de formats de données géographiques. 
 
 L'aide de [geopandas](https://geopandas.org/io.html) propose des bouts de code en fonction des différentes situations dans lesquelles on se trouve.
 
-### Exemple: récupérer les découpages territoriaux
+## Exemple: récupérer les découpages territoriaux
 
 L'un des fonds de carte les plus fréquents qu'on utilise est celui des
-limites administratives. Elles peuvent être trouvées sur le
-[site de l'IGN](https://geoservices.ign.fr/adminexpress#telechargementCog) ou récupérées sur
-[data.gouv](https://www.data.gouv.fr/fr/datasets/decoupage-administratif-communal-francais-issu-d-openstreetmap/) (construites par `openstreetmap`).
+limites administratives des communes.
+Celui-ci peut être récupéré de plusieurs manières. 
+En premier lieu, pour récupérer 
+le fond de carte officiel, produit par l'IGN, sous 
+le nom d'[`AdminExpress`](https://geoservices.ign.fr/adminexpress#telechargementCog)[^1],
+il est possible de se rendre sur le site de l'IGN et de le télécharger depuis
+le serveur `FTP`. 
 Il est également possible d'utiliser l'une des [API de l'IGN](https://api.gouv.fr/les-api/api_carto_cadastre)
 mais ces dernières ne sont pas encore très documentées pour des utilisateurs
 de `Python`.
-
 Le package `pynsee` propose notamment un module dédié à la récupération de fonds de carte officiels pour valoriser des données
 d'open data. L'API sur laquelle il repose étant parfois lente, nous présentons le code dédié uniquement en annexe. 
 
 
-Nous allons ici utiliser les données de 
-`data.gouv`.
-L'inconvénient est que les arrondissements
-parisiens ne sont pas présents dans le fichier proposé sur `data.gouv`. Il
-faut donc utiliser une source complémentaire, issue de l'*opendata* de la 
-Mairie de Paris.
+[^1]: Il existe également une version moins officielle sur [data.gouv](https://www.data.gouv.fr/fr/datasets/decoupage-administratif-communal-francais-issu-d-openstreetmap/), construite à 
+partir d'`OpenStreetMap`.
 
-Les données des limites administratives demandent donc un peu de travail pour être
-importées car elles sont zippées (mais c'est un bon exercice !). Le code suivant, dont les 
-détails apparaîtront plus clairs après la lecture de la partie
-*[webscraping](webscraping)* permet de :
 
-1. Télécharger les données avec `requests` dans un dossier temporaire
-2. Les dézipper avec le module `zipfile`
+Nous proposons ici une méthode nouvelle de récupération de
+ces données qui s'appuie sur le projet interministériel 
+[`cartiflette`](https://10pourcent.etalab.studio/projets/insee/).  
+Ce projet vise à faciliter la récupération des sources officielles, notamment
+celles de l'IGN, et leur association à des jeux de données géographiques.
 
-La fonction suivante automatise un peu le processus :
+Pour l'installer, il est nécessaire d'utiliser les commandes suivantes
+depuis un `Jupyter Notebook` (si vous utilisez la ligne de commande directement,
+vous pouvez retirer les `!` et `%` en début de ligne):
 
 ```{python}
-import requests
-import tempfile
-import zipfile
-
-url = 'https://www.data.gouv.fr/fr/datasets/r/0e117c06-248f-45e5-8945-0e79d9136165'
-temporary_location = tempfile.gettempdir()
-
-def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
-  myfile = requests.get(url)
-  open("{}/{}.zip".format(dirname, destname), 'wb').write(myfile.content)
-  with zipfile.ZipFile("{}/{}.zip".format(dirname, destname), 'r') as zip_ref:
-      zip_ref.extractall(dirname + '/' + destname)
+#| eval: false
+!git clone https://github.com/InseeFrLab/cartogether.git
+%cd ./cartogether
+!pip install -r requirements.txt
+!pip install .
 ```
 
-```{python}
-#| output: false
-
-download_unzip(url)
-```
-
-```{python}
-#| output: false
-
-shp_communes = gpd.read_file(temporary_location + "/borders/communes-20220101.shp")
-```
+Ici, nous sommes intéressés par les contours des communes 
+de la petite couronne. On pourrait désirer récupérer
+l'ensemble de la région Ile-de-France mais nous
+allons nous contenter de l'analyse de Paris intra-muros
+et des départements limitrophes. 
+Les contours de cet espace peuvent être récupérés de la manière suivante:
 
 ```{python}
+import cartiflette.s3
+
+shp_communes = cartiflette.s3.download_vectorfile_url_all(
+    values = ["75", "92", "93", "94"],
+    level="COMMUNE",
+    vectorfile_format="geojson",
+    decoupage="departement",
+    year=2022)
+
 shp_communes.head()
 ```
 
-On reconnaît la structure d'un `DataFrame` `pandas`. A cette structure s'ajoute 
+On reconnaît la structure d'un `DataFrame` `Pandas`. A cette structure s'ajoute 
 une colonne `geometry` qui enregistre la position des limites des polygones de chaque
 observation. 
 
@@ -223,57 +219,82 @@ la terre, qui n'est pas un espace plan.
 shp_communes.crs
 ```
 
-Ici, les données ne sont pas projetées puisqu'elles sont dans le 
-système WSG84 (epsg: 4326) ce qui permet de facilement ajouter
-un fonds de carte `Openstreetmap` ou `Stamen` pour rendre une représentation
-graphique plus esthétique.
-En toute rigueur, pour faire une carte statique d'un pays en particulier,
-il faudrait reprojeter les données dans un système de projection adapté à la zone géographique étudiée
-(par exemple le Lambert-93 pour la France métropolitaine).
+Ici, les données sont dans le système de projection Lambert-93
+qui est le système légal de projection pour la France
+métropolitaine. 
 
-On peut ainsi représenter Paris pour se donner une idée de la nature
-du shapefile utilisé :
-
+Pour s'assurer qu'on a bien récupéré les contours voulus, 
+on peut représenter graphiquement
+les contours grâce à la méthode `plot` sur laquelle nous
+reviendrons :
+ 
 ```{python}
-paris = shp_communes.loc[shp_communes['insee'].str.startswith("75")]
-
-fig,ax = plt.subplots(figsize=(10, 10))
-paris.plot(ax = ax, alpha=0.5, edgecolor='blue')
-ctx.add_basemap(ax, crs = paris.crs.to_string())
+ax = region.plot()
 ax.set_axis_off()
-ax
 ```
 
+On peut remarquer que la ville de Paris ne comporte pas d'arrondissements
+sur cette carte. Pour vous en convaincre, vous pouvez exécuter la 
+commande :
 
-On voit ainsi que les données pour Paris ne comportent pas d'arrondissement, 
-ce qui est limitant pour une analyse focalisée sur Paris. On va donc les
-récupérer sur le site d'open data de la ville de Paris et les substituer 
-à Paris :
+```{python}
+ax = region.loc[regions['INSEE_DEP']=="75"].plot()
+ax.set_axis_off()
+```
+
+Il faut donc utiliser une source complémentaire.
+Le contour officiel des arrondissements est
+produit par l'IGN séparemment des contours de communes.
+Les contours d'arrondissements sont également
+disponibles 
+grâce à `cartiflette`:
+
+```{python}
+arrondissements = cartiflette.s3.download_vectorfile_s3_all(
+    values = "75",
+    level="ARRONDISSEMENT_MUNICIPAL",
+    vectorfile_format="geojson",
+    decoupage="departement",
+    year=2022)
+```
+
+```{python}
+ax = arrondissements.plot()
+ax.set_axis_off()
+```
+
+Il ne reste plus qu'à remplacer Paris par
+ses arrondissements dans `shp_communes`. 
+Pour cela, on peut utiliser les méthodes
+vues dans le chapitre `Pandas` relatives
+aux filtres et à la concaténation
+de plusieurs `DataFrames`:
 
 ```{python}
 #| echo: true
-#| include: false
+import pandas as pd
 
-arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
-arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
-arrondissements['insee'] = arrondissements['insee'].astype(str)
-shp_communes = shp_communes[~shp_communes.insee.str.startswith("75")].append(arrondissements)
+shp_communes = pd.concat(
+  [
+    shp_communes[shp_communes['INSEE_DEP'] != "75"],
+    arrondissements
+  ])
 ```
 
-En refaisant la carte ci-dessus, on obtient bien, cette fois, le résultat
-espéré
+Nous allons refaire la carte précédente de la petite couronne.
+Au passage, nous allons ajouter un fond de carte contextuel grâce
+au package `contextily`. Nous verrons, par la suite, 
+qu'il est nécessaire de reprojeter les données dans un 
+système de projection particulier (code EPSG: `3857`) pour
+ce type de représentation :
 
 ```{python}
-paris = shp_communes.loc[shp_communes.insee.str.startswith("75")]
-
-fig,ax = plt.subplots(figsize=(10, 10))
-
-paris.plot(ax = ax, alpha=0.5, edgecolor='k')
-ctx.add_basemap(ax, crs = paris.crs.to_string())
+paris = shp_communes.loc[shp_communes['INSEE_DEP'] == "75"].to_crs(3857)
+ax = paris.plot(alpha=0.5, edgecolor='k')
+ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
 ax.set_axis_off()
 ax
 ```
-
 
 
 # Opérations sur les attributs et les géométries
@@ -681,9 +702,100 @@ Les jointures spatiales peuvent être très gourmandes en ressources (car il peu
 {{% /box %}}
 
 
-## Annexe
+# Annexe
 
-### Récupération des données depuis le package `pynsee`
+## Récupération des données depuis data.gouv
+
+Avec cette méthode, les données des limites administratives demandent donc un peu de travail pour être
+importées car elles sont zippées (mais c'est un bon exercice !). 
+
+Le code suivant, dont les 
+détails apparaîtront plus clairs après la lecture de la partie
+*[webscraping](webscraping)* permet de :
+
+1. Télécharger les données avec `requests` dans un dossier temporaire
+2. Les dézipper avec le module `zipfile`
+
+La fonction suivante automatise un peu le processus :
+
+```{python}
+import requests
+import tempfile
+import zipfile
+
+url = 'https://www.data.gouv.fr/fr/datasets/r/0e117c06-248f-45e5-8945-0e79d9136165'
+temporary_location = tempfile.gettempdir()
+
+def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
+  myfile = requests.get(url)
+  open("{}/{}.zip".format(dirname, destname), 'wb').write(myfile.content)
+  with zipfile.ZipFile("{}/{}.zip".format(dirname, destname), 'r') as zip_ref:
+      zip_ref.extractall(dirname + '/' + destname)
+```
+
+```{python}
+#| output: false
+
+download_unzip(url)
+```
+
+```{python}
+#| output: false
+shp_communes = gpd.read_file(temporary_location + "/borders/communes-20220101.shp")
+```
+
+Ici, les données ne sont pas projetées puisqu'elles sont dans le 
+système WSG84 (epsg: 4326) ce qui permet de facilement ajouter
+un fonds de carte `Openstreetmap` ou `Stamen` pour rendre une représentation
+graphique plus esthétique.
+En toute rigueur, pour faire une carte statique d'un pays en particulier,
+il faudrait reprojeter les données dans un système de projection adapté à la zone géographique étudiée
+(par exemple le Lambert-93 pour la France métropolitaine).
+
+On peut ainsi représenter Paris pour se donner une idée de la nature
+du shapefile utilisé :
+
+```{python}
+paris = shp_communes.loc[shp_communes['insee'].str.startswith("75")]
+
+fig,ax = plt.subplots(figsize=(10, 10))
+paris.plot(ax = ax, alpha=0.5, edgecolor='blue')
+ctx.add_basemap(ax, crs = paris.crs.to_string())
+ax.set_axis_off()
+ax
+```
+
+On voit ainsi que les données pour Paris ne comportent pas d'arrondissement, 
+ce qui est limitant pour une analyse focalisée sur Paris. On va donc les
+récupérer sur le site d'open data de la ville de Paris et les substituer 
+à Paris :
+
+```{python}
+#| echo: true
+#| include: false
+
+arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
+arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
+arrondissements['insee'] = arrondissements['insee'].astype(str)
+shp_communes = shp_communes[~shp_communes.insee.str.startswith("75")].append(arrondissements)
+```
+
+En refaisant la carte ci-dessus, on obtient bien, cette fois, le résultat
+espéré
+
+```{python}
+paris = shp_communes.loc[shp_communes.insee.str.startswith("75")]
+
+fig,ax = plt.subplots(figsize=(10, 10))
+
+paris.plot(ax = ax, alpha=0.5, edgecolor='k')
+ctx.add_basemap(ax, crs = paris.crs.to_string())
+ax.set_axis_off()
+ax
+```
+
+
+## Récupération des données depuis le package `pynsee`
 
 
 Pour connaître les contraintes d'installation du package `pynsee`, se référer à la partie de cours dédiée à `pandas`.
