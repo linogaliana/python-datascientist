@@ -344,11 +344,6 @@ ax.set_axis_off()
 ```
 
 ```{python}
-#| echo: false
-ax.get_figure()
-```
-
-```{python}
 fig = ax.get_figure()
 fig.savefig("featured.png")
 ```
@@ -360,8 +355,7 @@ Découvrez ci-dessous par étape les différentes lignes de commandes permettant
 Afficher le nuage de points de 200 stations vélibs prises au hasard
 
 ```{python}
-#| include: false
-#| echo: true
+#| output: hide
 
 fig,ax = plt.subplots(figsize=(10, 10))
 stations.sample(200).to_crs(3857).plot(ax = ax, color = 'red', alpha = 0.4, zorder=2)
@@ -377,7 +371,7 @@ ax.get_figure()
 Ajouter à cette couche, en-dessous, les contours des communes
 
 ```{python}
-#| include: false
+#| output: hide
 #| echo: true
 
 fig,ax = plt.subplots(figsize=(10, 10))
@@ -464,6 +458,7 @@ des contours communaux.
 2. Calculons la surface (méthode `area` sur un objet `GeoPandas.GeoDataFrame` ramenée en km², attention néamoins au système de projection comme cela est expliqué plus bas)
 
 ```{python}
+#| output: hide
 from cartiflette.download import get_vectorfile_ign
 france = get_vectorfile_ign(level = "COMMUNE", field = "metropole")
 ```
@@ -476,7 +471,7 @@ Les plus grands départements s'obtiennent par une agrégation des
 surfaces communales :
 
 ```{python}
-france.groupby('INSEE_DEP').sum().sort_values('surface', ascending = False)
+france.groupby('INSEE_DEP').sum(numeric_only = True).sort_values('surface', ascending = False)
 ```
 
 Si on veut directement les plus
@@ -514,23 +509,6 @@ dep.plot(column = "area")
 
 ## Opérations sur les géométries
 
-{{% box status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
-Les données sont en système de coordonnées WGS 84 ou pseudo-Mercator (epsg: `4326`) et ne sont pas projetées. C'est un format approprié lorsqu'il s'agit d'utiliser un fonds
-de carte `OpenStreetMap`, `Stamen`, `Google Maps`, etc.
-
-Mais ce n'est pas un
-format sur lequel on désire faire des calculs car les distances sont faussées sans utiliser de projection. D'ailleurs, `geopandas` refusera certaines opérations
-sur des données dont le crs est `4326`. On reprojete ainsi les données 
-dans la projection officielle pour la métropole, le Lambert 93
-(epsg: `2154`).
-{{% /box %}}
-
-
-```{python}
-communes = shp_communes.to_crs(2154)
-stations = stations.to_crs(2154)
-```
-
 
 Outre la représentation graphique simplifiée,
 sur laquelle nous reviendrons ultérieurement, l'intérêt principal d'utiliser
@@ -539,13 +517,32 @@ manipuler la dimension spatiale. Un certain nombre proviennent du
 package
 [`Shapely`](https://shapely.readthedocs.io/en/latest/manual.html#general-attributes-and-methods). 
 
+
+{{% box status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
+
+Les données sont en système de coordonnées WGS 84 ou pseudo-Mercator (epsg: `4326`) et ne sont pas projetées. C'est un format approprié lorsqu'il s'agit d'utiliser un fonds
+de carte `OpenStreetMap`, `Stamen`, `Google Maps`, etc.
+
+Mais ce n'est pas un
+format sur lequel on désire faire des calculs car les distances sont faussées sans utiliser de projection. D'ailleurs, `geopandas` refusera certaines opérations
+sur des données dont le crs est `4326`. On reprojete ainsi les données 
+dans la projection officielle pour la métropole, le Lambert 93
+(epsg: `2154`).
+
+{{% /box %}}
+
+```{python}
+communes = shp_communes.to_crs(2154)
+stations = stations.to_crs(2154)
+```
+
 Par exemple, on peut recalculer la taille d'une commune ou d'arrondissement
 avec la méthode `area` (et diviser par $10^6$ pour avoir des $km^2$ au lieu
 des $m^2$):
 
 ```{python}
 communes['superficie'] = communes.area.div(10**6)
-communes
+communes.head(3)
 ```
 
 Une méthode qu'on utilise régulièrement est `centroid` qui, comme son nom l'indique,
@@ -559,11 +556,13 @@ fera
 departement = communes[communes['INSEE_DEP'] == "31"].copy()
 departement['geometry'] = departement['geometry'].centroid
 
+# on reprojete en 3857 pour le fond de carte
+departement = departement.to_crs(3857)
 
 ax = departement.plot(figsize = (10,10), color = 'red', alpha = 0.4, zorder=2)
-communes[communes['INSEE_DEP'] == "31"].plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
+communes[communes['INSEE_DEP'] == "31"].to_crs(3857).plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
                                                            color = None)
-ctx.add_basemap(ax, crs = stations.crs.to_string(), source = ctx.providers.Stamen.Toner)
+ctx.add_basemap(ax, source = ctx.providers.Stamen.Toner)
 ax.set_axis_off()
 ax
 ```
@@ -651,8 +650,10 @@ communes = communes.set_crs(2154)
 Alors que la reprojection (projection Albers : `5070`) s'obtient de la manière suivante :
 
 ```{python}
+shp_region = get_vectorfile_ign(level = "REGION", field = "metropole")
+
 fig,ax = plt.subplots(figsize=(10, 10))
-communes[communes['INSEE_DEP'] != "97"].dissolve(by='INSEE_DEP', aggfunc='sum').to_crs(5070).plot(ax = ax)
+shp_region.to_crs(5070).plot(ax = ax)
 ax
 ```
 
