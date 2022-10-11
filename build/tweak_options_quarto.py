@@ -12,8 +12,12 @@ def clean_overwrite_file(fl):
     content = read_file(fl)
     content = re.sub("#\|echo: false", "", content)
     content = re.sub("#\| echo: false", "", content)
+    content = re.sub("echo: false", "", content) #if in header
+    content = re.sub("echo:false", "", content) #if in header
     content = re.sub("#\|include: false", "", content)
     content = re.sub("#\| include: false", "", content)
+    content = re.sub("include: false", "", content) #if in header
+    content = re.sub("include:false", "", content) #if in header
     write_file(fl, content)
 
 if __name__ == '__main__':
