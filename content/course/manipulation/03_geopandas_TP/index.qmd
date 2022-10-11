@@ -376,9 +376,10 @@ square = Polygon([(0, 2), (1, 2), (1, 3), (0, 3), (0, 2)])
 
 {{% box status="exercise" title="Exercice 5 (optionnel) : Trouver les toilettes publiques les plus proches d'une station de vélib" icon="fas fa-pencil-alt" %}}
 1. Charger la localisation des toilettes publiques présente ici : https://data.ratp.fr/explore/dataset/sanitaires-reseau-ratp/download/?format=geojson&timezone=Europe/Berlin&lang=fr. Appelez-la `toilettes_publiques`.
-2. Trouver les toilettes publiques les plus proches de la station de vélib "Edgard Quinet - Gaité". La ligne de code `ensemble_toilettes = toilettes_publiques.unary_union` vous sera utile ainsi que l'importation de la fonction `from shapely.ops import nearest_points`.
-3. Généraliser aux 10 premières lignes de la table `stations` des vélibs en indiquant pour chaque station velib quelle sont les toilettes publiques les plus proches dans une nouvelle colonne appelée `Nearest`.
-
+2. Convertir les objets `toilettes_publiques` et `stations` au CRS 2154
+2. Utiliser la jointure spatiale par plus proche distance `sjoin_nearest` pour associer à chaque station les toilettes publiques les plus proches
+3. Trouver les toilettes publiques les plus proches de la station de vélib "Edgard Quinet - Gaité".
+4. Représenter un histogramme des distances aux toilettes les plus proches
 {{% /box %}}
 
 
@@ -390,82 +391,27 @@ toilettes_publiques = gpd.read_file("https://data.ratp.fr/explore/dataset/sanita
 toilettes_publiques.head()
 ```
 
+```{python}
+toilettes_publiques = toilettes_publiques.to_crs(2154)
+stations = stations.to_crs(2154)
+```
 
 ```{python}
-# 2. Trouver la station de toilettes la plus proche de la station de vélib "Edgard Quinet - Gaité"
-ensemble_toilettes = toilettes_publiques.unary_union
-ensemble_toilettes
-from shapely.ops import nearest_points
-edgard_quinet_gaite = stations[stations.name == 'Edgar Quinet - Gaité'].iloc[0,] #le iloc est fait pour passer d'un pd à un pd.series, sinon bug.
-nearest = nearest_points(edgard_quinet_gaite['geometry'], ensemble_toilettes)[1]
-toilettes_publiques[toilettes_publiques['geometry'] == nearest][:1]
+# 3. Jointure spatiale
+stations_toilettes = stations.sjoin_nearest(
+  toilettes_publiques,
+  how='inner',
+  distance_col="distance")
+
+# 4. Trouver la station de toilettes la plus proche de la station de vélib "Edgard Quinet - Gaité"
+stations_toilettes.loc[stations_toilettes['name'].str.contains("Edgar Quinet")]
 # Il va falloir se retenir un peu car s'agit de toilettes situées à la station Denfert Rochereau !
 ```
 
-
 ```{python}
-# A améliorer dans la forme du code (je suis passée par des listes alors que je n'aurais probablement pas du). KA
-
-#3. Fonction qui généralise aux 10 premières stations de la base de données
-def find_nearest(numero_station):
-      station_choisie = stations.iloc[numero_station,]
-      nearest = nearest_points(station_choisie['geometry'], ensemble_toilettes)[1]
-      return toilettes_publiques[toilettes_publiques['geometry'] == nearest][:1]['station']
-
-dix_premieres_stations = stations.tail(10)
-dix_premieres_stations['Nearest'] = [list(find_nearest(num_station))[0] for num_station in dix_premieres_stations.index]
-dix_premieres_stations
+stations_toilettes['distance'].plot(kind = "hist")
 ```
 
-<!-- 3. Quelle ligne de transport est à proximité du plus de velibs ? -->
-
-<!-- 4. Calculer la distance de chaque station à la ligne de métro la plus proche. Faire un nuage de points reliant distance au métro et nombre de places en stations -->
-
-
-```{python, eval = FALSE, include = FALSE}
-# Ancienne correction de Lino
-# un truc comme ça à revoir mais là fait des NaN :'(
-from shapely.ops import nearest_points
-temp = stations_transport.unary_union
-def find_nearest(geometry1, geometry2 = temp, df_point2 = stations_transport):
-    nearest = nearest_points(geometry1, geometry2)[1]
-    return df_point2[df_point2['geometry'] == nearest][:1]['nomptar']
-stations['Nearest'] = stations.apply(lambda row: find_nearest(row.geometry), axis=1)
-```
-
-<!-- # Exercices supplémentaires -->
-
-<!-- ## carte US election 2020 -->
-
-```{python, eval = FALSE, include = FALSE}
-import geopandas as gpd
-import urllib.request
-import gzip
-
-url = "https://int.nyt.com/newsgraphics/elections/map-data/2020/national/precincts-with-results.geojson.gz"
-# urllib.request.urlretrieve(url, "votes.gz")
-
-url2 = "https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_state_20m.zip"
-urllib.request.urlretrieve(url2, "states.zip")
-
-import gzip
-import shutil
-with gzip.open('votes.gz', 'rb') as f_in:
-    with open('votes.geojson', 'wb') as f_out:
-        shutil.copyfileobj(f_in, f_out)
-        
-import zipfile
-with zipfile.ZipFile("states.zip", 'r') as zip_ref:
-    zip_ref.extractall("states.shp")
-
-votes = gpd.read_file('votes.geojson')
-states = gpd.read_file("states.shp")
-votes['states'] = votes['GEOID'].str[:2]
-
-# alternative (plus rapide)
-essai = pd.read_csv("https://github.com/MEDSL/2020-elections-official/raw/main/PRESIDENT/PRESIDENT_precinct_general.csv.zip")
-essai.dropna(subset = ["party_simplified"]).groupby(["county_fips",'party_simplified']).agg({"votes": "sum"})
-```
 
 # Exercices supplémentaires
 
