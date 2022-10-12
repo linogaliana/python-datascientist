@@ -67,7 +67,7 @@ Dans cette partie, nous utiliserons la fonction suivante,
 le package [`cartiflette`](https://github.com/InseeFrLab/cartiflette.git)
 qui facilite la récupération de contours de cartes. 
 Une version antérieure de cet exercice, présentée sous forme
-d'exercice supplémentaire, utilisait des fonds de carte issus
+d'[exercice supplémentaire 👇️](#exo-supp), utilisait des fonds de carte issus
 de `data.gouv`. 
 
 
@@ -137,7 +137,8 @@ ax.set_axis_off()
 En effet, on ne dispose ainsi pas des limites des arrondissements parisiens, ce
 qui appauvrit grandement la carte de Paris. 
 On pourrait les récupérer directement 
-depuis le site d'_open-data_ du Grand Paris, ce qui est proposé en exercice supplémentaire.
+depuis le site d'_open-data_ du Grand Paris, ce qui est proposé
+en [exercice supplémentaire 👇️](#exo-supp).
 On propose ici d'utiliser à nouveau
 `cartiflette` pour cela afin de disposer du fonds de carte officiel. 
 
@@ -270,7 +271,7 @@ base.set_title("Les 50 principales stations de Vélib")
 Pour faire une belle carte, il faudrait couper les lignes de métro via une jointure spatiale ou
 utiliser un fonds de carte conceptuel. 
 L'exercice suivant propose de mettre en oeuvre la deuxième méthode. La première 
-est proposée en exercice supplémentaire.
+est proposée en [exercice supplémentaire 👇️](#exo-supp).
 
 
 {{% box status="exercise" title="Exercice 4: ajouter un fond de carte" icon="fas fa-pencil-alt" %}}
@@ -400,7 +401,7 @@ ax.set_title("Densité des stations vélib dans l'agglomération parisienne")
 ```
 
 ```{python}
-ax
+ax.get_figure()
 ```
 
 ```{python}
@@ -412,12 +413,24 @@ fig.savefig("featured.png")
 
 # Trouver les toilettes publiques les plus proches
 
+## Objectif
+
 Jusqu'à présent, nous nous sommes familiarisés avec
-la manipulation de données spatiales
+la manipulation de données spatiales et la représentation
+rapide de celle-ci grâce aux fonctionalités de `GeoPandas`.
 
-Une aide [ici](https://pysal.org/scipy2019-intermediate-gds/deterministic/gds1-relations.html#how-about-nearest-neighbor-joins)
+A partir de maintenant, nous allons utiliser `GeoPandas` 
+pour des tâches de manipulation géométrique.  
+Ces opérations reposeront sur des tâches classiques
+de la géomatique qui sont facilitées par le fait que
+`GeoPandas` offre une surcouche au package `Shapely` 
+de la même manière que `Pandas` était une sur-couche
+de `Numpy` pour les opérations numériques.
 
-Cet exemple peut également vous aider à comprendre certains concepts : 
+L'exemple suivant permet d'illustrer 
+le principe d'une des
+opérations que nous allons utiliser,
+à savoir la recherche de plus proche point:
 
 ```{python}
 #| echo: true
@@ -429,17 +442,38 @@ square = Polygon([(0, 2), (1, 2), (1, 3), (0, 3), (0, 2)])
 [o.wkt for o in nearest_points(triangle, square)]
 ```
 
+`GeoPandas` va permettre de généraliser ce processus
+en utilisant non plus deux listes modifiées (les
+polygones de `Shapely`) mais des `DataFrames` géographiques.
+Cela permettra, au passage, d'enrichir les 
+jointures spatiales avec les attributs des `DataFrames`
+concernés. 
+
+Sur `Shapely`, vous pourrez trouver une aide [ici](https://pysal.org/scipy2019-intermediate-gds/deterministic/gds1-relations.html#how-about-nearest-neighbor-joins).
+Néanmoins, à mesure que `GeoPandas` se développe, il 
+devient de moins en moins nécessaire d'utiliser directement
+`Shapely`. 
+
+## Mise en application
+
+Nous allons rechercher les toilettes publiques les 
+plus proches de chaque station. 
+Sans les fonctionalités de `GeoPandas`,
+cette recherche serait assez pénible. 
 
 {{% box status="exercise" title="Exercice 5 (optionnel) : Trouver les toilettes publiques les plus proches d'une station de vélib" icon="fas fa-pencil-alt" %}}
 1. Charger la localisation des toilettes publiques présente ici : https://data.ratp.fr/explore/dataset/sanitaires-reseau-ratp/download/?format=geojson&timezone=Europe/Berlin&lang=fr. Appelez-la `toilettes_publiques`.
-2. Convertir les objets `toilettes_publiques` et `stations` au CRS 2154
+2. Convertir les objets `toilettes_publiques` et `stations` au CRS 2154 (Lambert-93). Cette
+conversion permettra de mesurer en mètres les distances entre objets géographiques. Sans
+celle-ci, nous ferions des distances entre coordonnées GPS, ce qui n'aide pas l'analyse
+et l'interprétation. 
 2. Utiliser la jointure spatiale par plus proche distance `sjoin_nearest` pour associer à chaque station les toilettes publiques les plus proches
-3. Trouver les toilettes publiques les plus proches de la station de vélib "Edgard Quinet - Gaité".
+3. Trouver les toilettes publiques les plus proches des stations de vélib autour d'Edgard Quinet.
 4. Représenter un histogramme des distances aux toilettes les plus proches
 {{% /box %}}
 
-
-
+Le jeu de données _open-data_ des toilettes 
+publiques présente l'aspect suivant:
 
 ```{python}
 # 1. Charger les localisations des toilettes
@@ -447,10 +481,14 @@ toilettes_publiques = gpd.read_file("https://data.ratp.fr/explore/dataset/sanita
 toilettes_publiques.head()
 ```
 
+
 ```{python}
 toilettes_publiques = toilettes_publiques.to_crs(2154)
 stations = stations.to_crs(2154)
 ```
+
+Les toilettes les plus proches 
+d'Edgar Quinet sont les suivantes:
 
 ```{python}
 # 3. Jointure spatiale
@@ -460,16 +498,32 @@ stations_toilettes = stations.sjoin_nearest(
   distance_col="distance")
 
 # 4. Trouver la station de toilettes la plus proche de la station de vélib "Edgard Quinet - Gaité"
-stations_toilettes.loc[stations_toilettes['name'].str.contains("Edgar Quinet")]
-# Il va falloir se retenir un peu car s'agit de toilettes situées à la station Denfert Rochereau !
+stations_toilettes.loc[
+  stations_toilettes['name'].str.contains("Edgar Quinet"),
+  ["localisation", "station","name","distance"]]
 ```
+
+Il va donc falloir se
+retenir un peu car s'agit de toilettes situées
+à la station Denfert Rochereau !
+
+Enfin, de manière plus globale, voici la distribution
+des distances aux toilettes les plus proches:
 
 ```{python}
 stations_toilettes['distance'].plot(kind = "hist")
 ```
 
+Le mode de la distribution est entre 1 et 2km, ce
+qui est une petite distance tout de même !
+C'est normal, il ne s'agit pas de l'ensemble des
+toilettes publiques de la ville de Paris mais
+de celles gérées par la RATP. Rassurez-vous, au 
+moins dans Paris intra-muros, vous n'avez pas
+à systématiquement marcher (ou rouler) autant. 
 
-# Exercices supplémentaires
+
+# Exercices supplémentaires {#exo-supp}
 
 Voici une fonction pour télécharger et dézipper
 facilement un fonds de carte issu de `data.gouv`
@@ -491,11 +545,15 @@ def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
       zip_ref.extractall(dirname + '/' + destname)
 ```
 
+{{% box status="exercise" title="Télécharger et dézipper vous-même le fonds de carte" icon="fas fa-pencil-alt" %}}
 
 Importer le fichier avec le package `GeoPandas`
 (si vous avez laissé les paramètres par défaut,
 le fichier devrait
 être à l'emplacement `temporary_location + "/borders/communes-20210101.shp"`).
+
+{{% /box %}}
+
 
 ```{python}
 #| eval: false
@@ -512,6 +570,8 @@ download_unzip(url)
 #communes_borders = gpd.read_file(temporary_location + "/borders/communes-20220101.shp")
 ```
 
+{{% box status="exercise" title="Exercice optionnel 2 : Utiliser les arrondissements fournis par l'open data parisien" icon="fas fa-pencil-alt" %}}
+
 1. Importer les données de découpage des arrondissements parisiens à l'adresse
 <https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
 2. Vérifier sur une carte que les découpages des arrondissements sont bien présents.
@@ -522,6 +582,7 @@ soucier de la variable commune de superficie aux niveaux différents car on
 va la recréer. En revanche, renommer la variable `c_arinsee` en `insee` avec
 la méthode `rename` et faire attention aux types des variables
 
+{{% /box %}}
 
 
 ```{python}
@@ -561,9 +622,9 @@ data_paris.tail()
 L'objectif de cet exercice est de ne conserver que les 
 lignes de transports à l'intérieur de Paris intra-muros.
 Il s'agit d'appliquer les jointures spatiales de manière
-un petit peu différente à précédemment
+un petit peu différente à précédemment.
 
-{{% box status="exercise" title="Exercice 6 (optionnel) : Les lignes de transport dans Paris" icon="fas fa-pencil-alt" %}}
+{{% box status="exercise" title="Exercice optionnel 3 : Les lignes de transport dans Paris" icon="fas fa-pencil-alt" %}}
 
 1. Utiliser l'URL <https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr> pour récupérer les lignes de transport
 de la RATP. L'appeler `transports`.
@@ -591,4 +652,8 @@ base = data_paris[data_paris['INSEE_DEP'] == '75'].plot(alpha = 0.2, edgecolor =
 transports_paris.plot(ax=base, column='mode', alpha = 0.9, linewidth=3)
 ```
 
-
+Cette fois, on a bien conservé que les lignes de transport dans 
+Paris. Un peu de travail sur le rendu serait nécessaire pour
+obtenir une belle carte. Vous pouvez le faire en exercice, après
+avoir consulté le chapitre relatif à la cartographie dans
+la partie visualisation de données. 
