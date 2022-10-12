@@ -1,5 +1,5 @@
 ---
-title: "Pratique de geopandas: données vélib"
+title: "Pratique de geopandas avec les données vélib"
 date: 2020-07-09T13:00:00Z
 draft: false
 weight: 50
@@ -15,13 +15,12 @@ categories:
   - Exercice
 type: book
 summary: |
-  Ce chapitre illustre les fonctionalités de `geopandas` à partir des
+  Ce chapitre illustre les fonctionalités de `GeoPandas` à partir des
   décomptes de vélo fournis par la ville de Paris
   en [opendata](https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/map/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name&basemap=jawg.dark&location=12,48.85855,2.33754).
   Il prolonge
   le chapitre précédent avec des données un petit peu plus complexes
   à manipuler.
-eval: false
 echo: false
 ---
 
@@ -45,25 +44,497 @@ Installations préalables :
 
 ```{python}
 #| echo: true
-#| include: true
+#| eval: false
+
 
 !pip install pandas fiona shapely pyproj rtree # à faire obligatoirement en premier pour utiliser rtree ou pygeos pour les jointures spatiales
 !pip install contextily
 !pip install geopandas
+!pip install pygeos
 ```
+
+Les instructions d'installation du package `cartiflette`
+sont quant à elles détaillées dans le chapitre
+précédent.
 
 
 ```{python}
 #| echo: true
-
+#| output: false
 import geopandas as gpd
 ```
 
 
 # Lire et enrichir des données spatiales
 
-Dans cette partie, nous utiliserons la fonction suivante, qui facilite 
-le téléchargement et le dézippage des données proposées sur `data.gouv`:
+Dans cette partie,
+nous utiliserons
+le package [`cartiflette`](https://github.com/InseeFrLab/cartiflette.git)
+qui facilite la récupération de contours de cartes. 
+Une version antérieure de cet exercice, présentée sous forme
+d'[exercice supplémentaire 👇️](#exo-supp), utilisait des fonds de carte issus
+de `data.gouv`. 
+
+
+```{python}
+# 0) Chargement des packages utilisés dans la partie tutoriel
+import geopandas as gpd
+import contextily as ctx
+import matplotlib.pyplot as plt
+import cartiflette.s3
+```
+
+{{% box status="exercise" title="Exercice 1: lire et explorer la structure de fichiers géographiques" icon="fas fa-pencil-alt" %}}
+1. S'inspirer des exemples de code présents dans le chapitre précédent, mobilisant
+le package `cartiflette`
+pour télécharger les données communales.
+Vous pouvez nommer l'objet `communes_borders`
+3. Regarder les premières lignes des données. Identifier la différence avec
+un DataFrame standard. 
+4. Afficher l'attribut `crs` de `communes_borders`. Ce dernier contrôle la
+transformation de l'espace tridimensionnel terrestre en une surface plane. 
+5. Afficher les communes des Hauts de Seine (département 92) et utiliser la méthode
+`plot`
+6. Réprésenter la carte de Paris : quel est le problème ?
+{{% /box %}}
+
+
+```{python}
+communes_borders = cartiflette.s3.download_vectorfile_url_all(
+    values = ["75", "92", "93", "94"],
+    level="COMMUNE",
+    vectorfile_format="geojson",
+    decoupage="departement",
+    year=2022)
+```
+
+
+```{python}
+# 2) Regarder les premières lignes
+communes_borders.head()
+# Il y a une colonne geometry qui contient les informations nécessaires pour connaître les contours communaux
+```
+
+```{python}
+# 3) Afficher le crs
+communes_borders.crs
+# Les données ne sont pas projetées, elles sont en "longitude - latitude" (WGS 84)
+```
+
+La carte du 92 est la suivante:
+
+```{python}
+# 4) afficher les communes du département 12
+ax = communes_borders[communes_borders['INSEE_DEP'] == "92"].plot()
+ax.set_axis_off()
+```
+
+Quant à Paris, à l'issue de la question 5, la carte
+aura l'aspect suivant:
+
+```{python}
+# 5) Représenter la carte de Paris. Quel est le problème ?
+ax = communes_borders[communes_borders['INSEE_DEP'] == "75"].plot()
+ax.set_axis_off()
+```
+
+
+En effet, on ne dispose ainsi pas des limites des arrondissements parisiens, ce
+qui appauvrit grandement la carte de Paris. 
+On pourrait les récupérer directement 
+depuis le site d'_open-data_ du Grand Paris, ce qui est proposé
+en [exercice supplémentaire 👇️](#exo-supp).
+On propose ici d'utiliser à nouveau
+`cartiflette` pour cela afin de disposer du fonds de carte officiel. 
+
+
+{{% box status="exercise" title="Exercice 2: compléter des données spatiales issues de sources différentes" icon="fas fa-pencil-alt" %}}
+
+
+1. Importer les données de découpage des arrondissements parisiens à l'adresse
+<https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
+2. Vérifier sur une carte que les découpages des arrondissements sont bien présents.
+3. Vérifier l'attribut `crs`. Est-il cohérent avec celui des données communales ?
+4. Retirer Paris du jeu de données communales et utiliser les arrondissements
+pour enrichir (nommer l'objet obtenu `data_borders`). 
+6. Représenter à nouveau les communes de la petite couronne parisienne (75, 92, 93, 94)
+{{% /box %}}
+
+```{python}
+#1) Importer arrondissements
+arrondissements = cartiflette.s3.download_vectorfile_url_all(
+    values = "75",
+    level="ARRONDISSEMENT_MUNICIPAL",
+    vectorfile_format="geojson",
+    decoupage="departement",
+    year=2022)
+```
+
+La carte de Paris intra-muros est, après la
+récupération des arrondissements avec
+`cartiflette` de ce type là:
+
+```{python}
+#2) Vérifier présence arrondissements
+ax = arrondissements.plot(alpha = 0.8, edgecolor = "k")
+ax.set_axis_off()
+```
+
+```{python}
+#3) Vérifier l'attribut `crs`. Est-il cohérent ?
+print(communes_borders.crs)
+print(communes_borders.crs == arrondissements.crs)
+# Oui, les deux fonds de carte ont le même attribut CRS, pas besoin de convertir les projections de l'une d'entre elles
+```
+
+```{python}
+#4) Retirer Paris et ajouter les arrondissements
+import pandas as pd
+
+data_paris = pd.concat(
+  [
+    communes_borders[communes_borders['INSEE_DEP'] != "75"],
+    arrondissements
+  ])
+```
+
+La carte obtenue à l'issue de la question 6, c'est-à-dire après
+avoir consolidé les données, devrait avoir l'aspect suivant:
+
+```{python}
+#6) Représenter les communes du 75, 92, 93, 94
+ax = data_paris.plot(alpha = 0.3, edgecolor = "k")
+ax.set_axis_off()
+```
+
+# Utiliser des données géographiques comme des couches graphiques
+
+Souvent, le découpage communal ne sert qu'en fond de cartes, pour donner des
+repères. En complément de celui-ci, on peut désirer exploiter
+un autre jeu de données.
+
+On va partir des données de localisation des
+stations velib, 
+disponibles [sur le site d'open data de la ville de Paris](https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/table/) et 
+requêtables directement par l'url
+<https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
+
+{{% box status="exercise" title="Exercice 3: importer et explorer les données velib" icon="fas fa-pencil-alt" %}}
+1. Importer les données velib sous le nom `station`
+2. Vérifier la projection géographique de `station` (attribut `crs`). Si celle-ci est différente des données communales, reprojeter ces
+dernières dans le même système de projection que les stations de vélib
+2.  Représenter sur une carte les 50 stations les plus importantes (variable `capacity`). Vous pouvez également afficher le fonds de carte des arrondissements de Paris.
+Cette [page](https://geopandas.org/mapping.html#maps-with-layers) peut vous aider pour comprendre comment afficher plusieurs couches à la fois. Vous pouvez customiser la carte en retirant les axes grâce à la méthode `set_axis_off` et mettre un titre tel que _"Les 50 principales stations de Vélib"_ avec la méthode `set_title`. 
+3. Afficher également (trait bleu et épais) les réseaux de transport en communs, disponibles [ici](https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/map/?location=7,48.69717,2.33167&basemap=jawg.streets). L'url à requêter est
+<https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
+{{% /box %}}
+
+
+
+```{python}
+# 1) Importer les données velib
+url = "https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
+stations = gpd.read_file(url)
+stations.head()
+```
+
+```{python}
+# 2) Reprojection
+stations.crs
+data_paris = data_paris.to_crs(stations.crs)
+```
+
+La carte attendu à l'issue de la question 3 a l'aspect suivant:
+
+```{python}
+# 3) Carte des 50 stations les plus importantes. 
+base = data_paris[data_paris['INSEE_DEP'] == '75'].plot(alpha = 0.2, edgecolor = 'black')
+stations.sort_values('capacity', ascending = False).head(50).plot(ax = base, color = 'red', alpha = 0.6)
+base.set_axis_off()
+base.set_title("Les 50 principales stations de Vélib")
+```
+
+
+```{python}
+# 4) Réseaux de transport en communs
+url = "https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
+transports = gpd.read_file(url)
+transports.head()
+print(transports['mode'].unique())
+```
+
+L'ajout du réseau de métro permet d'obtenir une carte ressemblant à celle-ci:
+
+```{python}
+base = data_paris[data_paris['INSEE_DEP'] == '75'].plot(alpha = 0.2, edgecolor = 'black')
+stations.sort_values('capacity', ascending = False).head(50).plot(ax = base, color = 'red', alpha = 0.6)
+transports[transports['mode'] == "METRO"].plot(ax=base, color = 'blue', alpha = 0.3,linewidth=3)
+base.set_axis_off()
+base.set_title("Les 50 principales stations de Vélib")
+```
+
+Pour faire une belle carte, il faudrait couper les lignes de métro via une jointure spatiale ou
+utiliser un fonds de carte conceptuel. 
+L'exercice suivant propose de mettre en oeuvre la deuxième méthode. La première 
+est proposée en [exercice supplémentaire 👇️](#exo-supp).
+
+
+{{% box status="exercise" title="Exercice 4: ajouter un fond de carte" icon="fas fa-pencil-alt" %}}
+
+1. Recréer par couche successive la carte précédente, que vous pouvez nommer `base`
+2. Utiliser `add_basemap` du package [`contextily`](https://contextily.readthedocs.io/en/latest/)
+pour ajouter, en arrière plan, un fonds de carte
+3. Jouer avec les fonds disponibles en utilisant l'argument `source`
+{{% /box  %}}
+
+Par exemple, en utilisant le fond `Stamen.Watercolor`, on obtient la carte
+suivante. Celle-ci permet déjà de mieux localiser les stations.
+
+```{python}
+base = data_paris[data_paris['INSEE_DEP'] == '75'].to_crs(3857).plot(alpha = 0.2, edgecolor = 'black')
+stations.sort_values('capacity', ascending = False).head(50).to_crs(3857).plot(ax = base, color = 'red', alpha = 0.6)
+base.set_axis_off()
+base.set_title("Les 50 principales stations de Vélib")
+ctx.add_basemap(base, source=ctx.providers.Stamen.Watercolor)
+```
+
+
+
+# Jointures spatiales
+
+Les jointures attributaires fonctionnent comme avec un DataFrame `pandas`.
+Pour conserver un objet spatial *in fine*, il faut faire attention à utiliser en premier (base de gauche) l'objet `GeoPandas`.
+En revanche, l'un des intérêts des objets geopandas est qu'on peut également faire une jointure sur la dimension spatiale grâce à `sjoin`.
+
+La documentation à laquelle se référer est [ici](https://geopandas.org/mergingdata.html#spatial-joins). 
+
+{{% box status="exercise" title="Exercice 4: Associer les stations aux communes et arrondissements auxquels elles appartiennent" icon="fas fa-pencil-alt" %}}
+1. Faire une jointure spatiale pour enrichir les données de stations en y ajoutant des informations de `data_paris`. Appeler cet objet `stations_info`
+2. Représenter la carte des stations du 19e arrondissement (s'aider de la variable `c_ar`). Vous pouvez mettre en fond de carte les arrondissements parisiens. 
+3. Compter le nombre de stations velib et le nombre de places velib par arrondissement ou commune (pour vous aider, vous pouvez compléter vos connaissances avec [ce tutoriel](https://pandas.pydata.org/docs/getting_started/intro_tutorials/06_calculate_statistics.html)). Représenter sur une carte chacune des informations
+4. Représenter les mêmes informations mais en densité (diviser par la surface de l'arrondissement ou commune en km2)
+5. (optionnel) Choisir une des cartes de densité et la nettoyer (retirer les axes, mettre les titres...)
+{{% /box %}}
+
+
+```{python}
+#1.  Jointure spatiale entre stations et data_paris
+stations_info = gpd.sjoin(stations, data_paris, predicate = 'within')
+stations_info.head()
+```
+
+Pour la question 2,
+la première méthode consiste à afficher
+toute la ville mais à ne représenter que
+les points des stations du 19e:
+
+```{python}
+#2. Carte des stations du 19e arrondissement
+# Méthode 1 : En affichant tout Paris
+base = data_paris[data_paris['INSEE_DEP'] == "75"].plot(alpha = 0.2, edgecolor = 'k') #fond de carte des arrondissements
+stations_19 = stations_info.loc[stations_info['NOM'].str.contains("19e")]
+stations_19.plot(ax = base, color = 'red', alpha = 0.6) # stations du 19e
+```
+
+Néanmoins, il est préférable de se centrer sur 
+le 19e en premier lieu, ce qui donne une
+carte comme celle-ci:
+
+```{python}
+# Méthode 2 : En affichant seulement le 19e
+base = data_paris[data_paris['NOM'].str.contains("19e")].to_crs(3857).plot(alpha = 0.2, edgecolor = 'k') #fond de carte du 19e
+stations_info[stations_info['NOM'].str.contains("19e")].to_crs(3857).plot(ax = base, color = 'red', alpha = 0.6) #stations du 19e
+ctx.add_basemap(base, source=ctx.providers.Stamen.Toner)
+```
+
+
+
+```{python}
+#3. Nombre de stations et de places vélib par arrondissement
+stations_agg = stations_info.groupby('NOM').agg({'stationcode': 'nunique',
+                                   'capacity': 'sum'}).reset_index()
+stations_agg.head()
+df = data_paris.merge(stations_agg, how = 'inner')
+df.head()
+```
+
+La carte des places disponibles est celle-ci:
+
+```{python}
+ax = df.plot(column = 'capacity', legend=True)
+ax.set_axis_off()
+ax.set_title("Nombre de places disponibles")
+```
+
+Alors que la carte des capacités de stations est
+plutôt celle-là:
+
+```{python}
+ax = df.plot(column = 'stationcode', legend=True)
+ax.set_axis_off()
+ax.set_title("Nombre de stations")
+```
+
+Pas vraiment de différence marquée entre les
+deux, on peut se contenter de regarder la capacité.
+
+Enfin, dans la question 4,
+si on représente plutôt la capacité 
+sous forme de densité, pour tenir compte
+de la taille différente des arrondissements,
+on obtient cette carte:
+
+```{python}
+#4. En densité
+cols = ['stationcode','capacity']
+df[[s + '_density' for s in cols]] = df[cols].div(df.to_crs(2158).area*10**(-6), axis = 0)
+df.plot(column = 'capacity_density', cmap = 'RdYlBu_r', legend=True)
+```
+
+Avec une palette `plasma_r`, cela donne plutôt cette carte:
+
+```{python}
+df.plot(column = 'capacity_density', cmap = 'plasma_r', legend=True)
+```
+
+Avec un peu de travail sur l'esthétique, la carte
+que vous obtenez à l'issue de l'exercice
+ressemble à celle-ci:
+
+```{python}
+#| output: false
+ax = df.plot(column = 'capacity_density', cmap = 'RdYlBu_r', legend=True, legend_kwds={"orientation": "horizontal", "pad": 0.01}) 
+ax.set_axis_off()
+ax.set_title("Densité des stations vélib dans l'agglomération parisienne")
+```
+
+```{python}
+ax.get_figure()
+```
+
+```{python}
+#| echo: false
+#| output: false
+fig = ax.get_figure()
+fig.savefig("featured.png")
+```
+
+# Trouver les toilettes publiques les plus proches
+
+## Objectif
+
+Jusqu'à présent, nous nous sommes familiarisés avec
+la manipulation de données spatiales et la représentation
+rapide de celle-ci grâce aux fonctionalités de `GeoPandas`.
+
+A partir de maintenant, nous allons utiliser `GeoPandas` 
+pour des tâches de manipulation géométrique.  
+Ces opérations reposeront sur des tâches classiques
+de la géomatique qui sont facilitées par le fait que
+`GeoPandas` offre une surcouche au package `Shapely` 
+de la même manière que `Pandas` était une sur-couche
+de `Numpy` pour les opérations numériques.
+
+L'exemple suivant permet d'illustrer 
+le principe d'une des
+opérations que nous allons utiliser,
+à savoir la recherche de plus proche point:
+
+```{python}
+#| echo: true
+
+from shapely.ops import Polygon
+from shapely.ops import nearest_points
+triangle = Polygon([(0, 0), (1, 0), (0.5, 1), (0, 0)])
+square = Polygon([(0, 2), (1, 2), (1, 3), (0, 3), (0, 2)])
+[o.wkt for o in nearest_points(triangle, square)]
+```
+
+`GeoPandas` va permettre de généraliser ce processus
+en utilisant non plus deux listes modifiées (les
+polygones de `Shapely`) mais des `DataFrames` géographiques.
+Cela permettra, au passage, d'enrichir les 
+jointures spatiales avec les attributs des `DataFrames`
+concernés. 
+
+Sur `Shapely`, vous pourrez trouver une aide [ici](https://pysal.org/scipy2019-intermediate-gds/deterministic/gds1-relations.html#how-about-nearest-neighbor-joins).
+Néanmoins, à mesure que `GeoPandas` se développe, il 
+devient de moins en moins nécessaire d'utiliser directement
+`Shapely`. 
+
+## Mise en application
+
+Nous allons rechercher les toilettes publiques les 
+plus proches de chaque station. 
+Sans les fonctionalités de `GeoPandas`,
+cette recherche serait assez pénible. 
+
+{{% box status="exercise" title="Exercice 5 (optionnel) : Trouver les toilettes publiques les plus proches d'une station de vélib" icon="fas fa-pencil-alt" %}}
+1. Charger la localisation des toilettes publiques présente ici : https://data.ratp.fr/explore/dataset/sanitaires-reseau-ratp/download/?format=geojson&timezone=Europe/Berlin&lang=fr. Appelez-la `toilettes_publiques`.
+2. Convertir les objets `toilettes_publiques` et `stations` au CRS 2154 (Lambert-93). Cette
+conversion permettra de mesurer en mètres les distances entre objets géographiques. Sans
+celle-ci, nous ferions des distances entre coordonnées GPS, ce qui n'aide pas l'analyse
+et l'interprétation. 
+2. Utiliser la jointure spatiale par plus proche distance `sjoin_nearest` pour associer à chaque station les toilettes publiques les plus proches
+3. Trouver les toilettes publiques les plus proches des stations de vélib autour d'Edgard Quinet.
+4. Représenter un histogramme des distances aux toilettes les plus proches
+{{% /box %}}
+
+Le jeu de données _open-data_ des toilettes 
+publiques présente l'aspect suivant:
+
+```{python}
+# 1. Charger les localisations des toilettes
+toilettes_publiques = gpd.read_file("https://data.ratp.fr/explore/dataset/sanitaires-reseau-ratp/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
+toilettes_publiques.head(2)
+```
+
+
+```{python}
+toilettes_publiques = toilettes_publiques.to_crs(2154)
+stations = stations.to_crs(2154)
+```
+
+Les toilettes les plus proches 
+d'Edgar Quinet sont les suivantes:
+
+```{python}
+# 3. Jointure spatiale
+stations_toilettes = stations.sjoin_nearest(
+  toilettes_publiques,
+  how='inner',
+  distance_col="distance")
+
+# 4. Trouver la station de toilettes la plus proche de la station de vélib "Edgard Quinet - Gaité"
+stations_toilettes.loc[
+  stations_toilettes['name'].str.contains("Edgar Quinet"),
+  ["localisation", "station","name","distance"]]
+```
+
+Il va donc falloir se
+retenir un peu car s'agit de toilettes situées
+à la station Denfert Rochereau !
+
+Enfin, de manière plus globale, voici la distribution
+des distances aux toilettes les plus proches:
+
+```{python}
+stations_toilettes['distance'].plot(kind = "hist")
+```
+
+Le mode de la distribution est entre 1 et 2km, ce
+qui est une petite distance tout de même !
+C'est normal, il ne s'agit pas de l'ensemble des
+toilettes publiques de la ville de Paris mais
+de celles gérées par la RATP. Rassurez-vous, au 
+moins dans Paris intra-muros, vous n'avez pas
+à systématiquement marcher (ou rouler) autant. 
+
+
+# Exercices supplémentaires {#exo-supp}
+
+Voici une fonction pour télécharger et dézipper
+facilement un fonds de carte issu de `data.gouv`
 
 ```{python}
 #| echo: true
@@ -77,96 +548,48 @@ temporary_location = tempfile.gettempdir()
 
 def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
   myfile = requests.get(url)
-  open(dirname + '/' + destname + '.zip', 'wb').write(myfile.content)
-  with zipfile.ZipFile(dirname + '/' + destname + '.zip', 'r') as zip_ref:
+  open("{}/{}.zip".format(dirname, destname), 'wb').write(myfile.content)
+  with zipfile.ZipFile("{}/{}.zip".format(dirname, destname), 'r') as zip_ref:
       zip_ref.extractall(dirname + '/' + destname)
 ```
 
+{{% box status="exercise" title="Exercice optionnel 1: télécharger et dézipper vous-même le fonds de carte" icon="fas fa-pencil-alt" %}}
 
-
-```{python}
-# 0) Chargement des packages utilisés dans la partie tutoriel
-import geopandas as gpd
-import contextily as ctx
-import matplotlib.pyplot as plt
-```
-
-{{% box status="exercise" title="Exercice 1: lire et explorer la structure de fichiers géographiques" icon="fas fa-pencil-alt" %}}
-1. Utiliser la fonction `download_unzip` avec l'url <https://www.data.gouv.fr/fr/datasets/r/07b7c9a2-d1e2-4da6-9f20-01a7b72d4b12>
-pour télécharger les données communales.
-2. Importer le fichier avec la package `geopandas`
+Importer le fichier avec le package `GeoPandas`
 (si vous avez laissé les paramètres par défaut,
 le fichier devrait
-être à l'emplacement `temporary_location + "/borders/communes-20190101.json"`).
-Vous pouvez le nommer `communes_borders`
-3. Regarder les premières lignes des données. Identifier la différence avec
-un DataFrame standard. 
-4. Afficher l'attribut `crs` de `communes_borders`. Ce dernier contrôle la
-transformation de l'espace tridimensionnel terrestre en une surface plane. 
-5. Afficher les communes de l'Aveyron (département 12) et utiliser la méthode
-`plot`
-6. Réprésenter la carte de Paris : quel est le problème ?
+être à l'emplacement `temporary_location + "/borders/communes-20210101.shp"`).
+
 {{% /box %}}
 
 
-
 ```{python}
+#| eval: false
+
 # 1) télécharger les données communales
-url = "https://www.data.gouv.fr/fr/datasets/r/07b7c9a2-d1e2-4da6-9f20-01a7b72d4b12"
+url = "https://www.data.gouv.fr/fr/datasets/r/0e117c06-248f-45e5-8945-0e79d9136165"
 download_unzip(url)
 ```
 
-
 ```{python}
+#| eval: false
+
 # 2) Importer le fichier
-communes_borders = gpd.read_file(temporary_location + "/borders/communes-20190101.json")
+#communes_borders = gpd.read_file(temporary_location + "/borders/communes-20220101.shp")
 ```
 
-
-```{python}
-# 3) Regarder les premières lignes
-communes_borders.head()
-```
-
-```{python}
-# 4) Afficher le crs
-communes_borders.crs
-```
-
-
-```{python}
-# 5) afficher les communes du département 12
-communes_borders[communes_borders.insee.str.startswith("12")].plot()
-```
-
-
-
-```{python}
-# 6) Représenter la carte de Paris. Quel est le problème ?
-communes_borders[communes_borders.insee.str.startswith("75")].plot()
-```
-
-
-En effet, on ne dispose ainsi pas des limites des arrondissements parisiens, ce
-qui appauvrit grandement la carte de Paris. On peut les récupérer directement 
-depuis le site d'open data du grand Paris
-(cf. [tutoriel du chapitre précédent](geopandas)).
-
-
-{{% box status="exercise" title="Exercice 2: compléter des données spatiales issues de sources différentes" icon="fas fa-pencil-alt" %}}
-
+{{% box status="exercise" title="Exercice optionnel 2 : Utiliser les arrondissements fournis par l'open data parisien" icon="fas fa-pencil-alt" %}}
 
 1. Importer les données de découpage des arrondissements parisiens à l'adresse
 <https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
-2. Vérifier sur une carte que les découpages des arrondissements sont bien présents
+2. Vérifier sur une carte que les découpages des arrondissements sont bien présents.
 3. Vérifier l'attribut `crs`. Est-il cohérent avec celui des données communales ?
 4. Retirer Paris du jeu de données communales et utiliser les arrondissements
 pour enrichir (nommer l'objet obtenu `data_borders`). Ici, on peut ne pas se
 soucier de la variable commune de superficie aux niveaux différents car on
 va la recréer. En revanche, renommer la variable `c_arinsee` en `insee` avec
 la méthode `rename` et faire attention aux types des variables
-5. Créer une variable `dep` stockant le département
-6. Représenter les communes de la petite couronne parisienne (75, 92, 93, 94)
+
 {{% /box %}}
 
 
@@ -179,253 +602,66 @@ arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arron
 ```{python}
 #2) Vérifier présence arrondissements
 arrondissements.plot()
-
 ```
-
 
 ```{python}
 #3) Vérifier l'attribut `crs`. Est-il cohérent ?
 print(communes_borders.crs)
 print(communes_borders.crs == arrondissements.crs)
+# Oui, les deux fonds de carte ont le même attribut CRS, pas besoin de convertir les projections de l'une d'entre elles
 ```
 
 
 
 ```{python}
 #4) Retirer Paris et ajouter les arrondissements
-arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
-arrondissements['dep'] = "75"
-data_paris = communes_borders[~communes_borders.insee.str.startswith("75")].append(arrondissements)
-data_paris.tail()
-```
-
-
-```{python}
-#5)  Créer une variable `dep`
-data_paris['dep'] # Il y a des NA qui proviennent de la base communes_borders
-data_paris['dep'] = data_paris.insee.astype(str).str[:2] # donc on recrée la var dep
+## On fait en sorte que les colonnes de arrondissements soient les mêmes que celles de communes borders
+arrondissements = arrondissements.rename(columns = {"c_arinsee": "INSEE_DEP"})
+arrondissements['INSEE_DEP'] = "75"
+# On sélectionne enlève la ligne du contour de Paris initiale, et on ajoute à la place les lignes d'arrondissements
+data_paris = communes_borders[communes_borders["INSEE_DEP"] != "75"].append(arrondissements)
+data_paris.tail(2)
 ```
 
 
 
-```{python}
-#6) Représenter les communes du 75, 92, 93, 94
-data_paris[data_paris['dep'].isin(['75','92','93','94'])].plot()
-```
+## Jointures spatiales
 
-# Utiliser des données géographiques comme des couches graphiques
+L'objectif de cet exercice est de ne conserver que les 
+lignes de transports à l'intérieur de Paris intra-muros.
+Il s'agit d'appliquer les jointures spatiales de manière
+un petit peu différente à précédemment.
 
-Souvent, le découpage communal ne sert qu'en fond de cartes, pour donner des
-repères. En complément de celui-ci, on peut désirer exploiter
-un autre jeu de données. On va partir des données de localisation des
-stations velib, 
-disponibles [sur le site d'open data de la ville de Paris](https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/table/) et 
-requêtables directement par l'url
-<https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
+{{% box status="exercise" title="Exercice optionnel 3 : Les lignes de transport dans Paris" icon="fas fa-pencil-alt" %}}
 
-{{% box status="exercise" title="Exercice 3: importer et explorer les données velib" icon="fas fa-pencil-alt" %}}
-1. Importer les données velib sous le nom `station`
-2. Représenter sur une carte les 50 stations les plus importantes (variable `capacity`). Vous pouvez également afficher le fonds de carte des arrondissements en ne gardant que les départements de la petite couronne (75, 92, 93, 94).
-Cette [page](https://geopandas.org/mapping.html#maps-with-layers) peut vous aider pour afficher plusieurs couches à la fois.
-3. Afficher également les réseaux de transport en communs, disponibles [ici](https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/map/?location=7,48.69717,2.33167&basemap=jawg.streets). L'url à requêter est
-<https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
+1. Utiliser l'URL <https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr> pour récupérer les lignes de transport
+de la RATP. L'appeler `transports`.
+2. A partir des arrondissements parisiens, utiliser `unary_union` pour créer un unique polygone parisien. Utiliser `within` pour ne conserver que les points de `transports` qui se trouvent
+dans Paris intra-muros
+3. Représenter graphiquement
 {{% /box %}}
 
 
-
 ```{python}
-# 1) Importer les données velib
-url = "https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
-stations = gpd.read_file(url)
-stations.head()
-```
-
-
-```{python}
-# 2) Carte des 50 stations les plus importantes. 
-base = data_paris[data_paris['dep'] == '75'].plot(alpha = 0.2, edgecolor = 'black')
-stations.sort_values('capacity', ascending = False).head(50).plot(ax = base, color = 'red', alpha = 0.6)
-transports[transports['mode'] == "Metro"].plot(ax = base, color = 'black', alpha = 0.3)
-```
-
-
-
-```{python}
-# 3) Réseaux de transport en communs
 url = "https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
 transports = gpd.read_file(url)
-transports.head()
-print(transports['mode'].unique())
-base = data_paris[data_paris['dep'] == '75'].plot(alpha = 0.2, edgecolor = 'black') #base carto des arrondissements
-stations.sort_values('capacity', ascending = False).head(50).plot(ax = base, color = 'red', alpha = 0.6) #points des 50 stations
-transports[transports['mode'] == "Metro"].plot(ax=base, color = 'black', alpha = 0.3)
 ```
-
-
-
-# Jointures spatiales
-
-Les jointures attributaires fonctionnent comme avec un DataFrame `pandas`. Pour conserver un objet spatial *in fine*, il faut faire attention à utiliser en premier (base de gauche) l'objet `geopandas`. En revanche, l'un des intérêts des objets geopandas est qu'on peut également faire une jointure sur la dimension spatiale.
-
-La documentation à laquelle se référer est [ici](https://geopandas.org/mergingdata.html#spatial-joins). 
-
-{{% box status="exercise" title="Exercice 4: Associer les stations aux communes et arrondissements auxquels elles appartiennent" icon="fas fa-pencil-alt" %}}
-1. Faire une jointure spatiale pour enrichir les données de stations en y ajoutant des informations de `data_paris`. Appeler cet objet `stations_info`
-2. Représenter la carte des stations du 19e arrondissement (s'aider de la variable `c_ar`). Vous pouvez mettre en fond de carte les arrondissements parisiens. 
-3. Compter le nombre de stations velib et le nombre de places velib par arrondissement ou commune (pour vous aider, vous pouvez compléter vos connaissances avec [ce tutoriel](https://pandas.pydata.org/docs/getting_started/intro_tutorials/06_calculate_statistics.html)). Représenter sur une carte chacune des informations
-4. Représenter les mêmes informations mais en densité (diviser par la surface de l'arrondissement ou commune en km2)
-{{% /box %}}
-
 
 ```{python}
-#1.  Jointure spatiale entre stations et data_paris
-stations_info = gpd.sjoin(stations, data_paris, op = 'within')
-stations_info.head()
+#2)
+paris = data_paris.loc[data_paris['INSEE_DEP']=="75"].geometry.unary_union
+transports_paris = transports[transports.geometry.within(paris)]
 ```
 
+La carte obtenue aura l'aspect suivant:
 
 ```{python}
-#2. Carte des stations du 19e arrondissement
-# Méthode 1 : En affichant tout Paris
-base = data_paris[data_paris.dep == "75"].plot(alpha = 0.2, edgecolor = 'k') #fond de carte des arrondissements
-stations_info[stations_info['c_ar'] == 19.0].plot(ax = base, color = 'red', alpha = 0.6) # stations du 19e
-# Méthode 2 : En affichant seulement le 19e
-base = data_paris[data_paris['c_ar'] == 19.0].plot(alpha = 0.2, edgecolor = 'k') #fond de carte du 19e
-stations_info[stations_info['c_ar'] == 19.0].plot(ax = base, color = 'red', alpha = 0.6) #stations du 19e
+base = data_paris[data_paris['INSEE_DEP'] == '75'].plot(alpha = 0.2, edgecolor = 'black')
+transports_paris.plot(ax=base, column='mode', alpha = 0.9, linewidth=3)
 ```
 
-
-
-```{python}
-#3. Nombre de stations et de places vélib par arrondissement
-stations_agg = stations_info.groupby('insee').agg({'stationcode': 'nunique',
-                                   'capacity': 'sum'}).reset_index()
-stations_agg.head()
-df = data_paris.merge(stations_agg, how = 'inner')
-df.head()
-df.plot(column = 'capacity', legend=True)
-df.plot(column = 'stationcode', legend=True)
-```
-
-
-
-```{python}
-#4. En densité
-cols = ['stationcode','capacity']
-df[[s + '_density' for s in cols]] = df[cols].div(df.to_crs(2158).area*10**(-6), axis = 0)
-df.plot(column = 'capacity_density', cmap = 'RdYlBu_r', legend=True)
-df.plot(column = 'capacity_density', cmap = 'plasma_r', legend=True)
-```
-
-
-# Trouver la station la plus proche
-
-
-Une aide [ici](https://pysal.org/scipy2019-intermediate-gds/deterministic/gds1-relations.html#how-about-nearest-neighbor-joins)
-
-Cet exemple peut également vous aider à comprendre certains concepts : 
-
-```{python, echo = TRUE, eval = TRUE, include = TRUE}
-from shapely.ops import Polygon
-from shapely.ops import nearest_points
-triangle = Polygon([(0, 0), (1, 0), (0.5, 1), (0, 0)])
-square = Polygon([(0, 2), (1, 2), (1, 3), (0, 3), (0, 2)])
-[o.wkt for o in nearest_points(triangle, square)]
-```
-
-{{% box status="exercise" title="Exercice 5 (optionnel): Trouver la station de métro la plus proche d'une station de vélib" icon="fas fa-pencil-alt" %}}
-1. Charger la localisation des stations de transports présente ici : https://data.ratp.fr/explore/dataset/accessibilite-des-gares-et-stations-metro-et-rer-ratp/download/?format=geojson&timezone=Europe/Berlin&lang=fr. Appelez-la `stations_transport` et ne gardez que les variables 'nomptar' et 'geometry'. 
-2. Trouver la station de transport la plus proche de la station de vélib "Edgard Quinet - Gaité". La ligne de code `ensemble_stations = stations_transport.unary_union` vous sera utile ainsi que l'importation de la fonction `from shapely.ops import nearest_points`.
-3. Généraliser aux 10 premières lignes de la table `stations` des vélibs en indiquant pour chaque station velib quelle est la station de transport en commun la plus proche dans une nouvelle colonne appelée `Nearest`.
-
-{{% /box %}}
-
-
-
-
-```{python}
-# 1. Charger les stations de transport
-# lien mort
-#stations_transport = gpd.read_file("https://data.ratp.fr/explore/dataset/positions-geographiques-des-stations-du-reseau-ratp/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
-stations_transport = gpd.read_file("https://data.ratp.fr/explore/dataset/accessibilite-des-gares-et-stations-metro-et-rer-ratp/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
-stations_transport = stations_transport[['nomptar','geometry']].dropna() #car sinon il y a des problèmes dans la gestion géographique
-stations_transport.head()
-stations.head()
-```
-
-
-```{python}
-# 2. Trouver la station de transport la plus proche de la station de vélib "Edgard Quinet - Gaité"
-ensemble_stations = stations_transport.unary_union
-ensemble_stations
-from shapely.ops import nearest_points
-edgard_quinet_gaite = stations[stations.name == 'Edgar Quinet - Gaité'].iloc[0,] #le iloc est fait pour passer d'un pd à un pd.series, sinon bug.
-nearest = nearest_points(edgard_quinet_gaite['geometry'], ensemble_stations)[1]
-stations_transport[stations_transport['geometry'] == nearest][:1]
-```
-
-
-```{python}
-# A améliorer dans la forme du code (je suis passée par des listes alors que je n'aurais probablement pas du). KA
-
-#3. Fonction qui généralise aux 10 premières stations de la base de données
-def find_nearest(numero_station):
-      station_choisie = stations.iloc[numero_station,]
-      nearest = nearest_points(station_choisie['geometry'], ensemble_stations)[1]
-      return stations_transport[stations_transport['geometry'] == nearest][:1]['nomptar']
-
-dix_premieres_stations = stations.head(10)
-dix_premieres_stations['Nearest'] = [list(find_nearest(num_station))[0] for num_station in dix_premieres_stations.index]
-dix_premieres_stations
-```
-
-<!-- 3. Quelle ligne de transport est à proximité du plus de velibs ? -->
-
-<!-- 4. Calculer la distance de chaque station à la ligne de métro la plus proche. Faire un nuage de points reliant distance au métro et nombre de places en stations -->
-
-
-```{python, eval = FALSE, include = FALSE}
-# Ancienne correction de Lino
-# un truc comme ça à revoir mais là fait des NaN :'(
-from shapely.ops import nearest_points
-temp = stations_transport.unary_union
-def find_nearest(geometry1, geometry2 = temp, df_point2 = stations_transport):
-    nearest = nearest_points(geometry1, geometry2)[1]
-    return df_point2[df_point2['geometry'] == nearest][:1]['nomptar']
-stations['Nearest'] = stations.apply(lambda row: find_nearest(row.geometry), axis=1)
-```
-
-<!-- # Exercices supplémentaires -->
-
-<!-- ## carte US election 2020 -->
-
-```{python, eval = FALSE, include = FALSE}
-import geopandas as gpd
-import urllib.request
-import gzip
-
-url = "https://int.nyt.com/newsgraphics/elections/map-data/2020/national/precincts-with-results.geojson.gz"
-# urllib.request.urlretrieve(url, "votes.gz")
-
-url2 = "https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_state_20m.zip"
-urllib.request.urlretrieve(url2, "states.zip")
-
-import gzip
-import shutil
-with gzip.open('votes.gz', 'rb') as f_in:
-    with open('votes.geojson', 'wb') as f_out:
-        shutil.copyfileobj(f_in, f_out)
-        
-import zipfile
-with zipfile.ZipFile("states.zip", 'r') as zip_ref:
-    zip_ref.extractall("states.shp")
-
-votes = gpd.read_file('votes.geojson')
-states = gpd.read_file("states.shp")
-votes['states'] = votes['GEOID'].str[:2]
-
-# alternative (plus rapide)
-essai = pd.read_csv("https://github.com/MEDSL/2020-elections-official/raw/main/PRESIDENT/PRESIDENT_precinct_general.csv.zip")
-essai.dropna(subset = ["party_simplified"]).groupby(["county_fips",'party_simplified']).agg({"votes": "sum"})
-```
-
+Cette fois, on a bien conservé que les lignes de transport dans 
+Paris. Un peu de travail sur le rendu serait nécessaire pour
+obtenir une belle carte. Vous pouvez le faire en exercice, après
+avoir consulté le chapitre relatif à la cartographie dans
+la partie visualisation de données. 
