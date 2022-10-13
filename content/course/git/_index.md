@@ -29,6 +29,7 @@ cet outil. Une mise en pratique est proposée
 avec [un cadavre exquis](/exogit).
 
 
+
 # Utilisation de `Git` avec `Python`
 
 `Git` est à la fois un outil et un langage. Il
