@@ -87,19 +87,20 @@ import cartiflette.s3
 {{% box status="exercise" title="Exercice 1: lire et explorer la structure de fichiers géographiques" icon="fas fa-pencil-alt" %}}
 1. S'inspirer des exemples de code présents dans le chapitre précédent, mobilisant
 le package `cartiflette`
-pour télécharger les données communales.
+pour télécharger les données communales des départements 75, 92, 93 et 94.
 Vous pouvez nommer l'objet `communes_borders`
-3. Regarder les premières lignes des données. Identifier la différence avec
+2. Regarder les premières lignes des données. Identifier la différence avec
 un DataFrame standard. 
-4. Afficher l'attribut `crs` de `communes_borders`. Ce dernier contrôle la
+3. Afficher l'attribut `crs` de `communes_borders`. Ce dernier contrôle la
 transformation de l'espace tridimensionnel terrestre en une surface plane. 
-5. Afficher les communes des Hauts de Seine (département 92) et utiliser la méthode
+4. Afficher les communes des Hauts de Seine (département 92) et utiliser la méthode
 `plot`
-6. Réprésenter la carte de Paris : quel est le problème ?
+5. Réprésenter la carte de Paris : quel est le problème ?
 {{% /box %}}
 
 
 ```{python}
+#1) Chargement des données de Cartiflette
 communes_borders = cartiflette.s3.download_vectorfile_url_all(
     values = ["75", "92", "93", "94"],
     level="COMMUNE",
@@ -118,13 +119,13 @@ communes_borders.head()
 ```{python}
 # 3) Afficher le crs
 communes_borders.crs
-# Les données ne sont pas projetées, elles sont en "longitude - latitude" (WGS 84)
+# Les données sont projetées en lambert 93
 ```
 
 La carte du 92 est la suivante:
 
 ```{python}
-# 4) afficher les communes du département 12
+# 4) afficher les communes du département 92
 ax = communes_borders[communes_borders['INSEE_DEP'] == "92"].plot()
 ax.set_axis_off()
 ```
@@ -151,13 +152,12 @@ On propose ici d'utiliser à nouveau
 {{% box status="exercise" title="Exercice 2: compléter des données spatiales issues de sources différentes" icon="fas fa-pencil-alt" %}}
 
 
-1. Importer les données de découpage des arrondissements parisiens à l'adresse
-<https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
+1. Importer les données de découpage des arrondissements parisiens à l'adresse à l'aide de `cartiflette`.
 2. Vérifier sur une carte que les découpages des arrondissements sont bien présents.
 3. Vérifier l'attribut `crs`. Est-il cohérent avec celui des données communales ?
 4. Retirer Paris du jeu de données communales et utiliser les arrondissements
 pour enrichir (nommer l'objet obtenu `data_borders`). 
-6. Représenter à nouveau les communes de la petite couronne parisienne (75, 92, 93, 94)
+5. Représenter à nouveau les communes de la petite couronne parisienne (75, 92, 93, 94)
 {{% /box %}}
 
 ```{python}
@@ -183,8 +183,9 @@ ax.set_axis_off()
 ```{python}
 #3) Vérifier l'attribut `crs`. Est-il cohérent ?
 print(communes_borders.crs)
+print(arrondissements.crs)
 print(communes_borders.crs == arrondissements.crs)
-# Oui, les deux fonds de carte ont le même attribut CRS, pas besoin de convertir les projections de l'une d'entre elles
+# Non, les deux fonds de carte n'ont pas le même attribut CRS, il faudrait convertir l'une d'elle pour les manipuler ensemble
 ```
 
 ```{python}
@@ -202,7 +203,7 @@ La carte obtenue à l'issue de la question 6, c'est-à-dire après
 avoir consolidé les données, devrait avoir l'aspect suivant:
 
 ```{python}
-#6) Représenter les communes du 75, 92, 93, 94
+#5) Représenter les communes du 75, 92, 93, 94
 ax = data_paris.plot(alpha = 0.3, edgecolor = "k")
 ax.set_axis_off()
 ```
@@ -223,9 +224,9 @@ requêtables directement par l'url
 1. Importer les données velib sous le nom `station`
 2. Vérifier la projection géographique de `station` (attribut `crs`). Si celle-ci est différente des données communales, reprojeter ces
 dernières dans le même système de projection que les stations de vélib
-2.  Représenter sur une carte les 50 stations les plus importantes (variable `capacity`). Vous pouvez également afficher le fonds de carte des arrondissements de Paris.
+3.  Représenter sur une carte les 50 stations les plus importantes (variable `capacity`). Vous pouvez également afficher le fonds de carte des arrondissements de Paris.
 Cette [page](https://geopandas.org/mapping.html#maps-with-layers) peut vous aider pour comprendre comment afficher plusieurs couches à la fois. Vous pouvez customiser la carte en retirant les axes grâce à la méthode `set_axis_off` et mettre un titre tel que _"Les 50 principales stations de Vélib"_ avec la méthode `set_title`. 
-3. Afficher également (trait bleu et épais) les réseaux de transport en communs, disponibles [ici](https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/map/?location=7,48.69717,2.33167&basemap=jawg.streets). L'url à requêter est
+4. Afficher également (trait bleu et épais) les réseaux de transport en communs, disponibles [ici](https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/map/?location=7,48.69717,2.33167&basemap=jawg.streets). L'url à requêter est
 <https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr>
 {{% /box %}}
 
@@ -266,6 +267,7 @@ print(transports['mode'].unique())
 L'ajout du réseau de métro permet d'obtenir une carte ressemblant à celle-ci:
 
 ```{python}
+# 4) Réseaux de transport en communs (suite)
 base = data_paris[data_paris['INSEE_DEP'] == '75'].plot(alpha = 0.2, edgecolor = 'black')
 stations.sort_values('capacity', ascending = False).head(50).plot(ax = base, color = 'red', alpha = 0.6)
 transports[transports['mode'] == "METRO"].plot(ax=base, color = 'blue', alpha = 0.3,linewidth=3)
@@ -308,7 +310,7 @@ En revanche, l'un des intérêts des objets geopandas est qu'on peut également 
 
 La documentation à laquelle se référer est [ici](https://geopandas.org/mergingdata.html#spatial-joins). 
 
-{{% box status="exercise" title="Exercice 4: Associer les stations aux communes et arrondissements auxquels elles appartiennent" icon="fas fa-pencil-alt" %}}
+{{% box status="exercise" title="Exercice 5 : Associer les stations aux communes et arrondissements auxquels elles appartiennent" icon="fas fa-pencil-alt" %}}
 1. Faire une jointure spatiale pour enrichir les données de stations en y ajoutant des informations de `data_paris`. Appeler cet objet `stations_info`
 2. Représenter la carte des stations du 19e arrondissement (s'aider de la variable `c_ar`). Vous pouvez mettre en fond de carte les arrondissements parisiens. 
 3. Compter le nombre de stations velib et le nombre de places velib par arrondissement ou commune (pour vous aider, vous pouvez compléter vos connaissances avec [ce tutoriel](https://pandas.pydata.org/docs/getting_started/intro_tutorials/06_calculate_statistics.html)). Représenter sur une carte chacune des informations
@@ -361,6 +363,7 @@ df.head()
 La carte des places disponibles est celle-ci:
 
 ```{python}
+#3. Nombre de stations et de places vélib par arrondissement
 ax = df.plot(column = 'capacity', legend=True)
 ax.set_axis_off()
 ax.set_title("Nombre de places disponibles")
@@ -370,6 +373,7 @@ Alors que la carte des capacités de stations est
 plutôt celle-là:
 
 ```{python}
+#3. Nombre de stations et de places vélib par arrondissement
 ax = df.plot(column = 'stationcode', legend=True)
 ax.set_axis_off()
 ax.set_title("Nombre de stations")
@@ -394,6 +398,7 @@ df.plot(column = 'capacity_density', cmap = 'RdYlBu_r', legend=True)
 Avec une palette `plasma_r`, cela donne plutôt cette carte:
 
 ```{python}
+#4. En densité
 df.plot(column = 'capacity_density', cmap = 'plasma_r', legend=True)
 ```
 
@@ -403,6 +408,7 @@ ressemble à celle-ci:
 
 ```{python}
 #| output: false
+# 5 Cartes nettoyées
 ax = df.plot(column = 'capacity_density', cmap = 'RdYlBu_r', legend=True, legend_kwds={"orientation": "horizontal", "pad": 0.01}) 
 ax.set_axis_off()
 ax.set_title("Densité des stations vélib dans l'agglomération parisienne")
@@ -471,13 +477,13 @@ cette recherche serait assez pénible.
 
 {{% box status="exercise" title="Exercice 5 (optionnel) : Trouver les toilettes publiques les plus proches d'une station de vélib" icon="fas fa-pencil-alt" %}}
 1. Charger la localisation des toilettes publiques présente ici : https://data.ratp.fr/explore/dataset/sanitaires-reseau-ratp/download/?format=geojson&timezone=Europe/Berlin&lang=fr. Appelez-la `toilettes_publiques`.
-2. Convertir les objets `toilettes_publiques` et `stations` au CRS 2154 (Lambert-93). Cette
+2. Convertir les objets `toilettes_publiques` et `stations` en projection Lambert-93 (CRS 2154). Cette
 conversion permettra de mesurer en mètres les distances entre objets géographiques. Sans
 celle-ci, nous ferions des distances entre coordonnées GPS, ce qui n'aide pas l'analyse
 et l'interprétation. 
-2. Utiliser la jointure spatiale par plus proche distance `sjoin_nearest` pour associer à chaque station les toilettes publiques les plus proches
-3. Trouver les toilettes publiques les plus proches des stations de vélib autour d'Edgard Quinet.
-4. Représenter un histogramme des distances aux toilettes les plus proches
+3. Utiliser la jointure spatiale par plus proche distance `sjoin_nearest` pour associer à chaque station les toilettes publiques les plus proches
+4. Trouver les toilettes publiques les plus proches des stations de vélib autour d'Edgard Quinet.
+5. Représenter un histogramme des distances aux toilettes les plus proches
 {{% /box %}}
 
 Le jeu de données _open-data_ des toilettes 
@@ -491,6 +497,7 @@ toilettes_publiques.head(2)
 
 
 ```{python}
+#2. Conversion des CRS
 toilettes_publiques = toilettes_publiques.to_crs(2154)
 stations = stations.to_crs(2154)
 ```
@@ -505,7 +512,8 @@ stations_toilettes = stations.sjoin_nearest(
   how='inner',
   distance_col="distance")
 
-# 4. Trouver la station de toilettes la plus proche de la station de vélib "Edgard Quinet - Gaité"
+
+# 4. Trouver les toilettes les plus proches d'Edgard Quinet
 stations_toilettes.loc[
   stations_toilettes['name'].str.contains("Edgar Quinet"),
   ["localisation", "station","name","distance"]]
@@ -519,10 +527,11 @@ Enfin, de manière plus globale, voici la distribution
 des distances aux toilettes les plus proches:
 
 ```{python}
+#5. Histogramme
 stations_toilettes['distance'].plot(kind = "hist")
 ```
 
-Le mode de la distribution est entre 1 et 2km, ce
+Le mode de la distribution est entre 1 et 2 km, ce
 qui est une petite distance tout de même !
 C'est normal, il ne s'agit pas de l'ensemble des
 toilettes publiques de la ville de Paris mais
