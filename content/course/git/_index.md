@@ -17,7 +17,7 @@ type: book
 ---
 
 Cette partie du site présente un élément qui n'est pas propre à
-`Python` mais qui est néanmoins indispensable: la pratique de `Git`.
+`Python` mais qui est néanmoins indispensable : la pratique de `Git`.
 
 Une grande partie du contenu de la partie provient du cours
 [Travail collaboratif avec `R`](https://linogaliana.gitlab.io/collaboratif/git.html)
