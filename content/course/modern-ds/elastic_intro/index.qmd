@@ -248,9 +248,10 @@ pour tester des requêtes et pour superviser le serveur Elastic. Cependant,
 pour le passage à l'échelle, notamment pour mettre en lien une base indexée dans
 Elastic avec une autre source de données, les API proposées par `ElasticSearch`
 sont beaucoup plus pratiques. Ces API permettent de connecter une session `Python` (idem pour `R`)
-à un serveur `Elastic` afin de communiquer avec lui (échanger des flux via une API REST). 
+à un serveur `Elastic` afin de communiquer avec lui
+(échanger des flux via une API REST). 
 
-## ElasticSearch et Python
+## `ElasticSearch` et `Python`
 
 En `Python`, le package officiel est [`elasticsearch`](https://elasticsearch-py.readthedocs.io/en/v7.12.0/).
 Ce dernier permet de configurer les paramètres pour interagir avec un serveur, indexer 
@@ -259,9 +260,9 @@ au serveur, récupérer les résultats directement dans une session `Python`...
 
 # Limites de la distance de Levenshtein
 
-
-On appelle distance de Levenshtein entre deux chaînes de caractères le coût minimal (en nombre d'opérations)
-pour transformer la première en la seconde par
+On appelle __distance de Levenshtein__ entre deux chaînes de caractères 
+le coût minimal (en nombre d'opérations)
+pour transformer la première en la seconde par:
 
 * substitution
 * insertion
@@ -272,27 +273,42 @@ chaînes de caractères. Il existe plusieurs packages pour calculer cette derni�
 `fuzzywuzzy` est le plus connu mais ce dernier est assez lent (implémentation en pur `Python`).
 Le package `rapidfuzz`, présenté ici, propose les mêmes fonctionalités mais est plus rapide car implémenté
 en `C++` qui est plus efficace. 
+Cependant, nous allons le voir, ce package ne nous
+offrira pas des performances
+assez bonnes pour que nous puissions
+passer à l'échelle.
+
+Voici trois exemples pour évaluer le coût de chaque 
+opération:
 
 ```{python}
-import rapidfuzz # "Rapid fuzzy string matching in Python and C++ using the Levenshtein Distance" soit l'équivalent plus rapide de la librarie fuzzywuzzy
-[rapidfuzz.string_metric.levenshtein('salut','slut', weights =(1,1,1)), # Suppression 
- rapidfuzz.string_metric.levenshtein('salut','saalut', weights =(1,1,1)), # Addition 
- rapidfuzz.string_metric.levenshtein('salut','selut', weights =(1,1,1))] # Substitution
+import rapidfuzz
+
+[
+  rapidfuzz.string_metric.levenshtein('salut','slut', weights =(1,1,1)), # Suppression 
+  rapidfuzz.string_metric.levenshtein('salut','saalut', weights =(1,1,1)), # Addition 
+  rapidfuzz.string_metric.levenshtein('salut','selut', weights =(1,1,1)) # Substitution
+  ] 
 ```
 
-## Produits Ciqual les plus similaires aux produits de la recette
+## Produits `Ciqual` les plus similaires aux produits de la recette
 
 On pourrait écrire une fonction qui prend en argument une liste de libellés d'intérêt et une liste de candidat au *match* et
 renvoie le libellé le plus proche. Cependant, le risque est que cet algorithme soit relativement lent s'il n'est pas codé
 parfaitement. Il est, à mon avis, plus simple, quand
-on est habitué à la logique `pandas`, de faire un produit cartésien pour obtenir un vecteur mettant en miroir
+on est habitué à la logique `Pandas`,
+de faire un produit cartésien pour obtenir un vecteur mettant en miroir
 chaque produit de notre recette avec l'ensembles des produits Ciqual et ensuite comparer les deux vecteurs pour prendre,
-pour chaque produit, le meilleur *match*. Les bases étant de taille limitée, le produit cartésien n'est pas problématique.
-Avec des bases plus conséquentes une stratégie plus parcimonieuse en mémoire devrait être envisagée. 
+pour chaque produit, le meilleur *match*.
+Les bases étant de taille limitée, le produit cartésien n'est pas problématique.
+Avec des bases plus conséquentes, une stratégie plus parcimonieuse en mémoire devrait être envisagée. 
 
+Pour faire cette opération, on va utiliser la fonction `match_product` de 
+note script d'utilitaires. 
 
 ```{python}
 dist_leven = fc.match_product(libelles, ciqual)
+dist_leven
 ```
 
 Cette première étape naïve est décevante à plusieurs égards: 
@@ -301,14 +317,14 @@ Cette première étape naïve est décevante à plusieurs égards:
 mais on a plus de couples incohérents ;
 * Le temps de calcul peut apparaître faible mais le passage à l'échelle risque d'être compliqué ;
 * Les besoins mémoires sont potentiellement importants lors de l'appel à 
-`rapidfuzz.process.extract` ce qui peut bloquer le passage à l'échelle
+`rapidfuzz.process.extract` ce qui peut bloquer le passage à l'échelle ;
 * La distance textuelle n'est pas nécessairement la plus pertinente. 
 
-On a négligé une étape importante: la normalisation (ou nettoyage des textes) présentée dans la 
+On a, en fait, négligé une étape importante: la normalisation (ou nettoyage des textes) présentée dans la 
 partie [NLP](#nlp), notamment: 
 
 * harmonisation de la casse, suppression des accents...
-* suppressions des mots outils (e.g. ici on va d'abord négliger les quantités pour trouver la nature de l'aliment, en particulier pour Ciqual)
+* suppressions des mots outils (e.g. ici on va d'abord négliger les quantités pour trouver la nature de l'aliment, en particulier pour `Ciqual`)
     
 
 ## Preprocessing pour améliorer la pertinence des matches
