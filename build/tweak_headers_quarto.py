@@ -17,9 +17,8 @@ def clean_overwrite_file(fl):
         # Delimit header
         if "---" in line:
             c += 1
-        if c <= 2:
+        if c < 2:
             line = re.sub("echo:\s?false", "echo: true", line)
-            line = re.sub("include:\s?false", "include: true", line)
         text_out.append(line)
         
     with open(fl, 'w') as file_out:
