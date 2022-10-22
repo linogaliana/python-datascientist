@@ -53,4 +53,4 @@ if __name__ == '__main__':
 
     for fl in list_files:
         if not fl.endswith("_index.md"):
-            clean_overwrite_file(fl)
+            change_box_markdown(fl)
