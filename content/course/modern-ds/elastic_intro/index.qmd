@@ -18,7 +18,7 @@ summary: |
   technologie dans des processus `Python` afin de les accélérer. Ce chapitre
   présente cette intégration d'`Elastic` avec l'exemple de la recherche
   dans les données alimentaires de l'`OpenFoodFacts` Database 
-bibliography: ../../reference.bib
+bibliography: ../../../../reference.bib
 ---
 
 
@@ -407,7 +407,7 @@ la cuisson est souvent renseignée et bruite les appariemments.
 sans accent, la fonction `unidecode` 
 (du package du même nom) est pratique. 
 La tester sur le jeu de données `ciqual` en créant une nouvelle
-colonne nommée `nom_clean`
+colonne nommée `libel_clean`
 
 2. La casse différente selon les jeux de données peut être pénalisante
 pour trouver des produits similaires. Pour éviter ces problèmes,
@@ -445,7 +445,7 @@ ressembler à celui-ci:
 ```{python}
 #| echo: false
 from unidecode import unidecode
-ciqual['nom_clean'] = ciqual['alim_nom_fr'].apply(lambda s: unidecode(s))
+ciqual['libel_clean'] = ciqual['alim_nom_fr'].apply(lambda s: unidecode(s))
 ciqual.head(2)
 ```
 
@@ -454,7 +454,7 @@ suivant:
 
 ```{python}
 #| echo: false
-ciqual['nom_clean'] = ciqual['nom_clean'].str.upper()
+ciqual['libel_clean'] = ciqual['libel_clean'].str.upper()
 ciqual.head(2)
 ```
 
@@ -463,13 +463,14 @@ la forme suivante:
 
 ```{python}
 #| echo: false
+import nltk
 from nltk.corpus import stopwords
 nltk.download('stopwords')
 
 stop_words = ['KG','CL','G','L','CRUE?S?', 'PREEMBALLEE?S?']
 stop_words += [l.upper() for l in stopwords.words('french')]
 
-ciqual['nom_clean'] = ciqual['nom_clean'].str.replace(
+ciqual['libel_clean'] = ciqual['libel_clean'].str.replace(
             '|'.join([r'\b{}\b'.format(w) for w in stop_words]),
             "", regex = True
         )
@@ -481,7 +482,7 @@ La regex pour éliminer les caractères de ponctuation permet ainsi d'obtenir:
 
 ```{python}
 #| echo: false
-ciqual["nom_clean"] = ciqual["nom_clean"].str.replace(r'[^a-zA-Z]', ' ', regex=True)
+ciqual["libel_clean"] = ciqual["libel_clean"].str.replace(r'[^a-zA-Z]', ' ', regex=True)
 ciqual.head(2)
 ```
 
@@ -489,7 +490,7 @@ Enfin, à l'issue de la question 5, le `DataFrame` obtenu est le suivant:
 
 ```{python}
 #| echo: false
-ciqual["nom_clean"] = ciqual["nom_clean"].str.replace(r'([ ]{2,})', ' ', regex=True)
+ciqual["libel_clean"] = ciqual["libel_clean"].str.replace(r'([ ]{2,})', ' ', regex=True)
 ciqual.head(2)
 ```
 
@@ -513,6 +514,7 @@ Pour résumer l'exercice précédent, cette fonction va :
 * Retirer les caractères isolés.
 
 ```{python}
+import nltk
 from nltk.corpus import stopwords
 nltk.download('stopwords')
 
@@ -561,12 +563,14 @@ de recherche est faible. Cette solution n'est donc pas généralisable.
 
 ## Réduire les temps de recherche
 
-Finalement, l'idéal serait de disposer d'un **moteur de recherche** adapté à notre besoin, contenant les produits candidats, que l'on pourrait interroger, rapide en lecture, capable de classer les échos renvoyés par pertinence, que l'on pourrait requêter de manière flexible. 
+Finalement, l'idéal serait de disposer d'un **moteur de recherche** adapté à notre besoin,
+contenant les produits candidats, que l'on pourrait interroger, rapide en lecture, capable de classer les échos renvoyés par pertinence, que l'on pourrait requêter de manière flexible. 
+
 Par exemple, on pourrait vouloir signaler qu'un
 écho nous intéresse seulement si la donnée calorique n'est pas manquante.
 On pourrait même vouloir qu'il effectue pour nous des prétraitements sur les données. 
 
-Cela paraît beaucoup demander. Mais c'est exactement ce que fait `Elastic`.
+Cela paraît beaucoup demander. Mais c'est exactement ce que fait `ElasticSearch`.
 
 # Indexer une base 
 
