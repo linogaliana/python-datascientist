@@ -320,7 +320,7 @@ opération:
 import rapidfuzz
 
 [
-  rapidfuzz.string_metric.levenshtein('salut','slut', weights =(1,1,1)), # Suppression 
+  rapidfuzz.distance.Levenshtein.distance('salut','slut', weights =(1,1,1)), # Suppression 
   rapidfuzz.distance.Levenshtein.distance('salut','saalut', weights =(1,1,1)), # Addition 
   rapidfuzz.distance.Levenshtein.distance('salut','selut', weights =(1,1,1)) # Substitution
 ] 
@@ -630,7 +630,7 @@ HOST = 'elasticsearch-master'
 
 def elastic():
     """Connection avec Elastic sur le data lab"""
-    es = Elasticsearch([{'host': HOST, 'port': 9200}], http_compress=True,  timeout=200)
+    es = Elasticsearch([{'host': HOST, 'port': 9200, 'scheme': 'http'}], http_compress=True, request_timeout=200)
     return es
 
 es = elastic()
@@ -652,10 +652,10 @@ On crée donc nos deux index:
 
 ```{python}
 #| eval: false
-if not es.indices.exists('openfood'):
-    es.indices.create('openfood')
-if not es.indices.exists('ciqual'):
-    es.indices.create('ciqual')
+if not es.indices.exists(index = 'openfood'):
+    es.indices.create(index = 'openfood')
+if not es.indices.exists(index = 'ciqual'):
+    es.indices.create(index = 'ciqual')
 ```
 
 Pour l'instant, nos index sont vides! Ils contiennent 0 documents.
@@ -671,61 +671,75 @@ es.count(index = 'openfood')
 
 Nous allons en rajouter quelques uns ! 
 
-~~~python
+```{python}
+#| eval: false
 es.create(index = 'openfood',  id = 1, body = {'product_name': 'Tarte noix de coco', 'product_name_clean': 'TARTE NOIX COCO'})
 es.create(index = 'openfood',  id = 2, body = {'product_name': 'Noix de coco', 'product_name_clean': 'NOIX COCO'})
 es.create(index = 'openfood',  id = 3, body = {'product_name': 'Beurre doux', 'product_name_clean': 'BEURRE DOUX'})
-~~~
+```
 
-~~~python
+```{python}
+#| eval: false
 es.count(index = 'openfood')
-~~~
+```
 
 ```
 {'count': 3, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}}
 ```
 
+Dans l'interface graphique `Kibana`,
+on peut vérifier que l'indexation 
+a bien eue lieu en allant dans `Management > Stack Management`
+
+![](index_management.png)
+
+
+
 ## Première recherche
 
 Faisons notre première recherche: cherchons des noix de pécan! 
 
-~~~python
+```{python}
+#| eval: false
 es.search(index = 'openfood', q = 'noix de pécan')
-~~~
+```
 
 ```
-{'took': 3102, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 2, 'relation': 'eq'}, 'max_score': 0.9400072, 'hits': [{'_index': 'openfood', '_type': '_doc', '_id': '2', '_score': 0.9400072, '_source': {'product_name': 'Noix de coco', 'product_name_clean': 'NOIX COCO'}}, {'_index': 'openfood', '_type': '_doc', '_id': '1', '_score': 0.8272065, '_source': {'product_name': 'Tarte noix de coco', 'product_name_clean': 'TARTE NOIX COCO'}}]}}
+ObjectApiResponse({'took': 116, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 2, 'relation': 'eq'}, 'max_score': 0.9400072, 'hits': [{'_index': 'openfood', '_type': '_doc', '_id': '2', '_score': 0.9400072, '_source': {'product_name': 'Noix de coco', 'product_name_clean': 'NOIX COCO'}}, {'_index': 'openfood', '_type': '_doc', '_id': '1', '_score': 0.8272065, '_source': {'product_name': 'Tarte noix de coco', 'product_name_clean': 'TARTE NOIX COCO'}}]}})
 ```
 
 
 Intéressons nous aux `hits` (résultats pertinents, ou echos) : nous en avons 2. 
 Le score maximal parmi les hits est mentionné dans `max_score` et correspond à celui du deuxième document indexé.
 
-Elastic nous fournit ici un **score de pertinence** dans notre recherche d'information, et classe ainsi les documents renvoyés.
+`Elastic` nous fournit ici un **score de pertinence** dans notre recherche d'information, et classe ainsi les documents renvoyés.
 
 Ici nous utilisons la configuration par défaut. Mais comment est calculé ce score? Demandons à Elastic de nous expliquer le score du document `2` dans la requête `"noix de pécan"`.
 
-~~~python
+
+```{python}
+#| eval: false
 es.explain(index = 'openfood', id = 2, q = 'noix de pécan')
-~~~
-
-```
-{'_index': 'openfood', '_type': '_doc', '_id': '2', 'matched': True, 'explanation': {'value': 0.9400072, 'description': 'max of:', 'details': [{'value': 0.49917626, 'description': 'sum of:', 'details': [{'value': 0.49917626, 'description': 'weight(product_name_clean:noix in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.49917626, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.48275858, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 2.0, 'description': 'dl, length of field', 'details': []}, {'value': 2.3333333, 'description': 'avgdl, average length of field', 'details': []}]}]}]}]}, {'value': 0.9400072, 'description': 'sum of:', 'details': [{'value': 0.4700036, 'description': 'weight(product_name:noix in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.4700036, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.45454544, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 3.0, 'description': 'dl, length of field', 'details': []}, {'value': 3.0, 'description': 'avgdl, average length of field', 'details': []}]}]}]}, {'value': 0.4700036, 'description': 'weight(product_name:de in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.4700036, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.45454544, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 3.0, 'description': 'dl, length of field', 'details': []}, {'value': 3.0, 'description': 'avgdl, average length of field', 'details': []}]}]}]}]}]}}
 ```
 
+```
+ObjectApiResponse({'_index': 'openfood', '_type': '_doc', '_id': '2', 'matched': True, 'explanation': {'value': 0.9400072, 'description': 'max of:', 'details': [{'value': 0.49917626, 'description': 'sum of:', 'details': [{'value': 0.49917626, 'description': 'weight(product_name_clean:noix in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.49917626, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.48275858, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 2.0, 'description': 'dl, length of field', 'details': []}, {'value': 2.3333333, 'description': 'avgdl, average length of field', 'details': []}]}]}]}]}, {'value': 0.9400072, 'description': 'sum of:', 'details': [{'value': 0.4700036, 'description': 'weight(product_name:noix in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.4700036, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.45454544, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 3.0, 'description': 'dl, length of field', 'details': []}, {'value': 3.0, 'description': 'avgdl, average length of field', 'details': []}]}]}]}, {'value': 0.4700036, 'description': 'weight(product_name:de in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.4700036, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.45454544, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 3.0, 'description': 'dl, length of field', 'details': []}, {'value': 3.0, 'description': 'avgdl, average length of field', 'details': []}]}]}]}]}]}})
+```
 
-Elastic nous explique donc que le score `0.9400072` est le maximum entre deux sous-scores, `0.4991` et `0.9400072`.
+
+`Elastic` nous explique donc que le score `0.9400072` est le maximum entre deux sous-scores, `0.4991` et `0.9400072`.
 
 Pour chacun de ces sous-scores, le détail de son calcul est donné.
 Le premier sous-score n'a accordé un score que par rapport au premier mot (noix), tandis que le second a accordé un score sur la base des deux mots déjà connu dans les documents ("noix" et "de"). Il a ignoré pécan! Jusqu'à présent, ce terme n'est pas connu dans l'index. 
 
-La pertinence d'un mot pour notre recherche est construite sur une variante de la TF-IDF,
+La pertinence d'un mot pour notre recherche est construite sur une variante de la `TF-IDF`,
 considérant qu'un terme est pertinent s'il est souvent présent dans le document (Term Frequency)
 alors qu'il est peu fréquent dans les autres document (inverse document frequency).
 Ici les notations des documents 1 et 2 sont très proches, la différence est dûe à des IDF plus faibles dans le document 1,
 qui est pénalisé pour être légérement plus long. 
 
-Bref, tout ça est un peu lourd, mais assez efficace, en tout cas moins rudimentaire que les distances caractères à caractères pour ramener des echos pertinents.
+Bref, tout ça est un peu lourd, mais assez efficace,
+en tout cas moins rudimentaire que les distances caractères à caractères pour ramener des echos pertinents.
 
 
 ## Limite de cette première indexation
@@ -733,35 +747,41 @@ Bref, tout ça est un peu lourd, mais assez efficace, en tout cas moins rudiment
 Pour l'instant, Elastic n'a pas l'air de gérer les fautes de frappes!
 Pas le droit à l'erreur dans la requête:
 
-~~~python
+
+```{python}
+#| eval: false
 es.search(index = 'openfood',q = 'TART NOI')
-~~~
-
-```
-{'took': 35, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 0, 'relation': 'eq'}, 'max_score': None, 'hits': []}}
 ```
 
+```
+ObjectApiResponse({'took': 38, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 0, 'relation': 'eq'}, 'max_score': None, 'hits': []}})
+```
 
-Cela s'explique par la représentation des champs (*'product_name'* par exemple) qu'Elastic a inféré, puisque nous n'avons rien spécifié.
+
+Cela s'explique par la représentation des champs (*'product_name'* par exemple) qu'`Elastic` a inféré,
+puisque nous n'avons rien spécifié.
 La représentation d'une variable conditionne la façon dont les champs sont analysés pour calculer la pertinence.
 Par exemple, regardons la représentation du champ `product_name`
 
-~~~python
+```{python}
+#| eval: false
 es.indices.get_field_mapping(index = 'openfood', fields = 'product_name')
-~~~
-
-```
-{'openfood': {'mappings': {'product_name': {'full_name': 'product_name', 'mapping': {'product_name': {'type': 'text'}}}}}}
 ```
 
-Elastic a compris qu'il s'agissait d'un champ textuel. En revanche, le type est `keyword` n'autorise pas des analyses approximatives donc 
+```
+ObjectApiResponse({'openfood': {'mappings': {'product_name': {'full_name': 'product_name', 'mapping': {'product_name': {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}}}}}}}})
+```
+
+`Elastic` a compris qu'il s'agissait d'un champ textuel.
+En revanche, le type est `keyword` n'autorise pas des analyses approximatives donc 
 ne permet pas de tenir compte de fautes de frappes.
+
 Pour qu'un echo remonte, un des termes doit matcher exactement. Dommage !
 Mais c'est parce qu'on a utilisé le *mapping* par défaut.
-En réalité, il est assez simple de préciser un *mapping* plus riche, autorisant une analyse *"fuzzy"* ou *"flou"*.
+En réalité, il est assez simple de préciser un *mapping* plus riche,
+autorisant une analyse *"fuzzy"* ou *"flou"*.
 
 # Améliorer l'indexation
-
 
 On peut spécifier la façon dont l'on souhaite analyser le texte.
 Par exemple, on peut préciser que l'on souhaite enlever des *stopwords*, raciniser, analyser les termes via des *n-grammes*
@@ -772,7 +792,6 @@ Pour une présentation plus complète, voir
 [la documentation officielle d'Elastic](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html)
 
 On propose les analyseurs stockés dans un fichier [schema.json](#schema.json)
-
 
 Les *n-grammes* sont des séquences de *n* caractères ou plus généralement *n* éléments qui s'enchaînent séquentiellement.
 Par exemple, NOI et OIX sont des tri-grammes de caractères dans NOIX. 
