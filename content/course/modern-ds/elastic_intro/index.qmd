@@ -12,12 +12,13 @@ categories:
 slug: elastic
 type: book
 summary: |
-  ElasticSearch est un moteur de recherche extrêmement rapide et flexible. 
+  `ElasticSearch` est un moteur de recherche extrêmement rapide et flexible. 
   Cette technologie s'est imposée dans le domaine du traitement des 
-  données textuelles. L'API Python permet d'intégrer cette 
-  technologie dans des processus Python afin de les accélérer. Ce chapitre
-  présente cette intégration d'Elastic avec l'exemple de la recherche
-  dans les données alimentaires de l'OpenFood Facts Database 
+  données textuelles. L'API `Python` permet d'intégrer cette 
+  technologie dans des processus `Python` afin de les accélérer. Ce chapitre
+  présente cette intégration d'`Elastic` avec l'exemple de la recherche
+  dans les données alimentaires de l'`OpenFoodFacts` Database 
+bibliography: ../../reference.bib
 ---
 
 
@@ -44,15 +45,6 @@ et présente quelques éléments qui servent de base à un travail en cours
 sur les inégalités socioéconomiques dans les
 choix de consommation alimentaire.
 
-:warning: Il nécessite une version particulière du package `elasticsearch` pour tenir compte de l'héritage de la version 7 du moteur Elastic. Pour cela, faire
-
-~~~python
-!pip install elasticsearch==8.2.0
-!pip install unidecode
-!pip install rapidfuzz
-!pip install xlrd
-~~~
-
 # Introduction
 
 ## Réplication de ce chapitre
@@ -65,6 +57,20 @@ deuxième qui nécessite un serveur `ElasticSearch`. Les utilisateurs du
 car cette technologie est disponible (que ce soit pour indexer une base ou
 pour requêter une base existante).
 
+:warning: Ce
+chapitre nécessite une version particulière du
+package `ElasticSearch` pour tenir compte de l'héritage de la version 7 du moteur `Elastic`.
+Pour cela, faire
+
+```{python}
+#| eval: false
+!pip install elasticsearch==8.2.0
+!pip install unidecode
+!pip install rapidfuzz
+!pip install xlrd
+```
+
+
 La première partie de ce tutoriel ne nécessite pas d'architecture particulière et
 peut ainsi être exécutée en utilisant les packages suivants: 
 
@@ -73,7 +79,10 @@ import time
 import pandas as pd
 ```
 
-Le script `functions.py`, disponible sur `Github`, regroupe un certain nombre de fonctions utiles. 
+Le script `functions.py`, disponible sur `Github`,
+regroupe un certain nombre de fonctions utiles permettant
+d'automatiser certaines tâches de nettoyage classiques
+en NLP. 
 
 {{% box status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 
@@ -93,7 +102,8 @@ open('functions.py', 'wb').write(r.content)
 ```
 {{% /box %}}
 
-Après l'avoir récupéré (cf. encadré dédié), il convient d'importer les fonctions sous forme de module:
+Après l'avoir récupéré (cf. encadré dédié),
+il convient d'importer les fonctions sous forme de module:
 
 ```{python}
 import functions as fc
@@ -102,12 +112,12 @@ import functions as fc
 
 ## Cas d'usage
 
-
-Ce notebook recense et propose d'appréhender quelques outils utilisés
+Ce _notebook_ recense et propose d'appréhender quelques outils utilisés
 pour le papier présenté aux
 [Journées de Méthodologie Statistiques 2022: Galiana and Suarez-Castillo, _"Fuzzy matching on big-data: an illustration with scanner data and crowd-sourced nutritional data"_](http://jms-insee.fr/jms2022s28_2/)
 (travail en cours!)
 
+On va partir du cas d'usage suivant:
 
 > Combien de calories dans ma recette de cuisine de ce soir? Combien de calories dans mes courses de la semaine?
 
@@ -149,16 +159,21 @@ ingredients = ['500 g de carottes',
 Essayer de récupérer par webscraping cette liste est un bon exercice pour réviser
 les concepts [vus précedemment](#webscraping)
 
+
+On va donc créer une liste de course compilant
+ces deux 
+listes hétérogènes de noms de produits:
+
 ```{python}
 libelles = ticket + ingredients
 ```
 
 On part avec cette liste dans notre supermarché virtuel. L'objectif sera de trouver
-une méthode permettant passer à l'échelle:
+une méthode permettant de passer à l'échelle:
 automatiser les traitements, effectuer des recherches efficaces, garder une certaine généralité et flexibilité. 
 
 Ce chapitre montrera par l'exemple l'intérêt d'`Elastic` par rapport à une solution 
-qui n'utiliserait que du Python
+qui n'utiliserait que du `Python`.
 
 # Données utilisées
 
@@ -185,10 +200,10 @@ qui servent de base au travail de
 [[@galiana2022]](https://dl.acm.org/doi/10.1145/3524458.3547244)
 
 
-* L'[OpenFoodFacts database](https://fr.openfoodfacts.org/) qui est une base française, 
-collaborative de produits alimentaires. Issue d'un projet [Data4Good](https://dataforgood.fr/), il s'agit d'une 
-alternative opensource et opendata à la base de données de l'application [Yuka](https://yuka.io/). 
-* La table de composition nutritionnelle [Ciqual](https://ciqual.anses.fr) produite par l'Anses. Celle-ci
+* L'[`OpenFoodFacts` database](https://fr.openfoodfacts.org/) qui est une base  
+collaborative française de produits alimentaires. Issue d'un projet [Data4Good](https://dataforgood.fr/), il s'agit d'une 
+alternative _opensource_ et _opendata_ à la base de données de l'application [Yuka](https://yuka.io/). 
+* La table de composition nutritionnelle [`Ciqual`](https://ciqual.anses.fr) produite par l'Anses. Celle-ci
 propose la composition nutritionnelle _moyenne_ des aliments les plus consommés en France. Il s'agit d'une base de données
 enrichie par rapport à celle de l'USDA puisqu'elle ne se cantonne pas aux produits agricoles non transformés. 
 Avec cette base, il ne s'agit pas de trouver un produit exact mais essayer de trouver un produit type proche du produit
@@ -198,8 +213,10 @@ dont on désire connaître les caractéristiques.
 
 ## Import 
 
-Quelques fonctions utiles sont regroupées dans le script `functions.py` et importées dans le notebook.
-La base `OpenFood` peut être récupérée en ligne (opération qui peut prendre un peu de temps, on passe ici par le stockage interne de la plateforme en spécifiant `from_latest=False`). La base `Ciqual`, plus légère, est récupérée elle directement en ligne.
+Quelques fonctions utiles sont regroupées dans le script `functions.py` et importées dans le _notebook_.
+La base `OpenFood` peut être récupérée en ligne (opération qui peut prendre un peu de temps,
+on passe ici par le stockage interne de la plateforme en spécifiant `from_latest=False`).
+La base `Ciqual`, plus légère, est récupérée elle directement en ligne.
 
 ```{python}
 openfood = fc.import_openfood()
@@ -230,20 +247,27 @@ dans un corpus de grande dimension
 (plusieurs sites web, livres...), un certain texte en s'autorisant des termes voisins
 (verbes conjugués, fautes de frappes...).  
 
-Un __index__ est une collection de documents dans lesquels on souhaite chercher, préalablement ingérés dans un moteur de recherche les documents sont les établissements. L'__indexation__ consiste à pré-réaliser les traitements des termes des documents pour gagner en efficacité lors de la phase de recherche. L'indexation est faite une fois pour de nombreuses recherches potentielles, pour lesquelles la rapidité de réponse peut être cruciale.
+Un __index__ est une collection de documents dans lesquels on souhaite chercher, préalablement ingérés dans un moteur de recherche les documents sont les établissements.
+L'__indexation__ consiste à pré-réaliser les traitements des termes des documents pour gagner en efficacité lors de la phase de recherche.
+L'indexation est faite une fois pour de nombreuses recherches potentielles, pour lesquelles la rapidité de réponse peut être cruciale.
+Après avoir indexé une base, on effectuera des __requêtes__ qui sont des recherches 
+d'un document dans la base indexé (équivalent de notre _web_) à partir de 
+termes de recherche normalisés.
 
 Le principe est le même que celui d'un moteur de recherche du web comme `Google`. 
 D'un côté, l'ensemble à parcourir est indexé pour être en 
 mesure de parcourir de manière efficace l'ensemble du corpus.
 De l'autre côté, la phase de recherche permet de retrouver l'élément du corpus le
-plus cohérent avec la requête de recherche. L'indexation consiste, par exemple,
+plus cohérent avec la requête de recherche.
+L'indexation consiste, par exemple,
 à pré-définir des traitements des termes du corpus pour gagner en efficacité
 lors de la phase de recherche. En effet, l'indexation est une opération peu fréquente
 par rapport à la recherche. Pour cette dernière, l'efficacité est cruciale (un site web 
 qui prend plusieurs secondes à interpréter une requête simple ne sera pas utilisé). Mais, pour
 l'indexation, ceci est moins crucial. 
 
-Les documents sont constitués de variables, les __champs__ (_'fields'_), dont le type est spécifié (_"text"_, _"keywoard"_, _"geo_point"_, _"numeric"_...) à l'indexation.
+Les documents sont constitués de variables, les __champs__ (_'fields'_),
+dont le type est spécifié (_"text"_, _"keywoard"_, *"geo_point"*, _"numeric"_...) à l'indexation.
 
 `ElasticSearch` propose une interface graphique nommée `Kibana`.
 Celle-ci est pratique
@@ -261,7 +285,15 @@ Ce dernier permet de configurer les paramètres pour interagir avec un serveur, 
 une ou plusieurs bases, envoyer de manière automatisée un ensemble de requêtes
 au serveur, récupérer les résultats directement dans une session `Python`...
 
-# Limites de la distance de Levenshtein
+# Premières limites de la distance de Levenshtein
+
+Pour évaluer la similarité entre deux données textuelles, il est 
+nécessaire de transformer l'information qualitative qu'est le nom
+du produit en information quantitative qui permettra de rapprocher
+différents types de produits. 
+Les ordinateurs ont en effet besoin de transformer les informations
+textuelles en information numérique pour être en mesure
+de les exploiter. 
 
 On appelle __distance de Levenshtein__ entre deux chaînes de caractères 
 le coût minimal (en nombre d'opérations)
@@ -294,15 +326,20 @@ import rapidfuzz
   ] 
 ```
 
-## Produits `Ciqual` les plus similaires aux produits de la recette
+## Premier essai: les produits `Ciqual` les plus similaires aux produits de la recette
 
-On pourrait écrire une fonction qui prend en argument une liste de libellés d'intérêt et une liste de candidat au *match* et
-renvoie le libellé le plus proche. Cependant, le risque est que cet algorithme soit relativement lent s'il n'est pas codé
-parfaitement. Il est, à mon avis, plus simple, quand
+On pourrait écrire une fonction qui prend en argument
+une liste de libellés d'intérêt et une liste de candidat au *match* et
+renvoie le libellé le plus proche.
+Cependant, le risque est que cet algorithme soit relativement lent s'il n'est pas codé
+parfaitement.
+
+Il est, à mon avis, plus simple, quand
 on est habitué à la logique `Pandas`,
 de faire un produit cartésien pour obtenir un vecteur mettant en miroir
-chaque produit de notre recette avec l'ensembles des produits Ciqual et ensuite comparer les deux vecteurs pour prendre,
+chaque produit de notre recette avec l'ensembles des produits `Ciqual` et ensuite comparer les deux vecteurs pour prendre,
 pour chaque produit, le meilleur *match*.
+
 Les bases étant de taille limitée, le produit cartésien n'est pas problématique.
 Avec des bases plus conséquentes, une stratégie plus parcimonieuse en mémoire devrait être envisagée. 
 
@@ -329,13 +366,35 @@ partie [NLP](#nlp), notamment:
 * harmonisation de la casse, suppression des accents...
 * suppressions des mots outils (e.g. ici on va d'abord négliger les quantités pour trouver la nature de l'aliment, en particulier pour `Ciqual`)
     
+Faisons donc en apparence un retour en arrière qui sera
+néanmoins salvateur pour améliorer
+la pertinence des liens faits entre nos 
+bases de données.
 
-## Preprocessing pour améliorer la pertinence des matches
+# Preprocessing pour améliorer la pertinence des matches
 
-On nettoie les libellés en mobilisant des expressions régulières et un dictionnaire de mots outils.
-On peut adapter le nettoyage à la base, par exemple dans ciqual, la cuisson est souvent renseignée et bruite les appariemments.
-La fonction `clean_libelle` du script d'utilitaires propose quelques fonctions
-appliquant les méthodes disponibles dans la partie [NLP](#NLP)
+## Objectif
+
+Le _preprocessing_ correspond à l'ensemble des opérations
+ayant lieu avant l'analyse à proprement parler. 
+Ici, ce _preprocessing_ est intéressant à plusieurs
+égards:
+
+- Il réduit le bruit dans nos jeux de données (par exemple des mots de liaisons) ;
+- Il permet de normaliser et harmoniser les syntaxes dans nos différentes sources.
+
+L'objectif est ainsi de réduire nos noms de produits à la substantifique moelle
+pour améliorer la pertinence de la recherche. 
+
+Pour être pertinent, le _preprocessing_ comporte généralement deux types de
+traitements. En premier lieu, ceux qui sont généraux et applicables
+à tous types de corpus textuels: retrait des _stopwords_, de la ponctuation, etc.
+les méthodes disponibles dans la partie [NLP](#NLP).
+Ensuite, il est nécessaire de mettre en oeuvre des nettoyages plus spécifiques à chaque corpus. 
+Par exemple dans la source `Ciqual`,
+la cuisson est souvent renseignée et bruite les appariemments.
+
+## Implémentation
 
 
 ```{python}
