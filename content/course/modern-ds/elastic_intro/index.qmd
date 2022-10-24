@@ -12,12 +12,13 @@ categories:
 slug: elastic
 type: book
 summary: |
-  ElasticSearch est un moteur de recherche extrêmement rapide et flexible. 
+  `ElasticSearch` est un moteur de recherche extrêmement rapide et flexible. 
   Cette technologie s'est imposée dans le domaine du traitement des 
-  données textuelles. L'API Python permet d'intégrer cette 
-  technologie dans des processus Python afin de les accélérer. Ce chapitre
-  présente cette intégration d'Elastic avec l'exemple de la recherche
-  dans les données alimentaires de l'OpenFood Facts Database 
+  données textuelles. L'API `Python` permet d'intégrer cette 
+  technologie dans des processus `Python` afin de les accélérer. Ce chapitre
+  présente cette intégration d'`Elastic` avec l'exemple de la recherche
+  dans les données alimentaires de l'`OpenFoodFacts` Database 
+bibliography: ../../../../reference.bib
 ---
 
 
@@ -44,23 +45,31 @@ et présente quelques éléments qui servent de base à un travail en cours
 sur les inégalités socioéconomiques dans les
 choix de consommation alimentaire.
 
-:warning: Il nécessite une version particulière du package `elasticsearch` pour tenir compte de l'héritage de la version 7 du moteur Elastic. Pour cela, faire
-
-~~~python
-!pip install elasticsearch==8.2.0
-!pip install unidecode
-!pip install rapidfuzz
-~~~
-
 # Introduction
 
 ## Réplication de ce chapitre
 
 Ce chapitre est plus exigeant en termes d'infrastructures que les précédents.
-Il nécessite un serveur Elastic. Les utilisateurs du
+Si la première partie de ce chapitre peut être menée avec une 
+installation standard de `Python`, ce n'est pas le cas de la
+deuxième qui nécessite un serveur `ElasticSearch`. Les utilisateurs du
 [SSP Cloud](datalab.sspcloud.fr/) pourront répliquer les exemples de ce cours
 car cette technologie est disponible (que ce soit pour indexer une base ou
 pour requêter une base existante).
+
+:warning: Ce
+chapitre nécessite une version particulière du
+package `ElasticSearch` pour tenir compte de l'héritage de la version 7 du moteur `Elastic`.
+Pour cela, faire
+
+```{python}
+#| eval: false
+!pip install elasticsearch==8.2.0
+!pip install unidecode
+!pip install rapidfuzz
+!pip install xlrd
+```
+
 
 La première partie de ce tutoriel ne nécessite pas d'architecture particulière et
 peut ainsi être exécutée en utilisant les packages suivants: 
@@ -70,7 +79,10 @@ import time
 import pandas as pd
 ```
 
-Le script `functions.py`, disponible sur `Github`, regroupe un certain nombre de fonctions utiles. 
+Le script `functions.py`, disponible sur `Github`,
+regroupe un certain nombre de fonctions utiles permettant
+d'automatiser certaines tâches de nettoyage classiques
+en NLP. 
 
 {{% box status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 
@@ -90,7 +102,8 @@ open('functions.py', 'wb').write(r.content)
 ```
 {{% /box %}}
 
-Après l'avoir récupéré (cf. encadré dédié), il convient d'importer les fonctions sous forme de module:
+Après l'avoir récupéré (cf. encadré dédié),
+il convient d'importer les fonctions sous forme de module:
 
 ```{python}
 import functions as fc
@@ -99,12 +112,12 @@ import functions as fc
 
 ## Cas d'usage
 
-
-Ce notebook recense et propose d'appréhender quelques outils utilisés
+Ce _notebook_ recense et propose d'appréhender quelques outils utilisés
 pour le papier présenté aux
 [Journées de Méthodologie Statistiques 2022: Galiana and Suarez-Castillo, _"Fuzzy matching on big-data: an illustration with scanner data and crowd-sourced nutritional data"_](http://jms-insee.fr/jms2022s28_2/)
 (travail en cours!)
 
+On va partir du cas d'usage suivant:
 
 > Combien de calories dans ma recette de cuisine de ce soir? Combien de calories dans mes courses de la semaine?
 
@@ -146,16 +159,21 @@ ingredients = ['500 g de carottes',
 Essayer de récupérer par webscraping cette liste est un bon exercice pour réviser
 les concepts [vus précedemment](#webscraping)
 
+
+On va donc créer une liste de course compilant
+ces deux 
+listes hétérogènes de noms de produits:
+
 ```{python}
 libelles = ticket + ingredients
 ```
 
 On part avec cette liste dans notre supermarché virtuel. L'objectif sera de trouver
-une méthode permettant passer à l'échelle:
+une méthode permettant de passer à l'échelle:
 automatiser les traitements, effectuer des recherches efficaces, garder une certaine généralité et flexibilité. 
 
 Ce chapitre montrera par l'exemple l'intérêt d'`Elastic` par rapport à une solution 
-qui n'utiliserait que du Python
+qui n'utiliserait que du `Python`.
 
 # Données utilisées
 
@@ -182,10 +200,10 @@ qui servent de base au travail de
 [[@galiana2022]](https://dl.acm.org/doi/10.1145/3524458.3547244)
 
 
-* L'[OpenFoodFacts database](https://fr.openfoodfacts.org/) qui est une base française, 
-collaborative de produits alimentaires. Issue d'un projet [Data4Good](https://dataforgood.fr/), il s'agit d'une 
-alternative opensource et opendata à la base de données de l'application [Yuka](https://yuka.io/). 
-* La table de composition nutritionnelle [Ciqual](https://ciqual.anses.fr) produite par l'Anses. Celle-ci
+* L'[`OpenFoodFacts` database](https://fr.openfoodfacts.org/) qui est une base  
+collaborative française de produits alimentaires. Issue d'un projet [Data4Good](https://dataforgood.fr/), il s'agit d'une 
+alternative _opensource_ et _opendata_ à la base de données de l'application [Yuka](https://yuka.io/). 
+* La table de composition nutritionnelle [`Ciqual`](https://ciqual.anses.fr) produite par l'Anses. Celle-ci
 propose la composition nutritionnelle _moyenne_ des aliments les plus consommés en France. Il s'agit d'une base de données
 enrichie par rapport à celle de l'USDA puisqu'elle ne se cantonne pas aux produits agricoles non transformés. 
 Avec cette base, il ne s'agit pas de trouver un produit exact mais essayer de trouver un produit type proche du produit
@@ -195,8 +213,10 @@ dont on désire connaître les caractéristiques.
 
 ## Import 
 
-Quelques fonctions utiles sont regroupées dans le script `functions.py` et importées dans le notebook.
-La base `OpenFood` peut être récupérée en ligne (opération qui peut prendre un peu de temps, on passe ici par le stockage interne de la plateforme en spécifiant `from_latest=False`). La base `Ciqual`, plus légère, est récupérée elle directement en ligne.
+Quelques fonctions utiles sont regroupées dans le script `functions.py` et importées dans le _notebook_.
+La base `OpenFood` peut être récupérée en ligne (opération qui peut prendre un peu de temps,
+on passe ici par le stockage interne de la plateforme en spécifiant `from_latest=False`).
+La base `Ciqual`, plus légère, est récupérée elle directement en ligne.
 
 ```{python}
 openfood = fc.import_openfood()
@@ -227,20 +247,27 @@ dans un corpus de grande dimension
 (plusieurs sites web, livres...), un certain texte en s'autorisant des termes voisins
 (verbes conjugués, fautes de frappes...).  
 
-Un __index__ est une collection de documents dans lesquels on souhaite chercher, préalablement ingérés dans un moteur de recherche les documents sont les établissements. L'__indexation__ consiste à pré-réaliser les traitements des termes des documents pour gagner en efficacité lors de la phase de recherche. L'indexation est faite une fois pour de nombreuses recherches potentielles, pour lesquelles la rapidité de réponse peut être cruciale.
+Un __index__ est une collection de documents dans lesquels on souhaite chercher, préalablement ingérés dans un moteur de recherche les documents sont les établissements.
+L'__indexation__ consiste à pré-réaliser les traitements des termes des documents pour gagner en efficacité lors de la phase de recherche.
+L'indexation est faite une fois pour de nombreuses recherches potentielles, pour lesquelles la rapidité de réponse peut être cruciale.
+Après avoir indexé une base, on effectuera des __requêtes__ qui sont des recherches 
+d'un document dans la base indexé (équivalent de notre _web_) à partir de 
+termes de recherche normalisés.
 
 Le principe est le même que celui d'un moteur de recherche du web comme `Google`. 
 D'un côté, l'ensemble à parcourir est indexé pour être en 
 mesure de parcourir de manière efficace l'ensemble du corpus.
 De l'autre côté, la phase de recherche permet de retrouver l'élément du corpus le
-plus cohérent avec la requête de recherche. L'indexation consiste, par exemple,
+plus cohérent avec la requête de recherche.
+L'indexation consiste, par exemple,
 à pré-définir des traitements des termes du corpus pour gagner en efficacité
 lors de la phase de recherche. En effet, l'indexation est une opération peu fréquente
 par rapport à la recherche. Pour cette dernière, l'efficacité est cruciale (un site web 
 qui prend plusieurs secondes à interpréter une requête simple ne sera pas utilisé). Mais, pour
 l'indexation, ceci est moins crucial. 
 
-Les documents sont constitués de variables, les __champs__ (_'fields'_), dont le type est spécifié (_"text"_, _"keywoard"_, _"geo_point"_, _"numeric"_...) à l'indexation.
+Les documents sont constitués de variables, les __champs__ (_'fields'_),
+dont le type est spécifié (_"text"_, _"keywoard"_, *"geo_point"*, _"numeric"_...) à l'indexation.
 
 `ElasticSearch` propose une interface graphique nommée `Kibana`.
 Celle-ci est pratique
@@ -258,7 +285,15 @@ Ce dernier permet de configurer les paramètres pour interagir avec un serveur, 
 une ou plusieurs bases, envoyer de manière automatisée un ensemble de requêtes
 au serveur, récupérer les résultats directement dans une session `Python`...
 
-# Limites de la distance de Levenshtein
+# Premières limites de la distance de Levenshtein
+
+Pour évaluer la similarité entre deux données textuelles, il est 
+nécessaire de transformer l'information qualitative qu'est le nom
+du produit en information quantitative qui permettra de rapprocher
+différents types de produits. 
+Les ordinateurs ont en effet besoin de transformer les informations
+textuelles en information numérique pour être en mesure
+de les exploiter. 
 
 On appelle __distance de Levenshtein__ entre deux chaînes de caractères 
 le coût minimal (en nombre d'opérations)
@@ -285,21 +320,27 @@ opération:
 import rapidfuzz
 
 [
-  rapidfuzz.string_metric.levenshtein('salut','slut', weights =(1,1,1)), # Suppression 
-  rapidfuzz.string_metric.levenshtein('salut','saalut', weights =(1,1,1)), # Addition 
-  rapidfuzz.string_metric.levenshtein('salut','selut', weights =(1,1,1)) # Substitution
-  ] 
+  rapidfuzz.distance.Levenshtein.distance('salut','slut', weights =(1,1,1)), # Suppression 
+  rapidfuzz.distance.Levenshtein.distance('salut','saalut', weights =(1,1,1)), # Addition 
+  rapidfuzz.distance.Levenshtein.distance('salut','selut', weights =(1,1,1)) # Substitution
+] 
 ```
 
-## Produits `Ciqual` les plus similaires aux produits de la recette
 
-On pourrait écrire une fonction qui prend en argument une liste de libellés d'intérêt et une liste de candidat au *match* et
-renvoie le libellé le plus proche. Cependant, le risque est que cet algorithme soit relativement lent s'il n'est pas codé
-parfaitement. Il est, à mon avis, plus simple, quand
+## Premier essai: les produits `Ciqual` les plus similaires aux produits de la recette
+
+On pourrait écrire une fonction qui prend en argument
+une liste de libellés d'intérêt et une liste de candidat au *match* et
+renvoie le libellé le plus proche.
+Cependant, le risque est que cet algorithme soit relativement lent s'il n'est pas codé
+parfaitement.
+
+Il est, à mon avis, plus simple, quand
 on est habitué à la logique `Pandas`,
 de faire un produit cartésien pour obtenir un vecteur mettant en miroir
-chaque produit de notre recette avec l'ensembles des produits Ciqual et ensuite comparer les deux vecteurs pour prendre,
+chaque produit de notre recette avec l'ensembles des produits `Ciqual` et ensuite comparer les deux vecteurs pour prendre,
 pour chaque produit, le meilleur *match*.
+
 Les bases étant de taille limitée, le produit cartésien n'est pas problématique.
 Avec des bases plus conséquentes, une stratégie plus parcimonieuse en mémoire devrait être envisagée. 
 
@@ -325,46 +366,190 @@ partie [NLP](#nlp), notamment:
 
 * harmonisation de la casse, suppression des accents...
 * suppressions des mots outils (e.g. ici on va d'abord négliger les quantités pour trouver la nature de l'aliment, en particulier pour `Ciqual`)
-    
 
-## Preprocessing pour améliorer la pertinence des matches
 
-On nettoie les libellés en mobilisant des expressions régulières et un dictionnaire de mots outils.
-On peut adapter le nettoyage à la base, par exemple dans ciqual, la cuisson est souvent renseignée et bruite les appariemments.
-La fonction `clean_libelle` du script d'utilitaires propose quelques fonctions
-appliquant les méthodes disponibles dans la partie [NLP](#NLP)
+::: {layout-nrow=2}
+![Scanner-data avant nettoyage](wordcloud_relevanc_start.png)
 
+![OpenFood data avant nettoyage](wordcloud_openfood_start.png)
+
+![Scanner-data après nettoyage](wordcloud_relevanc_clean.png)
+
+![OpenFood data après nettoyage](wordcloud_openfood_clean.png)
+:::
+
+Faisons donc en apparence un retour en arrière qui sera
+néanmoins salvateur pour améliorer
+la pertinence des liens faits entre nos 
+bases de données.
+
+# Preprocessing pour améliorer la pertinence des matches
+
+## Objectif
+
+Le _preprocessing_ correspond à l'ensemble des opérations
+ayant lieu avant l'analyse à proprement parler. 
+Ici, ce _preprocessing_ est intéressant à plusieurs
+égards:
+
+- Il réduit le bruit dans nos jeux de données (par exemple des mots de liaisons) ;
+- Il permet de normaliser et harmoniser les syntaxes dans nos différentes sources.
+
+L'objectif est ainsi de réduire nos noms de produits à la substantifique moelle
+pour améliorer la pertinence de la recherche. 
+
+Pour être pertinent, le _preprocessing_ comporte généralement deux types de
+traitements. En premier lieu, ceux qui sont généraux et applicables
+à tous types de corpus textuels: retrait des _stopwords_, de la ponctuation, etc.
+les méthodes disponibles dans la partie [NLP](#NLP).
+Ensuite, il est nécessaire de mettre en oeuvre des nettoyages plus spécifiques à chaque corpus. 
+Par exemple dans la source `Ciqual`,
+la cuisson est souvent renseignée et bruite les appariemments.
+
+## Démarche
+
+```{=html}
+<div class="alert alert-success" role="alert">
+```
+
+**Exercice 1: preprocessing**
+
+1. Pour transformer les lettres avec accents en leur équivalent
+sans accent, la fonction `unidecode` 
+(du package du même nom) est pratique. 
+La tester sur le jeu de données `ciqual` en créant une nouvelle
+colonne nommée `libel_clean`
+
+2. La casse différente selon les jeux de données peut être pénalisante
+pour trouver des produits similaires. Pour éviter ces problèmes,
+mettre tout en majuscule. 
+
+3. Les informations sur les quantités ou le _packaging_ peuvent apporter
+du bruit dans notre comparaison. Nous allons retirer ces mots,
+à travers la liste `['KG','CL','G','L','CRUE?S?', 'PREEMBALLEE?S?']`,
+qu'on peut considérer comme un dictionnaire de _stop-words_ métier.
+Pour cela, il convient d'utiliser une expression régulière dans la méthode
+`str.replace` de `Pandas`.
+Avec ceux-ci, on va utiliser la liste des _stop-words_ de 
+la librairie `nltk` pour retirer les _stop-words_ classiques (_"le","la", etc.).
+La librairie `SpaCy`, plus riche, pourrait être utilisée ; nous laissons
+cela sous la forme d'exercice supplémentaire. 
+
+4. On a encore des signes de ponctuation ou des chiffres qui peuvent
+poluer la comparaison. Les retirer grâce à la méthode `replace` et
+une regex `[^a-zA-Z]`
+
+5. Enfin, par sécurité, on peut supprimer les espaces multiples. 
+Utiliser la regex `'([ ]{2,})'` pour cela. Observer le résultat
+final. 
+
+6. __(Optionnel)__. Comme exercice supplémentaire, faire la même chose avec les
+_pipelines_ `SpaCy`. 
+
+```{=html}
+</div>
+```
+
+A l'issue de la question 1, le jeu de données `ciqual` devrait
+ressembler à celui-ci:
+
+```{python}
+#| echo: false
+from unidecode import unidecode
+ciqual['libel_clean'] = ciqual['alim_nom_fr'].apply(lambda s: unidecode(s))
+ciqual.head(2)
+```
+
+Après avoir mis en majuscule, on se retrouve avec le jeu de données
+suivant:
+
+```{python}
+#| echo: false
+ciqual['libel_clean'] = ciqual['libel_clean'].str.upper()
+ciqual.head(2)
+```
+
+Après retrait des _stop-words_, nos libellés prennent
+la forme suivante:
+
+```{python}
+#| echo: false
+import nltk
+from nltk.corpus import stopwords
+nltk.download('stopwords')
+
+stop_words = ['KG','CL','G','L','CRUE?S?', 'PREEMBALLEE?S?']
+stop_words += [l.upper() for l in stopwords.words('french')]
+
+ciqual['libel_clean'] = ciqual['libel_clean'].str.replace(
+            '|'.join([r'\b{}\b'.format(w) for w in stop_words]),
+            "", regex = True
+        )
+
+ciqual.head(2)
+```
+
+La regex pour éliminer les caractères de ponctuation permet ainsi d'obtenir:
+
+```{python}
+#| echo: false
+ciqual["libel_clean"] = ciqual["libel_clean"].str.replace(r'[^a-zA-Z]', ' ', regex=True)
+ciqual.head(2)
+```
+
+Enfin, à l'issue de la question 5, le `DataFrame` obtenu est le suivant:
+
+```{python}
+#| echo: false
+ciqual["libel_clean"] = ciqual["libel_clean"].str.replace(r'([ ]{2,})', ' ', regex=True)
+ciqual.head(2)
+```
+
+Ces étapes de nettoyage ont ainsi permis de concentrer l'information
+dans les noms de produits sur ce qui l'identifie vraiment. 
+
+## Approche systématique
+
+Pour systématiser cette approche à nos différents `DataFrame`, rien de mieux
+qu'une fonction. Celle-ci est présente dans le module `functions` 
+sous le nom `clean_libelle`. 
 
 ```{python}
 from functions import clean_libelle
 ```
 
-On peut déjà : 
+Pour résumer l'exercice précédent, cette fonction va : 
 
-* Harmoniser la casse et retirer les accents (voir `functions.py`)
-* Retirer tout les caractères qui ne sont pas des lettres (chiffres, ponctuations)
-* Retirer les caractères isolés
+* Harmoniser la casse et retirer les accents (voir `functions.py`) ;
+* Retirer tout les caractères qui ne sont pas des lettres (chiffres, ponctuations) ;
+* Retirer les caractères isolés.
 
 ```{python}
-stopWords = ['KG','CL','G','L','CRUE?S?', 'PREEMBALLEE?S?']
+import nltk
+from nltk.corpus import stopwords
+nltk.download('stopwords')
+
+stop_words = ['KG','CL','G','L','CRUE?S?', 'PREEMBALLEE?S?']
+stop_words += [l.upper() for l in stopwords.words('french')]
+
 replace_regex = {r'[^A-Z]': ' ', r'\b[A-Z0-9]{1,2}?\b':' '} # 
 ```
 
 Cela permet d'obtenir les bases nettoyées suivantes:
 
 ```{python}
-ciqual = clean_libelle(ciqual, yvar = 'alim_nom_fr', replace_regex = replace_regex, stopWords = stopWords)
+ciqual = clean_libelle(ciqual, yvar = 'alim_nom_fr', replace_regex = replace_regex, stopWords = stop_words)
 ciqual.sample(10)
 ```
 
 ```{python}
-openfood = clean_libelle(openfood, yvar = 'product_name', replace_regex = replace_regex, stopWords = stopWords)
+openfood = clean_libelle(openfood, yvar = 'product_name', replace_regex = replace_regex, stopWords = stop_words)
 openfood.sample(10)
 ```
 
 ```{python}
 courses = pd.DataFrame(libelles, columns = ['libel'])
-courses = clean_libelle(courses, yvar = 'libel', replace_regex = replace_regex, stopWords = stopWords)
+courses = clean_libelle(courses, yvar = 'libel', replace_regex = replace_regex, stopWords = stop_words)
 courses.sample(10)
 ```
 
@@ -389,19 +574,21 @@ de recherche est faible. Cette solution n'est donc pas généralisable.
 
 ## Réduire les temps de recherche
 
-Finalement, l'idéal serait de disposer d'un **moteur de recherche** adapté à notre besoin, contenant les produits candidats, que l'on pourrait interroger, rapide en lecture, capable de classer les échos renvoyés par pertinence, que l'on pourrait requêter de manière flexible. 
+Finalement, l'idéal serait de disposer d'un **moteur de recherche** adapté à notre besoin,
+contenant les produits candidats, que l'on pourrait interroger, rapide en lecture, capable de classer les échos renvoyés par pertinence, que l'on pourrait requêter de manière flexible. 
+
 Par exemple, on pourrait vouloir signaler qu'un
 écho nous intéresse seulement si la donnée calorique n'est pas manquante.
 On pourrait même vouloir qu'il effectue pour nous des prétraitements sur les données. 
 
-Cela paraît beaucoup demander. Mais c'est exactement ce que fait `Elastic`.
+Cela paraît beaucoup demander. Mais c'est exactement ce que fait `ElasticSearch`.
 
 # Indexer une base 
 
 A partir de maintenant, commence, à proprement parler, la démonstration `Elastic`.
 Cette 
 partie développe les éléments les plus techniques, à savoir l'indexation d'une base. 
-Tous les utilisateurs d'Elastic n'ont pas nécessairement à passer par là, ils peuvent 
+Tous les utilisateurs d'`Elastic` n'ont pas nécessairement à passer par là, ils peuvent 
 trouver une base déjà indexée, idéalement par un *data engineer* qui aura optimisé
 les traitements. 
 
@@ -412,7 +599,7 @@ répliquer les éléments de la suite du document.
 
 ## Créer un cluster `Elastic` sur le DataLab
 
-Pour lancer un service `Elastic`, il faut cliquer sur [ce lien](https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/elastic). 
+Pour lancer un service `Elastic`, il faut cliquer sur [ce lien](https://datalab.sspcloud.fr/launcher/databases/elastic?autoLaunch=false&security.allowlist.enabled=false). 
 
 Une fois créé, vous pouvez explorer l'interface graphique `Kibana`.
 Cependant, grâce à l'API `Elastic`
@@ -421,11 +608,12 @@ une fois lancé, pas besoin d'ouvrir ce service `Elastic` pour continuer à suiv
 
 [^1]: Le lancement du service a créé dans votre `NAMESPACE Kubernetes` (l'ensemble de tout vos services) un cluster `Elastic`.
 Vous n'avez droit qu'à un cluster par _namespace_ (ou compte d'utilisateur).
-Votre service `Jupyter`, `VSCode`, `RStudio`, etc. est associé au même namespace.
+Votre service `Jupyter`, `VSCode`, `RStudio`, etc. est associé au même _namespace_.
 De même qu'il n'est pas nécessaire de comprendre comment fonctionne le moteur d'une voiture pour conduire, 
 il n'est pas nécessaire de comprendre la manière dont tout ce beau monde dialogue pour pouvoir utiliser le `SSP Cloud`. 
 
-Dans un terminal, vous pouvez aussi vérifier que vous êtes en mesure de dialoguer avec votre cluster Elastic, qui est prêt à vous écouter:
+Dans un terminal, vous pouvez aussi vérifier que vous êtes en mesure de dialoguer avec votre cluster `Elastic`,
+qui est prêt à vous écouter:
 
 ```shell
 kubectl get statefulset
@@ -442,7 +630,7 @@ HOST = 'elasticsearch-master'
 
 def elastic():
     """Connection avec Elastic sur le data lab"""
-    es = Elasticsearch([{'host': HOST, 'port': 9200}], http_compress=True,  timeout=200)
+    es = Elasticsearch([{'host': HOST, 'port': 9200, 'scheme': 'http'}], http_compress=True, request_timeout=200)
     return es
 
 es = elastic()
@@ -462,18 +650,20 @@ Maintenant que la connection est établie, deux étapes nous attendent:
 
 On crée donc nos deux index:
 
-~~~python
-if not es.indices.exists('openfood'):
-    es.indices.create('openfood')
-if not es.indices.exists('ciqual'):
-    es.indices.create('ciqual')
-~~~
+```{python}
+#| eval: false
+if not es.indices.exists(index = 'openfood'):
+    es.indices.create(index = 'openfood')
+if not es.indices.exists(index = 'ciqual'):
+    es.indices.create(index = 'ciqual')
+```
 
 Pour l'instant, nos index sont vides! Ils contiennent 0 documents.
 
-~~~python
+```{python}
+#| eval: false
 es.count(index = 'openfood')
-~~~
+```
 
 ```
 {'count': 0, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}}
@@ -481,61 +671,75 @@ es.count(index = 'openfood')
 
 Nous allons en rajouter quelques uns ! 
 
-~~~python
+```{python}
+#| eval: false
 es.create(index = 'openfood',  id = 1, body = {'product_name': 'Tarte noix de coco', 'product_name_clean': 'TARTE NOIX COCO'})
 es.create(index = 'openfood',  id = 2, body = {'product_name': 'Noix de coco', 'product_name_clean': 'NOIX COCO'})
 es.create(index = 'openfood',  id = 3, body = {'product_name': 'Beurre doux', 'product_name_clean': 'BEURRE DOUX'})
-~~~
+```
 
-~~~python
+```{python}
+#| eval: false
 es.count(index = 'openfood')
-~~~
+```
 
 ```
 {'count': 3, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}}
 ```
 
+Dans l'interface graphique `Kibana`,
+on peut vérifier que l'indexation 
+a bien eue lieu en allant dans `Management > Stack Management`
+
+![](index_management.png)
+
+
+
 ## Première recherche
 
 Faisons notre première recherche: cherchons des noix de pécan! 
 
-~~~python
+```{python}
+#| eval: false
 es.search(index = 'openfood', q = 'noix de pécan')
-~~~
+```
 
 ```
-{'took': 3102, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 2, 'relation': 'eq'}, 'max_score': 0.9400072, 'hits': [{'_index': 'openfood', '_type': '_doc', '_id': '2', '_score': 0.9400072, '_source': {'product_name': 'Noix de coco', 'product_name_clean': 'NOIX COCO'}}, {'_index': 'openfood', '_type': '_doc', '_id': '1', '_score': 0.8272065, '_source': {'product_name': 'Tarte noix de coco', 'product_name_clean': 'TARTE NOIX COCO'}}]}}
+ObjectApiResponse({'took': 116, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 2, 'relation': 'eq'}, 'max_score': 0.9400072, 'hits': [{'_index': 'openfood', '_type': '_doc', '_id': '2', '_score': 0.9400072, '_source': {'product_name': 'Noix de coco', 'product_name_clean': 'NOIX COCO'}}, {'_index': 'openfood', '_type': '_doc', '_id': '1', '_score': 0.8272065, '_source': {'product_name': 'Tarte noix de coco', 'product_name_clean': 'TARTE NOIX COCO'}}]}})
 ```
 
 
 Intéressons nous aux `hits` (résultats pertinents, ou echos) : nous en avons 2. 
 Le score maximal parmi les hits est mentionné dans `max_score` et correspond à celui du deuxième document indexé.
 
-Elastic nous fournit ici un **score de pertinence** dans notre recherche d'information, et classe ainsi les documents renvoyés.
+`Elastic` nous fournit ici un **score de pertinence** dans notre recherche d'information, et classe ainsi les documents renvoyés.
 
 Ici nous utilisons la configuration par défaut. Mais comment est calculé ce score? Demandons à Elastic de nous expliquer le score du document `2` dans la requête `"noix de pécan"`.
 
-~~~python
+
+```{python}
+#| eval: false
 es.explain(index = 'openfood', id = 2, q = 'noix de pécan')
-~~~
-
-```
-{'_index': 'openfood', '_type': '_doc', '_id': '2', 'matched': True, 'explanation': {'value': 0.9400072, 'description': 'max of:', 'details': [{'value': 0.49917626, 'description': 'sum of:', 'details': [{'value': 0.49917626, 'description': 'weight(product_name_clean:noix in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.49917626, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.48275858, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 2.0, 'description': 'dl, length of field', 'details': []}, {'value': 2.3333333, 'description': 'avgdl, average length of field', 'details': []}]}]}]}]}, {'value': 0.9400072, 'description': 'sum of:', 'details': [{'value': 0.4700036, 'description': 'weight(product_name:noix in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.4700036, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.45454544, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 3.0, 'description': 'dl, length of field', 'details': []}, {'value': 3.0, 'description': 'avgdl, average length of field', 'details': []}]}]}]}, {'value': 0.4700036, 'description': 'weight(product_name:de in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.4700036, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.45454544, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 3.0, 'description': 'dl, length of field', 'details': []}, {'value': 3.0, 'description': 'avgdl, average length of field', 'details': []}]}]}]}]}]}}
 ```
 
+```
+ObjectApiResponse({'_index': 'openfood', '_type': '_doc', '_id': '2', 'matched': True, 'explanation': {'value': 0.9400072, 'description': 'max of:', 'details': [{'value': 0.49917626, 'description': 'sum of:', 'details': [{'value': 0.49917626, 'description': 'weight(product_name_clean:noix in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.49917626, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.48275858, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 2.0, 'description': 'dl, length of field', 'details': []}, {'value': 2.3333333, 'description': 'avgdl, average length of field', 'details': []}]}]}]}]}, {'value': 0.9400072, 'description': 'sum of:', 'details': [{'value': 0.4700036, 'description': 'weight(product_name:noix in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.4700036, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.45454544, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 3.0, 'description': 'dl, length of field', 'details': []}, {'value': 3.0, 'description': 'avgdl, average length of field', 'details': []}]}]}]}, {'value': 0.4700036, 'description': 'weight(product_name:de in 1) [PerFieldSimilarity], result of:', 'details': [{'value': 0.4700036, 'description': 'score(freq=1.0), computed as boost * idf * tf from:', 'details': [{'value': 2.2, 'description': 'boost', 'details': []}, {'value': 0.47000363, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [{'value': 2, 'description': 'n, number of documents containing term', 'details': []}, {'value': 3, 'description': 'N, total number of documents with field', 'details': []}]}, {'value': 0.45454544, 'description': 'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:', 'details': [{'value': 1.0, 'description': 'freq, occurrences of term within document', 'details': []}, {'value': 1.2, 'description': 'k1, term saturation parameter', 'details': []}, {'value': 0.75, 'description': 'b, length normalization parameter', 'details': []}, {'value': 3.0, 'description': 'dl, length of field', 'details': []}, {'value': 3.0, 'description': 'avgdl, average length of field', 'details': []}]}]}]}]}]}})
+```
 
-Elastic nous explique donc que le score `0.9400072` est le maximum entre deux sous-scores, `0.4991` et `0.9400072`.
+
+`Elastic` nous explique donc que le score `0.9400072` est le maximum entre deux sous-scores, `0.4991` et `0.9400072`.
 
 Pour chacun de ces sous-scores, le détail de son calcul est donné.
 Le premier sous-score n'a accordé un score que par rapport au premier mot (noix), tandis que le second a accordé un score sur la base des deux mots déjà connu dans les documents ("noix" et "de"). Il a ignoré pécan! Jusqu'à présent, ce terme n'est pas connu dans l'index. 
 
-La pertinence d'un mot pour notre recherche est construite sur une variante de la TF-IDF,
+La pertinence d'un mot pour notre recherche est construite sur une variante de la `TF-IDF`,
 considérant qu'un terme est pertinent s'il est souvent présent dans le document (Term Frequency)
 alors qu'il est peu fréquent dans les autres document (inverse document frequency).
 Ici les notations des documents 1 et 2 sont très proches, la différence est dûe à des IDF plus faibles dans le document 1,
 qui est pénalisé pour être légérement plus long. 
 
-Bref, tout ça est un peu lourd, mais assez efficace, en tout cas moins rudimentaire que les distances caractères à caractères pour ramener des echos pertinents.
+Bref, tout ça est un peu lourd, mais assez efficace,
+en tout cas moins rudimentaire que les distances caractères à caractères pour ramener des echos pertinents.
 
 
 ## Limite de cette première indexation
@@ -543,35 +747,41 @@ Bref, tout ça est un peu lourd, mais assez efficace, en tout cas moins rudiment
 Pour l'instant, Elastic n'a pas l'air de gérer les fautes de frappes!
 Pas le droit à l'erreur dans la requête:
 
-~~~python
+
+```{python}
+#| eval: false
 es.search(index = 'openfood',q = 'TART NOI')
-~~~
-
-```
-{'took': 35, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 0, 'relation': 'eq'}, 'max_score': None, 'hits': []}}
 ```
 
+```
+ObjectApiResponse({'took': 38, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 0, 'relation': 'eq'}, 'max_score': None, 'hits': []}})
+```
 
-Cela s'explique par la représentation des champs (*'product_name'* par exemple) qu'Elastic a inféré, puisque nous n'avons rien spécifié.
+
+Cela s'explique par la représentation des champs (*'product_name'* par exemple) qu'`Elastic` a inféré,
+puisque nous n'avons rien spécifié.
 La représentation d'une variable conditionne la façon dont les champs sont analysés pour calculer la pertinence.
 Par exemple, regardons la représentation du champ `product_name`
 
-~~~python
+```{python}
+#| eval: false
 es.indices.get_field_mapping(index = 'openfood', fields = 'product_name')
-~~~
-
-```
-{'openfood': {'mappings': {'product_name': {'full_name': 'product_name', 'mapping': {'product_name': {'type': 'text'}}}}}}
 ```
 
-Elastic a compris qu'il s'agissait d'un champ textuel. En revanche, le type est `keyword` n'autorise pas des analyses approximatives donc 
+```
+ObjectApiResponse({'openfood': {'mappings': {'product_name': {'full_name': 'product_name', 'mapping': {'product_name': {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}}}}}}}})
+```
+
+`Elastic` a compris qu'il s'agissait d'un champ textuel.
+En revanche, le type est `keyword` n'autorise pas des analyses approximatives donc 
 ne permet pas de tenir compte de fautes de frappes.
+
 Pour qu'un echo remonte, un des termes doit matcher exactement. Dommage !
 Mais c'est parce qu'on a utilisé le *mapping* par défaut.
-En réalité, il est assez simple de préciser un *mapping* plus riche, autorisant une analyse *"fuzzy"* ou *"flou"*.
+En réalité, il est assez simple de préciser un *mapping* plus riche,
+autorisant une analyse *"fuzzy"* ou *"flou"*.
 
 # Améliorer l'indexation
-
 
 On peut spécifier la façon dont l'on souhaite analyser le texte.
 Par exemple, on peut préciser que l'on souhaite enlever des *stopwords*, raciniser, analyser les termes via des *n-grammes*
@@ -582,7 +792,6 @@ Pour une présentation plus complète, voir
 [la documentation officielle d'Elastic](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html)
 
 On propose les analyseurs stockés dans un fichier [schema.json](#schema.json)
-
 
 Les *n-grammes* sont des séquences de *n* caractères ou plus généralement *n* éléments qui s'enchaînent séquentiellement.
 Par exemple, NOI et OIX sont des tri-grammes de caractères dans NOIX. 
