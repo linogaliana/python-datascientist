@@ -47,7 +47,9 @@ choix de consommation alimentaire.
 :warning: Il nécessite une version particulière du package `elasticsearch` pour tenir compte de l'héritage de la version 7 du moteur Elastic. Pour cela, faire
 
 ~~~python
-pip install elasticsearch==8.2.0
+!pip install elasticsearch==8.2.0
+!pip install unidecode
+!pip install rapidfuzz
 ~~~
 
 # Introduction
@@ -77,10 +79,9 @@ le script d'utilitaires. Voici une proposition
 
 ```python
 import requests
-
 baseurl = "https://raw.githubusercontent.com/linogaliana/python-datascientist"
-branch = "quarto"
-path = "content/course/NLP/06_elastic/functions.py"
+branch = "master"
+path = "content/course/modern-ds/elastic_intro/functions.py"
 
 url = f"{baseurl}/{branch}/{path}"
 r = requests.get(url, allow_redirects=True)
@@ -171,13 +172,14 @@ Cependant, cette approche serait très fastidieuse et
 nécessiterait de récuperer, à la main, chaque caractéristique
 pour chaque produit. Ce n'est donc pas envisageable.
 
-Les données disponibles sur Google viennent de l'[USDA](https://fdc.nal.usda.gov/),
+Les données disponibles sur `Google` viennent de l'[USDA](https://fdc.nal.usda.gov/),
 l'équivalent américain de notre Ministère de l'Agriculture. 
 Cependant, pour des recettes comportant des noms de produits français, ainsi que 
 des produits potentiellement transformés, ce n'est pas très pratique d'utiliser
 une base de données de produits agricoles en Français. Pour cette raison,
-nous proposons d'utiliser les deux bases suivantes, qui servent de base au travail de
-Galiana et al. (à venir)
+nous proposons d'utiliser les deux bases suivantes,
+qui servent de base au travail de
+[[@galiana2022]](https://dl.acm.org/doi/10.1145/3524458.3547244)
 
 
 * L'[OpenFoodFacts database](https://fr.openfoodfacts.org/) qui est une base française, 
@@ -193,7 +195,8 @@ dont on désire connaître les caractéristiques.
 
 ## Import 
 
-Quelques fonctions utiles sont regroupées dans le script `functions.py` et importées dans le notebook. La base OpenFood peut être récupérée en ligne (opération qui peut prendre un peu de temps, on passe ici par le stockage interne de la plateforme en spécifiant `from_latest=False`). La base ciqual, plus légère, est récupérée elle directement en ligne.
+Quelques fonctions utiles sont regroupées dans le script `functions.py` et importées dans le notebook.
+La base `OpenFood` peut être récupérée en ligne (opération qui peut prendre un peu de temps, on passe ici par le stockage interne de la plateforme en spécifiant `from_latest=False`). La base `Ciqual`, plus légère, est récupérée elle directement en ligne.
 
 ```{python}
 openfood = fc.import_openfood()
@@ -212,17 +215,21 @@ ciqual.head()
 
 ## Qu'est-ce qu'Elastic ? 
 
-ElasticSearch c'est un logiciel qui fournit un moteur de recherche installé sur
+`ElasticSearch` c'est un logiciel qui fournit un moteur de recherche installé sur
 un serveur (ou une machine personnelle) qu'il est possible de requêter depuis un client
-(une session `Python` par exemple). C'est un moteur de recherche 
+(une session `Python` par exemple).
+C'est un moteur de recherche 
 très performant, puissant et flexible, extrêmement utilisé dans le domaine de la datascience
-sur données textuelles. Un cas d'usage est par exemple de trouver,
+sur données textuelles.
+
+Un cas d'usage est par exemple de trouver,
 dans un corpus de grande dimension
 (plusieurs sites web, livres...), un certain texte en s'autorisant des termes voisins
 (verbes conjugués, fautes de frappes...).  
-Un index est une collection de documents dans lesquels on souhaite chercher, préalablement ingérés dans un moteur de recherche les documents sont les établissements. L'indexation consiste à pré-réaliser les traitements des termes des documents pour gagner en efficacité lors de la phase de recherche. L'indexation est faite une fois pour de nombreuses recherches potentielles, pour lesquelles la rapidité de réponse peut être cruciale.
 
-Le principe est le même que celui d'un moteur de recherche du web comme Google. 
+Un __index__ est une collection de documents dans lesquels on souhaite chercher, préalablement ingérés dans un moteur de recherche les documents sont les établissements. L'__indexation__ consiste à pré-réaliser les traitements des termes des documents pour gagner en efficacité lors de la phase de recherche. L'indexation est faite une fois pour de nombreuses recherches potentielles, pour lesquelles la rapidité de réponse peut être cruciale.
+
+Le principe est le même que celui d'un moteur de recherche du web comme `Google`. 
 D'un côté, l'ensemble à parcourir est indexé pour être en 
 mesure de parcourir de manière efficace l'ensemble du corpus.
 De l'autre côté, la phase de recherche permet de retrouver l'élément du corpus le
@@ -233,16 +240,18 @@ par rapport à la recherche. Pour cette dernière, l'efficacité est cruciale (u
 qui prend plusieurs secondes à interpréter une requête simple ne sera pas utilisé). Mais, pour
 l'indexation, ceci est moins crucial. 
 
-Les documents sont constitués de variables, les champs (_'fields'_), dont le type est spécifié (_"text"_, _"keywoard"_, _"geo_point"_, _"numeric"_...) à l'indexation.
+Les documents sont constitués de variables, les __champs__ (_'fields'_), dont le type est spécifié (_"text"_, _"keywoard"_, _"geo_point"_, _"numeric"_...) à l'indexation.
 
-ElasticSearch propose une interface graphique nommée Kibana. Celle-ci est pratique
+`ElasticSearch` propose une interface graphique nommée `Kibana`.
+Celle-ci est pratique
 pour tester des requêtes et pour superviser le serveur Elastic. Cependant,
 pour le passage à l'échelle, notamment pour mettre en lien une base indexée dans
-Elastic avec une autre source de données, les API proposées par ElasticSearch
+Elastic avec une autre source de données, les API proposées par `ElasticSearch`
 sont beaucoup plus pratiques. Ces API permettent de connecter une session `Python` (idem pour `R`)
-à un serveur Elastic afin de communiquer avec lui (échanger des flux via une API REST). 
+à un serveur `Elastic` afin de communiquer avec lui
+(échanger des flux via une API REST). 
 
-## ElasticSearch et Python
+## `ElasticSearch` et `Python`
 
 En `Python`, le package officiel est [`elasticsearch`](https://elasticsearch-py.readthedocs.io/en/v7.12.0/).
 Ce dernier permet de configurer les paramètres pour interagir avec un serveur, indexer 
@@ -251,9 +260,9 @@ au serveur, récupérer les résultats directement dans une session `Python`...
 
 # Limites de la distance de Levenshtein
 
-
-On appelle distance de Levenshtein entre deux chaînes de caractères le coût minimal (en nombre d'opérations)
-pour transformer la première en la seconde par
+On appelle __distance de Levenshtein__ entre deux chaînes de caractères 
+le coût minimal (en nombre d'opérations)
+pour transformer la première en la seconde par:
 
 * substitution
 * insertion
@@ -264,27 +273,42 @@ chaînes de caractères. Il existe plusieurs packages pour calculer cette derni�
 `fuzzywuzzy` est le plus connu mais ce dernier est assez lent (implémentation en pur `Python`).
 Le package `rapidfuzz`, présenté ici, propose les mêmes fonctionalités mais est plus rapide car implémenté
 en `C++` qui est plus efficace. 
+Cependant, nous allons le voir, ce package ne nous
+offrira pas des performances
+assez bonnes pour que nous puissions
+passer à l'échelle.
+
+Voici trois exemples pour évaluer le coût de chaque 
+opération:
 
 ```{python}
-import rapidfuzz # "Rapid fuzzy string matching in Python and C++ using the Levenshtein Distance" soit l'équivalent plus rapide de la librarie fuzzywuzzy
-[rapidfuzz.string_metric.levenshtein('salut','slut', weights =(1,1,1)), # Suppression 
- rapidfuzz.string_metric.levenshtein('salut','saalut', weights =(1,1,1)), # Addition 
- rapidfuzz.string_metric.levenshtein('salut','selut', weights =(1,1,1))] # Substitution
+import rapidfuzz
+
+[
+  rapidfuzz.string_metric.levenshtein('salut','slut', weights =(1,1,1)), # Suppression 
+  rapidfuzz.string_metric.levenshtein('salut','saalut', weights =(1,1,1)), # Addition 
+  rapidfuzz.string_metric.levenshtein('salut','selut', weights =(1,1,1)) # Substitution
+  ] 
 ```
 
-## Produits Ciqual les plus similaires aux produits de la recette
+## Produits `Ciqual` les plus similaires aux produits de la recette
 
 On pourrait écrire une fonction qui prend en argument une liste de libellés d'intérêt et une liste de candidat au *match* et
 renvoie le libellé le plus proche. Cependant, le risque est que cet algorithme soit relativement lent s'il n'est pas codé
 parfaitement. Il est, à mon avis, plus simple, quand
-on est habitué à la logique `pandas`, de faire un produit cartésien pour obtenir un vecteur mettant en miroir
+on est habitué à la logique `Pandas`,
+de faire un produit cartésien pour obtenir un vecteur mettant en miroir
 chaque produit de notre recette avec l'ensembles des produits Ciqual et ensuite comparer les deux vecteurs pour prendre,
-pour chaque produit, le meilleur *match*. Les bases étant de taille limitée, le produit cartésien n'est pas problématique.
-Avec des bases plus conséquentes une stratégie plus parcimonieuse en mémoire devrait être envisagée. 
+pour chaque produit, le meilleur *match*.
+Les bases étant de taille limitée, le produit cartésien n'est pas problématique.
+Avec des bases plus conséquentes, une stratégie plus parcimonieuse en mémoire devrait être envisagée. 
 
+Pour faire cette opération, on va utiliser la fonction `match_product` de 
+note script d'utilitaires. 
 
 ```{python}
 dist_leven = fc.match_product(libelles, ciqual)
+dist_leven
 ```
 
 Cette première étape naïve est décevante à plusieurs égards: 
@@ -293,21 +317,21 @@ Cette première étape naïve est décevante à plusieurs égards:
 mais on a plus de couples incohérents ;
 * Le temps de calcul peut apparaître faible mais le passage à l'échelle risque d'être compliqué ;
 * Les besoins mémoires sont potentiellement importants lors de l'appel à 
-`rapidfuzz.process.extract` ce qui peut bloquer le passage à l'échelle
+`rapidfuzz.process.extract` ce qui peut bloquer le passage à l'échelle ;
 * La distance textuelle n'est pas nécessairement la plus pertinente. 
 
-On a négligé une étape importante: la normalisation (ou nettoyage des textes) présentée dans la 
+On a, en fait, négligé une étape importante: la normalisation (ou nettoyage des textes) présentée dans la 
 partie [NLP](#nlp), notamment: 
 
 * harmonisation de la casse, suppression des accents...
-* suppressions des mots outils (e.g. ici on va d'abord négliger les quantités pour trouver la nature de l'aliment, en particulier pour Ciqual)
+* suppressions des mots outils (e.g. ici on va d'abord négliger les quantités pour trouver la nature de l'aliment, en particulier pour `Ciqual`)
     
 
 ## Preprocessing pour améliorer la pertinence des matches
 
 On nettoie les libellés en mobilisant des expressions régulières et un dictionnaire de mots outils.
 On peut adapter le nettoyage à la base, par exemple dans ciqual, la cuisson est souvent renseignée et bruite les appariemments.
-La fonction `clean_libelle` du script [`utils.py`](#utils.py) propose quelques fonctions
+La fonction `clean_libelle` du script d'utilitaires propose quelques fonctions
 appliquant les méthodes disponibles dans la partie [NLP](#NLP)
 
 
@@ -345,7 +369,8 @@ courses.sample(10)
 ```
 
 
-Les noms de produits sont déjà plus harmonisés. Voyons voir si _a permet de trouver un
+Les noms de produits sont déjà plus harmonisés.
+Voyons voir si cela permet de trouver un
 *match* dans l'Openfood database: 
 
 
@@ -364,15 +389,17 @@ de recherche est faible. Cette solution n'est donc pas généralisable.
 
 ## Réduire les temps de recherche
 
-Finalement, l'idéal serait de disposer d'un **moteur de recherche** adapté à notre besoin, contenant les produits candidats, que l'on pourrait interroger, rapide en lecture, capable de classer les echos renvoyés par pertinence, que l'on pourrait requêter de manière flexible
-(par exemple, on pourrait vouloir signaler qu'un echo nous intéresse seulement si la donnée calorique n'est pas manquante).
+Finalement, l'idéal serait de disposer d'un **moteur de recherche** adapté à notre besoin, contenant les produits candidats, que l'on pourrait interroger, rapide en lecture, capable de classer les échos renvoyés par pertinence, que l'on pourrait requêter de manière flexible. 
+Par exemple, on pourrait vouloir signaler qu'un
+écho nous intéresse seulement si la donnée calorique n'est pas manquante.
 On pourrait même vouloir qu'il effectue pour nous des prétraitements sur les données. 
 
-C'est exactement ce que fait Elastic
+Cela paraît beaucoup demander. Mais c'est exactement ce que fait `Elastic`.
 
 # Indexer une base 
 
-A partir de maintenant, commence, à proprement parler, la démonstration Elastic. Cette 
+A partir de maintenant, commence, à proprement parler, la démonstration `Elastic`.
+Cette 
 partie développe les éléments les plus techniques, à savoir l'indexation d'une base. 
 Tous les utilisateurs d'Elastic n'ont pas nécessairement à passer par là, ils peuvent 
 trouver une base déjà indexée, idéalement par un *data engineer* qui aura optimisé
@@ -383,17 +410,18 @@ repose sur la technologie [Kubernetes](https://kubernetes.io/) peuvent
 répliquer les éléments de la suite du document. 
 
 
-## Créer un cluster Elastic sur le DataLab
+## Créer un cluster `Elastic` sur le DataLab
 
-Pour lancer un service Elastic, il faut cliquer sur [ce lien](https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/elastic). 
+Pour lancer un service `Elastic`, il faut cliquer sur [ce lien](https://datalab.sspcloud.fr/launcher/inseefrlab-helm-charts-datascience/elastic). 
 
-Une fois créé, vous pouvez explorer l'interface graphique Kibana. Cependant, grâce à l'API Elastic
-de Python, on se passera de celle-ci. Donc, en pratique,
-une fois lancé, pas besoin d'ouvrir ce service Elastic pour continuer à suivre[^1].
+Une fois créé, vous pouvez explorer l'interface graphique `Kibana`.
+Cependant, grâce à l'API `Elastic`
+de `Python`, on se passera de celle-ci. Donc, en pratique,
+une fois lancé, pas besoin d'ouvrir ce service `Elastic` pour continuer à suivre[^1].
 
-[^1]: Le lancement du service a créé dans votre `NAMESPACE Kubernetes` (l'ensemble de tout vos services) un cluster Elastic.
-Vous n'avez droit qu'à un cluster par namespace (ou compte d'utilisateur).
-Votre service Jupyter, VSCode, RStudio, etc. est associé au même namespace.
+[^1]: Le lancement du service a créé dans votre `NAMESPACE Kubernetes` (l'ensemble de tout vos services) un cluster `Elastic`.
+Vous n'avez droit qu'à un cluster par _namespace_ (ou compte d'utilisateur).
+Votre service `Jupyter`, `VSCode`, `RStudio`, etc. est associé au même namespace.
 De même qu'il n'est pas nécessaire de comprendre comment fonctionne le moteur d'une voiture pour conduire, 
 il n'est pas nécessaire de comprendre la manière dont tout ce beau monde dialogue pour pouvoir utiliser le `SSP Cloud`. 
 
@@ -403,8 +431,9 @@ Dans un terminal, vous pouvez aussi vérifier que vous êtes en mesure de dialog
 kubectl get statefulset
 ```
 
-Passer par la ligne de commande serait peu commode. 
-Nous allons utiliser la librairie `python` `elasticsearch` pour dialoguer avec notre moteur de recherche Elastic.
+Passer par la ligne de commande serait peu commode pour industrialiser notre
+recherche. 
+Nous allons utiliser la librairie `elasticsearch` pour dialoguer avec notre moteur de recherche Elastic.
 Les instructions ci-dessous indiquent comment établir la connection.
 
 ```python
