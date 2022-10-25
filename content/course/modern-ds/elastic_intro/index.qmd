@@ -197,7 +197,7 @@ des produits potentiellement transformés, ce n'est pas très pratique d'utilise
 une base de données de produits agricoles en Français. Pour cette raison,
 nous proposons d'utiliser les deux bases suivantes,
 qui servent de base au travail de
-[[@galiana2022]](https://dl.acm.org/doi/10.1145/3524458.3547244)
+[ @galiana2022 ](https://dl.acm.org/doi/10.1145/3524458.3547244)
 
 
 * L'[`OpenFoodFacts` database](https://fr.openfoodfacts.org/) qui est une base  
@@ -624,7 +624,8 @@ recherche.
 Nous allons utiliser la librairie `elasticsearch` pour dialoguer avec notre moteur de recherche Elastic.
 Les instructions ci-dessous indiquent comment établir la connection.
 
-```python
+```{python}
+#| eval: false
 from elasticsearch import Elasticsearch
 HOST = 'elasticsearch-master'
 
@@ -796,7 +797,7 @@ On propose les analyseurs stockés dans un fichier [schema.json](#schema.json)
 Les *n-grammes* sont des séquences de *n* caractères ou plus généralement *n* éléments qui s'enchaînent séquentiellement.
 Par exemple, NOI et OIX sont des tri-grammes de caractères dans NOIX. 
 
-Comparer les n-grammes composant des libellés peut permettre d'avoir dans des comparaisons à fautes de frappe/abbréviations près.
+Comparer les *n-grammes* composant des libellés peut permettre d'avoir dans des comparaisons à fautes de frappe/abbréviations près.
 Cela fait aussi plus de comparaisons à opérer ! D'où également, l'intérêt d'Elastic, qui intégre facilement et efficacement ces comparaisons. 
 
 
@@ -805,50 +806,60 @@ On va préciser un peu le schéma de données qu'on souhaite _indexer_, et aussi
 
 ### Une indexation plus adaptée
 
-~~~python
+```{python}
+#| eval: false
 import json
 
-if es.indices.exists('openfood'):
-    es.indices.delete('openfood')
+if es.indices.exists(index = 'openfood'):
+    es.indices.delete(index = 'openfood')
 
 with open('schema.json') as f:
     mapping = json.load(f)
     
 es.indices.create(index = "openfood", body = mapping)    
-~~~
+```
 
 Maintenant, les champs textuels *"product_name"* et *"product_name_clean"*
 vont pouvoir être analysé aussi via leur n-grammes et après racinisation (et l'un n'exclut pas l'autre!)
 
-~~~python
-es.indices.get_field_mapping(index = 'openfood', fields = 'product_name')
-~~~
+```{python}
+#| eval: false
+es.indices.get_field_mapping(
+  index = 'openfood', fields = 'product_name'
+  )
+```
 
 ```
-{'openfood': {'mappings': {'product_name': {'full_name': 'product_name', 'mapping': {'product_name': {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}, 'ngr': {'type': 'text', 'analyzer': 'ngram_analyzer'}, 'stem': {'type': 'text', 'analyzer': 'stem_analyzer'}}}}}}}}
+ObjectApiResponse({'openfood': {'mappings': {'product_name': {'full_name': 'product_name', 'mapping': {'product_name': {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}, 'ngr': {'type': 'text', 'analyzer': 'ngram_analyzer'}, 'stem': {'type': 'text', 'analyzer': 'stem_analyzer'}}}}}}}})
 ```
 
-C'est parti, on envoie toute notre base OpenFood pour pouvoir la requêter ! La fonction suivante (`index_elastic`) va vous faire gagner du temps pour indexer
+C'est parti, on envoie toute notre base OpenFood pour pouvoir la requêter !
+La fonction suivante (`index_elastic`) va vous faire gagner du temps pour indexer
 car indexer chaque produit à la main n'est pas très efficace.
 
-Du coup ça prend quelques minutes ... mais c'est pour nous en faire gagner ensuite. Cette opération est faite une fois, pour préparer des requêtes potentiellement nombreuses!
+Du coup ça prend quelques minutes... mais c'est pour nous en faire gagner ensuite.
+Cette opération est faite une fois, pour préparer des requêtes potentiellement nombreuses!
 
-~~~python
+```{python}
+#| eval: false
 fc.index_elastic(es =es, index_name = "openfood",
         setting_file = 'schema.json',
         df = openfood[['product_name',"libel_clean","energy_100g","nutriscore_score"]].drop_duplicates())
-~~~
-
-```
-Temps d'exécution total : 263.11 secondes ---
 ```
 
-~~~python
-es.count(index = 'openfood')
-~~~
+```
+Temps d'exécution total : 125.57 secondes ---
+```
+
+
+```{python}
+#| eval: false
+es.count(index = 'openfood')['count']
+```
+
 
 ```
-{'count': 630727, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}}
+738366
 ```
 
 
@@ -856,50 +867,76 @@ es.count(index = 'openfood')
 
 Vérifions qu'on recupère quelques tartes aux noix même si l'on fait plein de fautes:
 
-~~~python
+
+```{python}
+#| eval: false
 es.search(index = 'openfood', q = 'TART NOI', size = 3)
-~~~
-
-```
-{'took': 4201, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 10000, 'relation': 'gte'}, 'max_score': 22.765423, 'hits': [{'_index': 'openfood', '_type': '_doc', '_id': '307496', '_score': 22.765423, '_source': {'product_name': 'Tarte noix', 'libel_clean': 'TARTE NOIX', 'energy_100g': 1833.0, 'nutriscore_score': 23.0}}, {'_index': 'openfood', '_type': '_doc', '_id': '825159', '_score': 22.277456, '_source': {'product_name': 'Tarte aux noix', 'libel_clean': 'TARTE AUX NOIX', 'energy_100g': 4.0, 'nutriscore_score': 4.0}}, {'_index': 'openfood', '_type': '_doc', '_id': '867887', '_score': 22.277456, '_source': {'product_name': 'Tarte aux noix', 'libel_clean': 'TARTE AUX NOIX', 'energy_100g': 1929.0, 'nutriscore_score': 21.0}}]}}
 ```
 
-Pour automatiser cette approche, on peut définir  la fonctioin suivante
+```
+ObjectApiResponse({'took': 60, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 10000, 'relation': 'gte'}, 'max_score': 22.837925, 'hits': [{'_index': 'openfood', '_type': '_doc', '_id': '405332', '_score': 22.837925, '_source': {'product_name': 'Tarte noix', 'libel_clean': 'TARTE NOIX', 'energy_100g': 1833.0, 'nutriscore_score': 23.0}}, {'_index': 'openfood', '_type': '_doc', '_id': '1103594', '_score': 22.82367, '_source': {'product_name': 'Tarte aux noix', 'libel_clean': 'TARTE NOIX', 'energy_100g': 4.0, 'nutriscore_score': 4.0}}, {'_index': 'openfood', '_type': '_doc', '_id': '1150755', '_score': 22.82367, '_source': {'product_name': 'Tarte aux noix', 'libel_clean': 'TARTE NOIX', 'energy_100g': 1929.0, 'nutriscore_score': 21.0}}]}})
+```
 
-```python
+Si on préfère sous une forme de `DataFrame`:
+
+```{python}
+#| eval: false
+df = pd.json_normalize(
+    es.search(index = 'openfood', q = 'TART NOI', size = 3)['hits']['hits']
+)
+df.columns = df.columns.str.replace("_source.", "", regex = False)
+df.head(2)
+```
+
+```{=html}
+<table border="1" class="dataframe">\n  <thead>\n    <tr style="text-align: right;">\n      <th></th>\n      <th>_index</th>\n      <th>_type</th>\n      <th>_id</th>\n      <th>_score</th>\n      <th>product_name</th>\n      <th>libel_clean</th>\n      <th>energy_100g</th>\n      <th>nutriscore_score</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>openfood</td>\n      <td>_doc</td>\n      <td>405332</td>\n      <td>22.837925</td>\n      <td>Tarte noix</td>\n      <td>TARTE NOIX</td>\n      <td>1833.0</td>\n      <td>23.0</td>\n    </tr>\n    <tr>\n      <th>1</th>\n      <td>openfood</td>\n      <td>_doc</td>\n      <td>1103594</td>\n      <td>22.823670</td>\n      <td>Tarte aux noix</td>\n      <td>TARTE NOIX</td>\n      <td>4.0</td>\n      <td>4.0</td>\n    </tr>\n    <tr>\n      <th>2</th>\n      <td>openfood</td>\n      <td>_doc</td>\n      <td>1150755</td>\n      <td>22.823670</td>\n      <td>Tarte aux noix</td>\n      <td>TARTE NOIX</td>\n      <td>1929.0</td>\n      <td>21.0</td>\n    </tr>\n  </tbody>\n</table>
+```
+
+Pour automatiser l'envoi de requêtes et la récupération du meilleur
+écho, on peut définir la fonction suivante
+
+```{python}
+#| eval: false
 def matchElastic(libelles):
-    matches = dict()
     start_time = time.time()
+    matches = {}
     for l in libelles:
         response = es.search(index = 'openfood', q = l, size = 1)
         if len(response['hits']['hits'])>0:
-            matches[l] = response['hits']['hits'][0]['_source']['libel_clean']
+            matches[l] = pd.json_normalize(
+              response['hits']['hits']
+            )
     print(80*'-')
     print(f"Temps d'exécution total : {(time.time() - start_time):.2f} secondes ---")
     
     return matches
 ```
 
-```python
+```{python}
+#| eval: false
 matches = matchElastic(courses['libel_clean'])
-pd.DataFrame.from_dict(matches, orient='index')
+matches = pd.concat(matches)
+matches.sample(3)
+```
+
+```{=html}
+<table border="1" class="dataframe">\n  <thead>\n    <tr style="text-align: right;">\n      <th></th>\n      <th></th>\n      <th>_index</th>\n      <th>_type</th>\n      <th>_id</th>\n      <th>_score</th>\n      <th>_source.product_name</th>\n      <th>_source.libel_clean</th>\n      <th>_source.energy_100g</th>\n      <th>_source.nutriscore_score</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>GOUSSE AIL</th>\n      <th>0</th>\n      <td>openfood</td>\n      <td>_doc</td>\n      <td>1982062</td>\n      <td>57.93140</td>\n      <td>Gousse d\'ail</td>\n      <td>GOUSSE AIL</td>\n      <td>498.0</td>\n      <td>5.0</td>\n    </tr>\n    <tr>\n      <th>IGP SAUVIGNON</th>\n      <th>0</th>\n      <td>openfood</td>\n      <td>_doc</td>\n      <td>1801406</td>\n      <td>96.55756</td>\n      <td>vin blanc Sauvignon</td>\n      <td>VIN BLANC SAUVIGNON</td>\n      <td>66.3</td>\n      <td>1.0</td>\n    </tr>\n    <tr>\n      <th>POTIRON</th>\n      <th>0</th>\n      <td>openfood</td>\n      <td>_doc</td>\n      <td>1043961</td>\n      <td>75.96385</td>\n      <td>Potiron</td>\n      <td>POTIRON</td>\n      <td>172.0</td>\n      <td>0.0</td>\n    </tr>\n  </tbody>\n</table>
 ```
 
 Et voilà, on a un outil très rapide de requête ! 
-Maintenant, on peut préciser des requêtes plus sophistiquées![^2]
+La pertinence des résultats est encore douteuse. 
+Pour cela, il conviendrait de préciser des requêtes plus sophistiquées![^2]
 
 [^2]: Vous pouvez aussi explorer les possibilités de requêtes via la [doc Elastic](https://www.elastic.co/guide/en/elasticsearch/reference/6.8/query-dsl.html) et vous entrainer à un écrire avec votre index tout neuf.
 
 
-```python
-body = '''
-{
-  "size": "1",
-  "query": {
+```{python}
+req = {
     "bool": {
       "should": [
         { "match": { "libel_clean":  { "query":  "HUILE OLIVE" , "boost" : 10}}},
-        { "match": { "libel_clean.ngr":   "HUILE OLIVE" }}],
+        { "match": { "libel_clean.ngr":   "HUILE OLIVE" }}
+        ],
       "minimum_should_match": 1,
       "filter": [
       { 
@@ -912,30 +949,34 @@ body = '''
                     }
       ]
     }
-  }
 }
-'''
 ```
 
-~~~python
-es.search(index = 'openfood', body = body)
-~~~
-
-```
-{'took': 10322, 'timed_out': False, '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0}, 'hits': {'total': {'value': 10000, 'relation': 'gte'}, 'max_score': 174.37657, 'hits': [{'_index': 'openfood', '_type': '_doc', '_id': '693544', '_score': 174.37657, '_source': {'product_name': 'Huile d olive', 'libel_clean': 'HUILE OLIVE', 'energy_100g': 3761.0, 'nutriscore_score': 11.0}}]}}
+```{python}
+#| eval: false
+out = es.search(index = 'openfood', query = req, size = 1)
+pd.json_normalize(out['hits']['hits'])
 ```
 
 
-Qu'a-t-on demandé ici? De renvoyer 1 et 1 seul echo (`"size":"1"`) et seulement si celui ci a:
-* `"should"`: Au moins un (`"minimum_should_match":"1"`) des termes des deux champs `libel_clean` et `libel_clean.ngr` qui matche sur un terme de _HUILE OLIVE_, l'analyse (la définition du "terme") étant réalisé soit en tant que `text` ("libel_clean") soit en tant que n-gramme `ngr` ("libel_clean.ngr", une analyse que nous avons spécifié dans le mapping) 
-* `"filter"`: Le champ `float` nutriscore_score doit être compris entre 10 et 20 ("filter").  
+```{=html}
+<table border="1" class="dataframe">\n  <thead>\n    <tr style="text-align: right;">\n      <th></th>\n      <th>_index</th>\n      <th>_type</th>\n      <th>_id</th>\n      <th>_score</th>\n      <th>_source.product_name</th>\n      <th>_source.libel_clean</th>\n      <th>_source.energy_100g</th>\n      <th>_source.nutriscore_score</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>openfood</td>\n      <td>_doc</td>\n      <td>960041</td>\n      <td>174.27896</td>\n      <td>Huile d olive</td>\n      <td>HUILE OLIVE</td>\n      <td>3761.0</td>\n      <td>11.0</td>\n    </tr>\n  </tbody>\n</table>
+```
+
+
+Qu'a-t-on demandé ici? 
+- De renvoyer 1 et 1 seul echo (`"size":"1"`) et seulement si celui ci a:
+    + `"should"`: Au moins un (`"minimum_should_match":"1"`) des termes des deux champs `libel_clean` et `libel_clean.ngr` qui matche sur un terme de _HUILE OLIVE_, l'analyse (la définition du "terme") étant réalisé soit en tant que `text` ("libel_clean") soit en tant que n-gramme `ngr` ("libel_clean.ngr", une analyse que nous avons spécifié dans le mapping) 
+    + `"filter"`: Le champ `float` `nutriscore_score` doit être compris entre 10 et 20 ("filter").  
 
 A noter :
 
-1. Les clauses (`"should"`+`"minimum_should_match":"1"`) peuvent être remplacé par un `"must"`, auquel cas, l'echo doit obligatoirement matcher sur chaque clause.
-2. Préciser dans `"filter"` (plutôt que dans "`should`") une condition signifie que celle-ci ne participe pas au score de pertinence. 
+1. Les clauses (`"should"`+`"minimum_should_match":"1"`) peuvent être remplacé par un `"must"`. Auquel cas, l'écho doit obligatoirement matcher sur chaque clause.
+2. Préciser dans `"filter"` (plutôt que dans `"should"`) une condition signifie que celle-ci ne participe pas au score de pertinence. 
 
 
-On n'a pas encore un appariemment très satisfaisant, en particulier sur les boissons. Comment faire ? La réponse sera dans Galiana et al. (à venir)
+On n'a pas encore un appariemment très satisfaisant, en particulier sur les boissons. Comment faire ? La réponse est dans @galiana2022 
 
+<div class="alert alert-success" role="alert">
 A vous, de calculer le nombre de calories de notre recette de course ! 
+</div>
