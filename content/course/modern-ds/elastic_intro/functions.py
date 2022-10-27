@@ -13,23 +13,27 @@ import s3fs
 openfoodcols = ['product_name', 'energy_100g', 'nutriscore_score']
 ENDPOINT_URL = "https://minio.lab.sspcloud.fr"
 
-def import_openfood_s3(cols=openfoodcols[:1], nrows = None):
+def import_openfood_s3(cols=openfoodcols, nrows = None):
 
     fs = s3fs.S3FileSystem(
         client_kwargs={"endpoint_url": ENDPOINT_URL}
         )
     fs.download(
-        "/projet-relevanc/diffusion/openfood/openfood.csv",
+        "projet-relevanc/diffusion/openfood.csv",
         "openfood.csv"
         )
 
+    cols = pd.Series(cols)\
+        .str.replace('_score', '_grade')\
+        .tolist()
+
     data = pd.read_csv(filepath_or_buffer='openfood.csv', 
-                       delimiter="\t", 
                        usecols=cols, 
                        nrows = nrows, 
                        encoding = 'utf-8')
     data = data.dropna()
 
+    return data
 
 
 def import_openfood(from_latest = False,cols=openfoodcols, nrows = None):
