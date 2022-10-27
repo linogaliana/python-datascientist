@@ -7,7 +7,12 @@ CHAPTER=$2
 
 WORK_DIR="/home/onyxia/work"
 CLONE_DIR="${WORK_DIR}/repo-git"
-COURSE_DIR="${CLONE_DIR}/notebooks/course"
+if [[ "$3" == "correction" ]];
+then 
+  COURSE_DIR="${CLONE_DIR}/corrections/course"
+else
+  COURSE_DIR="${CLONE_DIR}/notebooks/course"
+fi
 
 # Clone course repository
 REPO_URL="https://github.com/linogaliana/python-datascientist.git"
