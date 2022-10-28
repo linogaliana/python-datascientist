@@ -8,16 +8,38 @@ from collections import deque
 import json
 import time
 import rapidfuzz
+import s3fs
 
 openfoodcols = ['product_name', 'energy_100g', 'nutriscore_score']
+ENDPOINT_URL = "https://minio.lab.sspcloud.fr"
 
+def import_openfood_s3(cols=openfoodcols, nrows = None):
 
+    fs = s3fs.S3FileSystem(
+        client_kwargs={"endpoint_url": ENDPOINT_URL}
+        )
+    fs.download(
+        "projet-relevanc/diffusion/openfood.csv",
+        "openfood.csv"
+        )
+
+    cols = pd.Series(cols)\
+        .str.replace('_score', '_grade')\
+        .tolist()
+
+    data = pd.read_csv(filepath_or_buffer='openfood.csv', 
+                       usecols=cols, 
+                       nrows = nrows, 
+                       encoding = 'utf-8')
+    data = data.dropna()
+
+    return data
 
 
 def import_openfood(from_latest = False,cols=openfoodcols, nrows = None):
     """
     Import and clean openfood data from https://fr.openfoodfacts.org/data 
-    see https://world.openfoodfacts.org/terms-of-use 
+    see https://world.openfoodfacts.org/terms-of-use
     :param cols: A list of columns that is passed to pandas.read_csv to subset
       the file and speedup import. Default to None which means all columns
       are imported
@@ -25,7 +47,9 @@ def import_openfood(from_latest = False,cols=openfoodcols, nrows = None):
     """
     
     if os.path.isfile("openfood.csv") is False:
-            urllib.request.urlretrieve("https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv", "openfood.csv")
+        urllib.request.urlretrieve(
+            "https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv", "openfood.csv"
+            )
         
     data = pd.read_csv(filepath_or_buffer='openfood.csv', 
                        delimiter="\t", 
