@@ -1,10 +1,12 @@
 import re
 
+
 def reminder_badges(
     source_file = "content/01_toto.Rmd",
     type = ['md','html'],
     split = None,
-    onyxia_only = False
+    onyxia_only = False,
+    correction = False
 ):
 
     if isinstance(type, list):
@@ -15,7 +17,10 @@ def reminder_badges(
         ".ipynb",
         source_file
     )
-    notebook = re.sub(r"content", "notebooks", notebook)
+    if correction:
+        notebook = re.sub(r"content", "corrections", notebook)
+    else:
+        notebook = re.sub(r"content", "notebooks", notebook)
 
 
     if notebook == "":
@@ -57,11 +62,14 @@ def reminder_badges(
 
     section_latest = section.rsplit("/", maxsplit=1)[-1]
     chapter_no_extension=re.sub(".ipynb","", chapter)
-
+    onyxia_init_args = [section_latest, chapter_no_extension]
+    if correction:
+        onyxia_init_args.append("correction")
+    onyxia_init_args = "%20".join(onyxia_init_args)
     onyxia_link_launcher = "https://datalab.sspcloud.fr/launcher/ide/jupyter-python"\
         "?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB"\
         "&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB"\
-        f"&init.personalInitArgs=%C2%AB{section_latest}%20{chapter_no_extension}%C2%BB&security.allowlist.enabled=false"
+        f"&init.personalInitArgs=%C2%AB{onyxia_init_args}%C2%BB&security.allowlist.enabled=false"
 
     if type == "md":
         onyxia_link = "[![Onyxia]"\
@@ -131,12 +139,15 @@ def print_badges(
     fpath,
     onyxia_only=False,
     split=4,
-    type="html"):
+    type="html",
+    correction=False):
       
       badges = reminder_badges(
           fpath,
           type=type,
           split=split,
-          onyxia_only=onyxia_only)
+          onyxia_only=onyxia_only,
+          correction=correction
+          )
           
       print(badges)
