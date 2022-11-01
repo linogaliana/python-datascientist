@@ -46,6 +46,11 @@ def change_box_markdown(fl):
     write_file(fl, tweak_md)
 
 if __name__ == '__main__':
-    list_files = glob.glob("./content/course/**/index.qmd", recursive=True)
-    print(list_files)
-    [change_box_markdown(fl) for fl in list_files if not fl.endswith("_index.md")]
+    with open('diff') as f:
+        lines = f.read().splitlines() 
+
+    list_files = [l for l in lines if l.endswith('.qmd')]
+
+    for fl in list_files:
+        if not fl.endswith("_index.md"):
+            change_box_markdown(fl)
