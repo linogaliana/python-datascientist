@@ -3,10 +3,6 @@ title: "Préparation des données pour construire un modèle"
 date: 2020-10-15T13:00:00Z
 draft: false
 weight: 10
-output: 
-  html_document:
-    keep_md: true
-    self_contained: true
 slug: preprocessing
 tags:
   - scikit
@@ -27,6 +23,7 @@ summary: |
   Beaucoup de méthodes sont disponibles dans `scikit`, ce qui rend ce travail
   moins fastidieux et plus fiable. 
 plotly: true
+bibliography: ../../../../reference.bib
 ---
 
 ::: {.cell .markdown}
@@ -46,37 +43,81 @@ print_badges("content/course/modelisation/0_preprocessing.qmd")
 :::
 
 Ce chapitre utilise le jeu de données présenté dans l'[introduction
-de cette partie](https://linogaliana-teaching.netlify.app/modelisation/):
-les données de vote aux élections présidentielles US
-croisées à des variables socio-démographiques. Le code 
-est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py) mais l'exercice 1 permet, à ceux qui le désirent, d'essayer de reproduire la constitution de la base de données. 
+de cette partie](https://linogaliana-teaching.netlify.app/modelisation/) :
+les données de vote aux élections présidentielles américaines de 2020 au niveau des comtés
+croisées à des variables socio-démographiques.
+Le code de consitution de la base de données
+est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py).
+L'exercice 1 permet, à ceux qui le désirent, d'essayer de le reconstituer pas à pas. 
 
 Le guide utilisateur de `scikit` est une référence précieuse,
 à consulter régulièrement. La partie sur le *preprocessing* est
 disponible [ici](https://scikit-learn.org/stable/modules/preprocessing.html).
 
+L'objectif de ce chapitre est de présenter quelques éléments de 
+préparation des données. Il s'agit d'une étape fondamentale, à ne
+pas négliger. Les modèles reposent sur certaines hypothèses, généralement
+relatives à la distribution théorique des variables qui y sont intégrées.
+
+Il est nécessaire de faire correspondre la distribution empirique
+à ces hypothèses ce qui implique un travail de restructuration des données.
+Celui-ci permettra d'avoir des résultats de modélisation plus pertinents. 
 Nous verrons dans le chapitre sur les *pipelines* comment industrialiser
-ces étapes de pré-processing afin de se simplifier la vie pour appliquer
+ces étapes de _preprocessing_ afin de se simplifier la vie pour appliquer
 un modèle sur un jeu de données différent de celui sur lequel il a été estimé. 
 
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> scikit-learn </h3>
+```
+
+`scikit-learn` est aujourd'hui la librairie de référence dans l'écosystème du
+_Machine Learning_. Il s'agit d'une librairie qui, malgré les très nombreuses
+méthodes implémentées, présente l'avantage d'être un point d'entrée unifié.
+Cet aspect unifié est l'une des raisons du succès précoce de celle-ci. `R` n'a 
+bénéficié que plus récemment d'une librairie unifiée,
+à savoir [`tidymodels`](https://www.tidymodels.org/).
+
+Une autre raison du succès de `scikit` est son approche opérationnelle: la mise
+en production de modèles développés via les _pipelines_ `scikit` est peu coûteuse.
+Un [chapitre spécial de ce cours](/pipeline-scikit) est dédié aux _pipelines_.
+Avec Romain Avouac, nous proposons un [cours plus avancé](https://ensae-reproductibilite.netlify.app/) 
+en dernière année d'ENSAE où nous présentons certains enjeux relatifs
+à la mise en production de modèles développés avec `scikit`. 
+
+Le coeur de l'équipe de développement de `scikit-learn` est situé
+à l'[Inria](https://www.inria.fr/fr) 🇫🇷. 
+Pour découvrir la richesse de l'écosystème `scikit`, il 
+est recommandé de suivre le
+[`MOOC scikit`](https://www.fun-mooc.fr/fr/cours/machine-learning-python-scikit-learn/),
+développé dans le cadre de l'initiative [`Inria Academy`](https://www.inria.fr/fr/mooc-scikit-learn).
+
+```{=html}
+</div>
+```
+:::
 
 # Construction de la base de données
 
-Les sources étant éclatées, le code pour construire une base combinant toutes ces
-sources est directement fourni. Le travail de construction d'une base unique
+Les sources de données étant diverses, le code qui construit la base finale est directement fourni. Le travail de construction d'une base unique
 est un peu fastidieux mais il s'agit d'un bon exercice, que vous pouvez tenter,
 pour [réviser `pandas`](#pandas)   :
 
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Exercice 1 : Importer les données des élections US</h3>
+```
 
-**Exercice 1 : Importer les données des élections US** [OPTIONNEL]
+__Cet exercice est OPTIONNEL__
 
 1. Télécharger et importer le shapefile [depuis ce lien](https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_02_sldl_500k.zip)
 2. Exclure les Etats suivants: "02", "69", "66", "78", "60", "72", "15"
 3. Importer les résultats des élections depuis [ce lien](https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-20/master/2020_US_County_Level_Presidential_Results.csv)
 4. Importer les bases disponibles sur le site de l'USDA en faisant attention à renommer les variables de code FIPS de manière identique
 dans les 4 bases
-5. *Merger* ces 4 bases dans une base unique de caractéristiques socio-économiques
+5. *Merger* ces 4 bases dans une base unique de caractéristiques socioéconomiques
 6. *Merger* aux données électorales à partir du code FIPS
 7. *Merger* au shapefile à partir du code FIPS. Faire attention aux 0 à gauche dans certains codes. Il est
 recommandé d'utiliser la méthode `str.lstrip` pour les retirer
@@ -88,14 +129,20 @@ Ne garder que les colonnes `"year", "FIPS", "party", "candidatevotes", "share"`
 10. Faire une conversion `long` to `wide` avec la méthode `pivot_table` pour garder une ligne
 par comté x année avec en colonnes les résultats de chaque candidat dans cet état.
 11. Merger à partir du code FIPS au reste de la base. 
-{{% /box %}}
 
+```{=html}
+</div>
+```
+:::
 
 Si vous ne faites pas l'exercice 1, pensez à charger les données en executant la fonction `get_data.py` :
 
 ```{python}
 #| echo: true
+#| message: false
+#| warning: false
 
+#!pip install --upgrade xlrd #colab bug verson xlrd
 #!pip install geopandas
 
 import requests
@@ -114,7 +161,7 @@ suivant:
 
 ```{python}
 #| echo: false
-votes.head()
+votes.head(3)
 ```
 
 
@@ -130,8 +177,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
+# republican : red, democrat : blue
 color_dict = {'republican': '#FF0000', 'democrats': '#0000FF'}
-#votes.plot(column = "winner", figsize = (12,12), c=votes['winner'].map(color_dict))
 
 fig, ax = plt.subplots(figsize = (12,12))
 grouped = votes.groupby('winner')
@@ -139,22 +187,28 @@ for key, group in grouped:
     group.plot(ax=ax, column='winner', label=key, color=color_dict[key])
 plt.axis('off')
 
-# plt.show()
 ```
 
 
-Les cartes choroplèthes peuvent donner une impression fallacieuse ayant servi 
-de justification pour contester les résultats du vote. En effet, un biais
+Les cartes choroplèthes peuvent donner une impression fallacieuse 
+ce qui exiplique que 
+ce type de carte a servi 
+de justification pour contester les résultats du vote.
+En effet, un biais
 connu des représentations choroplèthes est qu'elles donnent une importance
 visuelle excessive aux grands espaces. Or, ceux-ci sont souvent des espaces
 peu denses et influencent donc moins la variable d'intérêt (en l'occurrence
 le taux de vote en faveur des républicains/démocrates). Une représentation à 
-privilégier pour ce type de phénomènes est les ronds proportionnels. 
+privilégier pour ce type de phénomènes est les
+ronds proportionnels (voir @inseeSemiologie, _"Le piège territorial en cartographie"_). 
+
 
 Le [GIF "Land does not vote, people do"](https://www.core77.com/posts/90771/A-Great-Example-of-Better-Data-Visualization-This-Voting-Map-GIF)
 qui avait eu un certain succès en 2020 propose un autre mode de visualisation.
 La carte originale a probablement été construite avec `JavaScript`. Cependant,
-on dispose avec `Python` pour répliquer, à faible coût, cette approche avec 
+on dispose avec `Python` de plusieurs outils
+pour répliquer, à faible coût, cette carte 
+grâce à
 l'une des surcouches à JavaScript vue dans la partie [visualisation](#visualisation). 
 
 En l'occurrence, on peut utiliser `plotly` pour tenir compte de la population:
@@ -166,7 +220,7 @@ La Figure a été obtenue avec le code suivant:
 ```{python}
 #| message: false
 #| warning: false
-#| output: hide
+#| output: false
 import plotly
 import plotly.graph_objects as go
 import pandas as pd
@@ -212,40 +266,57 @@ fig_plotly.update_layout(
         showlegend = True,
         geo = {"scope": 'usa', "landcolor": 'rgb(217, 217, 217)'}
     )
-
-# Pour inclusion sur site web
-fig_plotly.write_json("people_vote.json")
 ```
 
 ```{python}
+#| output: false
 #| echo: false
+fig_plotly.write_json("people_vote.json")
 fig_plotly.write_image("featured.png")
 ```
 
 Les cercles proportionnels permettent ainsi à l'oeil de se concentrer sur les 
 zones les plus denses et non sur les grands espaces.
 
-## Explorer la structure des données
+# Explorer la structure des données
 
 La première étape nécessaire à suivre avant de se lancer dans la modélisation
 est de déterminer les variables à inclure dans le modèle.
 
-Les fonctionnalités de `pandas` sont, à ce niveau, suffisantes pour explorer des structures simples. Néanmoins, lorsqu'on est face à un jeu de données présentant de nombreuses variables explicatives (*features* en machine learning, *covariates* en économétrie), il est souvent judicieux d'avoir une première étape de sélection de variable, ce que nous verrons par la suite dans la [partie dédiée](https://linogaliana-teaching.netlify.app/lasso/).  
+Les fonctionnalités de `pandas` sont, à ce niveau, suffisantes pour explorer des structures simples.
+Néanmoins, lorsqu'on est face à un jeu de données présentant de
+nombreuses variables explicatives (*features* en machine learning, *covariates* en économétrie),
+il est souvent judicieux d'avoir une première étape de sélection de variables,
+ce que nous verrons par la suite dans la [partie dédiée](https://linogaliana-teaching.netlify.app/lasso/).  
 
-Avant d'être en mesure de sélectionner le meilleur ensemble de variables explicatives, nous allons en prendre un nombre restreint et arbitraire. La première tâche est de représenter les relations entre les données, notamment la relation des variables explicatives à la variable dépendante (le score du parti républicain) ainsi que les relations entre les variables explicatives. 
+Avant d'être en mesure de sélectionner le meilleur ensemble de variables explicatives,
+nous allons en prendre un nombre restreint et arbitraire.
+La première tâche est de représenter les relations entre les données,
+notamment la relation des variables explicatives
+à la variable dépendante (le score du parti républicain)
+ainsi que les relations entre les variables explicatives. 
 
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Exercice 2 : Regarder les corrélations entre les variables</h3>
+```
 
-**Exercice 2 : Regarder les corrélations entre les variables**
-
-1. Créer un DataFrame `df2` plus petit avec les variables `winner` et 
-`votes_gop`, `Unemployment_rate_2019`,
+1. Créer un DataFrame `df2` plus petit avec les variables `winner`, `votes_gop`, `Unemployment_rate_2019`,
 `Median_Household_Income_2019`,
 `Percent of adults with less than a high school diploma, 2015-19`,
 `Percent of adults with a bachelor's degree or higher, 2015-19`
+2. Représenter grâce à un graphique la matrice de corrélation avec `heatmap` de `seaborn`.
+3. Représenter une matrice de nuages de points des variables de la base `df2` avec `pd.plotting.scatter_matrix`
+4. (optionnel) Refaire ces figures avec `plotly` qui offre également la possibilité de faire une matrice de corrélation. 
+
+```{=html}
+</div>
+```
+:::
 
 ```{python}
-#| include: false
+#| output: false
 #| echo: false
 
 # 1. Créer le data.frame df2.
@@ -255,11 +326,10 @@ df2 = votes.set_index("GEOID").loc[: , ["winner", "votes_gop",
           "Percent of adults with a bachelor's degree or higher, 2015-19"]]
 ```
 
-2. Représenter grâce à un graphique la matrice de corrélation avec `heatmap` de `seaborn`.
-
-```{python heatmap seaborn}
-#| include: false
+```{python}
 #| echo: false
+#| message: false
+#| warning: false
 
 # 2. Matrice de corrélation graphique
 g1 = sns.heatmap(df2.drop("winner", axis = 1).corr(), cmap='coolwarm', annot=True, fmt=".2f")
@@ -268,29 +338,32 @@ g1 = sns.heatmap(df2.drop("winner", axis = 1).corr(), cmap='coolwarm', annot=Tru
 g2 = df2.drop("winner", axis = 1).corr().style.background_gradient(cmap='coolwarm').set_precision(2)
 ```
 
-La matrice construite avec `seaborn` aura un aspect comme suit:
+La matrice construite avec `seaborn` (question 2) aura l'aspect suivant:
 
 ```{python}
+#| echo: false
+
 g1.figure.get_figure()
 ```
 
-Alors que celle construite directement avec `pandas`
+Alors que celle construite directement avec `corr` de `pandas`
 ressemblera plutôt à ce tableau :
 
 ```{python}
+#| echo: false
+
 g2
 ```
 
-
-3. Choisir quelques variables (pas plus de 4 ou 5) et représenter une matrice de nuages de points
+Le nuage de point obtenu à l'issue de la question 3 ressemblera à :
 
 ```{python}
-#| include: false
 #| echo: false
+#| message: false
+#| warning: false
 
 # 3. Matrice de nuages de points
 ax = pd.plotting.scatter_matrix(df2, figsize = (15,15))
-ax
 ```
 
 ```{python}
@@ -298,34 +371,31 @@ ax
 ax
 ```
 
+Le résultat de la question 4 devrait, quant à lui,
+ressembler au graphique suivant :
 
-4. (optionnel) Refaire ces figures avec `plotly` qui offre également la possibilité de faire une matrice de corrélation. Le résultat devrait ressembler au graphique suivant :
- 
-
-```{python scatter_matrix_plotly}
-#| include: false
+```{python}
 #| echo: false
-#| output: hide
+#| output: false
  
 # 4. Matrice de corélation avec plotly
 import plotly
 import plotly.express as px
 htmlsnip2 = px.scatter_matrix(df2)
 htmlsnip2.update_traces(diagonal_visible=False)
+#htmlsnip2
+```
 
+```{python}
 # Pour inclusion dans le site web
 htmlsnip2.write_json("scatter.json")
 ```
 
-{{% /box %}}
-
-La matrice de corrélation devrait avoir l'aspect suivant:
 
 {{< chart data="scatter" >}}
 
 
-
-## Transformer les données
+# Transformer les données
 
 Les différences d'échelle ou de distribution entre les variables peuvent 
 diverger des hypothèses sous-jacentes dans les modèles.
@@ -335,7 +405,8 @@ de la régression linéaire, les variables catégorielles ne sont pas traitées 
 enseigne que les variables ayant valeur dans $\mathbb{R}$. Une variable
 discrète (prenant un nombre fini de valeurs) devra être transformées en suite de
 variables 0/1 par rapport à une modalité de référence pour être en adéquation
-avec les hypothèses de la régression linéaire. On appelle ce type de transformation
+avec les hypothèses de la régression linéaire.
+On appelle ce type de transformation
 *one-hot encoding*, sur lequel nous reviendrons. Il s'agit d'une transformation,
 parmi d'autres, disponibles dans `scikit` pour mettre en adéquation un jeu de
 données et des hypothèses mathématiques. 
@@ -349,25 +420,64 @@ similaire:
 ![](scikit_predict.png)
 
 
+Nous allons voir deux processus très classiques de *preprocessing* : 
 
-### Standardisation
+1. La **standardisation** transforme des données pour que la distribution empirique suive une loi $\mathcal{N}(0,1)$.
+
+2. La **normalisation**  transforme les données de manière à obtenir une norme ($\mathcal{l}_1$ ou $\mathcal{l}_2$) unitaire. Autrement dit, avec la norme adéquate, la somme des éléments est égale à 1.
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-danger" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+```
+Pour un statisticien,
+le terme `normalization` dans le vocable `scikit` peut avoir un sens contre-intuitif.
+On s'attendrait à ce que la normalisation consiste à transformer une variable de manière à ce que $X \sim \mathcal{N}(0,1)$.
+C'est, en fait, la **standardisation** en `scikit` qui fait cela.
+
+```{=html}
+</div>
+```
+:::
+
+
+## Standardisation
 
 La standardisation consiste à transformer des données pour que la distribution empirique suive une loi $\mathcal{N}(0,1)$. Pour être performants, la plupart des modèles de machine learning nécessitent souvent d'avoir des données dans cette distribution.
 
-{{% box status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
-Pour un statisticien, le terme `normalization` dans le vocable `scikit` peut avoir un sens contre-intuitif. On s'attendrait à ce que la normalisation consiste à transformer une variable de manière à ce que $X \sim \mathcal{N}(0,1)$. C'est, en fait, la **standardisation** en `scikit`. 
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Exercice 3: Standardisation</h3>
+```
 
-La **normalisation** consiste à modifier les données de manière à avoir une norme unitaire. La raison est expliquée plus bas.
-{{% /box %}}
-
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
-
-**Exercice 3: Standardisation**
 
 1. Standardiser la variable `Median_Household_Income_2019` (ne pas écraser les valeurs !) et regarder l'histogramme avant/après normalisation.
 
+*Note : On obtient bien une distribution centrée à zéro et on pourrait vérifier que la variance empirique soit bien égale à 1. On pourrait aussi vérifier que ceci est vrai également quand on transforme plusieurs colonnes à la fois.*
+
+
+2. Créer `scaler`, un `Transformer` que vous construisez sur les 1000 premières lignes de votre DataFrame `df2`  à  l'exception de la variable à expliquer `winner`. Vérifier la moyenne et l'écart-type de chaque colonne sur ces mêmes observations.
+
+*Note : Les paramètres qui seront utilisés pour une standardisation ultérieure sont stockés dans les attributs `.mean_` et `.scale_`*
+
+On peut voir ces attributs comme des paramètres entraînés sur un certain jeu de
+données et qu'on peut réutiliser sur un autre, à condition que les
+dimensions coïncident.
+
+3. Appliquer `scaler` sur les autres lignes du DataFrame et comparer les distributions obtenues de la variable `Median_Household_Income_2019`.
+
+*Note : Une fois appliqués à un autre `DataFrame`, on peut remarquer que la distribution n'est pas exactement centrée-réduite dans le `DataFrame` sur lequel les paramètres n'ont pas été estimés. C'est normal, l'échantillon initial n'était pas aléatoire, les moyennes et variances de cet échantillon n'ont pas de raison de coïncider avec les moments de l'échantillon complet.*
+
+
+```{=html}
+</div>
+```
+:::
+
 ```{python}
-#| include: false
+#| output: false
 #| echo: false
 
 # 1. Standardisation de Median_Household_Income_2019 et histogramme
@@ -376,18 +486,19 @@ df2['y_standard'] = preprocessing.scale(df2['Median_Household_Income_2019'])
 f, axes = plt.subplots(2, figsize=(10, 10))
 sns.distplot(df2["Median_Household_Income_2019"] , color="skyblue", ax=axes[0])
 sns.distplot(df2["y_standard"] , color="olive", ax=axes[1])
-#plt.savefig('standardisation.png', bbox_inches='tight')
+#print(df2['y_standard'].mean())
+#print(df2['y_standard'].var())
+
 ```
 
 ```{python}
 #| echo: false
-ax
+
+#plt.savefig('standardisation.png', bbox_inches='tight')
+# ax
 ```
 
-*Note : On obtient bien une distribution centrée à zéro et on pourrait vérifier que la variance empirique soit bien égale à 1. On pourrait aussi vérifier que ceci est vrai également quand on transforme plusieurs colonnes à la fois.*
 
-
-2. Créer `scaler`, un `Transformer` que vous construisez sur les 1000 premières lignes de votre DataFrame. Vérifier la moyenne et l'écart-type de chaque colonne sur ces mêmes observations.
 
 ```{python}
 #| include: false
@@ -395,30 +506,17 @@ ax
 
 # 2. Créer un scaler
 df2 = df2.drop("winner", axis = 1)
+print("Moyenne de chaque variable sur 1000 premières observations avant : ", np.array(df2.head(1000).mean(axis=0)))
+print("Ecart-type de chaque variable sur 1000 premières observations avant : ", np.array(df2.head(1000).std(axis=0)))
 scaler = preprocessing.StandardScaler().fit(df2.head(1000))
 scaler.transform(df2.head(1000))
-print("Moyenne de chaque variable sur 1000 premières observations")
-scaler.transform(df2.head(1000)).mean(axis=0)
-print("Ecart-type de chaque variable sur 1000 premières observations")
-scaler.transform(df2.head(1000)).std(axis=0)
+print("Moyenne de chaque variable sur 1000 premières observations après : ", scaler.transform(df2.head(1000)).mean(axis=0))
+print("Ecart-type de chaque variable sur 1000 premières observations après : ", scaler.transform(df2.head(1000)).std(axis=0))
+#print(scaler.mean_)
+#print(scaler.scale_)
+
 ```
 
-
-*Note : Les paramètres qui seront utilisés pour une standardisation ultérieure sont stockés dans les attributs `.mean_` et `.scale_`*
-
-```{python}
-#| include: false
-#| echo: true
-
-scaler.mean_
-scaler.scale_
-```
-
-On peut voir ces attributs comme des paramètres entraînés sur un certain jeu de
-données et qu'on peut réutiliser sur un autre, à condition que les
-dimensions coïncident.
-
-3. Appliquer `scaler` sur les autres lignes du DataFrame et comparer les distributions obtenues de la variable `Median_Household_Income_2019`.
 
 ```{python}
 #| include: false
@@ -433,42 +531,40 @@ col_pos = df2.columns.get_loc("Median_Household_Income_2019")
 f, axes = plt.subplots(2, figsize=(10, 10))
 sns.distplot(X1[:,col_pos] , color="skyblue", ax=axes[0])
 sns.distplot(X2[:,col_pos] , color="olive", ax=axes[1])
-#plt.savefig('standardisation2.png', bbox_inches='tight')
+
 ```
 
 ```{python}
 #| echo: false
-axes
+#plt.savefig('standardisation2.png', bbox_inches='tight')
+#axes
 ```
 
 
-*Note : Une fois appliqués à un autre `DataFrame`, on peut remarquer que la distribution n'est pas exactement centrée-réduite dans le `DataFrame` sur lequel les paramètres n'ont pas été estimés. C'est normal, l'échantillon initial n'était pas aléatoire, les moyennes et variances de cet échantillon n'ont pas de raison de coïncider avec les moments de l'échantillon complet.*
+## Normalisation
 
-{{% /box %}}
+La **normalisation** est l'action de transformer les données de manière
+à obtenir une norme ($\mathcal{l}_1$ ou $\mathcal{l}_2$) unitaire.
+Autrement dit, avec la norme adéquate, la somme des éléments est égale à 1.
+Par défaut, la norme est dans $\mathcal{l}_2$.
+Cette transformation est particulièrement utilisée en classification de texte ou pour effectuer du *clustering*.
 
-
-
-
-
-
-
- 
-
-
-
-
-### Normalisation
-
-La **normalisation** est l'action de transformer les données de manière à obtenir une norme ($\mathcal{l}_1$ ou $\mathcal{l}_2$) unitaire. Autrement dit, avec la norme adéquate, la somme des éléments est égale à 1. Par défaut, la norme est dans $\mathcal{l}_2$. Cette transformation est particulièrement utilisée en classification de texte ou pour effectuer du *clustering*.
-
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
-
-**Exercice 4 : Normalisation**
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Exercice 4 : Normalisation</h3>
+```
 
 1. Normaliser la variable `Median_Household_Income_2019` (ne pas écraser les valeurs !) et regarder l'histogramme avant/après normalisation.
+2. Vérifier que la norme $\mathcal{l}_2$ est bien égale à 1.
 
-```{python normalisation}
-#| include: false
+```{=html}
+</div>
+```
+:::
+
+```{python}
+#| output: false
 #| echo: false
 
 # 1. Normalisation de Median_Household_Income_2019 et histogrammes
@@ -478,56 +574,89 @@ X1 = scaler.transform(df2.dropna(how = "any").head(1000))
 f, axes = plt.subplots(2, figsize=(10, 10))
 sns.distplot(df2["Median_Household_Income_2019"] , color="skyblue", ax=axes[0])
 sns.distplot(X1[:,col_pos] , color="olive", ax=axes[1])
-#plt.savefig('normalisation.png', bbox_inches='tight')
 ```
 
 ```{python}
 #| echo: false
-axes
+#plt.savefig('normalisation.png', bbox_inches='tight')
+# axes
 ```
 
 
-2. Vérifier que la norme $\mathcal{l}_2$ est bien égale à 1.
 
 ```{python}
-#| include: false
+#| output: false
 #| echo: false
 
 # 2. Vérification de la norme L2
-np.sqrt(np.sum(X1**2, axis=1))[:5] # L2-norm
-
+np.sqrt(np.sum(X1**2, axis=1))[:10] # L2-norm
 ```
 
 
-{{% /box %}}
 
-
-
-
-{{% box status="warning" title="Warning" icon="fa fa-exclamation-triangle" %}}
-` preprocessing.Normalizer` n'accepte pas les valeurs manquantes, alors que `preprocessing.StandardScaler()` s'en accomode (dans la version `0.22` de scikit). Pour pouvoir aisément appliquer le *normalizer*, il faut
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-danger" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+```
+`preprocessing.Normalizer` n'accepte pas les valeurs manquantes, alors que `preprocessing.StandardScaler()` s'en accomode (dans la version `0.22` de scikit). Pour pouvoir aisément appliquer le *normalizer*, il faut
 
 * retirer les valeurs manquantes du DataFrame avec la méthode `dropna`: `df.dropna(how = "any")`;
 * ou les imputer avec un modèle adéquat. [`scikit` permet de le faire](https://scikit-learn.org/stable/modules/preprocessing.html#imputation-of-missing-values).
-{{% /box %}}
 
-### Encodage des valeurs catégorielles
+```{=html}
+</div>
+```
+:::
 
-Les données catégorielles doivent être recodées sous forme de valeurs numériques pour être intégrables dans le cadre d'un modèle. Cela peut être fait de plusieurs manières :
 
-* `LabelEncoder`: transforme un vecteur `["a","b","c"]` en vecteur numérique `[0,1,2]`. Cette approche a l'inconvénient d'introduire un ordre dans les modalités, ce qui n'est pas toujours souhaitable
+## Encodage des valeurs catégorielles
 
-* `OrdinalEncoder`: une version généralisée du `LabelEncoder` qui a vocation à s'appliquer sur des matrices ($X$), alors que `LabelEncoder` est plutôt pour un vecteur ($y$)
+Les données catégorielles doivent être recodées
+sous forme de valeurs numériques pour être intégrés aux modèles de *machine learning*.
+Cela peut être fait de plusieurs manières :
 
-* `pandas.get_dummies` effectue une opération de *dummy expansion*. Un vecteur de taille *n* avec *K* catégories sera transformé en matrice de taille $n \times K$ pour lequel chaque colonne sera une variable *dummy* pour la modalité *k*. Il y a ici $K$ modalités et il y a donc multicollinéarité. Avec une régression linéaire avec constante, il convient de retirer une modalité avant l'estimation.
+* `LabelEncoder`: transforme un vecteur `["a","b","c"]` en vecteur numérique `[0,1,2]`.
+Cette approche a l'inconvénient d'introduire un ordre dans les modalités, ce qui n'est pas toujours souhaitable
 
-* `OneHotEncoder` est une version généralisée (et optimisée) de la *dummy expansion*. Il a plutôt vocation à s'appliquer sur les *features* ($X$) du modèle
+* `OrdinalEncoder`: une version généralisée du `LabelEncoder` qui a vocation à s'appliquer sur des matrices ($X$),
+alors que `LabelEncoder` s'applique plutôt à un vecteur ($y$)
 
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+* `pandas.get_dummies` effectue une opération de *dummy expansion*.
+Un vecteur de taille *n* avec *K* catégories sera transformé en matrice de taille $n \times K$
+pour lequel chaque colonne sera une variable *dummy* pour la modalité *k*.
+Il y a ici $K$ modalités et il y a donc multicolinéarité.
+Avec une régression linéaire avec constante,
+il convient de retirer une modalité avant l'estimation.
 
-**Exercice 5 : Encoder des variables catégorielles**
+* `OneHotEncoder` est une version généralisée (et optimisée) de la *dummy expansion*.
+Il a plutôt vocation à s'appliquer sur les *features* ($X$) du modèle
+
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Exercice 5 : Encoder des variables catégorielles</h3>
+```
 
 1. Créer `df` qui conserve uniquement les variables `state_name` et `county_name` dans `votes`.
+2. Appliquer à `state_name` un `LabelEncoder`
+*Note : Le résultat du label encoding est relativement intuitif, notamment quand on le met en relation avec le vecteur initial.*
+
+3. Regarder la *dummy expansion* de `state_name`
+4. Appliquer un `OrdinalEncoder` à `df[['state_name', 'county_name']]`
+*Note : Le résultat du _ordinal encoding_ est cohérent avec celui du label encoding*
+
+5. Appliquer un `OneHotEncoder` à `df[['state_name', 'county_name']]`
+
+*Note : `scikit` optimise l'objet nécessaire pour stocker le résultat d'un modèle de transformation. Par exemple, le résultat de l'encoding One Hot est un objet très volumineux. Dans ce cas, `scikit` utilise une matrice Sparse.*
+
+
+```{=html}
+</div>
+```
+:::
 
 ```{python}
 #| include: false
@@ -537,7 +666,6 @@ Les données catégorielles doivent être recodées sous forme de valeurs numér
 df = votes[["state_name",'county_name']]
 ```
 
-2. Appliquer à `state_name` un `LabelEncoder`
 
 ```{python}
 #| include: false
@@ -548,9 +676,6 @@ label_enc = preprocessing.LabelEncoder().fit(df['state_name'])
 np.column_stack((label_enc.transform(df['state_name']),df['state_name']))
 ```
 
-*Note : Le résultat du label encoding est relativement intuitif, notamment quand on le met en relation avec le vecteur initial.*
-
-3. Regarder la *dummy expansion* de `state_name`
 
 ```{python}
 #| include: false
@@ -560,7 +685,6 @@ np.column_stack((label_enc.transform(df['state_name']),df['state_name']))
 pd.get_dummies(df['state_name'])
 ```
 
-4. Appliquer un `OrdinalEncoder` à `df[['state_name', 'county_name']]`
 
 
 ```{python}
@@ -574,9 +698,6 @@ ord_enc.transform(df)[:,0]
 
 ```
 
-*Note : Le résultat du *ordinal encoding* est cohérent avec celui du label encoding*
-
-5. Appliquer un `OneHotEncoder` à `df[['state_name', 'county_name']]`
 
 ```{python}
 #| include: false
@@ -587,7 +708,8 @@ onehot_enc = preprocessing.OneHotEncoder().fit(df)
 onehot_enc.transform(df)
 ```
 
-*Note : `scikit` optimise l'objet nécessaire pour stocker le résultat d'un modèle de transformation. Par exemple, le résultat de l'encoding One Hot est un objet très volumineux. Dans ce cas, scikit utilise une matrice Sparse.*
 
-{{% /box %}}
+## Références
 
+::: {#refs}
+:::
