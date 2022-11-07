@@ -1,5 +1,5 @@
 ---
-title: "Régression: une introduction"
+title: "Régression : une introduction"
 date: 2020-10-15T13:00:00Z
 draft: false
 weight: 40
@@ -41,6 +41,34 @@ print_badges("content/course/modelisation/3_regression.qmd")
 ```
 :::
 
+
+Nous allons partir du même jeu de données que précédemment,
+c'est-à-dire les résultats des élections US 2020 présentés dans l'[introduction
+de cette partie](https://linogaliana-teaching.netlify.app/modelisation/): les données de vote aux élections présidentielles américaines
+croisées à des variables sociodémographiques.
+Le code 
+est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py).
+
+
+```{python}
+#| echo: true
+#| message: false
+#| warning: false
+
+#!pip install --upgrade xlrd #colab bug verson xlrd
+#!pip install geopandas
+
+import requests
+
+url = 'https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/course/modelisation/get_data.py'
+r = requests.get(url, allow_redirects=True)
+open('getdata.py', 'wb').write(r.content)
+
+import getdata
+votes = getdata.create_votes_dataframes()
+```
+
+
 Le précédent chapitre visait à proposer un premier modèle pour comprendre
 les comtés où le parti Républicain l'emporte. La variable d'intérêt étant
 bimodale (victoire ou défaite), on était dans le cadre d'un modèle de 
@@ -53,8 +81,8 @@ qu'il faudrait, pour être rigoureux, transformer l'échelle afin d'avoir
 des données dans cet intervalle. 
 
 Ce chapitre utilise toujours le même jeu de données, présenté dans l'[introduction
-de cette partie](https://linogaliana-teaching.netlify.app/modelisation/): les données de vote aux élections présidentielles US
-croisées à des variables socio-démographiques.
+de cette partie](https://linogaliana-teaching.netlify.app/modelisation/): les données de vote aux élections présidentielles américaines
+croisées à des variables sociodémographiques.
 Le code 
 est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py).
 
@@ -62,6 +90,7 @@ est disponible [sur Github](https://github.com/linogaliana/python-datascientist/
 #| include: false
 #| echo: true
 
+#!pip install --upgrade xlrd #colab bug verson xlrd
 #!pip install geopandas
 
 import requests
@@ -134,9 +163,23 @@ $\epsilon \sim \mathcal{N}(0,\sigma^2)$ i.i.d., l'estimateur $\beta$ obtenu
 est équivalent à celui du Maximum de Vraisemblance dont la théorie asymptotique
 nous assure l'absence de biais, la variance minimale (borne de Cramer-Rao).
 
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
+```{python}
+# packages utiles
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+import sklearn.metrics
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+```
 
-**Exercice 1a : Régression linéaire avec scikit [parcours data-science]**
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1a : Régression linéaire avec scikit</h3>
+```
+
 
 Cet exercice vise à illustrer la manière d'effectuer une régression linéaire avec `scikit`.
 Dans ce domaine,
@@ -153,22 +196,26 @@ variables. Contrairement au chapitre précédent, où on se focalisait sur
 un résultat binaire (victoire/défaite des Républicains), cette
 fois on va chercher à modéliser directement le score des Républicains. 
 
-```{python}
-# packages utiles
-import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
-import sklearn.metrics
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-```
 
 
 1. A partir de quelques variables, par exemple, *'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"*, expliquer la variable `per_gop` à l'aide d'un échantillon d'entraînement `X_train` constitué au préalable.
 
 :warning: utiliser la variable `Median_Household_Income_2019`
 en `log` sinon son échelle risque d'écraser tout effet.
+
+2. Afficher les valeurs des coefficients, constante comprise
+
+3. Evaluer la pertinence du modèle avec le $R^2$ et la qualité du fit avec le MSE.
+
+4. Représenter un nuage de points des valeurs observées
+et des erreurs de prédiction. Observez-vous
+un problème de spécification ?
+
+
+```{=html}
+</div>
+```
+:::
 
 ```{python}
 #| include: false
@@ -192,8 +239,6 @@ y_pred = ols.predict(X_test)
 ```
 
 
-2. Afficher les valeurs des coefficients, constante comprise
-
 
 ```{python}
 #| include: false
@@ -203,8 +248,6 @@ y_pred = ols.predict(X_test)
 print(ols.intercept_, ols.coef_)
 ```
 
-
-3. Evaluer la pertinence du modèle avec le $R^2$ et la qualité du fit avec le MSE.
 
 ```{python}
 #| include: false
@@ -221,10 +264,6 @@ print('Mean squared error: %.2f'
 print('Coefficient of determination: %.2f'
       % rsq)
 ```
-
-4. Représenter un nuage de points des valeurs observées
-et des erreurs de prédiction. Observez-vous
-un problème de spécification ?
 
 ```{python}
 #| include: false
@@ -257,17 +296,6 @@ g.figure.get_figure().savefig("featured.png")
 
 
 
-{{% /box %}}
-
-
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
-
-**Exercice 1b : Régression linéaire avec scikit [parcours économie]**
-
-Cet exercice vise à illustrer la manière d'effectuer une régression linéaire avec `statsmodels` qui offre une interface proche de celle de `R`.
-
-L'objectif est d'expliquer le score des Républicains en fonction de quelques
-variables
 
 ```{python}
 # packages utiles
@@ -275,10 +303,30 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 ```
 
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1b : Régression linéaire avec statsmodels</h3>
+```
+
+
+Cet exercice vise à illustrer la manière d'effectuer une régression linéaire avec `statsmodels` qui offre des fonctionnalités plus proches de celles de `R`, et moins orientées *Machine Learning*.
+
+L'objectif est toujours d'expliquer le score des Républicains en fonction de quelques
+variables.
+
 
 1. A partir de quelques variables, par exemple, *'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"*, expliquer la variable `per_gop`. :warning: utiliser la variable `Median_Household_Income_2019`
 en `log` sinon son échelle risque d'écraser tout effet.
+2. Afficher un tableau de régression.
+3. Evaluer la pertinence du modèle avec le R^2.
+4. Utiliser l'API `formula` pour régresser le score des républicains en fonction de la variable `Unemployment_rate_2019`, de `Unemployment_rate_2019` au carré et du log de 
+`Median_Household_Income_2019`.
 
+```{=html}
+</div>
+```
+:::
 
 ```{python}
 #| include: false
@@ -297,7 +345,6 @@ results = sm.OLS(df2[['per_gop']], X).fit()
 ```
 
 
-2. Afficher un tableau de régression.
 
 ```{python}
 #| include: false
@@ -308,7 +355,6 @@ print(results.summary())
 # html_snippet = results.summary().as_html()
 ```
 
-3. Evaluer la pertinence du modèle avec le R^2.
 
 ```{python}
 #| include: false
@@ -319,8 +365,6 @@ print("R2: ", results.rsquared)
 ```
 
 
-4. Utiliser l'API `formula` pour régresser le score des républicains en fonction de la variable `Unemployment_rate_2019`, de `Unemployment_rate_2019` au carré et du log de 
-`Median_Household_Income_2019`.
 
 ```{python}
 #| include: false
@@ -331,15 +375,25 @@ results = smf.ols('per_gop ~ Unemployment_rate_2019 + I(Unemployment_rate_2019**
 print(results.summary())
 ```
 
-{{% /box %}}
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint</h3>
+```
 
-{{% box status="hint" title="Hint" icon="fa fa-lightbulb" %}}
 Pour sortir une belle table pour un rapport sous $\LaTeX$, il est possible d'utiliser
 la méthode [`Summary.as_latex`](https://www.statsmodels.org/devel/generated/statsmodels.iolib.summary.Summary.as_latex.html#statsmodels.iolib.summary.Summary.as_latex). Pour un rapport HTML, on utilisera [`Summary.as_html`](https://www.statsmodels.org/devel/generated/statsmodels.iolib.summary.Summary.as_latex.html#statsmodels.iolib.summary.Summary.as_latex)
-{{% /box %}}
 
+```{=html}
+</div>
+```
+:::
 
-{{% box status="note" title="Note" icon="fa fa-comment" %}}
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
 Les utilisateurs de `R` retrouveront des éléments très familiers avec `statsmodels`,
 notamment la possibilité d'utiliser une formule pour définir une régression.
 La philosophie de `statsmodels` est similaire à celle qui a influé sur la construction
@@ -350,7 +404,11 @@ par rapport aux packages `R`. Depuis les années 1990, les packages `R` visant
 multipliés alors que `statsmodels`, enfant des années 2010, n'a eu qu'à
 proposer un cadre général (les *generalized estimating equations*) pour
 englober ces modèles.
-{{% /box %}}
+
+```{=html}
+</div>
+```
+:::
 
 ## La régression logistique
 
@@ -382,21 +440,20 @@ L'estimation des paramètres $\beta$ peut se faire par maximum de vraisemblance
 ou par régression, les deux solutions sont équivalentes sous certaines
 hypothèses. 
 
-
-{{% box status="note" title="Note" icon="fa fa-comment" %}}
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
 Par défaut, `scikit` applique une régularisation pour pénaliser les modèles
 peu parcimonieux (comportement différent
 de celui de `statsmodels`). Ce comportement par défaut est à garder à l'esprit
 si l'objectif n'est pas de faire de la prédiction. 
-{{% /box %}}
 
-
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
-
-**Exercice 2a : Régression logistique [data-scientists]**
-
-Avec `scikit`, en utilisant échantillons d'apprentissage et d'estimation :
-
+```{=html}
+</div>
+```
+:::
 
 ```{python}
 # packages utiles
@@ -404,8 +461,24 @@ from sklearn.linear_model import LogisticRegression
 import sklearn.metrics
 ```
 
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2a : Régression logistique avec scikit</h3>
+```
+
+Avec `scikit`, en utilisant échantillons d'apprentissage et d'estimation :
+
 1. Evaluer l'effet des variables déjà utilisées sur la probabilité des Républicains
 de gagner. Affichez la valeur des coefficients.
+2. Déduire une matrice de confusion et 
+une mesure de qualité du modèle.
+3. Supprimer la régularisation grâce au paramètre `penalty`. Quel effet sur les paramètres estimés ?
+
+```{=html}
+</div>
+```
+:::
 
 ```{python}
 #| include: false
@@ -433,8 +506,6 @@ print(clf.intercept_, clf.coef_)
 # Lino : KA a fait un début de corrigé rapidos : à vérifier
 ```
 
-2. Déduire une matrice de confusion et 
-une mesure de qualité du modèle.
 
 ```{python}
 #| include: false
@@ -457,7 +528,6 @@ sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
 ```
 
 
-3. Supprimer la régularisation grâce au paramètre `penalty`. Quel effet sur les paramètres estimés ?
 
 ```{python}
 #| include: false
@@ -472,12 +542,7 @@ print(clf2.intercept_, clf2.coef_)
 # Lino : KA a fait un début de corrigé rapidos : à vérifier
 ```
 
-{{% /box %}}
 
-
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
-
-**Exercice 2b : Régression logistique [économistes]**
 
 
 ```{python}
@@ -485,17 +550,29 @@ print(clf2.intercept_, clf2.coef_)
 from scipy import stats
 ```
 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2b : Régression logistique avec statmodels</h3>
+```
+
+
 En utilisant échantillons d'apprentissage et d'estimation :
 
 1. Evaluer l'effet des variables déjà utilisées sur la probabilité des Républicains
 de gagner.
+2. Faire un test de ratio de vraisemblance concernant l'inclusion de la variable de (log)-revenu.
 
 ```{python}
 #| include: false
 #| echo: false
 
 #1. Modèle logit avec les mêmes variables que précédemment
-xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
+xvars = [
+  'Unemployment_rate_2019', 'Median_Household_Income_2019',
+  'Percent of adults with less than a high school diploma, 2015-19',
+  "Percent of adults with a bachelor's degree or higher, 2015-19"]
 
 df2 = votes[["per_gop"] + xvars]
 df2['log_income'] = np.log(df2["Median_Household_Income_2019"])
@@ -504,18 +581,21 @@ df2 = df2[indices_to_keep].astype(np.float64)
 
 df2['y'] = (df2['per_gop']>0.5).astype(int)
 
-mylogit = smf.logit(formula = 'y ~ Unemployment_rate_2019 + I(Unemployment_rate_2019**2) + np.log(Median_Household_Income_2019)', data=df2[df2['Median_Household_Income_2019']>0]).fit()
+mylogit = smf.logit(
+  formula = 'y ~ Unemployment_rate_2019 + I(Unemployment_rate_2019**2) + np.log(Median_Household_Income_2019)',
+  data=df2[df2['Median_Household_Income_2019']>0]).fit()
 print(mylogit.summary())
 ```
 
-2. Faire un test de ratio de vraisemblance concernant l'inclusion de la variable de (log)-revenu.
 
 ```{python}
 #| include: false
 #| echo: false
 
 #2. Faire un test de ratio de vraisemblance 
-logit_h0 = smf.logit(formula = 'y ~ Unemployment_rate_2019 + I(Unemployment_rate_2019**2)', data=df2[df2['Median_Household_Income_2019']>0]).fit()
+logit_h0 = smf.logit(
+  formula = 'y ~ Unemployment_rate_2019 + I(Unemployment_rate_2019**2)',
+  data=df2[df2['Median_Household_Income_2019']>0]).fit()
 # print(logit_h0.summary())
 
 lr = -2*(mylogit.llf - logit_h0.llf)
@@ -530,16 +610,27 @@ lr_pvalue = stats.chi2.sf(lr, df=lrdf)
 # presque à coup sûr, de l'information au modèle. 
 ```
 
+```{=html}
+</div>
+```
+:::
 
-{{% /box %}}
 
-{{% box status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint</h3>
+```
+
 La statistique du test est:
 $$
 LR = -2\log\bigg(\frac{\mathcal{L}_{\theta}}{\mathcal{L}_{\theta_0}}\bigg) = -2(\mathcal{l}_{\theta} - \mathcal{l}_{\theta_0})
 $$
-{{% /box %}}
 
+```{=html}
+</div>
+```
+:::
 
 <!-- ## Modèles linéaires généralisés -->
 
