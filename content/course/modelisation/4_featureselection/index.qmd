@@ -30,6 +30,8 @@ summary: |
 ---
 
 
+
+
 ::: {.cell .markdown}
 ```{python}
 #| echo: false
@@ -46,19 +48,23 @@ print_badges("content/course/modelisation/4_featureselection.qmd")
 ```
 :::
 
+
+
 Pour illustrer le travail de données nécessaire pour faire de la sélection de variables,
 nous allons partir du même jeu de données que précédemment,
 c'est-à-dire les résultats des élections US 2020 présentés dans l'[introduction
-de cette partie](https://linogaliana-teaching.netlify.app/modelisation/): les données de vote aux élections présidentielles US
-croisées à des variables socio-démographiques.
+de cette partie](https://linogaliana-teaching.netlify.app/modelisation/): les données de vote aux élections présidentielles américaines
+croisées à des variables sociodémographiques.
 Le code 
 est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py).
 
-
-Le code 
-est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py).
 
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
+
+#!pip install --upgrade xlrd #colab bug verson xlrd
 #!pip install geopandas
 
 import requests
@@ -109,7 +115,11 @@ En adoptant le principe d'une fonction objectif pénalisée,
 le LASSO permet de fixer un certain nombre de coefficients à 0.
 Les variables dont la norme est non nulle passent ainsi le test de sélection. 
 
-{{% box status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Hint</h3>
+```
 Le LASSO est un programme d'optimisation sous contrainte. On cherche à trouver l'estimateur $\beta$ qui minimise l'erreur quadratique (régression linéaire) sous une contrainte additionnelle régularisant les paramètres:
 $$
 \min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) \\
@@ -120,9 +130,11 @@ $$
 \beta^{\text{LASSO}} = \arg \min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) + \alpha \sum_{j=1}^p |\beta_j| = \arg \min_{\beta} ||y-X\beta||_{2}^{2} + \alpha ||\beta||_1
 $$
 où $\lambda$ est une réécriture de la régularisation précédente. 
-{{% /box %}}
 
-<!-- warning: sélection de variables corrélées -->
+```{=html}
+</div>
+```
+:::
 
 ## Première régression LASSO
 
@@ -136,9 +148,8 @@ df2 = votes.loc[:,~votes.columns.str.endswith(
   )]
 ```
 
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
-
-**Exercice 1 : Premier LASSO**
+Nous allons utiliser par la suite les fonctions ou
+packages suivants:
 
 ```{python}
 # packages utiles
@@ -156,11 +167,32 @@ from sklearn.linear_model import lasso_path
 import seaborn as sns
 ```
 
-1. Préparez les variables à utiliser.
-* Ne garder que les colonnes numériques (idéalement on transformerait
-les variables non numériques en numériques)
-* Remplacer les valeurs infinies par des NaN
-* Standardiser les variables avec `StandardScaler`
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1 : Premier LASSO</h3>
+```
+
+
+On cherche toujours à prédire la variable `per_gop`.
+
+1.  Préparez les variables à utiliser.
+  * Ne garder que les colonnes numériques (idéalement on transformerait
+      les variables non numériques en numériques)
+  * Remplacer les valeurs infinies par des NaN et les valeurs manquantes par 0. 
+  * Standardiser les *features* (c'est-à-dire les variables autres que la variable `per_gop`) avec `StandardScaler`
+2. On cherche toujours à prédire la variable `per_gop`. Créez un échantillon d'entraînement et un échantillon test. 
+3. Estimer un modèle LASSO pénalisé avec $alpha = 0.1$. Afficher les valeurs des coefficients. Quelles variables ont une valeur non nulle ?
+4. Montrer que les variables sélectionnées sont parfois très corrélées. 
+5. Comparer la performance de ce modèle parcimonieux avec celle d'un modèle avec plus de variables 
+6. Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
+varie (parcourir $\alpha \in [0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0]$ ). 
+
+```{=html}
+</div>
+```
+:::
+
 
 ```{python}
 #| include: false
@@ -178,8 +210,6 @@ df2[col_names] = features
 #df2.head()
 ```
 
-2. On cherche toujours à prédire la variable `per_gop`. Créez un échantillon d'entraînement et un échantillon test. 
-
 ```{python}
 #| include: false
 #| echo: false
@@ -192,9 +222,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 ```
 
 
-3. Estimer un modèle LASSO pénalisé avec $alpha = 0.1$. Afficher les valeurs des coefficients. Quelles variables ont une valeur non nulle ?
 
-Les variables sélectionnées sont :
+A l'issue de la question 3,
+les variables sélectionnées sont :
 
 ```{python}
 #| include: true
@@ -213,9 +243,8 @@ features_selec
 
 Certaines variables font sens, comme les variables d'éducation par exemple. Notamment, un des meilleurs prédicteurs pour le score des Républicains en 2020 est... le score des Républicains (et mécaniquement des démocrates) en 2016.
 
-Par ailleurs, on sélectionne des variables redondantes. Une phase plus approfondie de nettoyage des données serait nécessaire ;
+Par ailleurs, on sélectionne des variables redondantes. Une phase plus approfondie de nettoyage des données serait en réalité nécessaire.
 
-4. Montrer que les variables sélectionnées sont parfois très corrélées. 
 
 ```{python}
 #| include: false
@@ -229,9 +258,6 @@ p = corr.style.background_gradient(cmap='coolwarm', axis=None).set_precision(2)
 p
 ```
 
-
-
-5. Comparer la performance de ce modèle parcimonieux avec celle d'un modèle avec plus de variables 
 
 ```{python}
 #| include: false
@@ -254,7 +280,7 @@ print("rmse_nonparci : ", rmse_nonparci)
 rsq_nonparci = sklearn.metrics.r2_score(y_test, y_pred_nonparci) 
 print("rsq_nonparci : ", rsq_nonparci)
 
-# Le modèle parcimonieux est plus performant. 
+# Le modèle parcimonieux est (légèrement) plus performant. 
 
 ```
 
@@ -275,8 +301,7 @@ print("rsq_nonparci : ", rsq_nonparci)
 
 ```
 
-6. Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
-varie (parcourir $\alpha \in [0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0]$ ). 
+
 
 ```{python}
 #| include: false
@@ -299,13 +324,15 @@ p.set(title = r"Number variables and regularization parameter ($\alpha$)", xlabe
 ```
 
 ```{python}
+#| echo: false
+
 p.figure.get_figure()
 ```
 
-On voit que plus alpha est élevé, moins le modèle sélectionne de variables.
+On voit que plus $\alpha$ est élevé, moins le modèle sélectionne de variables.
 
 
-{{% /box %}}
+
 
 ```{python}
 #| include: false
@@ -317,10 +344,9 @@ p.figure.get_figure().savefig("featured.png")
 Quel $\alpha$ faut-il privilégier ? Pour cela, 
 il convient d'effectuer une validation croisée afin de choisir le modèle pour
 lequel les variables qui passent la phase de sélection permettent de mieux
-prédire le résultat Républicain.
+prédire le résultat Républicain :
 
 ```{python}
-#| include: false
 #| echo: true
 from sklearn.linear_model import LassoCV
 
@@ -340,7 +366,6 @@ print("alpha optimal :", lcv.alpha_)
 ```
 
 ```{python}
-#| include: false
 lasso2 = Lasso(fit_intercept=True, alpha = lcv.alpha_).fit(X_train,y_train)
 features_selec2 = df2.select_dtypes(include=np.number).drop("per_gop", axis = 1).columns[np.abs(lasso2.coef_)>0].tolist()
 ```
@@ -356,14 +381,24 @@ print(features_selec2)
 ```{python}
 df2.select_dtypes(include=np.number).drop("per_gop", axis = 1).columns[np.abs(lasso2.coef_)>0]
 nlasso = sum(np.abs(lasso2.coef_)>0)
-print(nlasso)
 ```
 
 ```{python}
+#| echo: false
 #| output: asis
 print("Cela correspond à un modèle avec {} variables sélectionnées.".format(int(nlasso)))
 ```
 
-{{% box status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Hint</h3>
+```
+
 Dans le cas où le modèle paraîtrait trop peu parcimonieux, il faudrait revoir la phase de définition des variables pertinentes pour comprendre si des échelles différentes de certaines variables ne seraient pas plus appropriées (par exemple du `log`). 
-{{% /box %}}
+
+```{=html}
+</div>
+```
+:::
