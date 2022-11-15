@@ -22,7 +22,7 @@ summary: |
   en fonction de caractéristiques observables. Il s'agit d'une
   application classique, en _machine learning_
   de méthodes non supervisées puisqu'on ne dispose généralement pas de l'information 
-  sur le groupe auquel apprartient réellement une observation. Les applications
+  sur le groupe auquel appartient réellement une observation. Les applications
   au monde réel sont nombreuses, notamment dans le domaine de la
   segmentation tarifaire.
 ---
@@ -44,7 +44,36 @@ print_badges("content/course/modelisation/5_clustering.qmd")
 ```
 :::
 
-Nous allons continuer avec le jeu de données de [résultat des élections US 2020 au niveau des comtés](#preprocessing)
+
+
+Nous allons continuer avec le même jeu de données que précédemment,
+c'est-à-dire les résultats des élections US 2020 présentés dans l'[introduction
+de cette partie](https://linogaliana-teaching.netlify.app/modelisation/): les données de vote aux élections présidentielles américaines
+croisées à des variables sociodémographiques.
+Le code 
+est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py).
+
+
+```{python}
+#| echo: true
+#| message: false
+#| warning: false
+
+#!pip install --upgrade xlrd #colab bug verson xlrd
+#!pip install geopandas
+
+import requests
+
+url = 'https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/course/modelisation/get_data.py'
+r = requests.get(url, allow_redirects=True)
+open('getdata.py', 'wb').write(r.content)
+
+import getdata
+votes = getdata.create_votes_dataframes()
+```
+
+
+# Introduction sur le *clustering*
 
 Jusqu'à présent, nous avons fait de l'apprentissage supervisé puisque nous
 connaissions la vraie valeur de la variable à expliquer/prédire (`y`). Ce n'est plus le cas avec
@@ -88,55 +117,38 @@ image représentative par groupe, et labelliser ces images représentatives au l
 Les méthodes de *clustering* sont nombreuses.
 Nous allons nous pencher sur la plus intuitive : les *k-means*.
 
-# Données
-
-Comme précédemment, le code de chargement des données 
-est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/course/modelisation/get_data.py).
-
-```{python}
-#| include: false
-#| echo: true
-
-#!pip install geopandas
-
-import requests
-
-url = 'https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/course/modelisation/get_data.py'
-r = requests.get(url, allow_redirects=True)
-open('getdata.py', 'wb').write(r.content)
-
-import getdata
-votes = getdata.create_votes_dataframes()
-```
+# Les k-means
 
 ## Principe
 
-L'objectif des *k-means* est de partitioner l'espace des observations en trouvant des points (*centroids*) jouant le rôle de centres de gravité pour lesquels les observations proches peuvent être regroupées dans une classe homogène.
+L'objectif des *k-means* est de partitionner l'espace des observations en trouvant des points (*centroids*) jouant le rôle de centres de gravité pour lesquels les observations proches peuvent être regroupées dans une classe homogène.
 L'algorithme *k-means* fonctionne par itération, en initialisant les centroïdes puis en les mettant à jour à chaque
 itération, jusqu'à ce que les centroïdes se stabilisent. Quelques exemples de *clusters* issus de la méthode *k-means* : 
 
 ![](https://scikit-learn.org/stable/_images/sphx_glr_plot_kmeans_assumptions_001.png)
 
-{{% box status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Hint</h3>
+```
+
 L'objectif des *k-means* est de trouver une partition des données $S=\{S_1,...,S_K\}$ telle que
 $$
 \arg\min_{S} \sum_{i=1}^K \sum_{x \in S_i} ||x - \mu_i||^2
 $$
 avec $\mu_i$ la moyenne des $x_i$ dans l'ensemble de points $S_i$
-{{% /box %}}
 
-```{python, echo=TRUE}
-import matplotlib.pyplot as plt
+```{=html}
+</div>
 ```
+:::
 
-
-
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
-
-**Exercice 1 : Principe des k-means**
 
 ```{python}
 # packages utiles
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -144,20 +156,40 @@ from sklearn.cluster import KMeans #pour kmeans
 import seaborn as sns #pour scatterplots
 ```
 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1 : Principe des k-means</h3>
+```
+
 1. Importer les données et se restreindre aux variables `'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"` et bien-sûr  `'per_gop'`. Appelez cette base restreinte `df2` et enlevez les valeurs manquantes.
+2. Faire un *k-means* avec $k=4$.
+3. Créer une variable `label` dans `votes` stockant le résultat de la typologie
+4. Afficher cette typologie sur une carte.
+5. Choisir les variables `Median_Household_Incomme_2019` et `Unemployment_rate_2019` et représenter le nuage de points en colorant différemment
+en fonction du label obtenu.
+
+6. Représenter la distribution du vote pour chaque *cluster*
+
+```{=html}
+</div>
+```
+:::
 
 ```{python}
 #| include: false
 #| echo: false
 
 # 1. Chargement de la base restreinte.
-xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
+xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019',
+'Percent of adults with less than a high school diploma, 2015-19',
+"Percent of adults with a bachelor's degree or higher, 2015-19"]
 
 df2 = votes[xvars + ["per_gop"]].dropna()
 ```
 
 
-2. Faire un *k-means* avec $k=4$.
 
 ```{python}
 #| include: false
@@ -168,7 +200,7 @@ model = KMeans(n_clusters=4)
 model.fit(df2[xvars])
 ```
 
-3. Créer une variable `label` dans `votes` stockant le résultat de la typologie
+
 
 ```{python}
 #| include: false
@@ -179,7 +211,10 @@ votes['label'] = model.labels_
 #votes['label'].head()
 ```
 
-4. Afficher cette typologie sur une carte.
+La carte obtenue à la question 4, qui permet de 
+représenter spatialement nos groupes, est
+la suivante:
+
 
 ```{python}
 #| include: false
@@ -187,6 +222,7 @@ votes['label'] = model.labels_
 
 #4. Carte de la typologie
 p = votes.plot(column = "label", cmap = "inferno")
+p.set_axis_off()
 ```
 
 ```{python}
@@ -194,9 +230,9 @@ p = votes.plot(column = "label", cmap = "inferno")
 p.get_figure()
 ```
 
-
-5. Choisir les variables `Median_Household_Incomme_2019` et `Unemployment_rate_2019` et représenter le nuage de points en colorant différemment
-en fonction du label obtenu.
+Le nuage de point de la question 5, permettant de représenter
+la relation entre `Median_Household_Incomme_2019`
+et `Unemployment_rate_2019`, aura l'aspect suivant:
 
 ```{python}
 #| include: false
@@ -204,7 +240,11 @@ en fonction du label obtenu.
 
 #5. Nuage de points de 2 variables et coloration selon le label
 plt.figure()
-p = sns.scatterplot(data=votes, x="Median_Household_Income_2019", y="Unemployment_rate_2019", hue = "label", palette="deep", alpha = 0.4)
+p = sns.scatterplot(
+  data=votes,
+  x="Median_Household_Income_2019",
+  y="Unemployment_rate_2019", hue = "label", palette="deep",
+  alpha = 0.4)
 p.set(xscale="log")
 ```
 
@@ -218,9 +258,7 @@ p.figure.get_figure()
 p.figure.get_figure().savefig("featured.png")
 ```
 
-
-
-6. Représenter la distribution du vote pour chaque *cluster*
+Enfin, l'histogramme des votes pour chaque cluster est :
 
 ```{python}
 #| include: false
@@ -238,11 +276,12 @@ p2.figure.get_figure()
 ```
 
 
-{{% /box %}}
-
-
-{{% box status="hint" title="Hint" icon="fa fa-lightbulb" %}}
-Il faut noter plusieurs points sur l'algorithme implémenté par défaut par scikit learn, que l'on peut lire dans
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Hint</h3>
+```
+Il faut noter plusieurs points sur l'algorithme implémenté par défaut par `scikit-learn`, que l'on peut lire dans
 la documentation :
 - l'algorithme implémenté par défaut est kmeans ++ (cf. paramètre `init`). Cela signifie que
 l'initialisation des centroïdes est faite de manière intelligente pour que les centroïdes initiaux soient choisis
@@ -253,7 +292,10 @@ en fonction de l'**inertia** du modèle, par défaut égale à 10.
 Le modèle renvoie les `cluster_centers_`, les labels `labels_`, l'inertia `inertia_` et le nombre d'itérations
 `n_iter_`.
 
-{{% /box %}}
+```{=html}
+</div>
+```
+:::
 
 ## Choisir le nombre de clusters
 
@@ -300,7 +342,6 @@ Le package `yellowbrick` fournit une extension utile à `scikit` pour représent
 facilement la performance en *clustering*.
 
 ```{python}
-#| include: false
 #| echo: true
 from sklearn.cluster import KMeans
 from yellowbrick.cluster import KElbowVisualizer
@@ -310,7 +351,7 @@ visualizer.fit(df2[xvars])        # Fit the data to the visualizer
 ```
 
 ```{python}
-#| include: false
+#| echo: false
 visualizer.show(outpath="elbow-yellowbrick.png")        # Finalize and render the figure
 ```
 
@@ -324,8 +365,9 @@ semblait donc approprié.
 l'interprétation est moins aisée et le coût computationnel plus élevé :
 
 ```{python}
-#| include: false
 #| echo: true
+#| output: false
+
 from yellowbrick.cluster import SilhouetteVisualizer
 
 fig, ax = plt.subplots(2, 2, figsize=(15,8))
@@ -385,7 +427,8 @@ Il existe de nombreuses autres méthodes de clustering. Parmi les plus connues, 
 
 ### DBSCAN
 
-L'algorithme DBSCAN est implémenté dans `sklearn.cluster`. Il peut être utilisé pour faire de la détection d'anomalies
+L'[algorithme DBSCAN](https://fr.wikipedia.org/wiki/DBSCAN) est implémenté dans `sklearn.cluster`.
+Il peut être utilisé pour faire de la détection d'anomalies
 notamment.
 En effet, cette méthode repose sur le clustering en régions où la densité
 des observations est continue, grâce à la notion de voisinage selon une certaine distance epsilon.
@@ -405,8 +448,11 @@ Dans `sklearn`, les mélanges gaussiens sont implémentés dans `sklearn.mixture
 Les paramètres importants sont alors le nombre de gaussiennes `n_components` et le nombre d'initiatisations `n_init`.
 Il est possible de faire de la détection d'anomalie savec les mélanges de gaussiennes.
 
-
-{{% box status="hint" title="Pour aller plus loin" icon="fas fa-glasses" %}}
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Pour aller plus loin</h3>
+```
 
 Il existe de nombreuses autres méthodes de clustering :
 
@@ -414,4 +460,8 @@ Il existe de nombreuses autres méthodes de clustering :
 - bayesian gaussian mixture models ;
 - différentes méthodes de clustering hiérarchique ;
 - etc.
-{{% /box %}}
+
+```{=html}
+</div>
+```
+:::
