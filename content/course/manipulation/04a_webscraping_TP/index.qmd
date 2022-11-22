@@ -990,85 +990,6 @@ et enregistrer en local les images.
 
 
 ```{python}
-import urllib
-import bs4
-import time
-
-import pandas as pd
-import numpy as np
-
-from tqdm import tqdm
-
-
-import re, datetime
-from dateutil.parser import parse as parse_dt
-
-%pip install dateparser
-import dateparser
-
-import matplotlib.pyplot as plt
-```
-
-```{python}
-url_gouvernement = "https://www.gouvernement.fr"
-suffixe_ministres = "/composition-du-gouvernement"
-
-def from_birth_to_age(birth):
-    today = datetime.date.today()
-    return today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
-
-
-def from_bio_to_age(url):
-    html = urllib.request.urlopen(url).read()
-    page = bs4.BeautifulSoup(html)
-    s = page.find("div", {"id":"biography"}).text.replace("1er", "1") # un peu ad hoc
-    expression = re.compile("[0-3]?\d \S* \d{4}") # renvoie parfois des dates autres que dates de naissance
-    str_date = expression.findall(s)[0]
-    date_de_naissance = dateparser.parse(str_date).date()
-    return from_birth_to_age(date_de_naissance)
-
-html = urllib.request.urlopen(url_gouvernement + suffixe_ministres).read()
-page = bs4.BeautifulSoup(html)
-compo = page.find("div", {"class":"composition-du-gouvernement-contenu"}) # Nous n'avons besoin que de la composition
-
-
-ministres = compo.find_all("div", {"class":"ministre"})
-print(f"Nous retrouvons ainsi {len(ministres)} ministres.")
-
-
-i = 0
-liste = []
-
-for ministre in tqdm(ministres):
-    prenom_nom = ministre.find("a", {"class":"ministre-nom"}).text
-    fonction = ministre.find("p", {"class":"ministre-fonction"}).text
-    photo = ministre.find("img")["src"]
-    href = url_gouvernement + ministre.find("a", {"class":"ministre-nom"})["href"]
-    try:
-        age = from_bio_to_age(href)
-    except:
-        age = np.NaN
-
-    liste.append({
-        'Nom complet': prenom_nom,
-        'Fonction': fonction,
-        'Photo': photo,
-        'href': href,
-        'Age': age
-        })
-    
-    time.sleep(0.25) # Ne pas surcharger les requêtes
-
-
-df = pd.DataFrame(liste)
-df
-
-
-plt.hist(df.Age, bins=np.arange(25, 80, 4))
-```
-
-
-```{python}
 #| include: false
 #| echo: false
 
@@ -1103,6 +1024,123 @@ ax[0].get_figure()
 ```{python}
 #| include: false
 shutil.copyfile("bulbasaur.jpg", "featured.jpg")
+```
+
+
+# Exercice 2
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice : Les ministres français </h3>
+```
+
+Scraper la liste des ministres français depuis le [site du gouvernement](https://www.gouvernement.fr/composition-du-gouvernement). Faire une graphique qui représente la distribution de leurs âges.
+
+```{=html}
+</div>
+```
+:::
+
+## Imports
+
+### Librairies
+
+```{python}
+import urllib
+import bs4
+import time
+
+import pandas as pd
+import numpy as np
+
+from tqdm import tqdm
+
+
+import re, datetime
+from dateutil.parser import parse as parse_dt
+
+%pip install dateparser
+import dateparser
+
+import matplotlib.pyplot as plt
+```
+
+### Variables globales
+
+```{python}
+url_gouvernement = "https://www.gouvernement.fr"
+suffixe_ministres = "/composition-du-gouvernement"
+```
+
+## Fonctions utiles
+
+```{python}
+def from_birth_to_age(birth):
+    today = datetime.date.today()
+    return today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+```
+
+```{python}
+def from_bio_to_age(url):
+    html = urllib.request.urlopen(url).read()
+    page = bs4.BeautifulSoup(html)
+    s = page.find("div", {"id":"biography"}).text.replace("1er", "1") # un peu ad hoc
+    expression = re.compile("[0-3]?\d \S* \d{4}") # renvoie parfois des dates autres que dates de naissance
+    str_date = expression.findall(s)[0]
+    date_de_naissance = dateparser.parse(str_date).date()
+    return from_birth_to_age(date_de_naissance)
+```
+
+## Obtenir la liste des  ministres et leurs âges
+
+```{python}
+html = urllib.request.urlopen(url_gouvernement + suffixe_ministres).read()
+page = bs4.BeautifulSoup(html)
+compo = page.find("div", {"class":"composition-du-gouvernement-contenu"}) # Nous n'avons besoin que de la composition
+```
+
+```{python}
+ministres = compo.find_all("div", {"class":"ministre"})
+print(f"Nous retrouvons ainsi {len(ministres)} ministres.")
+```
+
+```{python}
+i = 0
+liste = []
+
+for ministre in tqdm(ministres):
+    prenom_nom = ministre.find("a", {"class":"ministre-nom"}).text
+    fonction = ministre.find("p", {"class":"ministre-fonction"}).text
+    photo = ministre.find("img")["src"]
+    href = url_gouvernement + ministre.find("a", {"class":"ministre-nom"})["href"]
+    try:
+        age = from_bio_to_age(href)
+    except:
+        age = np.NaN
+
+    liste.append({
+        'Nom complet': prenom_nom,
+        'Fonction': fonction,
+        'Photo': photo,
+        'href': href,
+        'Age': age
+        })
+    
+    time.sleep(0.25) # Ne pas surcharger les requêtes
+```
+
+```{python}
+df = pd.DataFrame(liste)
+df
+```
+
+## Distribution des âges
+
+Les âges égaux à 0 sont une 'erreur' de scraping : lorsque la date de naissance complète n'est pas disponible sur la biographie d'un ministre.
+
+```{python}
+plt.hist(df.Age, bins=np.arange(25, 80, 4))
 ```
 
 
@@ -1327,24 +1365,3 @@ while True:
 print('Score final : {} en {} coups'.format(scoreElem.text, count))    
 browser.quit()
 ```
-
-
-# Exercice supplémentaire [BONUS]
-
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice : liste des ministres français grâce à Wikipedia </h3>
-```
-
-Scraper la liste des ministres français depuis wikipedia. Faire une graphique qui représente la distribution de leur âge.
-
-Si vous avez une solution satisfaisante, n'hésitez pas à la soumettre
-sur <a href="https://github.com/linogaliana/python-datascientist" class="github"><i class="fab fa-github"></i></a>
-(car je n'ai pas encore testé...)
-
-```{=html}
-</div>
-```
-:::
