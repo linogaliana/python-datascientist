@@ -1300,9 +1300,23 @@ Pour cet exercice, on propose de scraper la liste des ministres français depuis
 respectivement, la racine de l'URL du site web et le chemin au sein de celui-ci ;
 2. Utiliser `bs4` pour récupérer la composition du gouvernement, qui est contenue dans un `<div>`
 ayant une classe _ad hoc_. Nommer cet objet `compo`
-3. Utiliser `find_all` pour récupérer la liste des ministres dans `compo` 
-2. Inspecter la page du site du gouvernement et répérer les id `biography`. Remarquer
-la structure. 
+3. Utiliser `find_all` pour récupérer la liste des ministres dans `compo`. Nommer
+cet objet `ministres`
+4. Inspecter la structure des champs au sein de `ministres`. Répérer les id `biography`. Comme
+la structure est générique, on va écrire une fonction `from_bio_to_age` sur laquelle on va itérer
+pour chaque élément de la liste `ministres`. Cette fonction effectuera les opérations suivantes:
+    + Remplacer les champs de dates de naissance non numériques (par exemple _"1er"_), en valeur numérique (par exemple 1). 
+    + Utiliser la regex `[0-3]?\d \S* \d{4}` avec le _package_ `re` pour extraire les dates
+    de naissance. Nommer l'objet `str_date`.
+    + Appliquer `dateparser.parse` pour convertir sous forme de date
+    + Appliquer `from_birth_to_age` pour transformer cette date de naissance en âge
+5. Pour chaque élément de la liste `ministres`, faire une boucle (en introduisant un 
+    `time.sleep(0.25)` entre chaque itération pour ne pas surcharger le site):
+    + Récupérer les noms et prénoms, fonctions pour chaque ministre
+    + Récupérer l'URL de la photo
+    + Créer un URL pour chaque ministre afin d'appliquer la fonction
+    `from_bio_to_age`
+6. Utiliser `matplotlib` ou `seaborn` pour faire un histogramme d'âge
 
 ```{=html}
 </div>
@@ -1317,6 +1331,7 @@ suffixe_ministres = "/composition-du-gouvernement"
 ```
 
 ```{python}
+#| echo: false
 # 2/ Récupérer compo gouvernement
 url = f"{url_gouvernement}/{suffixe_ministres}"
 html = urllib.request.urlopen(url).read()
@@ -1325,8 +1340,15 @@ compo = page.find("div", {"class":"composition-du-gouvernement-contenu"}) # Nous
 ```
 
 ```{python}
+#| echo: false
 # 3/ Récupérer les ministres
 ministres = compo.find_all("div", {"class":"ministre"})
+```
+
+A l'issue de la question 4, on devrait 
+retrouver les informations suivantes:
+
+```{python}
 print(f"Nous retrouvons ainsi {len(ministres)} ministres.")
 ```
 
@@ -1342,7 +1364,6 @@ def from_bio_to_age(url):
 ```
 
 ```{python}
-i = 0
 liste = []
 
 for ministre in tqdm(ministres):
@@ -1366,14 +1387,27 @@ for ministre in tqdm(ministres):
     time.sleep(0.25) # Ne pas surcharger les requêtes
 ```
 
+_In fine_, on obtient une liste dont le premier élément
+prend la forme suivante:
+
 ```{python}
-df = pd.DataFrame(liste)
-df
+liste[0]
 ```
 
-## Distribution des âges
+Finalement, le `DataFrame` pourra être
+structuré sous la forme suivante. On va éliminer
+les âges égaux à 0 sont qui sont des erreurs
+de scraping:
+lorsque la date de naissance complète n'est pas disponible
+sur la biographie d'un ministre.
 
-Les âges égaux à 0 sont une 'erreur' de scraping : lorsque la date de naissance complète n'est pas disponible sur la biographie d'un ministre.
+```{python}
+df = pd.DataFrame(liste)
+df = df.loc[df['Age'] != 0]
+df.head(3)
+```
+
+Finalement, l'histogramme aura l'aspect suivant:
 
 ```{python}
 plt.hist(df.Age, bins=np.arange(25, 80, 4))
