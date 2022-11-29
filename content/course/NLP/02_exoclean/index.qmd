@@ -193,8 +193,8 @@ train['ID'] = train['Id'].str.replace("id","")
 #| include: false
 #| echo: false
 
-#3. Retirer le prefixe id
-train = train.set_index('ID')
+#4. Mettre Id en index
+train = train.set_index('Id')
 #train.head()
 ```
 
@@ -234,14 +234,13 @@ sampsize = train.shape[0]
 On peut se rendre compte que les extraits des 3 auteurs ne sont pas forcément équilibrés dans le jeu de données. Il faudra en tenir compte dans la prédiction. 
 
 ```{python}
-#| include: false
 #| echo: true
 fig = plt.figure()
 g = sns.barplot(x=['Edgar Allen Poe', 'Mary W. Shelley', 'H.P. Lovecraft'], y=train['Author'].value_counts())
-g
 ```
 
 ```{python}
+#| echo: false
 g.figure.get_figure()
 ```
 
@@ -287,15 +286,21 @@ les proportions.
 
 ```{python}
 #| echo: false
+#| include: false
 
 #1. Compter le nombre de phrase pour chaque auteur avec fear
 def nb_occurrences(word, train_data):
     train_data['wordtoplot'] = train_data['Text'].str.contains(word).astype(int)
-    table = train.groupby('Author').sum()
+    table = train_data.groupby('Author').sum()
     data = table.to_dict()['wordtoplot']
     return table
   
 table = nb_occurrences("fear", train)
+```
+
+```{python}
+#| echo: false
+
 table.head()
 ```
 
@@ -490,7 +495,6 @@ g.figure.get_figure()
 
 
 ```{python}
-#| output: hide
 import statsmodels.api as sm
 
 exog = sm.add_constant(np.log(count_words['rank'].astype(float)))
@@ -498,13 +502,11 @@ exog = sm.add_constant(np.log(count_words['rank'].astype(float)))
 model = sm.GLM(count_words['freq'].astype(float), exog, family = sm.families.Poisson()).fit()
 
 # Afficher les résultats du modèle
-print(model.summary().as_html())
+print(model.summary())
 ```
 
-<!-- TO BE COMPLETED -->
 
 {{% /box %}}
-
 
 ## Nettoyage d'un texte
 
@@ -690,12 +692,14 @@ Le score total, obtenu en multipliant les deux composantes, permet ainsi de donn
 from sklearn.feature_extraction.text import TfidfVectorizer
 tfidf = TfidfVectorizer(stop_words=stopwords.words("english"))
 tfs = tfidf.fit_transform(train['Text'])
+#print(tfs)
 ```
 
 2. Après avoir construit la matrice de documents x terms avec le code suivant, rechercher les lignes où les termes ayant la structure `abandon` sont non-nuls. 
 
 ```{python}
-#| echo: false
+#| echo: true
+
 feature_names = tfidf.get_feature_names()
 corpus_index = [n for n in list(tfidf.vocabulary_.keys())]
 import pandas as pd
@@ -774,18 +778,18 @@ On s'intéresse non seulement aux mots et à leur fréquence, mais aussi aux mot
 
 On va, rapidement, regarder dans quel contexte apparaît le mot `fear` dans
 l'oeuvre d'Edgar Allan Poe (EAP). Pour cela, on transforme d'abord
-le corpus EAP en tokens `nltk` : 
+le corpus EAP en tokens `nltk : 
 
 ```{python}
-#| include: false
 #| echo: true
-eap_clean = train_clean[train_clean["Author"] == "EAP"]
+
+eap_clean = train[train["Author"] == "EAP"]
 eap_clean = ' '.join(eap_clean['Text'])
-#Tokenisation naïve sur les espaces entre les mots => on obtient une liste de mots
 tokens = eap_clean.split()
 print(tokens[:10])
 text = nltk.Text(tokens)
 print(text)
+
 ```
 
 1. Utiliser la méthode `concordance` pour afficher le contexte dans lequel apparaît le terme `fear`. La liste devrait ressembler à celle-ci:
@@ -800,7 +804,7 @@ text.concordance("fear")
 print('\n')
 ```
 
-Même si on peut facilement voir le mot avant et après, cette liste est assez difficile à interpréter car elle recoupe beaucoup d'information. 
+Même si on peut facilement voir le mot avant et après, cette liste est assez difficile à interpréter car elle recoupe beaucoup d'informations. 
 
 La `collocation` consiste à trouver les bi-grammes qui
 apparaissent le plus fréquemment ensemble. Parmi toutes les paires de deux mots observées, il s'agit de sélectionner, à partir d'un modèle statistique, les "meilleures". 
