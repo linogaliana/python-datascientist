@@ -445,7 +445,9 @@ def graph_wordcloud(author, train_data, varname = "Text"):
   all_text = ' '.join([text for text in txt])
   wordcloud = WordCloud(width=800, height=500,
                       random_state=21,
-                      max_words=2000).generate(all_text)
+                      max_words=2000,
+                      background_color = "white",
+                      colormap='Set2').generate(all_text)
   return wordcloud
 
 n_topics = ["HPL","EAP","MWS"]
@@ -459,11 +461,15 @@ for i in range(len(n_topics)):
     ax.axis('off')
 ```
 
+Le _wordcloud_ pour nos différents auteurs est le suivant:
+
 ```{python}
 #| echo: false
 fig.get_figure()
 ```
 
+Enfin, si on fait un histogramme des fréquences,
+cela donnera :
 
 ```{python}
 #| include: false
@@ -501,24 +507,42 @@ par la loi de Zipf, cf. exercice suivant).
 
 ## Aparté: la loi de Zipf
 
-{{% box status="hint" title="La loi de Zipf" icon="fa fa-lightbulb" %}}
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> La loi de Zipf</h3>
+```
 Dans son sens strict, la loi de Zipf prévoit que
 dans un texte donné, la fréquence d'occurrence $f(n_i)$ d'un mot est
 liée à son rang $n_i$ dans l'ordre des fréquences par une loi de la forme
 $f(n_i) = c/n_i$ où $c$ est une constante. Zipf, dans les années 1930, se basait sur l'oeuvre 
 de Joyce, *Ulysse* pour cette affirmation. 
 
-Plus généralement, on peut dériver la loi de Zipf d'une distribution exponentielle des fréquences: $f(n_i) = cn_{i}^{-k}$. Cela permet d'utiliser la famille des modèles linéaires généralisés, notamment les régressions poissonniennes, pour mesurer les paramètres de la loi. Les modèles linéaire traditionnels en `log` souffrent en effet, dans ce contexte, de biais (la loi de Zipf est un cas particulier d'un modèle gravitaire, où appliquer des OLS est une mauvaise idée, cf. [Galiana et al. (2020)](https://linogaliana.netlify.app/publication/2020-segregation/) pour les limites).
+Plus généralement, on peut dériver la loi de Zipf d'une distribution exponentielle des fréquences: $f(n_i) = cn_{i}^{-k}$. Cela permet d'utiliser la famille des modèles linéaires généralisés, notamment les régressions poissonniennes, pour mesurer les paramètres de la loi. Les modèles linéaire traditionnels en `log` souffrent en effet, dans ce contexte, de biais (la loi de Zipf est un cas particulier d'un modèle gravitaire, où appliquer des OLS est une mauvaise idée, cf. [@galiana2020segregation](https://linogaliana.netlify.app/publication/2020-segregation/) pour les limites).
 
-On va estimer le modèle suivant par GLM via `statsmodels`:
+```{=html}
+</div>
+```
+:::
+
+Un modèle exponentiel peut se représenter par un modèle de Poisson ou, si 
+les données sont très dispersées, par un modèle binomial négatif. Pour
+plus d'informations, consulter l'annexe de @galiana2020segregation. 
+La technique économétrique associée pour l'estimation est 
+les modèles linéaires généralisés (GLM) qu'on peut 
+utiliser en `Python` via le
+package `statsmodels`[^3]:
+
+[^3]: La littérature sur les modèles gravitaires, présentée dans @galiana2020segregation, 
+donne quelques arguments pour privilégier les modèles GLM à des modèles log-linéaires
+estimés par moindres carrés ordinaires. 
 
 $$
 \mathbb{E}\bigg( f(n_i)|n_i \bigg) = \exp(\beta_0 + \beta_1 \log(n_i))
 $$
 
-Prenons les résultats de l'exercice précédent et enrichissons les du rang et de la fréquence d'occurrence d'un mot : 
 
-<!-- source : https://stackoverflow.com/questions/23377108/pandas-percentage-of-total-with-groupby -->
+Prenons les résultats de l'exercice précédent et enrichissons les du rang et de la fréquence d'occurrence d'un mot : 
 
 ```{python}
 count_words = pd.DataFrame({'counter' : train
@@ -538,6 +562,8 @@ count_words = count_words.assign(
 )
 ```
 
+Commençons par représenter la relation entre la fréquence et le rang:
+
 ```{python}
 #| include: false
 #| echo: true
@@ -546,10 +572,13 @@ g.set(xscale="log", yscale="log")
 g
 ```
 
+Nous avons bien, graphiquement, une relation log-linéaire entre les deux:
+
 ```{python}
 g.figure.get_figure()
 ```
 
+Avec `statsmodels`, vérifions plus formellement cette relation:
 
 ```{python}
 import statsmodels.api as sm
@@ -562,10 +591,12 @@ model = sm.GLM(count_words['freq'].astype(float), exog, family = sm.families.Poi
 print(model.summary())
 ```
 
+Le coefficient de la régression est presque 1 ce qui suggère bien une relation
+quasiment log-linéaire entre le rang et la fréquence d'occurrence d'un mot. 
+Dit autrement, le mot le plus utilisé l'est deux fois plus que le deuxième
+mois le plus fréquent qui l'est trois plus que le troisième, etc.
 
-{{% /box %}}
-
-## Nettoyage d'un texte
+# Nettoyage d'un texte
 
 Les premières étapes dans le nettoyage d'un texte, qu'on a
 développé au cours du [chapitre précédent](#nlp), sont :
@@ -574,23 +605,42 @@ développé au cours du [chapitre précédent](#nlp), sont :
 * suppression des *stopwords*
 
 Cela passe par la tokenisation d'un texte, c'est-à-dire la décomposition
-de celui-ci en unités lexicales (les *tokens*). Ces unités lexicales peuvent être de différentes natures, selon l'analyse que l'on désire mener. Ici, on va définir les tokens comme étant les mots utilisés.
+de celui-ci en unités lexicales (les *tokens*).
+Ces unités lexicales peuvent être de différentes natures,
+selon l'analyse que l'on désire mener.
+Ici, on va définir les tokens comme étant les mots utilisés.
 
-Plutôt que de faire soi-même ce travail de nettoyage, avec des fonctions mal optimisées, on peut utiliser la librairie `nltk` comme détaillé [précédemment](#nlp). 
+Plutôt que de faire soi-même ce travail de nettoyage,
+avec des fonctions mal optimisées,
+on peut utiliser la librairie `nltk` comme détaillé [précédemment](#nlp). 
 
 
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
-
-**Exercice 4 : Nettoyage du texte** 
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4 : Nettoyage du texte</h3>
+```
 
 Repartir de `train`, notre jeu de données d'entraînement. Pour rappel, `train` a la structure suivante:
+
+1. Tokeniser chaque phrase avec `nltk`.
+2. Retirer les stopwords avec `nltk`.
+
+
+```{=html}
+</div>
+```
+:::
+
+Pour rappel, au début de l'exercice, le `DataFrame` présente l'aspect suivant:
+
 
 ```{python}
 #| echo: false
 train.head(2)
 ```
 
-1. Tokeniser chaque phrase avec `nltk`. Le `DataFrame` devrait maintenant avoir cet aspect :
+Après tokenisation, il devrait avoir cet aspect :
 
 ```{python}
 #| include: true
@@ -605,7 +655,7 @@ train_clean = (train
 train_clean.head(2)
 ```
 
-2. Retirer les stopwords avec `nltk`.
+Après le retrait des stopwords, cela donnera:
 
 ```{python}
 #| include: false
@@ -623,12 +673,20 @@ train_clean = (train_clean
 train_clean.head(2)
 ```
 
-{{% /box %}}
 
-{{% box status="hint" title="Hint" icon="fa fa-lightbulb" %}}
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Hint</h3>
+```
 La méthode `apply` est très pratique ici car nous avons une phrase par ligne. Plutôt que de faire un `DataFrame` par auteur, ce qui n'est pas une approche très flexible, on peut directement appliquer la tokenisation
 sur notre `DataFrame` grâce à `apply`, sans le diviser.
-{{% /box %}}
+
+```{=html}
+</div>
+```
+:::
+
 
 Ce petit nettoyage permet d'arriver à un texte plus intéressant en termes d'analyse lexicale. Par exemple, si on reproduit l'analyse précédente... :
 
@@ -662,12 +720,13 @@ mettre en place les classes d'équivalence développées dans la
 mot par une forme canonique :
 
 * la **racinisation** (*stemming*) assez fruste mais rapide, notamment
-en présence de fautes d’orthographe. Dans ce cas, chevaux peut devenir chev
-mais être ainsi confondu avec chevet ou cheveux. Elles est généralement plus simple à mettre en oeuvre, quoique
+en présence de fautes d’orthographe. Dans ce cas, _chevaux_ peut devenir _chev_
+mais être ainsi confondu avec _chevet_ ou _cheveux_.
+Cette méthode est généralement plus simple à mettre en oeuvre, quoique
 plus fruste. 
 
 * la **lemmatisation** qui requiert la connaissance des statuts
-grammaticaux (exemple : chevaux devient cheval).
+grammaticaux (exemple : _chevaux_ devient _cheval_).
 Elle est mise en oeuvre, comme toujours avec `nltk`, à travers un
 modèle. En l'occurrence, un `WordNetLemmatizer`  (WordNet est une base
 lexicographique ouverte). Par exemple, les mots *"women"*, *"daughters"*
@@ -681,16 +740,25 @@ for word in ["women","daughters", "leaves"]:
     print("The lemmatized form of %s is: {}".format(lemm.lemmatize(word)) % word)
 ```
 
-{{% box status="note" title="Note" icon="fa fa-comment" %}}
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
 Pour disposer du corpus nécessaire à la lemmatisation, il faut, la première fois,
 télécharger celui-ci grâce aux commandes suivantes:
-
+```{=html}
+</div>
+```
 ~~~python
 import nltk
 nltk.download('wordnet')
 nltk.download('omw-1.4')
 ~~~
-{{% /box %}}
+:::
+
+
+
 
 {{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
 
