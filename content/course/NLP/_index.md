@@ -1,19 +1,19 @@
 ---
-title: "Partie 4: Natural Language Processing (NLP)"
+title: "Partie 4 : Natural Language Processing (NLP)"
 date: 2020-10-14T13:00:00Z
 draft: false
 weight: 39
 slug: "nlp"
 icon: book
 icon_pack: fas
-#linktitle: "Partie 4: Natural Language Processing (NLP)"
+#linktitle: "Partie 4 : Natural Language Processing (NLP)"
 summary: |
   L'un des grands avantages comparatifs de Python par rapport aux
   langages concurrents (R notamment) est dans
   la richesse des librairies de Traitement du Langage Naturel (mieux
   connu sous son acronyme anglais : NLP pour natural langage processing).
   Cette partie vise à illustrer la richesse de cet écosystème à partir
-  de quelques exemples littéraires:  Dumas, Poe, Shelley, Lovecraft.
+  de quelques exemples littéraires :  Dumas, Poe, Shelley, Lovecraft.
 type: book
 ---
 
@@ -22,7 +22,7 @@ des exemples de :books: pour s'amuser.
 
 Dans un premier temps, cette partie propose d'explorer *bag of words* 
 pour montrer comment transformer un corpus en outil propre à une 
-analyse statistique:
+analyse statistique :
 
 * Elle propose d'abord une introduction aux enjeux du nettoyage des données
 textuelles à travers l'analyse du *Comte de Monte Cristo* d'Alexandre Dumas
