@@ -662,3 +662,90 @@ m
 ```
 {{< /rawhtml >}}
 
+# Exercices supplémentaires
+
+## Densité de population dans la petite couronne parisienne
+
+Pour cet exercice, le package [`cartiflette`](https://github.com/InseeFrLab/cartogether)
+va être pratique pour récupérer un fonds de carte mélangeant arrondissements
+parisiens et communes dans les autres villes.
+
+Nous allons privilégier une carte à ronds proportionnels (_bubble map_)
+aux cartes chorolèpthes qui trompent
+l'oeil. 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice: bubble map de densité des populations</h3>
+```
+
+1. Récupérer le fond de carte des départements 75, 92, 93 et 94
+avec `cartiflette`. Pour cela, utiliser `download_vectorfile_url_all`
+depuis `cartiflette.s3` en fixant l'option `level` à `COMMUNE_ARRONDISSEMENT`.
+Nommer cet objet `df`.
+2. Créer un objet `departements` avec `dissolve` pour également disposer
+d'un fond de carte des départements
+3. Créer une variable `surface` et utilisant la méthode `area`. L'unité
+doit être le km², il faut donc diviser par $10^6$
+4. Créer une variable `densite`
+5. Utiliser `pd.cut` avec les seuils 5000, 15000 et 30000 personnes
+par km². Vous pouvez utiliser l'option `label` pour dénommer les tranches
+6. Représenter une carte
+
+```{=html}
+</div>
+```
+:::
+
+```{python}
+#| echo: false
+import pandas as pd
+import matplotlib.pyplot as plt
+from cartiflette.s3 import download_vectorfile_url_all
+
+# 1/ Fonds communaux
+df = download_vectorfile_url_all(
+    values = ["75", "92", "93", "94"],
+    level="COMMUNE_ARRONDISSEMENT",
+    decoupage="departement")
+# 2/ Départements
+departements = regions.dissolve("INSEE_DEP")
+```
+
+```{python}
+# 3/ et 4/
+df['surface'] = df.area.div(10**6)
+df['densite'] = (df['POPULATION']/df['surface'])
+#5/ 
+df['markersize'] = 8*df['densite'].div(df.area.div(10**6).sum())
+df['markercolor'] = pd.cut(
+    df['densite'],
+    [0, 5000, 15000, 30000, 50000], labels=["Moins de 5", "Entre 5 et 15", "Entre 15 et 30","Plus de 30"])
+```
+
+```{python}
+# 6/ 
+ax = df.plot(
+    color="lightgray", edgecolor="grey",
+    figsize=(7,7), 
+    linewidth=0.4, alpha = 0.3)
+df_points.plot(
+    ax=ax,
+    column="markercolor", markersize="markersize",
+    alpha=0.7, #categorical=False,
+    legend = True,
+    legend_kwds={'loc': 'upper center', "ncol": 2, "bbox_to_anchor": (0.5, 0.05)},
+    cmap='viridis')
+departements.boundary.plot(
+    ax = ax, edgecolor = "black", alpha = 0.3)
+ax.axis("off")
+ax.set(title='Densité de population dans la petite couronne')
+ax.get_legend().set_title("Densité de population, en milliers d'habitants par km²")
+plt.figtext(0.3, 0.15,
+            "Source: IGN - AdminExpress",
+            wrap=True, horizontalalignment='center',
+            fontsize=8, style = "italic")
+```
+
+
