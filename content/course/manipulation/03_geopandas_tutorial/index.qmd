@@ -230,6 +230,15 @@ de la petite couronne. On pourrait désirer récupérer
 l'ensemble de la région Ile-de-France mais nous
 allons nous contenter de l'analyse de Paris intra-muros
 et des départements limitrophes. 
+C'est l'un des avantage de `cartiflette` que de faciliter
+la récupération de fonds de carte sur un ensemble de département.
+Cela évite la récupération d'un fond de carte très
+volumineux (plus de 500Mo) pour une analyse restreinte (quelques départements).
+Un autre avantage de `cartiflette` est de faciliter la récupération de fonds
+de carte consolidés comme celui dont on a besoin ici: arrondissements 
+dans Paris, communes ailleurs. Comme cela est expliqué dans un encadré à part,
+il s'agirait d'une opération pénible à mettre en oeuvre sans `cartiflette`. 
+
 Les contours de cet espace peuvent être récupérés de la manière suivante:
 
 ```{python}
@@ -237,8 +246,8 @@ import cartiflette.s3
 
 shp_communes = cartiflette.s3.download_vectorfile_url_all(
     values = ["75", "92", "93", "94"],
-    level="COMMUNE",
-    vectorfile_format="geojson",
+    level="COMMUNE_ARRONDISSEMENT",
+    vectorfile_format="GPKG",
     decoupage="departement",
     year=2022)
 
@@ -267,7 +276,37 @@ les contours grâce à la méthode `plot` sur laquelle nous
 reviendrons :
  
 ```{python}
-ax = shp_communes.plot()
+ax = shp_communes.boundary.plot()
+ax.set_axis_off()
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Note</h3>
+```
+
+Si on ne désire pas utiliser le niveau `COMMUNE_ARRONDISSEMENT`,
+il est nécessaire de mettre en oeuvre une construction du fond de
+carte en plusieurs phases.
+
+En premier lieu, il est nécessaire de récupérer le niveau des communes. 
+
+```{python}
+import cartiflette.s3
+
+shp_communes = cartiflette.s3.download_vectorfile_url_all(
+    values = ["75", "92", "93", "94"],
+    level="COMMUNE",
+    vectorfile_format="GPKG",
+    decoupage="departement",
+    year=2022)
+
+shp_communes.head()
+```
+
+```{python}
+ax = shp_communes.boundary.plot()
 ax.set_axis_off()
 ```
 
@@ -276,7 +315,7 @@ sur cette carte. Pour vous en convaincre, vous pouvez exécuter la
 commande :
 
 ```{python}
-ax = shp_communes.loc[shp_communes['INSEE_DEP']=="75"].plot()
+ax = shp_communes.loc[shp_communes['INSEE_DEP']=="75"].boundary.plot()
 ax.set_axis_off()
 ```
 
@@ -314,11 +353,20 @@ import pandas as pd
 
 shp_communes = pd.concat(
   [
-    shp_communes[shp_communes['INSEE_DEP'] != "75"],
-    arrondissements
+    shp_communes[shp_communes['INSEE_DEP'] != "75"].to_crs(2154),
+    arrondissements.to_crs(2154)
   ])
 ```
 
+Cette approche fonctionne mais elle nécessite un certain nombre
+de gestes, qui sont autant de risques d'erreurs. Il est
+donc recommandé de privilégier le niveau `COMMUNE_ARRONDISSEMENT`
+qui fait exactement ceci mais de manière fiable. 
+
+```{=html}
+</div>
+```
+:::
 
 # Opérations sur les attributs et les géométries
 
