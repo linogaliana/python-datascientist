@@ -109,7 +109,7 @@ une colonne supplémentaire: `geometry`. Elle stocke les coordonnées des
 objets géographiques (ou ensemble de coordonnées s'agissant de contours). Un objet `geopandas` hérite des propriétés d'un 
 DataFrame pandas mais propose des méthodes adaptées au traitement des données spatiales. 
 
-Ainsi, grâce à  `geopandas`, on pourra effectuer des manipulations sur les attributs des données comme avec `pandas` mais on pourra également faire des manipulations sur la dimension spatiale des données. En particulier,
+Ainsi, grâce à  `Geopandas`, on pourra effectuer des manipulations sur les attributs des données comme avec `pandas` mais on pourra également faire des manipulations sur la dimension spatiale des données. En particulier,
 
 * Calculer des distances et des surfaces;
 * Agréger rapidement des zonages (regrouper les communes en département par exemple);
@@ -123,14 +123,17 @@ Ainsi, grâce à  `geopandas`, on pourra effectuer des manipulations sur les att
 <h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint</h3>
 ```
 
-Les manipulations de données sur un objet geopandas sont nettement plus lentes que sur un DataFrame traditionnel (car python doit gérer les informations géographiques pendant la manipulation des données). Lorsque vous manipulez des données de grandes dimensions, il peut être préférable d’effectuer les opérations sur les données avant de joindre une géométrie à celles-ci.
+Les manipulations de données sur un objet `Geopandas` sont nettement plus lentes que sur
+un `DataFrame` traditionnel (car `Python` doit gérer les informations géographiques pendant la manipulation des données).
+Lorsque vous manipulez des données de grandes dimensions,
+il peut être préférable d’effectuer les opérations sur les données avant de joindre une géométrie à celles-ci.
 
 ```{=html}
 </div>
 ```
 :::
 
-Par rapport à un logiciel spécialisé comme `QGIS`, `python` permettra 
+Par rapport à un logiciel spécialisé comme `QGIS`, `Python` permettra 
 d'automatiser le traitement et la représentation des données. D'ailleurs,
 `QGIS` utilise lui-même `python`...
 
@@ -188,7 +191,7 @@ celles de l'IGN, et leur association à des jeux de données géographiques.
 
 ::: {.cell .markdown}
 ```{=html}
-<div class="alert alert-success" role="alert">
+<div class="alert alert-info" role="alert">
 <h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
 ```
 
@@ -251,6 +254,7 @@ shp_communes = cartiflette.s3.download_vectorfile_url_all(
     decoupage="departement",
     year=2022)
 
+shp_communes = shp_communes
 shp_communes.head()
 ```
 
@@ -266,8 +270,10 @@ la terre, qui n'est pas un espace plan.
 shp_communes.crs
 ```
 
-Ici, les données sont dans le système de projection Lambert-93
-qui est le système légal de projection pour la France
+Ici, les données sont dans le système WGS84 (code EPSG 4326).
+Ce n'est pas le
+Lambert-93 comme on pourrait s'y attendre, ce dernier
+étant le système légal de projection pour la France
 métropolitaine. 
 
 Pour s'assurer qu'on a bien récupéré les contours voulus, 
@@ -524,13 +530,12 @@ des contours communaux.
 
 ```{python}
 #| output: false
-from cartiflette.download import get_vectorfile_ign
-france = get_vectorfile_ign(
-  level = "COMMUNE",
-  field = "metropole",
-  source = "COG",
-  provider="opendatarchives"
-  )
+france = cartiflette.s3.download_vectorfile_url_all(
+    values="metropole",
+    level="COMMUNE",
+    vectorfile_format="GPKG",
+    decoupage="france_entiere",
+    year=2022)
 ```
 
 ```{python}
@@ -571,11 +576,15 @@ récupérer les fonds officiels des départements plutôt que d'agréger les
 contours des communes:
 
 ```{python}
-dep = get_vectorfile_ign(
-  level = "DEPARTEMENT", field = "metropole",
-  source = "COG", provider="opendatarchives")
+dep = cartiflette.s3.download_vectorfile_url_all(
+    values="metropole",
+    level="DEPARTEMENT",
+    vectorfile_format="GPKG",
+    decoupage="france_entiere",
+    year=2022)
 dep["area"] = dep.area
-dep.plot(column = "area")
+ax = dep.plot(column = "area")
+ax.set_axis_off()
 ```
 
 
@@ -610,6 +619,10 @@ dans la projection officielle pour la métropole, le Lambert 93
 </div>
 ```
 :::
+
+Comme indiqué ci-dessus, nous reprojetons les données
+dans le système Lambert 93 qui ne fausse pas les
+calculs de distance et d'aires.
 
 ```{python}
 communes = shp_communes.to_crs(2154)
