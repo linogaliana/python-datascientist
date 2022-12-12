@@ -684,6 +684,9 @@ l'oeil.
 avec `cartiflette`. Pour cela, utiliser `download_vectorfile_url_all`
 depuis `cartiflette.s3` en fixant l'option `level` à `COMMUNE_ARRONDISSEMENT`.
 Nommer cet objet `df`.
+2. Afin que les calculs ultérieurs de surface ne soient pas faussés,
+assurez-vous que les données sont en Lambert 93 en reprojetant
+nos contours (code EPSG: 2154).
 2. Créer un objet `departements` avec `dissolve` pour également disposer
 d'un fond de carte des départements
 3. Créer une variable `surface` et utilisant la méthode `area`. L'unité
@@ -712,16 +715,18 @@ df = download_vectorfile_url_all(
     values = ["75", "92", "93", "94"],
     level="COMMUNE_ARRONDISSEMENT",
     decoupage="departement")
-# 2/ Départements
+# 2/ Lambert 93
+df = df.to_crs(2154) 
+# 3/ Départements
 departements = df.dissolve("INSEE_DEP")
 ```
 
 ```{python}
 #| echo: false
-# 3/ et 4/
+# 4/ et 5/
 df['surface'] = df.area.div(10**6)
 df['densite'] = (df['POPULATION']/df['surface'])
-#5/ 
+#6/ 
 df['markersize'] = 8*df['densite'].div(df.area.div(10**6).sum())
 df['markercolor'] = pd.cut(
     df['densite'],
@@ -730,7 +735,7 @@ df['markercolor'] = pd.cut(
 
 ```{python}
 #| echo: false
-# 6/
+# 7/
 df_points = df.copy()
 df_points["geometry"] = df_points["geometry"].centroid
 ```
@@ -739,7 +744,7 @@ La carte obtenue devrait ressembler à celle-ci:
 
 ```{python}
 #| echo: false
-# 7/ 
+# 8/ 
 ax = df.plot(
     color="lightgray", edgecolor="grey",
     figsize=(7,7), 
