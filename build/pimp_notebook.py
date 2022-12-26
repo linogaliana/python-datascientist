@@ -114,7 +114,7 @@ def change_box_markdown(fl):
     tweak_md = ["```{=html}\n</div>\n```\n:::" if l.startswith("{{% /box") else l for l in tweak_md]
     tweak_md = "\n".join(tweak_md)
     # FORCE CSS INSIDE DEFINITION 
-    tweak_md = box_for_jupyter(tweak_md)
+    tweak_md = box_for_jupyter(tweak_md, "warning")
 
     # FOOTNOTES
     p = re.compile("\[\^[0-9]+\]:")
