@@ -71,9 +71,9 @@ def box_for_jupyter(tweak_md, btype):
     pattern_heading = '<h3 class="alert-heading"{}>'
     old_icons = {
         "warning": "fa fa-lightbulb-o",
-        "success": "fa-pencil",
-        "info": "fa-comment",
-        "danger": "fa-exclamation-triangle"
+        "success": "fa fa-pencil",
+        "info": "fa fa-comment",
+        "danger": "fa fa-exclamation-triangle"
         }
     new_icons = {
         "warning": "fa-solid fa-lightbulb",
