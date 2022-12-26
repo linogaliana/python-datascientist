@@ -23,10 +23,10 @@ def replace_pattern(
     rules_inline = " ".join(rules)
     empty=""
     if put_in_pattern is True:
-        pattern_find=pattern.format(box_type, empty)
+        pattern_find = pattern.format(box_type, empty)
         pattern_repl = pattern.format(box_type, f' style="{rules_inline}"')
     else:
-        pattern_find=pattern.format(empty)        
+        pattern_find = pattern.format(empty)        
         pattern_repl = pattern.format(f' style="{rules_inline}"')
     return re.sub(pattern_find, pattern_repl, string)
 
@@ -88,12 +88,12 @@ def box_for_jupyter(tweak_md, btype):
         rules_general=rules_general_box,
         rules_specific=rules_specific_box,
         box_type=btype)
-    tweak_md2 = replace_pattern(
-        tweak_md2, pattern=pattern_heading,
-        rules_general=rules_general_heading,
-        rules_specific=rules_specific_heading,
-        put_in_pattern=False,
-        box_type=btype)
+    #tweak_md2 = replace_pattern(
+    #    tweak_md2, pattern=pattern_heading,
+    #    rules_general=rules_general_heading,
+    #    rules_specific=rules_specific_heading,
+    #    put_in_pattern=False,
+    #    box_type=btype)
     tweak_md2 = re.sub(
         new_icons[btype], old_icons[btype],
         tweak_md2
@@ -120,6 +120,9 @@ def change_box_markdown(fl):
     tweak_md = "\n".join(tweak_md)
     # FORCE CSS INSIDE DEFINITION 
     tweak_md = box_for_jupyter(tweak_md, "warning")
+    tweak_md = box_for_jupyter(tweak_md, "info")
+    tweak_md = box_for_jupyter(tweak_md, "success")
+    tweak_md = box_for_jupyter(tweak_md, "danger")
 
     # FOOTNOTES
     p = re.compile("\[\^[0-9]+\]:")
