@@ -13,12 +13,12 @@
 
 
 
-Ce dépôt Github stocke les fichiers sources ayant permis de construire le site
+Ce dépôt `Github`
+stocke les fichiers sources ayant permis de construire le site
 <https://pythonds.linogaliana.fr/>. 
 
-Il s'agit de l'ensemble du cours *Python pour les data-scientists et économistes* :snake:
-que je donne en  
-deuxième année (Master 1) de l'ENSAE.
+Il s'agit de l'ensemble du cours *Python pour les data-scientists* :snake:
+que je donne en deuxième année (Master 1) de l'ENSAE.
 
 ## Syllabus
 
@@ -34,7 +34,7 @@ _data-science_ que quelqu'un à la recherche de contenu plus avancé :
 1. Traitement de données textuelles (NLP)
 1. Introduction à la _data-science_ moderne: _cloud computing_, ElasticSearch, intégration continue...
 
-Un bon complément du contenu du site web est le cours que nous donnons avec Romain Avouac ([@avouacr](https://github.com/avouacr)) en dernière année de l'ENSAE plus tourné mise en production de projets _data-science_: ensae-reproductibilite.netlify.app/
+Un bon complément du contenu du site web est le cours que nous donnons avec Romain Avouac ([@avouacr](https://github.com/avouacr)) en dernière année de l'ENSAE plus tourné mise en production de projets _data-science_: https://ensae-reproductibilite.netlify.app/
 
 <details>
 <summary>
@@ -83,7 +83,7 @@ automatiquement construite et mise à disposition depuis
 </summary>
 
 Le site est construit de manière automatique grâce à [Hugo](https://gohugo.io/)
-à partir d'un environnement conteneurisée [Docker](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general) 
+à partir d'un environnement conteneurisé [Docker](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general) 
 La reproductibilité des exemples et des exercices est testée avec 
 Github Actions ([![build-doc Actions Status](https://github.com/linogaliana/python-datascientist/actions/workflows/prod.yml/badge.svg)](https://github.com/linogaliana/python-datascientist/actions)).
 
