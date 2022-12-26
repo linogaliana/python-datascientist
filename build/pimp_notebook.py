@@ -53,7 +53,12 @@ def box_for_jupyter(tweak_md, btype):
         "success": "border-left:.2rem solid #3fb618;"
     }
     rules_general_heading = [
-        "margin-bottom: 15px !important;"
+        "margin-bottom: 15px !important;",
+        "margin-top: 0rem;",
+        "font-weight:600;",
+        "font-size: 1.1rem;",
+        "padding-top: .2em;",
+        "padding-bottom: .2em;"
     ]
     rules_specific_heading = {
         "danger": "background-color: #dc3545;",
@@ -63,7 +68,7 @@ def box_for_jupyter(tweak_md, btype):
     }
 
     pattern_box = r'<div class="alert alert-{}" role="alert"{}>'
-    pattern_heading = '<h3 class="alert-heading{}">'
+    pattern_heading = '<h3 class="alert-heading"{}>'
     old_icons = {
         "warning": "fa fa-lightbulb-o",
         "success": "fa-pencil",
