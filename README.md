@@ -13,7 +13,7 @@
 
 
 
-Ce dépôt Github stocke les fichiers sources ayant permis de construire le site
+Ce dépôt `Github` stocke les fichiers sources ayant permis de construire le site
 <https://pythonds.linogaliana.fr/>. 
 
 Il s'agit de l'ensemble du cours *Python pour les data-scientists et économistes* :snake:
