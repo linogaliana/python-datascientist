@@ -14,9 +14,9 @@ def transform_note_reference(re_find, content_note=False):
 
 def replace_pattern(
         string, pattern,
+        rules_general,
+        rules_specific,
         box_type = "warning",
-        rules_general = rules_general_box,
-        rules_specific = rules_specific_box,
         put_in_pattern = True
     ):
     rules = rules_general + [rules_specific[box_type]]
@@ -78,14 +78,17 @@ def box_for_jupyter(tweak_md, btype):
         }
 
     tweak_md2 = replace_pattern(
-        tweak_md, pattern=pattern_box,
+        tweak_md,
+        pattern=pattern_box,
+        rules_general=rules_general_box,
+        rules_specific=rules_specific_box,
         box_type=btype)
     tweak_md2 = replace_pattern(
         tweak_md2, pattern=pattern_heading,
-        rules_general = rules_general_heading,
-        rules_specific = rules_specific_heading,
-        put_in_pattern = False,
-        box_type = btype)
+        rules_general=rules_general_heading,
+        rules_specific=rules_specific_heading,
+        put_in_pattern=False,
+        box_type=btype)
     tweak_md2 = re.sub(
         new_icons[btype], old_icons[btype],
         tweak_md2
