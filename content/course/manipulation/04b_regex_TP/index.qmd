@@ -36,12 +36,256 @@ print_badges("content/course/manipulation/04b_regex_TP.qmd")
 ```
 :::
 
+# Introduction
+
+`Python` offre énormément de fonctionalités très pratiques pour la manipulation de données
+textuelles. C'est l'une des raisons de son
+succès dans la communauté du traitement automatisé du langage (NLP, voir partie dédiée). 
+Dans les chapitres précédents, nous avons parfois été amenés à chercher des éléments textuels basiques. Cela était possible avec la méthode `str.find` du package `Pandas` qui constitue une version vectorisée de la méthode `find`
+de base. Nous avons d'ailleurs
+pu utiliser cette dernière directement, notamment lorsqu'on a fait du _webscraping_. 
+Cependant, cette fonction de recherche
+trouve rapidement ses limites. 
+Par exemple, si on désire trouver à la fois les occurrences d'un terme au singulier
+et au pluriel, il sera nécessaire d'utiliser
+au moins deux fois la méthode `find`.
+Pour des verbes conjugués, cela devient encore plus complexe, en particulier si ceux-ci changent de forme selon le sujet. 
+ 
+Pour des expressions compliquées, il est conseillé d'utiliser les __expressions régulières__,
+ou _"regex"_. C'est une fonctionnalité qu'on retrouve dans beaucoup de langages. C'est une forme de grammaire qui permet de rechercher des expressions.
+
+Une partie du contenu de cette partie
+est une adaptation de la
+[documentation collaborative sur `R` nommée `utilitR`](https://www.book.utilitr.org/textdata.html#regex) à laquelle j'ai participé. Ce chapitre reprend aussi du contenu du
+livre [_R for data science_](https://r4ds.hadley.nz/regexps.html) qui présente un chapitre 
+très pédagogique sur les regex.
+
+Nous allons utiliser le _package_ `re` pour illustrer nos exemples d'expressions
+régulières. Il s'agit du package de référence, qui est utilisé, en arrière-plan,
+par `Pandas` pour vectoriser les recherches textuelles. 
+
+```{python}
+import re
+```
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint</h3>
+```
+
+**Les expressions régulières (*regex*) sont notoirement difficiles à maîtriser.** Il existe des outils qui facilitent le travail avec les expressions régulières. L'outil de référence pour ceci est [https://regex101.com/] qui permet de tester des `regex` en `Python`.
+
+Il peut être pratique de demander à des IA assistantes, comme `Github Copilot` ou `ChatGPT`, une
+première version d'une regex en expliquant le contenu qu'on veut extraire.
+Cela peut faire économiser pas mal de temps, sauf quand l'IA fait preuve d'une confiance excessive
+et vous propose avec aplomb une regex totalement fausse...
+
+```{=html}
+</div>
+```
+:::
+
+
+# Principe
+
+**Les expressions régulières sont un outil permettant de décrire un ensemble de chaînes de caractères possibles selon une syntaxe précise, et donc de définir un motif (ou `pattern`).** Les expressions régulières servent par exemple lorsqu'on veut extraire une partie d'une chaîne de caractères, ou remplacer une partie d'une chaîne de caractères. Une expression régulière prend la forme d'une chaîne de caractères, qui peut contenir à la fois des éléments littéraux et des caractères spéciaux qui ont un sens logique. 
+
+Par exemple, `"ch.+n"` est une expression régulière qui décrit le motif suivant: la chaîne littérale `ch`, suivi de n'importe quelle chaîne d'au moins un caractère (`.+`), suivie de la lettre `n`. Dans la chaîne `"J'ai un chien."`, la sous-chaîne `"chien"` correspond à ce motif. De même pour `"chapeau ron"` dans `"J'ai un chapeau rond"`. En revanche, dans la chaîne `"La soupe est chaude."`, aucune sous-chaîne ne correpsond à ce motif (car aucun `n` n'apparaît après le `ch`).
+
+Pour s'en convaincre, nous pouvons déjà regarder
+les deux premiers cas:
+
+```{python}
+pattern = "ch.+n"
+print(re.search(pattern, "J'ai un chien."))
+print(re.search(pattern, "J'ai un chapeau rond."))
+```
+
+Cependant, dans le dernier cas, nous ne trouvons pas
+le _pattern_ recherché:
+
+```{python}
+print(re.search(pattern, "La soupe est chaude."))
+```
+
+La regex précédente comportait deux types de caractères:
+
+- les _caractères littéraux_: lettres et nombres qui sont reconnus de manière littérale
+- les _méta-caractères_: symboles qui ont un sens particulier dans les regex.
+
+Les principaux _méta-caractères_ sont `.`, `+`, `*`, `[`, `]`, `^` et `$` mais il
+en existe beaucoup d'autres.
+Parmi cet ensemble, on utilise principalement les quantifieurs (`.`, `+`, `*`...),
+les classes de caractères (ensemble qui sont délimités par `[` et `]`)
+ou les ancres (`^`, `$`...)
+
+Dans l'exemple précédent, 
+nous retrouvions deux quantifieurs accolés `.+`. Le premier (`.`) signifie n'importe quel caractère[^1]. Le deuxième (`+`) signifie _"répète le pattern précédent"_.
+Dans notre cas, la combinaison `.+` permet ainsi de répéter n'importe quel caractère avant de trouver un _n_. 
+Le nombre de fois est indeterminé: cela peut ne pas être pas nécessaire d'intercaler des caractères avant le _n_ 
+ou cela peut être nécessaire d'en intercepter plusieurs:
+
+```{python}
+print(re.search(pattern, "J'ai un chino"))
+print(re.search(pattern, "J'ai un chiot très mignon."))
+```
+
+[^1]: N'importe quel caractère à part le retour à la ligne (`\n`). Ceci est à garder en tête, j'ai déjà perdu des heures à chercher pourquoi mon `.` ne capturait pas ce que je voulais qui s'étalait sur plusieurs lignes...
+
+## Classes de caractères
+
+Les classes de caractères peuvent être pratiques pour rechercher du texte. Par
+exemple, si on désire trouver tous les _pattern_ qui commencent par un `c` suivi 
+d'un `h` puis d'une voyelle (a, e, i, o, u), on peut essayer
+cette expression régulière. 
+
+```{python}
+re.findall("[c][h][aeiou]", "chat, chien, veau, vache, chèvre")
+```
+
+Il serait plus pratique d'utiliser `Pandas` dans ce cas pour isoler les 
+lignes qui répondent à la condition logique (en ajoutant les accents
+qui ne sont pas compris sinon):
+
+```{python}
+import pandas as pd
+txt = pd.Series("chat, chien, veau, vache, chèvre".split(", "))
+txt.str.match("ch[aeéèiou]")
+```
+
+Cependant, l'usage ci-dessus des classes de caractères
+n'est pas le plus fréquent. 
+On privilégie celles-ci pour identifier des
+pattern complexe plutôt qu'une suite de caractères littéraux.
+Les tableaux d'aide mémoire illustrent une partie des
+classes de caractères les plus fréquentes
+(`[:digit:]` ou `\d`...)
+
+## Quantifieurs
+
+Nous avons rencontré les quantifieurs avec notre première expression
+régulière. Ceux-ci contrôlent le nombre de fois 
+qu'un _pattern_ est rencontré. 
+
+Les plus fréquents sont: 
+
+- `?` : 0 ou 1 match ;
+- `+` : 1 ou plus de matches ;
+- `*` : 0 or more matches. 
+
+Par exemple, `colou?r` permettra de matcher à la fois l'écriture américaine et anglaise
+
+```{python}
+re.findall("colou?r", "Did you write color or colour?")
+```
+
+Ces quantifiers peuvent bien-sûr être associés à 
+d'autres types de caractères, notamment les classes de caractères. 
+Cela peut être extrèmement pratique.
+Par exemple, `\d+` permettra de capturer un ou plusieurs chiffres, `\s?`
+permettra d'ajouter en option un espace...
+
+Il est aussi possible de définir le nombre de répétitions
+avec `{}`:
+
+- `{n}` matche exactement _n_ fois ;
+- `{n,}` matche au moins _n_ fois ;
+- `{n,m}` matche entre _n_ et _m_ fois.
+
+Cependant, la répétition des termes
+ne s'applique par défaut qu'au dernier
+caractère précédent le quantifier. 
+On peut s'en convaincre avec l'exemple ci-dessus:
+
+```{python}
+print(re.match("toc{4}","toctoctoctoc"))
+```
+
+Pour pallier ce problème, il existe les parenthèses.
+Le principe est le même qu'avec les règles numériques:
+les parenthèses permettent d'introduire une hiérarchie. 
+Pour reprendre l'exemple précédent, on obtient
+bien le résultat attendu grâce aux parenthèses:
+
+```{python}
+print(re.match("(toc){4}","toctoctoctoc"))
+print(re.match("(toc){5}","toctoctoctoc"))
+print(re.match("(toc){2,4}","toctoctoctoc"))
+```
+
+
+## Aide-mémoire
+
+Le tableau ci-dessous peut servir d'aide-mémoire
+sur les regex:
+
+|Expression régulière|Signification |
+|------------------|---------------------------------|
+|`"^"`             | Début de la chaîne de caractères |
+|`"$"`             | Fin de la chaîne de caractères |
+|`"\\."`           | Un point |
+|`"."`             | N'importe quel caractère |
+|`".+"`            | N'importe quelle suite de caractères non vide |
+|`".*"`            | N'importe quelle suite de caractères, éventuellement vi
+|`"[:alnum:]"`     | Un caractère alphanumérique |
+|`"[:alpha:]"`     | Une lettre |
+|`"[:digit:]"`     | Un chiffre |
+|`"[:lower:]"`     | Une lettre minuscule |
+|`"[:punct:]"`     | Un signe de ponctuation |
+|`"[:space:]"`     | un espace |
+|`"[:upper:]"`     | Une lettre majuscule |
+|`"[[:alnum:]]+"`  | Une suite d'au moins un caractère alphanumérique |
+|`"[[:alpha:]]+"`  | Une suite d'au moins une lettre |
+|`"[[:digit:]]+"`  | Une suite d'au moins un chiffre |
+|`"[[:lower:]]+"`  | Une suite d'au moins une lettre minuscule |
+|`"[[:punct:]]+"`  | Une suite d'au moins un signe de ponctuation |
+|`"[[:space:]]+"`  | Une suite d'au moins un espace |
+|`"[[:upper:]]+"`  | Une suite d'au moins une lettre majuscule |
+|`"[[:alnum:]]*"`  | Une suite de caractères alphanumériques, éventuellement
+|`"[[:alpha:]]*"`  | Une suite de lettres, éventuellement vide |
+|`"[[:digit:]]*"`  | Une suite de chiffres, éventuellement vide |
+|`"[[:lower:]]*"`  | Une suite de lettres minuscules, éventuellement vide |
+|`"[[:upper:]]*"`  | Une suite de lettres majuscules, éventuellement vide |
+|`"[[:punct:]]*"`  | Une suite de signes de ponctuation, éventuellement vide
+|`"[^[:alpha:]]+"` | Une suite d'au moins un caractère autre qu'une lettre |
+|`"[^[:digit:]]+"` | Une suite d'au moins un caractère autre qu'un chiffre |
+|`"|"`             | L'une des expressions `x` ou `y` est présente          |
+| `[abyz]`         | Un seul des caractères spécifiés  |
+| `[abyz]+`        | Un ou plusieurs des caractères spécifiés (éventuellement répétés) |   
+| `[^abyz]`        | Aucun des caractères spécifiés n'est présent  |
+
+
+Certaines classes de caractères bénéficient d'une syntaxe plus légère car
+elles sont très fréquentes. Parmi-celles:
+
+|Expression régulière|Signification |
+|------------------|---------------------------------|
+| `\d`             | N'importe quel chiffre  |
+| `\D`             | N'importe quel caractère qui n'est pas un caractère |
+| `\s`             | N'importe quel espace (espace, tabulation, retour à la ligne) |
+| `\S`             | N'importe quel caractère qui n'est pas un espace |
+| `\w`             | N'importe quel type de mot (lettres et nombres)
+| `\W`             | N'importe quel ensemble qui n'est pas un mot (lettres et nombres)
+
+
+
+# Principales fonctions de `re`
+
+TO BE COMPLETED
+
+# Pour en savoir plus
+
+- [documentation collaborative sur `R` nommée `utilitR`](https://www.book.utilitr.org/textdata.html#regex)
+- [_R for data science_](https://r4ds.hadley.nz/regexps.html)
+
+
+# OLD
+
 Ce TD est directement issu du contenu de [Xavier Dupré](http://www.xavierdupre.fr/app/teachpyx/helpsphinx/c_regex/regex.html),
 l'ancien professeur de ce cours. Il sera mis-à-jour dans le futur.
 
-Chercher un mot dans un texte est une tâche facile, c'est l'objectif de la méthode `find()` attachée aux chaînes de caractères, étudiée dans la partie webscraping. Elle suffit également lorsque l'on cherche un mot au pluriel ou au singulier, mais il faut dans ce cas l'appeler au moins deux fois. 
-
-Pour des expressions plus compliquées, il est conseillé d'utiliser les expressions régulières, ou "regex". C'est une fonctionnalité qu'on retrouve dans beaucoup de langages. C'est une forme de grammaire qui permet de rechercher des expressions.
 
 Par exemple, lorsqu'on remplit un formulaire, on voit souvent le format ``"MM/JJ/AAAA"`` qui précise sous quelle forme on s'attend à ce qu’une date soit écrite. Les expressions régulières permettent de définir également ce format et de chercher dans un texte toutes les chaînes de caractères qui sont conformes à ce format.
 
