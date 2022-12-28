@@ -77,7 +77,15 @@ import re
 <h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint</h3>
 ```
 
-**Les expressions régulières (*regex*) sont notoirement difficiles à maîtriser.** Il existe des outils qui facilitent le travail avec les expressions régulières. L'outil de référence pour ceci est [https://regex101.com/] qui permet de tester des `regex` en `Python`.
+**Les expressions régulières (*regex*) sont notoirement difficiles à maîtriser.** Il existe des outils qui facilitent le travail avec les expressions régulières.
+
+- L'outil de référence pour ceci est [https://regex101.com/] qui permet de tester des `regex` en `Python`
+tout en ayant une explication qui accompagne ce test
+
+- De même pour [ce site](https://ole.michelsen.dk/tools/regex/) qui comporte une cheat sheet en bas de la page. 
+
+- Les jeux de [Regex Crossword](https://regexcrossword.com/) permettent d'apprendre les expressions régulières en s'amusant
+
 
 Il peut être pratique de demander à des IA assistantes, comme `Github Copilot` ou `ChatGPT`, une
 première version d'une regex en expliquant le contenu qu'on veut extraire.
@@ -222,6 +230,44 @@ print(re.match("(toc){5}","toctoctoctoc"))
 print(re.match("(toc){2,4}","toctoctoctoc"))
 ```
 
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
+
+L’algorithme des expressions régulières essaye toujours de faire correspondre le plus grand morceau à l’expression régulière. 
+
+Par exemple, soit une chaine de caractère HTML: 
+
+```{python}
+s = "<h1>Super titre HTML</h1>"
+```
+
+L'expression régulière `re.findall("<.*>", s)` correspond, potentiellement,
+à trois morceaux : 
+
+*  ``<h1>``
+*  ``</h1>``
+* ``<h1>Super titre HTML</h1>``
+
+C'est ce dernier qui sera choisi, car le plus grand. Pour 
+sélectionner le plus petit, 
+il faudra écrire les multiplicateurs comme ceci : `*?`, `+?`.
+En voici quelques exemples:
+
+```{python}
+s = "<h1>Super titre HTML</h1>\n<p><code>Python</code> est un langage très flexible</p>"
+print(re.findall("<.*>", s))
+print(re.findall("<p>.*</p>", s))
+print(re.findall("<p>.*?</p>", s))
+print(re.compile("<.*?>").findall(s))
+```
+
+```{=html}
+</div>
+```
+:::
 
 ## Aide-mémoire
 
@@ -365,7 +411,110 @@ re.findall("\d{1,4}/\d{1,2}/\d{1,4}", s + "\n 1998/07/12")
 
 # Principales fonctions de `re`
 
-TO BE COMPLETED
+
+| Fonction         | Objectif        |
+|------------------|-----------------|
+| `re.match(<regex>, s)` | Trouver et renvoyer le __premier__ _match_ de l'expression régulière `<regex>` __à partir du début__ du _string_ `s` |
+| `re.search(<regex>, s)` | Trouver et renvoyer le __premier__ _match_ de l'expression régulière `<regex>` __quelle que soit sa position__ dans le _string_ `s` | 
+| `re.finditer(<regex>, s)` | Trouver et renvoyer un itérateur stockant tous les _matches_ de l'expression régulière `<regex>` __quelle que soit leur(s) position(s)__ dans le _string_ `s`. En général, on effectue ensuite une boucle sur cet itérateur | 
+| `re.findall(<regex>, s)` | Trouver et renvoyer **tous les _matches_** de l'expression régulière `<regex>` __quelle que soit leur(s) position(s)__ dans le _string_ `s` sous forme de __liste__ | 
+| `re.sub(<regex>, new_text, s)` | Trouver et __remplacer tous__ les _matches_ de l'expression régulière `<regex>` __quelle que soit leur(s) position(s)__ dans le _string_ `s` |
+
+Pour illustrer ces fonctions, voici quelques exemples:
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>re.match</code> 👇</summary>
+```
+
+`re.match` ne peut servir qu'à capturer un _pattern_ en début
+de _string_. Son utilité est donc limitée. 
+Capturons néanmoins `toto` :
+
+```{python}
+re.match("(to){2}", "toto à la plage")
+```
+
+```{=html}
+</details>
+```
+:::
+
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>re.search</code> 👇</summary>
+```
+
+`re.search` est plus puissant que `re.match`, on peut
+capturer des termes quelle que soit leur position
+dans un _string_. Par exemple, pour capturer _age_:
+
+```{python}
+re.search("age", "toto a l'age d'aller à la plage")
+```
+
+Et pour capturer exclusivement _"age"_ en fin 
+de _string_:
+
+```{python}
+re.search("age$", "toto a l'age d'aller à la plage")
+```
+
+
+```{=html}
+</details>
+```
+:::
+
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>re.finditer</code> 👇</summary>
+```
+
+`re.finditer` est, à mon avis,
+moins pratique que `re.findall`. Son utilité
+principale par rapport à `re.findall` 
+est de capturer la position dans un champ textuel:
+
+```{python}
+s = "toto a l'age d'aller à la plage"
+for match in re.finditer("age", s):
+    start = match.start()
+    end = match.end()
+    print(f'String match "{s[start:end]}" at {start}:{end}')
+```
+
+
+```{=html}
+</details>
+```
+:::
+
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>re.sub</code> 👇</summary>
+```
+
+`re.sub` permet de capturer et remplacer des expressions. 
+Par exemple, remplaçons _"age"_ par _"âge"_. Mais attention,
+il ne faut pas le faire lorsque le motif est présent dans _"plage"_.
+On va donc mettre une condition négative: capturer _"age"_ seulement
+s'il n'est pas en fin de _string_ (ce qui se traduit en _regex_ par `?!$`)
+
+```{python}
+re.sub("age(?!$)", "âge", "toto a l'age d'aller à la plage")
+```
+
+
+```{=html}
+</details>
+```
+:::
+
+
 
 <!-----
 - match
@@ -378,56 +527,12 @@ TO BE COMPLETED
 
 - [documentation collaborative sur `R` nommée `utilitR`](https://www.book.utilitr.org/textdata.html#regex)
 - [_R for Data Science_](https://r4ds.hadley.nz/regexps.html)
-
-
-# OLD
+- [_Regular Expression HOWTO_ dans la documentation officielle de `Python`](https://docs.python.org/3/howto/regex.html)
 
 
 
 
-## Les ensembles de caractères
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-info" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
-```
-
-L’algorithme des expressions régulières essaye toujours de faire correspondre le plus grand morceau à l’expression régulière. 
-
-Par exemple, soit une chaine de caractère HTML: 
-
-```{python}
-s = "<h1>Super titre HTML</h1>"
-```
-
-L'expression régulière `re.findall("<.*>", s)` correspond, potentiellement,
-à trois morceaux : 
-
-*  ``<h1>``
-*  ``</h1>``
-* ``<h1>Super titre HTML</h1>``
-
-C'est ce dernier qui sera choisi, car le plus grand. Pour 
-sélectionner le plus petit, 
-il faudra écrire les multiplicateurs comme ceci : `*?`, `+?`.
-En voici quelques exemples:
-
-```{python}
-s = "<h1>Super titre HTML</h1>\n<p><code>Python</code> est un langage très flexible</p>"
-print(re.findall("<.*>", s))
-print(re.findall("<p>.*</p>", s))
-print(re.findall("<p>.*?</p>", s))
-print(re.compile("<.*?>").findall(s))
-```
-
-```{=html}
-</div>
-```
-:::
-
-
-
+Un exo : extraction d'adresses mails
 
 Un exemple pour trouver des adresses emails : 
 
@@ -445,7 +550,7 @@ liste_emails = re.findall('\S+@\S+', text_emails)
 print(liste_emails)
 ```
 
-## Exercices
+## Exercices supplémentaires
 
 {{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
 
@@ -547,10 +652,5 @@ pandas.to_numeric(data_books['Date of Publication 2'], downcast='integer').plot(
 
 {{% /box %}}
 
-## Aller plus loin pour apprendre les regex
 
-- Le site [regex101](https://regex101.com/) permet de tester les expressions régulières utilisées tout en ayant une explication qui accompagne ce test
 
-- De même pour [ce site](https://ole.michelsen.dk/tools/regex/) qui comporte une cheat sheet en bas de la page. 
-
-- Les jeux de [Regex Crossword](https://regexcrossword.com/) permettent d'apprendre les expressions régulières en s'amusant
