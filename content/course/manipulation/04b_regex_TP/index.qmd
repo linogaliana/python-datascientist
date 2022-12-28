@@ -597,107 +597,105 @@ liste_emails = re.findall('\S+@\S+', text_emails)
 print(liste_emails)
 ```
 
-## Exercices supplémentaires
-
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
-
-**Exercice 1: Application directe**
-
-Recherchez les dates présentes dans la phrase suivante.
-
-```{python}
-texte1 = """Je suis né le 28/12/1903 et je suis mort le 08/02/1957. Ma seconde femme est morte le 10/11/1963. 
-J'ai écrit un livre intitulé 'Comprendre les fractions : les exemples en page 12/46/83' """
-```
-
-Puis dans celle-ci : 
-
-```{python}
-texte2 = """Je suis né le 28/12/1903 et je suis mort le 08/02/1957. Je me suis marié le 8/5/45. 
-J'ai écrit un livre intitulé 'Comprendre les fractions : les exemples en page 12/46/83' """
-```
-
-
-
-```{python, show = FALSE, include = FALSE}
-# Correction
-import re
-expression = re.compile("([0-3]?[0-9]/[0-1]?[0-9]/[0-2]?[0-9]?[0-9][0-9])")
-print(expression.findall(texte1))
-print(expression.findall(texte2))
-```
-
-
-{{% /box %}}
-
-
-{{% box status="exercise" title="Exercice" icon="fas fa-pencil-alt" %}}
-
-**Exercice 2: Nettoyer une colonne de date de publication**
+### Extraire des années depuis un `DataFrame` `Pandas`
 
 L'objectif général de l'exercice est de nettoyer des colonnes d'un DataFrame en utilisant des expressions régulières.
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice</h3>
+```
 
 La base en question contient des livres de la British Library et quelques informations les concernant. Le jeu de données est disponible ici : https://raw.githubusercontent.com/realpython/python-data-cleaning/master/Datasets/BL-Flickr-Images-Book.csv
 
 La colonne "Date de Publication" n'est pas toujours une année, il y a parfois d'autres informations. Le but de l'exercice est d'avoir **une date de publication du livre propre** et de regarder la **distribution des années de publications**. 
 
 Pour ce faire, vous pouvez :
+
 * Soit choisir de réaliser l'exercice sans aide. Votre **lecture de l'énoncé s'arrête donc ici**. Vous devez alors faire attention à bien regarder vous-même la base de données et la transformer avec attention. 
 
 * Soit suivre les différentes étapes qui suivent pas à pas.
 
-```{python}
-import pandas
+::: {.cell .markdown}
+```{=html}
+<details><summary>Version guidée 👇</summary>
+```
 
+1. Lire les données depuis l'url `https://raw.githubusercontent.com/realpython/python-data-cleaning/master/Datasets/BL-Flickr-Images-Book.csv`. Attention au séparateur
+2. Ne garder que les colonnes `['Identifier', 'Place of Publication', 'Date of Publication', 'Publisher', 'Title', 'Author']`
+3. Observer la colonne _'Date of Publication'_ et remarquer le problème sur certaines lignes (par exemple la ligne 13)
+4. Commencez par regarder le nombre d'informations manquantes. On ne pourra pas avoir mieux après la regex, et normalement on ne devrait pas avoir moins...
+5. Déterminer la forme de la regex pour une date de publication. A priori, il y a 4 chiffres qui forment une année.
+Utiliser la méthode `str.extract()` avec l'argument `expand = False` (pour ne conserver que la première date concordant avec notre _pattern_)?
+6. On a 2 `NaN` qui n'étaient pas présents au début de l'exercice. Quels sont-ils et pourquoi ? 
+7. Quelle est la répartition des dates de publications dans le jeu de données ? Vous pouvez par exemple afficher un histogramme grâce à la méthode `plot` avec l'argument `kind ="hist"`.
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+#| echo: false
+
+# Question 1
 data_books = pandas.read_csv('https://raw.githubusercontent.com/realpython/python-data-cleaning/master/Datasets/BL-Flickr-Images-Book.csv',sep=',')
 ```
 
 ```{python}
+#| echo: false
+
+# Question 2
 data_books=data_books[['Identifier', 'Place of Publication',
        'Date of Publication', 'Publisher', 'Title', 'Author']]
 ```
 
-En regardant la base, on réalise que cette colonne ne correspond pas toujours à une année, par exemple en lignes 13 et 16.
+Voici par exemple le problème qu'on demande de détecter à la question 3 :
 
 ```{python}
+#| echo: false
+
+# Question 3
 data_books[['Date of Publication',"Title"]].iloc[13:20]
 ```
 
-1. Commencez par regarder le nombre d'informations manquantes. On ne pourra pas avoir mieux après la regex, et normalement on ne devrait pas avoir moins...
+```{python}
+#| echo: false
 
-```{python, include = FALSE, eval = FALSE}
+# Question 4
 data_books['Date of Publication'].isna().sum()
 ```
 
-2. Déterminer la forme de la regex pour une date de publication. A priori, il y a 4 chiffres qui forment une année.
+Grâce à notre regex (question 5), on obtient ainsi un `DataFrame` plus conforme à nos attentes
 
-```{python, include = FALSE, eval = FALSE}
-import re
+```{python}
+#| echo: false
+
+# Question 5
 expression = "([0-2][0-9][0-9][0-9])"
+data_books['year'] = data_books['Date of Publication'].str.extract(expression, expand=False)
+
+data_books.loc[~(data_books['Date of Publication'] == data_books['year']), ['Date of Publication', 'year']]
 ```
 
-3. Quelles lignes sont changées quand on applique notre regex à la colonne qui nous intéresse avec la fonction `str.extract()` ?
+Quant aux nouveaux `NaN`,
+il s'agit de lignes qui ne contenaient pas de chaînes de caractères qui ressemblaient à des années:
 
-```{python, include = FALSE, eval = FALSE}
-data_books['Date of Publication 2'] = data_books['Date of Publication'].str.extract(expression, expand=False)
-data_books[~(data_books['Date of Publication'] == data_books['Date of Publication 2'])][['Date of Publication', 'Date of Publication 2']]
-
+```{python}
+#| echo: false
+data_books.loc[~data_books['Date of Publication'].isna() & data_books['Date of Publication 2'].isna(), ['Date of Publication', 'Date of Publication 2']]
 ```
 
-4. On a 2 `NaN` qui n'étaient pas présents au début de l'exercice. Quels sont-ils et pourquoi ? 
+Enfin, on obtient l'histogramme suivant des dates de publications:
 
-```{python, include = FALSE, eval = FALSE}
-# Il s'agit de lignes qui ne contenaient pas de chaînes de caractères qui ressemblaient à des années.
-data_books[~data_books['Date of Publication'].isna() & data_books['Date of Publication 2'].isna()][['Date of Publication', 'Date of Publication 2']]
+```{python}
+#| echo: false
+pd.to_numeric(data_books['Date of Publication 2'], downcast='integer').plot(kind ="hist")
 ```
 
-5. Quelle est la répartition des dates de publications dans le jeu de données ? Vous pouvez par exemple afficher un histogramme.
 
-```{python, include = FALSE, eval = FALSE}
-pandas.to_numeric(data_books['Date of Publication 2'], downcast='integer').plot(kind ="hist")
-```
-
-{{% /box %}}
 
 
 
