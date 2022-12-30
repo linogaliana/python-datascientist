@@ -6,6 +6,7 @@ def reminder_badges(
     type = ['md','html'],
     split = None,
     onyxia_only = False,
+    GPU=False,
     correction = False
 ):
 
@@ -61,12 +62,19 @@ def reminder_badges(
             '<img src="https://img.shields.io/badge/Visualize-nbviewer-blue?logo=Jupyter" alt="nbviewer"></a>'
 
     section_latest = section.rsplit("/", maxsplit=1)[-1]
-    chapter_no_extension=re.sub(".ipynb","", chapter)
+    chapter_no_extension = re.sub(".ipynb", "", chapter)
     onyxia_init_args = [section_latest, chapter_no_extension]
+
     if correction:
         onyxia_init_args.append("correction")
+
+    if GPU is True:
+        service_name = "jupyter-pytorch-gpu"
+    else:
+        service_name = "jupyter-python"
+
     onyxia_init_args = "%20".join(onyxia_init_args)
-    onyxia_link_launcher = "https://datalab.sspcloud.fr/launcher/ide/jupyter-python"\
+    onyxia_link_launcher = f"https://datalab.sspcloud.fr/launcher/ide/{service_name}"\
         "?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB"\
         "&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB"\
         f"&init.personalInitArgs=%C2%AB{onyxia_init_args}%C2%BB&security.allowlist.enabled=false"
@@ -140,6 +148,7 @@ def print_badges(
     onyxia_only=False,
     split=4,
     type="html",
+    GPU = False,
     correction=False):
       
       badges = reminder_badges(
@@ -147,6 +156,7 @@ def print_badges(
           type=type,
           split=split,
           onyxia_only=onyxia_only,
+          GPU=GPU,
           correction=correction
           )
           
