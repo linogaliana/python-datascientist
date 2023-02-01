@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install recent go version
-GO_VERSION="1.19.2"
+GO_VERSION="1.19.5"
 wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -O go.tar.gz && \
     sudo rm -rf /usr/local/go && \
     sudo tar -C /usr/local -xzf go.tar.gz && \
@@ -9,10 +9,10 @@ wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -O go.tar.gz && \
 echo "PATH=$PATH:/usr/local/go/bin" >> $HOME/.bashrc
 
 # Install hugo
-HUGO_VERSION="0.97.3" 
-wget https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_Linux-64bit.deb -O hugo.deb && \
-    sudo dpkg -i hugo.deb && \
-    sudo rm hugo.deb
+HUGO_VERSION="0.110.0" 
+wget https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb && \
+    sudo apt install "./hugo_extended_${HUGO_VERSION}_linux-amd64.deb" && \
+    rm -f hugo_extended_${HUGO_VERSION}_linux-amd64.deb
 
 # Install quarto
 QUARTO_VERSION="1.1.251"
