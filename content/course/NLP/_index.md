@@ -45,3 +45,7 @@ de dire que sémantiquement `Homme` et `Femme` sont proches.
 ## Contenu de la partie
 
 {{< list_children >}}
+
+## Pour aller plus loin
+
+- [Cours sur `HuggingFace`](https://huggingface.co/course/chapter1/2?fw=pt)
