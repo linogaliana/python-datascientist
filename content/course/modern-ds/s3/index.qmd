@@ -618,7 +618,7 @@ Donc, du point de vue de l'utilisateur `Python`,
 il n'y a pas de différence fondamentale. Cependant,
 les données ne sont pas hebergées dans un dossier
 local (par exemple `Mes Documents/monsuperfichier`)
-mais sur un serveur distant auqgituel l'utilisateur
+mais sur un serveur distant auquel l'utilisateur
 de `Python` accède à travers un échange réseau.
 
 ![](featured.png)
@@ -978,7 +978,9 @@ Pour cela,
 la méthode `list_objects` offre toutes les options nécessaires:
 
 ```python
-for key in s3.list_objects(Bucket='donnees-insee', Prefix='FILOSOFI')['Contents']:
+import boto3
+s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
+for key in s3.list_objects(Bucket='donnees-insee', Prefix='diffusion/FILOSOFI')['Contents']:
     print(key['Key'])
 ```
 
@@ -996,8 +998,11 @@ for key in s3.list_objects(Bucket='donnees-insee', Prefix='FILOSOFI')['Contents'
 Pour lister les fichiers, c'est la méthode `ls` (celle-ci ne liste pas par
 défaut les fichiers de manière récursive comme `boto3`):
 
-```{python, eval = FALSE}
-fs.ls("donnees-insee")
+```python
+import s3fs
+fs = s3fs.S3FileSystem(
+  client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
+fs.ls("donnees-insee/diffusion")
 ```
 
 ```{=html}
@@ -1013,8 +1018,8 @@ fs.ls("donnees-insee")
 
 ```python
 from pyarrow import fs
-s3 = fs.S3FileSystem(endpoint_override='http://'+'minio.lab.sspcloud.fr')
-s3.get_file_info(fs.FileSelector('donnees-insee', recursive=True))
+s3 = fs.S3FileSystem(endpoint_override='https://'+'minio.lab.sspcloud.fr')
+s3.get_file_info(fs.FileSelector('donnees-insee/diffusion', recursive=True))
 ```
 
 ```{=html}
@@ -1059,7 +1064,9 @@ de dézipper un fichier).
 On utilise cette fois la méthode `download_file`
 
 ```python
-s3.download_file('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv", 'data.csv')
+import boto3
+s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
+s3.download_file('donnees-insee', "diffusion/FILOSOFI/2014/FILOSOFI_COM.csv", 'data.csv')
 ```
 
 ```{=html}
@@ -1074,7 +1081,10 @@ s3.download_file('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv", 'data.csv')
 ```
 
 ```python
-fs.download('donnees-insee/FILOSOFI/2014/FILOSOFI_COM.csv','test.csv')
+import s3fs
+fs = s3fs.S3FileSystem(
+  client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
+fs.download('donnees-insee/diffusion/FILOSOFI/2014/FILOSOFI_COM.csv','test.csv')
 ```
 
 ```{=html}
@@ -1141,7 +1151,9 @@ lit les données à la volée, sans les écrire dans un filesystem local.
 
 
 ```python
-obj = s3.get_object(Bucket='donnees-insee', Key="FILOSOFI/2014/FILOSOFI_COM.csv")
+import boto3
+s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
+obj = s3.get_object(Bucket='donnees-insee', Key="diffusion/FILOSOFI/2014/FILOSOFI_COM.csv")
 df = pd.read_csv(obj['Body'], sep = ";")
 df.head(2)
 ```
@@ -1160,8 +1172,12 @@ df.head(2)
 Le code suivant devrait permettre d'effectuer la même opération avec `s3fs`
 
 ```python
-df = pd.read_csv(fs.open('{}/{}'.format('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv"),
-                         mode='rb')
+import pandas as pd
+import s3fs
+fs = s3fs.S3FileSystem(
+  client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
+df = pd.read_csv(fs.open('{}/{}'.format('donnees-insee', "diffusion/FILOSOFI/2014/FILOSOFI_COM.csv"),
+                         mode='rb'), sep = ";"
                  )
 
 df.head(2)
@@ -1218,18 +1234,21 @@ s3 = fs.S3FileSystem(endpoint_override='http://'+'minio.lab.sspcloud.fr')
 Pour lire un csv, on fera:
 
 ```python
+from pyarrow import fs
 from pyarrow import csv
 
-with s3.open_input_file("donnees-insee/FILOSOFI/2014/FILOSOFI_COM.csv") as file:
-    df = csv.read_csv(file, parse_options=csv.ParseOptions(delimiter=";")).to_pandas()
+s3 = fs.S3FileSystem(endpoint_override='https://'+'minio.lab.sspcloud.fr')
 
-df.head(2)
+with s3.open_input_file("donnees-insee/diffusion/FILOSOFI/2014/FILOSOFI_COM.csv") as file:
+    df = csv.read_csv(file, parse_options=csv.ParseOptions(delimiter=";")).to_pandas()
 ```
 
-Pour un fichier au format parquet, on privilégiera:
+Pour un fichier au format parquet, la démarche est plus simple grâce à l'argument
+`filesystem` dans `pyarrow.parquet.ParquetDataset` :
 
 ```python
 import pyarrow.parquet as pq
+
 #bucket = ""
 #parquet_file=""
 df = pq.ParquetDataset(f'{bucket}/{parquet_file}', filesystem=s3).read_pandas().to_pandas()
