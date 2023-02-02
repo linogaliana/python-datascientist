@@ -998,7 +998,7 @@ for key in s3.list_objects(Bucket='donnees-insee', Prefix='diffusion/FILOSOFI')[
 Pour lister les fichiers, c'est la méthode `ls` (celle-ci ne liste pas par
 défaut les fichiers de manière récursive comme `boto3`):
 
-```python {hl_lines=["3-4"]}
+```python {hl_lines=[4]}
 import s3fs
 fs = s3fs.S3FileSystem(
   client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
@@ -1016,10 +1016,10 @@ fs.ls("donnees-insee/diffusion")
 <details><summary><code>Arrow</code> 👇</summary>
 ```
 
-```python
+```python {hl_lines=[3]}
 from pyarrow import fs
-s3 = fs.S3FileSystem(endpoint_override='http://'+'minio.lab.sspcloud.fr')
-s3.get_file_info(fs.FileSelector('donnees-insee', recursive=True))
+s3 = fs.S3FileSystem(endpoint_override='https://'+'minio.lab.sspcloud.fr')
+s3.get_file_info(fs.FileSelector('donnees-insee/diffusion', recursive=True))
 ```
 
 ```{=html}
@@ -1063,8 +1063,10 @@ de dézipper un fichier).
 
 On utilise cette fois la méthode `download_file`
 
-```python
-s3.download_file('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv", 'data.csv')
+```python {hl_lines=[3]}
+import boto3
+s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
+s3.download_file('donnees-insee', "diffusion/FILOSOFI/2014/FILOSOFI_COM.csv", 'data.csv')
 ```
 
 ```{=html}
@@ -1078,8 +1080,11 @@ s3.download_file('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv", 'data.csv')
 <details><summary><code>S3FS</code> 👇</summary>
 ```
 
-```python
-fs.download('donnees-insee/FILOSOFI/2014/FILOSOFI_COM.csv','test.csv')
+```python {hl_lines=[4]}
+import s3fs
+fs = s3fs.S3FileSystem(
+  client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
+fs.download('donnees-insee/diffusion/FILOSOFI/2014/FILOSOFI_COM.csv','test.csv')
 ```
 
 ```{=html}
@@ -1145,7 +1150,9 @@ lit les données à la volée, sans les écrire dans un filesystem local.
 ```
 
 
-```python
+```python {hl_lines=["3-4"]}
+import boto3
+s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
 obj = s3.get_object(Bucket='donnees-insee', Key="FILOSOFI/2014/FILOSOFI_COM.csv")
 df = pd.read_csv(obj['Body'], sep = ";")
 df.head(2)
@@ -1164,9 +1171,13 @@ df.head(2)
 
 Le code suivant devrait permettre d'effectuer la même opération avec `s3fs`
 
-```python
-df = pd.read_csv(fs.open('{}/{}'.format('donnees-insee', "FILOSOFI/2014/FILOSOFI_COM.csv"),
-                         mode='rb')
+```python {hl_lines=["5-7"]}
+import pandas as pd
+import s3fs
+fs = s3fs.S3FileSystem(
+  client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
+df = pd.read_csv(fs.open('{}/{}'.format('donnees-insee', "diffusion/FILOSOFI/2014/FILOSOFI_COM.csv"),
+                         mode='rb'), sep = ";"
                  )
 
 df.head(2)
