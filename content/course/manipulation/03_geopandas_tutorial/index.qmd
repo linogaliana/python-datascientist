@@ -245,13 +245,15 @@ il s'agirait d'une opération pénible à mettre en oeuvre sans `cartiflette`.
 Les contours de cet espace peuvent être récupérés de la manière suivante:
 
 ```{python}
-import cartiflette.s3
+import cartiflette.s3 as s3
 
-shp_communes = cartiflette.s3.download_vectorfile_url_all(
+shp_communes = s3.download_vectorfile_url_all(
+    crs = 4326,
     values = ["75", "92", "93", "94"],
-    level="COMMUNE_ARRONDISSEMENT",
-    vectorfile_format="geojson",
-    decoupage="departement",
+    borders="COMMUNE",
+    vectorfile_format="topojson",
+    filter_by="DEPARTEMENT",
+    source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
 
 shp_communes = shp_communes
@@ -299,13 +301,14 @@ carte en plusieurs phases.
 En premier lieu, il est nécessaire de récupérer le niveau des communes. 
 
 ```{python}
-import cartiflette.s3
+import cartiflette.s3 as s3
 
-shp_communes = cartiflette.s3.download_vectorfile_url_all(
+shp_communes = s3.download_vectorfile_url_all(
+    crs = 4326,
     values = ["75", "92", "93", "94"],
-    level="COMMUNE",
-    vectorfile_format="GPKG",
-    decoupage="departement",
+    borders="COMMUNE",
+    vectorfile_format="topojson",
+    filter_by="DEPARTEMENT",
     year=2022)
 
 shp_communes.head()
@@ -333,12 +336,15 @@ disponibles
 grâce à `cartiflette`:
 
 ```{python}
-arrondissements = cartiflette.s3.download_vectorfile_url_all(
-    values = "75",
-    level="ARRONDISSEMENT_MUNICIPAL",
-    vectorfile_format="geojson",
-    decoupage="departement",
+arrondissements = s3.download_vectorfile_url_all(
+    crs = 4326,
+    values = ["75"],
+    borders="COMMUNE",
+    vectorfile_format="topojson",
+    filter_by="DEPARTEMENT",
+    source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
+
 ```
 
 ```{python}
@@ -534,11 +540,11 @@ légère qui utilise pleinement les fonctionnalités de `cartiflette`).
 #| output: false
 from cartiflette.download import get_vectorfile_ign
 france = get_vectorfile_ign(
-  level = "COMMUNE",
+  borders = "COMMUNE",
   field = "metropole",
   source = "EXPRESS-COG-CARTO-TERRITOIRE",
-  provider="IGN"
-  )
+  provider="IGN
+)
 ```
 
 ```{python}
@@ -580,8 +586,8 @@ contours des communes:
 
 ```{python}
 dep = get_vectorfile_ign(
-  level = "DEPARTEMENT", field = "metropole",
-  source = "COG", provider="opendatarchives")
+  borders = "DEPARTEMENT", field = "metropole",
+  source = "EXPRESS-COG-CARTO-TERRITOIRE", provider="IGN")
 dep["area"] = dep.area
 ax = dep.plot(column = "area")
 ax.set_axis_off()
@@ -642,16 +648,19 @@ Une méthode qu'on utilise régulièrement est `centroid` qui, comme son nom l'i
 recherche le centroïde de chaque polygone et transforme ainsi des données
 surfaciques en données ponctuelles. Par exemple, pour
 représenter approximativement les centres des villages de la
-Haute-Garonne (31), on
+Haute-Garonne (31), après avoir téléchargé le fonds de carte adapté,
 fera
 
 ```{python}
-communes_31 = cartiflette.s3.download_vectorfile_url_all(
-    values = ["31"],
-    level="COMMUNE",
-    vectorfile_format="geojson",
-    decoupage="departement",
-    year=2022)
+communes_31 = s3.download_vectorfile_url_all(
+      crs = 4326,
+      values = "31",
+      borders="COMMUNE",
+      vectorfile_format="topojson",
+      filter_by="DEPARTEMENT",
+      source="EXPRESS-COG-CARTO-TERRITOIRE",
+      year=2022)
+
 # on reprojete en 3857 pour le fond de carte
 communes_31 = communes_31.to_crs(3857)
 
@@ -746,7 +755,7 @@ Alors que la reprojection (projection Albers : `5070`) s'obtient de la manière 
 
 ```{python}
 shp_region = get_vectorfile_ign(
-  level = "REGION", field = "metropole",
+  borders = "REGION", field = "metropole",
   source = "COG", provider="opendatarchives")
 
 fig,ax = plt.subplots(figsize=(10, 10))
