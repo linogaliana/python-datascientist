@@ -26,15 +26,22 @@ Le syllabus est disponible [sur le site de l'ENSAE](https://www.ensae.fr/courses
 
 Globalement, il propose un contenu très complet pouvant autant 
 satisfaire des débutants en 
-_data science_ que quelqu'un à la recherche de contenu plus avancé :
+_data science_ que des personnes à la recherche de contenu plus avancé :
 
-1. Manipulation de données avec `Python`: manipulation de données standards (`pandas`), données géographiques (`geopandas`), récupération de données (webscraping, API)...
-1. Visualisation de données avec `Python`: visualisations classiques (`matplotlib`, `seaborn`), cartographie, visualisations réactives (`plotly`, `folium`)
-1. Modélisation: _machine learning_ (`scikit`), économétrie
-1. Traitement de données textuelles (NLP)
-1. Introduction à la _data-science_ moderne: _cloud computing_, ElasticSearch, intégration continue...
+1. __Manipulation de données__ : manipulation de données standards (`Pandas`), données géographiques (`Geopandas`), récupération de données (webscraping, API)...
+1. __Visualisation de données__ : visualisations classiques (`Matplotlib`, `Seaborn`), cartographie, visualisations réactives (`Plotly`, `Folium`)
+1. __Modélisation__: _machine learning_ (`Scikit`), économétrie
+1. __Traitement de données textuelles__ (NLP): découverte de la tokenisation avec `NLTK` et `SpaCy`, modélisation...
+1. **Introduction à la _data science_ moderne**: _cloud computing_, `ElasticSearch`, intégration continue...
 
-Un bon complément du contenu du site web est le cours que nous donnons avec Romain Avouac ([@avouacr](https://github.com/avouacr)) en dernière année de l'ENSAE plus tourné mise en production de projets _data-science_: https://ensae-reproductibilite.netlify.app/
+L'ensemble du contenu de ce site s'appuie sur des données
+ouvertes, qu'il s'agisse de données françaises (principalement
+issues de la plateforme
+centralisatrice [`data.gouv`](https://www.data.gouv.fr) ou du site
+_web_ de l'[Insee](https://www.insee.fr)) ou de données
+américaines.
+
+Un bon complément du contenu du site web est le cours que nous donnons avec Romain Avouac ([@avouacr](https://github.com/avouacr)) en dernière année de l'ENSAE plus tourné autour de la mise en production de projets _data-science_: https://ensae-reproductibilite.netlify.app/
 
 <details>
 <summary>
@@ -57,12 +64,7 @@ notebooks `Jupyter` dans la configuration qui vous sied le mieux.
 <a href="http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
 <a href="https://github.dev/linogaliana/python-datascientist/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/static/v1?logo=visualstudiocode&amp;label=&amp;message=Open%20in%20Visual%20Studio%20Code&amp;labelColor=2c2c32&amp;color=007acc&amp;logoColor=007acc.png" alt="githubdev"></a></p>
 
-L'ensemble du contenu de ce site s'appuie sur des données
-ouvertes, qu'il s'agisse de données françaises (principalement
-issues de la plateforme
-centralisatrice [`data.gouv`](https://www.data.gouv.fr) ou du site
-_web_ de l'[Insee](https://www.insee.fr)) ou de données
-américaines.
+
 
 
 <h2>
