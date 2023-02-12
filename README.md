@@ -1,4 +1,4 @@
-# Python pour data-scientists et économistes :snake:
+# Python pour la data science <img height="28" width="28" src="https://cdn.simpleicons.org/python/00ccff99" />
 [![build-doc Actions Status](https://github.com/linogaliana/python-datascientist/actions/workflows/prod.yml/badge.svg)](https://github.com/linogaliana/python-datascientist/actions)
 [![Onyxia](https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&color=yellow?logo=Python)](https://datalab.sspcloud.fr/launcher/ide/jupyter-python?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascientist%C2%BB)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/linogaliana/python-datascientist/blob/pandas_intro/static/notebooks/numpy.ipynb)
@@ -13,20 +13,20 @@
 
 
 
-Ce dépôt `Github`
+Ce dépôt `Github` <img height="18" width="18" src="https://cdn.simpleicons.org/github/00ccff99" />
 stocke les fichiers sources ayant permis de construire le site
 <https://pythonds.linogaliana.fr/>. 
 
-Il s'agit de l'ensemble du cours *Python pour les data-scientists* :snake:
+Il s'agit de l'ensemble du cours *Python pour la data science* <img height="18" width="18" src="https://cdn.simpleicons.org/python/00ccff99" />
 que je donne en deuxième année (Master 1) de l'ENSAE.
 
 ## Syllabus
 
-Le syllabus est disponible [là](https://www.ensae.fr/courses/python-pour-le-data-scientist-pour-leconomiste/).
+Le syllabus est disponible [sur le site de l'ENSAE](https://www.ensae.fr/courses/1425-python-pour-le-data-scientist).
 
 Globalement, il propose un contenu très complet pouvant autant 
 satisfaire des débutants en 
-_data-science_ que quelqu'un à la recherche de contenu plus avancé :
+_data science_ que quelqu'un à la recherche de contenu plus avancé :
 
 1. Manipulation de données avec `Python`: manipulation de données standards (`pandas`), données géographiques (`geopandas`), récupération de données (webscraping, API)...
 1. Visualisation de données avec `Python`: visualisations classiques (`matplotlib`, `seaborn`), cartographie, visualisations réactives (`plotly`, `folium`)
