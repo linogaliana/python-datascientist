@@ -43,6 +43,7 @@ américaines.
 
 Un bon complément du contenu du site web est le cours que nous donnons avec Romain Avouac ([@avouacr](https://github.com/avouacr)) en dernière année de l'ENSAE plus tourné autour de la mise en production de projets _data-science_: https://ensae-reproductibilite.netlify.app/
 
+
 <details>
 <summary>
 <h2>
