@@ -32,10 +32,11 @@ def clean_write_file(fl):
     print(f"File: {fl}")
     add_text = '\n\n<script src="https://d3js.org/d3.v7.min.js"></script>\n<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>'
     yaml, text = content.split('---\n', 2)[1:]
+    incipit = "Ce contenu accompagne le cours [Python pour la data science](https://pythonds.linogaliana.fr/) de l'ENSAE. \n"
     if re.search("plotly: true", yaml) is not None:
         print(f"Tweaking {fl} using YAML header")
-        content = "---\n"+ yaml + "---\n" \
-            + add_text+"\n"+text
+        content = "---\n" + yaml + "---\n" \
+            + incipit + "\n" + add_text + "\n" + text
     else:
         print(f"File {fl}: nothing to do")
     if re.search(
