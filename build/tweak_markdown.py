@@ -36,7 +36,7 @@ def clean_write_file(fl):
     if re.search("plotly: true", yaml) is not None:
         print(f"Tweaking {fl} using YAML header")
         content = "---\n" + yaml + "---\n" \
-            + incipit + "\n" + add_text + "\n" + text
+            + "\n" + incipit + add_text + "\n" + text
     else:
         print(f"File {fl}: nothing to do")
     if re.search(
