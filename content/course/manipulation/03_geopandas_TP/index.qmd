@@ -274,8 +274,13 @@ Cette [page](https://geopandas.org/mapping.html#maps-with-layers) peut vous aide
 
 ```{python}
 # 1) Importer les données velib
+from cartiflette.utils import download_pb
 url = "https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
-stations = gpd.read_file(url)
+
+# sometimes, geopandas files to import directly from
+# url so proceeding in two times
+download_pb(url, "velib.geojson")
+stations = gpd.read_file("velib.geojson")
 stations.head()
 ```
 
@@ -299,7 +304,10 @@ base.set_title("Les 50 principales stations de Vélib")
 ```{python}
 # 4) Réseaux de transport en communs
 url = "https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
-transports = gpd.read_file(url)
+# sometimes, geopandas files to import directly from
+# url so proceeding in two times
+download_pb(url, "transports.geojson")
+transports = gpd.read_file("transports.geojson")
 transports.head()
 print(transports['mode'].unique())
 ```
@@ -559,7 +567,11 @@ publiques présente l'aspect suivant:
 
 ```{python}
 # 1. Charger les localisations des toilettes
-toilettes_publiques = gpd.read_file("https://data.ratp.fr/explore/dataset/sanitaires-reseau-ratp/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
+
+from cartiflette.utils import download_pb
+url = "https://data.ratp.fr/explore/dataset/sanitaires-reseau-ratp/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
+download_pb(url, "toilettes.geojson")
+toilettes_publiques = gpd.read_file("toilettes.geojson")
 toilettes_publiques.head(2)
 ```
 
@@ -690,7 +702,13 @@ la méthode `rename` et faire attention aux types des variables
 
 ```{python}
 #1) Importer arrondissements
-arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
+
+# sometimes, geopandas files to import directly from
+# url so proceeding in two times
+url = "https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
+download_pb(url, "arrondissements.geojson")
+
+arrondissements = gpd.read_file("arrondissements.geojson")
 arrondissements = arrondissements.to_crs(2154)
 ```
 
@@ -712,11 +730,19 @@ print(communes_borders.crs == arrondissements.crs)
 ```{python}
 #4) Retirer Paris et ajouter les arrondissements
 ## On fait en sorte que les colonnes de arrondissements soient les mêmes que celles de communes borders
+
 arrondissements = arrondissements.rename(columns = {"c_arinsee": "INSEE_DEP"})
 arrondissements['INSEE_DEP'] = "75"
-# On sélectionne enlève la ligne du contour de Paris initiale, et on ajoute à la place les lignes d'arrondissements
-data_paris = communes_borders[
-  communes_borders["INSEE_DEP"] != "75"].to_crs(2154).append(arrondissements.to_crs(2154))
+
+arrondissements = arrondissements.rename(columns = {"c_arinsee": "INSEE_DEP"})
+arrondissements['INSEE_DEP'] = "75"
+# On enlève la ligne du contour de Paris initiale, et on ajoute à la place les lignes d'arrondissements
+data_paris = pd.concat(
+    [
+        communes_borders[communes_borders["INSEE_DEP"] != "75"].to_crs(2154),
+        arrondissements.to_crs(2154)
+    ], ignore_index=True)
+
 data_paris.tail(2)
 ```
 
@@ -749,7 +775,11 @@ dans Paris intra-muros
 
 ```{python}
 url = "https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
-transports = gpd.read_file(url)
+# sometimes, geopandas files to import directly from
+# url so proceeding in two times
+download_pb(url, "transports.geojson")
+
+transports = gpd.read_file("transports.geojson")
 ```
 
 ```{python}
