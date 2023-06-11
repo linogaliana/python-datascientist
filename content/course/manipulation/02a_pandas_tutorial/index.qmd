@@ -562,12 +562,12 @@ df.count()
 ```
 
 ```{python}
-df.mean()
+df.mean(numeric_only = True)
 ```
 
 
 ```{python}
-df.sum()
+df.sum(numeric_only = True)
 ```
 
 ```{python}
@@ -575,8 +575,29 @@ df.nunique()
 ```
 
 ```{python}
-df.quantile(q = [0.1,0.25,0.5,0.75,0.9])
+df.quantile(q = [0.1,0.25,0.5,0.75,0.9], numeric_only = True)
 ```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-danger" role="alert">
+<i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+```
+
+La version 2.0 de `Pandas` a introduit un changement
+de comportement dans les méthodes d'agrégation. 
+
+Il est dorénavant nécessaire de préciser quand on désire
+effectuer des opérations si on désire ou non le faire
+exclusivement sur les colonnes numériques. C'est pour cette 
+raison qu'on exlicite ici l'argument `numeric_only = True`. 
+Ce comportement
+était par le passé implicite. 
+
+```{=html}
+</div>
+```
+:::
 
 
 Il faut toujours regarder les options de ces fonctions en termes de valeurs manquantes, car
@@ -964,7 +985,7 @@ La syntaxe est quasiment transparente. On peut bien-sûr effectuer des opératio
 par groupe sur plusieurs colonnes. Par exemple,
 
 ```{python}
-df.groupby('dep').mean()
+df.groupby('dep').mean(numeric_only = True)
 ```
 
 A noter que la variable de groupe, ici `dep`, devient, par défaut, l'index
@@ -987,8 +1008,12 @@ Il est possible d'appliquer plus d'une opération à la fois grâce à la métho
 de chaque département, on peut faire:
 
 ```{python}
-df.groupby('dep').agg(['min',"median","max"])
+numeric_columns = df.select_dtypes(['number']).columns
+df.loc[:, numeric_columns.tolist() + ["dep"] ].groupby('dep').agg(['min',"median","max"], numeric_only = True)
 ```
+
+La première ligne est présente pour nous faciliter la récupération des noms de colonnes des variables
+numériques
 
 ## Appliquer des fonctions
 
@@ -1013,7 +1038,13 @@ en milliers de tonnes. Dans ce cas, le premier réflexe est d'utiliser
 la `lambda` function suivante:
 
 ```{python}
-df.groupby('dep').agg(['min',"median","max"]).apply(lambda s: s/1000)
+numeric_columns = df.select_dtypes(['number']).columns
+(df
+    .loc[:, numeric_columns.tolist() + ["dep"] ]
+    .groupby('dep')
+    .agg(['min',"median","max"])
+    .apply(lambda s: s/1000)
+)
 ```
 
 En effet, cela effectue le résultat désiré. Cependant, il y a mieux: utiliser
@@ -1022,8 +1053,9 @@ la méthode `div`:
 ```{python}
 #| eval: false
 import timeit
-%timeit df.groupby('dep').agg(['min',"median","max"]).div(1000)
-%timeit df.groupby('dep').agg(['min',"median","max"]).apply(lambda s: s/1000)
+df_numeric = df.loc[:, numeric_columns.tolist() + ["dep"] ]
+%timeit df_numeric.groupby('dep').agg(['min',"median","max"]).div(1000)
+%timeit df_numeric.groupby('dep').agg(['min',"median","max"]).apply(lambda s: s/1000)
 ```
 
 La méthode `div` est en moyenne plus rapide et a un temps d'exécution
@@ -1034,7 +1066,7 @@ des performances équivalentes:
 
 ```{python}
 #| eval: false
-%timeit df.groupby('dep').agg(['min',"median","max"])/1000
+%timeit df_numeric.groupby('dep').agg(['min',"median","max"])/1000
 ```
 
 `apply` est plus rapide qu'une boucle (en interne, `apply` utilise `Cython`
