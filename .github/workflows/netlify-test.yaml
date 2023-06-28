@@ -1,0 +1,220 @@
+name: Deploy website to Netlify and build notebooks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - dev
+
+jobs:
+  blogdown:
+    name: Render-Blog
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Configure safe.directory  # Workaround for actions/checkout#760
+        run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+      - shell: bash
+        run: |
+          conda info
+          conda list
+      - name: Build to md
+        run: |
+          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff
+          python build/tweak_render.py
+          quarto render --to html
+          python build/wc_website.py
+          python build/tweak_markdown.py
+      - name: Set up quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+      - name: Publish to GitHub Pages (and render)
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Content
+          path: content/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Website
+          path: public/
+  enonces:
+    name: Render-Blog
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Configure safe.directory  # Workaround for actions/checkout#760
+        run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+      - shell: bash
+        run: |
+          conda info
+          conda list
+      - name: Convert in ipynb with Quarto
+        run: |
+         git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff
+         python build/tweak_render.py
+         python build/pimp_notebook.py
+         quarto render content --to ipynb
+         mkdir -p notebooks
+         python build/move_files.py notebooks
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Source enonce
+          path: content/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Enonces
+          path: notebooks/
+      - name: Commit new notebooks
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+         git config user.name 'github-actions[bot]'
+         git config user.email 'github-actions[bot]@users.noreply.github.com'
+         # git config user.email github-actions@github.com
+         #git checkout ${BRANCHE_REF}
+         git status
+         find notebooks -type f -name "*.ipynb" | xargs git add
+         git commit -m "Automated changes";
+         git pull
+         git push
+         git push
+  corrections:
+    name: Render-Blog
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Configure safe.directory  # Workaround for actions/checkout#760
+        run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+      - shell: bash
+        run: |
+          conda info
+          conda list
+      - name: Convert in ipynb with Quarto
+        run: |
+         git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff
+         python build/tweak_render.py
+         python build/tweak_options_quarto.py
+         python build/pimp_notebook.py
+         quarto render content --to ipynb --execute
+         mkdir -p corrections
+         python build/move_files.py corrections
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Corrections
+          path: corrections/
+      - name: Commit new notebooks
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+         git config user.name 'github-actions[bot]'
+         git config user.email 'github-actions[bot]@users.noreply.github.com'
+         # git config user.email github-actions@github.com
+         #git checkout ${BRANCHE_REF}
+         git status
+         find corrections -type f -name "*.ipynb" | xargs git add
+         git commit -m "Automated changes";
+         git pull
+         git push
+
+
+
+
+#  corrections:
+#    runs-on: ubuntu-latest
+#    container: linogaliana/python-datascientist:latest
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          submodules: true
+#          fetch-depth: 0
+#          ref: ${{ github.event.pull_request.head.ref }}
+#          repository: ${{github.event.pull_request.head.repo.full_name}}
+#      - name: Install rmarkdown
+#        env:
+#          GITHUB_PAT: ${{ secrets.PAT_GITHUB }}
+#        run: |
+#          Rscript -e 'remotes::install_github("yihui/xfun")'
+#          Rscript -e 'remotes::install_github("yihui/knitr")'
+#          Rscript -e 'install.packages(c("rmarkdown"))'
+#      - name: Install Python
+#        run: |
+#          Rscript -e "install.packages(c('remotes', 'reticulate'))"
+#          Rscript -e "install.packages(c('here'))"
+#      - shell: bash -l {0}
+#        run: |
+#          conda info
+#          conda list
+#      - name: Modif Rmd echo status
+#        run: |
+#         python build/modifmd.py
+#      - name: Build to md
+#        run: |
+#          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff.txt
+#          cat diff.txt
+#          Rscript -e 'source("./build/build_light.R")'
+#      - name: Clean files with Python function
+#        run: |
+#         rm -rf "./temp"
+#         mkdir -p temp
+#         mkdir -p corrections
+#         python build/cleanmd.py
+#      - name: Convert in ipynb with Jupytext
+#        run: |
+#         pip install jupytext
+#         cd ./temp
+#         for i in $(find . -type f \( -iname "*.Rmd" \)); do \
+#            j="${i%.Rmd}.md" ;
+#            echo "$j" ;
+#            if [ -e $j ]
+#            then
+#              echo "Converting $j"; \
+#              #jupytext --to py --execute "$i"
+#              jupytext --to ipynb "$j" ;
+#              k="${j%.md}.ipynb" ;
+#            fi            
+#         done
+#         mkdir -p ../corrections
+#         cp -R . ../corrections
+#         cd ..
+#      - uses: actions/upload-artifact@v2
+#        with:
+#          name: Corrections
+#          path: corrections/
+#      - name: Commit new notebooks
+#        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+#        env:
+#          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
+#        run: |
+#         git config user.name 'github-actions[bot]'
+#         git config user.email 'github-actions[bot]@users.noreply.github.com'
+#         # git config user.email github-actions@github.com
+#         #git checkout ${BRANCHE_REF}
+#         git status
+#         git add corrections/**/*.ipynb;
+#         git commit -m "Automated changes";
+#         git pull
+#         git push
+
