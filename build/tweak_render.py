@@ -1,10 +1,15 @@
+import os
+import glob
 import yaml
 
 with open("_quarto.yml", "r") as stream:
     config = yaml.load(stream, Loader=yaml.FullLoader)
 
-with open('diff') as f:
-    lines = f.read().splitlines() 
+if os.path.exists('diff'):
+    with open('diff') as f:
+        lines = f.read().splitlines()
+else:
+    lines = glob.glob('content/**/*.qmd', recursive=True)
 
 lines = [l for l in lines if l.endswith('.qmd') ]
 lines += [f"content/course/{dir}/index.qmd" \
