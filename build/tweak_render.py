@@ -22,7 +22,7 @@ lines += [f"index.qmd"]
 print(lines)
 config['project']['render'] = lines
 
-with open('_quarto.yml', 'w') as outfile:
+with open('_quarto_temp.yml', 'w') as outfile:
     yaml.dump(config, outfile, default_flow_style=False)
 
 print("Done")
