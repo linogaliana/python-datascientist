@@ -6,7 +6,7 @@ import os
 direction = sys.argv[1]
 print(direction)
 
-list_files = glob.glob(f"./content/**/*.ipynb", recursive=True)
+list_files = glob.glob(f"_site/content/**/*.ipynb", recursive=True)
 list_files = [fl for fl in list_files if not fl.endswith("_index.ipynb")]
 list_files = [fl for fl in list_files if fl.endswith("index.ipynb")]
 
@@ -16,7 +16,9 @@ def hack_name(fl, direction):
     basename = fl.rsplit("/", maxsplit=1)[0]
     newname = f"{basename}.ipynb"
     newname = newname.replace("content", direction)
+    newname = newname.replace("_site", ".")
     return newname
+
 
 corresp = {f: hack_name(f, direction) for f in list_files}
 print(corresp)

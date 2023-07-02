@@ -6,16 +6,16 @@ on:
       - main
       - master
       - dev
+      - quarto
 
 jobs:
-  blogdown:
+  pages:
     name: Render-Blog
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
     steps:
       - uses: actions/checkout@v2
         with:
-          submodules: true
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -25,35 +25,18 @@ jobs:
         run: |
           conda info
           conda list
-      - name: Build to md
+      - name: Render website
         run: |
           git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff
           python build/tweak_render.py
-          quarto render --to hugo
-          mv content/course/index.md content/course/_index.md
-          mv content/course/manipulation/index.md content/course/manipulation/_index.md
-          mv content/course/visualisation/index.md content/course/visualisation/_index.md
-          mv content/course/modelisation/index.md content/course/modelisation/_index.md
+          quarto render --to html
           python build/wc_website.py
           python build/tweak_markdown.py
-          hugo
-      - name: Install npm
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: actions/setup-node@v2          
-        with:
-          node-version: '14'        
-      - name: Deploy to Netlify
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        # NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID added in the repo's secrets
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
+      - name: Publish to Pages
         run: |
-          npm init -y
-          npm install --unsafe-perm=true netlify-cli -g
-          netlify init
-          netlify deploy --alias=${BRANCHE_REF} --dir="public" --message "Preview deploy from ${BRANCHE_REF}"
+          git config --global user.email quarto-github-actions-publish@example.com
+          git config --global user.name "Quarto GHA Workflow Runner"
+          quarto publish gh-pages . --no-render --no-browser
       - uses: actions/upload-artifact@v2
         with:
           name: Content
@@ -82,6 +65,7 @@ jobs:
       - name: Convert in ipynb with Quarto
         run: |
          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff
+         python build/tweak_project.py
          python build/tweak_render.py
          python build/pimp_notebook.py
          quarto render content --to ipynb
@@ -130,6 +114,7 @@ jobs:
       - name: Convert in ipynb with Quarto
         run: |
          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff
+         python build/tweak_project.py
          python build/tweak_render.py
          python build/tweak_options_quarto.py
          python build/pimp_notebook.py
