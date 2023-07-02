@@ -19,7 +19,7 @@ lines += [f"content/course/index.qmd"]
 lines += [f"!content/slides/intro/index.qmd"]
 lines += [f"index.qmd"]
 
-
+print(lines)
 config['project']['render'] = lines
 
 with open('_quarto.yml', 'w') as outfile:
