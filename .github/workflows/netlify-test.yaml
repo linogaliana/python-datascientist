@@ -32,11 +32,23 @@ jobs:
           quarto render --to html
           python build/wc_website.py
           python build/tweak_markdown.py
-      - name: Publish to Pages
+      - name: Install npm
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: actions/setup-node@v2          
+        with:
+          node-version: '14'        
+      - name: Deploy to Netlify
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        # NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID added in the repo's secrets
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          git config --global user.email quarto-github-actions-publish@example.com
-          git config --global user.name "Quarto GHA Workflow Runner"
-          quarto publish gh-pages . --no-render --no-browser
+          npm init -y
+          npm install --unsafe-perm=true netlify-cli -g
+          netlify init
+          netlify deploy --alias=${BRANCHE_REF} --dir="_book" --message "Preview deploy from ${BRANCHE_REF}"
       - uses: actions/upload-artifact@v2
         with:
           name: Content
