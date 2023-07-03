@@ -18,12 +18,15 @@ lines += [f"content/course/{dir}/index.qmd" \
     for dir in ["manipulation", "visualisation", "modelisation", "NLP", "modern-ds"]
     ]
 lines += [f"content/course/index.qmd"]
+lines += [f"index.qmd"]
+
+config.setdefault('book', {})['chapters'] = lines
+
 lines += [f"!content/slides/intro/index.qmd"]
-lines = [f"index.qmd"] + lines
+
 
 print(lines)
 config['project']['render'] = lines
-config['book']['chapters'] = lines
 
 with open(file_path, 'w') as outfile:
     yaml.dump(config, outfile, default_flow_style=False)
