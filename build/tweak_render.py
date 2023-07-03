@@ -19,11 +19,11 @@ lines += [f"content/course/{dir}/index.qmd" \
     ]
 lines += [f"content/course/index.qmd"]
 lines += [f"!content/slides/intro/index.qmd"]
-lines += [f"index.qmd"]
+lines = [f"index.qmd"] + lines
 
 print(lines)
 config['project']['render'] = lines
-
+config['book']['chapters'] = lines
 
 with open(file_path, 'w') as outfile:
     yaml.dump(config, outfile, default_flow_style=False)
