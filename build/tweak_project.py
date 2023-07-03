@@ -14,7 +14,7 @@ replacements = {
     "BOOK": "WEBSITE"
 }
 
-data['book']['chapters'] = []
+data['book']['chapters'] = None
 
 # Function to recursively replace values in a dictionary
 def replace_values(data):
