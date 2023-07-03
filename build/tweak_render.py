@@ -22,11 +22,11 @@ lines += [f"index.qmd"]
 
 config.setdefault('book', {})['chapters'] = lines
 
-lines += [f"!content/slides/intro/index.qmd"]
+lines2 = lines + ["!content/slides/intro/index.qmd"]
 
 
-print(lines)
-config['project']['render'] = lines
+print(lines2)
+config['project']['render'] = lines2
 
 with open(file_path, 'w') as outfile:
     yaml.dump(config, outfile, default_flow_style=False)
