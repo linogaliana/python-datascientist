@@ -24,6 +24,7 @@ lines += [f"index.qmd"]
 print(lines)
 config['project']['render'] = lines
 
+
 with open(file_path, 'w') as outfile:
     yaml.dump(config, outfile, default_flow_style=False)
 

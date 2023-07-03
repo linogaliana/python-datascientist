@@ -14,6 +14,8 @@ replacements = {
     "BOOK": "WEBSITE"
 }
 
+data['book']['chapters'] = []
+
 # Function to recursively replace values in a dictionary
 def replace_values(data):
     if isinstance(data, dict):
@@ -32,6 +34,7 @@ def replace_values(data):
 
 # Replace the values in the loaded data
 replace_values(data)
+
 
 # Write the modified data back to the YAML file
 with open(file_path, 'w') as file:
