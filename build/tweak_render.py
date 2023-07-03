@@ -2,7 +2,9 @@ import os
 import glob
 import yaml
 
-with open("_quarto.yml", "r") as stream:
+file_path = "_quarto.yml"
+
+with open(file_path, "r") as stream:
     config = yaml.load(stream, Loader=yaml.FullLoader)
 
 if os.path.exists('diff'):
@@ -22,7 +24,7 @@ lines += [f"index.qmd"]
 print(lines)
 config['project']['render'] = lines
 
-with open('_quarto_temp.yml', 'w') as outfile:
+with open(file_path, 'w') as outfile:
     yaml.dump(config, outfile, default_flow_style=False)
 
 print("Done")
