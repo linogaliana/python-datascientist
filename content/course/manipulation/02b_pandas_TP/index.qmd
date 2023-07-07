@@ -14,14 +14,13 @@ categories:
   - Exercice
 slug: pandasTP
 type: book
-summary: |
+description: |
   Après avoir présenté la logique de `pandas` dans le chapitre précédent, 
   ce chapitre vise à illustrer les fonctionalités du _package_ 
   à partir de données d'émissions de gaz à effet de serre
   de l'[`Ademe`](https://data.ademe.fr/). 
 echo: true
 output: false
-eval: false
 image: featured.png
 ---
 
@@ -376,7 +375,7 @@ df_city['dep'] = df_city.index.str[:2]
 ```{python}
 #| echo: false
 # Question 3
-df_log = df.groupby('dep').sum().apply(np.log)
+df_log = df.groupby('dep').sum(numeric_only = True).apply(np.log)
 print(df_log.head())
 df_log.sample(5).plot(kind = "bar")
 ```
@@ -385,8 +384,8 @@ df_log.sample(5).plot(kind = "bar")
 #| echo: false
 # Question 4
 ## Emissions totales par département (df)
-df_emissions = df.reset_index().set_index(['INSEE commune','dep']).sum(axis = 1).groupby('dep').sum()
-#df.reset_index().groupby('dep').sum().sum(axis = 1).head() #version simplifiee ?
+df_emissions = df.reset_index().set_index(['INSEE commune','dep']).sum(axis = 1, numeric_only = True).groupby('dep').sum(numeric_only = True)
+#df.reset_index().groupby('dep').sum(numeric_only = True).sum(axis = 1, numeric_only = True).head() #version simplifiee ?
 gros_emetteurs = df_emissions.sort_values(ascending = False).head(10)
 petits_emetteurs = df_emissions.sort_values().head(5)
 
@@ -435,8 +434,8 @@ df_copy2 = df_copy2.reset_index()
 #| echo: false
 #| eval: false
 # Question 3
-%timeit df_copy.drop('Commune', axis = 1).groupby('dep').sum()
-%timeit df_copy2.drop('Commune', axis = 1).groupby('dep').sum()
+%timeit df_copy.drop('Commune', axis = 1).groupby('dep').sum(numeric_only = True)
+%timeit df_copy2.drop('Commune', axis = 1).groupby('dep').sum(numeric_only = True)
 # Le temps d'exécution est plus lent sur la base sans index par département.
 ```
 
@@ -481,6 +480,7 @@ En règle générale, avec `Python` comme avec `R`, les formats *long* sont souv
 
 ```{python}
 #| echo: false
+#| label: question1
 # Question 1
 
 df_wide = df.copy()
@@ -489,6 +489,7 @@ df_wide[['Commune','dep', "Agriculture", "Tertiaire"]].head()
 
 ```{python}
 #| echo: false
+#| label: question2
 # Question 2
 
 df_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
@@ -497,22 +498,24 @@ df_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
 
 ```{python}
 #| echo: false
+#| label: question3
 # Question 3
 
 (df_wide.reset_index()
  .melt(id_vars = ['INSEE commune','Commune','dep'],
                           var_name = "secteur", value_name = "emissions")
- .groupby('secteur').sum().plot(kind = "barh")
+ .groupby('secteur').sum(numeric_only = True).plot(kind = "barh")
 )
 ```
 
 ```{python}
 #| echo: false
+#| label: question4
 # Question 4
 
 (df_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
                           var_name = "secteur", value_name = "emissions")
- .groupby(['secteur','dep']).sum().reset_index().sort_values(['dep','emissions'], ascending = False).groupby('dep').head(1)
+ .groupby(['secteur','dep']).sum(numeric_only=True).reset_index().sort_values(['dep','emissions'], ascending = False).groupby('dep').head(1)
 )
 ```
 
@@ -552,7 +555,7 @@ df_wide = df.copy()
 
 df_long_agg = (df_wide.reset_index()
  .melt(id_vars = ['INSEE commune','Commune','dep'],
-                          var_name = "secteur", value_name = "emissions").groupby(["dep", "secteur"]).sum()
+                          var_name = "secteur", value_name = "emissions").groupby(["dep", "secteur"]).sum(numeric_only = True)
 )
 
 df_long_agg.head()
@@ -615,7 +618,7 @@ On utilise de manière indifférente les termes *merge* ou *join*. Le deuxième 
 #| echo: false
 # Question 1
 
-df['emissions'] = df.sum(axis = 1)
+df['emissions'] = df.sum(axis = 1, numeric_only = True)
 ```
 
 ```{python}
@@ -641,13 +644,23 @@ np.log(df_merged['empreinte']).plot.hist()
 df_merged['empreinte'].describe()
 ```
 
+
 ```{python}
 #| echo: false
 # Question 4
 
-df_merged.corr()['empreinte'].nlargest(10)
+df_merged.corr(numeric_only=True)['empreinte'].nlargest(10)
 # Les variables en lien avec le transport. 
 ```
+
+```{python}
+#| output: false
+#| echo: false
+np.log(df_merged['empreinte']).plot.hist()
+plt.savefig("featured.png")
+```
+
+
 
 # Exercices bonus
 
