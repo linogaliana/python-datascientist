@@ -6,7 +6,6 @@ on:
       - main
       - master
       - dev
-      - quarto
 
 jobs:
   pages:
@@ -59,20 +58,21 @@ jobs:
           name: Website
           path: public/
   enonces:
-    name: Render-Blog
+    name: Render notebooks
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
-          submodules: true
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
       - name: Configure safe.directory  # Workaround for actions/checkout#760
-        run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+        run: |
+          git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+          git config --global --add safe.directory /__w/python-datascientist/python-datascientist-notebooks
       - shell: bash
         run: |
+          ls
           conda info
           conda list
       - name: Convert in ipynb with Quarto
@@ -82,8 +82,12 @@ jobs:
          python build/tweak_render.py
          python build/pimp_notebook.py
          quarto render content --to ipynb
-         mkdir -p notebooks
-         python build/move_files.py notebooks
+         mkdir -p temp_notebooks
+         mkdir -p temp_notebooks/notebooks
+         python build/move_files.py temp_notebooks/notebooks
+         quarto render content --to ipynb --execute
+         mkdir -p temp_notebooks/corrections
+         python build/move_files.py temp_notebooks/corrections
       - uses: actions/upload-artifact@v2
         with:
           name: Source enonce
@@ -91,62 +95,24 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: Enonces
-          path: notebooks/
-      - name: Commit new notebooks
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        env:
-          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-         git config user.name 'github-actions[bot]'
-         git config user.email 'github-actions[bot]@users.noreply.github.com'
-         git status
-         find notebooks -type f -name "*.ipynb" | xargs git add
-         git commit -m "Automated changes";
-         git pull
-         git push
-  corrections:
-    name: Render-Blog
-    runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - name: Configure safe.directory  # Workaround for actions/checkout#760
-        run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
-      - shell: bash
-        run: |
-          conda info
-          conda list
-      - name: Convert in ipynb with Quarto
-        run: |
-         git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff
-         python build/tweak_project.py
-         python build/tweak_render.py
-         python build/tweak_options_quarto.py
-         python build/pimp_notebook.py
-         quarto render content --to ipynb --execute
-         mkdir -p corrections
-         python build/move_files.py corrections
+          path: temp_notebooks/notebooks/
       - uses: actions/upload-artifact@v2
         with:
-          name: Corrections
-          path: corrections/
-      - name: Commit new notebooks
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          name: Enonces
+          path: temp_notebooks/corrections/
+      - name: Pushes to another repository
+        uses: linogaliana/github-action-push-to-another-repository@main
         env:
-          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-         git config user.name 'github-actions[bot]'
-         git config user.email 'github-actions[bot]@users.noreply.github.com'
-         git status
-         find corrections -type f -name "*.ipynb" | xargs git add
-         git commit -m "Automated changes";
-         git pull
-         git push
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          source-directory: 'temp_notebooks/'
+          destination-repository-username: 'linogaliana'
+          destination-repository-name: 'python-datascientist-notebooks'
+          user-email: lino.galiana@insee.fr
+          destination-github-username: linogaliana
+          target-branch: dev
+          create-target-branch-if-needed: true
+          reset-repo: true
 
 
 
