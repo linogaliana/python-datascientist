@@ -82,8 +82,12 @@ jobs:
          python build/tweak_render.py
          python build/pimp_notebook.py
          quarto render content --to ipynb
-         mkdir -p notebooks
-         python build/move_files.py notebooks
+         mkdir -p temp_notebooks
+         mkdir -p temp_notebooks/notebooks
+         python build/move_files.py temp_notebooks/notebooks
+         quarto render content --to ipynb --execute
+         mkdir -p temp_notebooks/corrections
+         python build/move_files.py temp_notebooks/corrections
       - uses: actions/upload-artifact@v2
         with:
           name: Source enonce
@@ -91,13 +95,13 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: Enonces
-          path: notebooks/
+          path: temp_notebooks/notebooks/
       - name: Pushes to another repository
         uses: linogaliana/github-action-push-to-another-repository@main
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
         with:
-          source-directory: 'notebooks/'
+          source-directory: 'temp_notebooks/'
           destination-repository-username: 'linogaliana'
           destination-repository-name: 'python-datascientist-notebooks'
           user-email: lino.galiana@insee.fr
@@ -105,49 +109,6 @@ jobs:
           #target-branch: test
           create-target-branch-if-needed: true
           reset-repo: true
-  corrections:
-    name: Render-Blog
-    runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - name: Configure safe.directory  # Workaround for actions/checkout#760
-        run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
-      - shell: bash
-        run: |
-          conda info
-          conda list
-      - name: Convert in ipynb with Quarto
-        run: |
-         git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff
-         python build/tweak_project.py
-         python build/tweak_render.py
-         python build/tweak_options_quarto.py
-         python build/pimp_notebook.py
-         quarto render content --to ipynb --execute
-         mkdir -p corrections
-         python build/move_files.py corrections
-      - uses: actions/upload-artifact@v2
-        with:
-          name: Corrections
-          path: corrections/
-      - name: Commit new notebooks
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        env:
-          BRANCHE_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-         git config user.name 'github-actions[bot]'
-         git config user.email 'github-actions[bot]@users.noreply.github.com'
-         git status
-         find corrections -type f -name "*.ipynb" | xargs git add
-         git commit -m "Automated changes";
-         git pull
-         git push
 
 
 
