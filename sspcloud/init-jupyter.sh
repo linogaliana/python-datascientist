@@ -15,7 +15,7 @@ else
 fi
 
 # Clone course repository
-REPO_URL="https://github.com/linogaliana/python-datascientist.git"
+REPO_URL="https://github.com/linogaliana/python-datascientist-notebooks.git"
 git clone --depth 1 $REPO_URL $CLONE_DIR
 
 # Put relevant notebook in formation dir
