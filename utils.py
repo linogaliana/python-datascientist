@@ -24,8 +24,9 @@ def reminder_badges(
         notebook = re.sub(r"content", "notebooks", notebook)
 
     github_repo_notebooks_simplified = "github/linogaliana/python-datascientist-notebooks"
+    github_alias = github_repo_notebooks_simplified.replace("github","github.com")
     github_repo_notebooks = \
-        f"https://{github_repo_notebooks_simplified.replace("github","github.com")}"
+        f"https://{github_alias}"
 
     if notebook == "":
         github_link = github_repo_notebooks
