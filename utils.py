@@ -112,7 +112,7 @@ def reminder_badges(
             "(https://colab.research.google.com/assets/colab-badge.svg)]"\
             f"(http://colab.research.google.com/{github_repo_notebooks_simplified}/blob/main{notebook_rel_path})"
     else:
-        colab_link = f'<a href="https://colab.research.google.com/github/linogaliana/python-datascientist/blob/master{notebook_rel_path}" target="_blank" rel="noopener">'\
+        colab_link = f'<a href="https://colab.research.google.com/github/linogaliana/python-datascientist-notebooks/blob/main{notebook_rel_path}" target="_blank" rel="noopener">'\
             '<img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>'
 
     if split == 6:
