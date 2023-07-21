@@ -81,7 +81,7 @@ def reminder_badges(
     onyxia_init_args = "%20".join(onyxia_init_args)
     onyxia_link_launcher = f"https://datalab.sspcloud.fr/launcher/ide/{service_name}"\
         "?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB"\
-        "&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist-notebooks%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB"\
+        "&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%main%2Fsspcloud%2Finit-jupyter.sh%C2%BB"\
         f"&init.personalInitArgs=%C2%AB{onyxia_init_args}%C2%BB&security.allowlist.enabled=false"
 
     if type == "md":
