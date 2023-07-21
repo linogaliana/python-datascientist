@@ -59,7 +59,7 @@ corpus = [w for w in corpus if not w in stop_words]
 corpus = " ".join(corpus)
 
 
-path = './content/home/word.png'
+path = './word.png'
 
 fig = plt.figure()
 
