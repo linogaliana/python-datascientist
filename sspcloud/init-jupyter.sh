@@ -26,4 +26,4 @@ rm -rf $CLONE_DIR ${WORK_DIR}/lost+found
 
 # Open the relevant notebook when starting Jupyter Lab
 jupyter server --generate-config
-echo "c.LabApp.default_url = '/lab/tree/work/${CHAPTER}.ipynb'" >> /home/onyxia/.jupyter/jupyter_server_config.py
+echo "c.LabApp.default_url = '/lab/tree/${CHAPTER}.ipynb'" >> /home/onyxia/.jupyter/jupyter_server_config.py
