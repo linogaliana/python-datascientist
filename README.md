@@ -25,7 +25,7 @@ que je donne en deuxième année (Master 1) de l'[ENSAE](https://www.ensae.fr/).
 ## Syllabus
 
 
-Le syllabus est disponible [sur le site de l'ENSAE](https://www.ensae.fr/courses/1425-python-pour-le-data-scientist).
+Le syllabus est disponible [sur le site de l'ENSAE](https://www.ensae.fr/courses/1425-python-pour-le-data-scientist) et sur le [site web du cours](https://pythonds.linogaliana.fr/).
 
 Globalement, il propose un contenu très complet pouvant autant 
 satisfaire des débutants en 
