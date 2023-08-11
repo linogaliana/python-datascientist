@@ -24,7 +24,8 @@ que je donne en deuxième année (Master 1) de l'[ENSAE](https://www.ensae.fr/).
 
 ## Syllabus
 
-Le syllabus est disponible [sur le site de l'ENSAE](https://www.ensae.fr/courses/1425-python-pour-le-data-scientist).
+
+Le syllabus est disponible [sur le site de l'ENSAE](https://www.ensae.fr/courses/1425-python-pour-le-data-scientist) et sur le [site web du cours](https://pythonds.linogaliana.fr/).
 
 Globalement, il propose un contenu très complet pouvant autant 
 satisfaire des débutants en 
@@ -43,7 +44,7 @@ centralisatrice [`data.gouv`](https://www.data.gouv.fr) ou du site
 _web_ de l'[Insee](https://www.insee.fr)) ou de données
 américaines.
 
-Un bon complément du contenu du site web est le cours que nous donnons avec Romain Avouac ([@avouacr](https://github.com/avouacr)) en dernière année de l'ENSAE plus tourné autour de la mise en production de projets _data-science_: https://ensae-reproductibilite.netlify.app/
+Un bon complément du contenu du site web est le cours que nous donnons avec Romain Avouac ([@avouacr](https://github.com/avouacr)) en dernière année de l'ENSAE plus tourné autour de la mise en production de projets _data-science_: [https://ensae-reproductibilite.github.io/website/](https://ensae-reproductibilite.github.io/website/)
 
 
 <details>

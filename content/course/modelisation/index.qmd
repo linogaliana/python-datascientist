@@ -2,83 +2,293 @@
 title: "Partie 3: modéliser"
 date: 2020-10-14T13:00:00Z
 draft: false
-weight: 35
 slug: "modelisation"
-type: book
-summary: |
+categories:
+  - Introduction
+  - Modélisation
+description: |
   La facilité à modéliser des processus très diverses a grandement 
   participé au succès de `Python`. La librairie `scikit` offre une
   grande variété de modèles et permet ainsi d'avoir un code
   fonctionnel en très peu de temps.
-icon: square-root-alt
-icon_pack: fas
 bibliography: ../../../reference.bib
+image: hal9000.png
 ---
 
+Les _data scientists_ sont souvent associés à la mise en oeuvre
+de modèles complexes d'intelligence artificielle. 
+Le succès médiatique de ce type d'outils, notamment `ChatGPT`, 
+n'y est pas pour rien. Cependant, la modélisation n'est souvent
+qu'une 
+phase du travail du _data scientist_, un peu comme la visualisation. 
+D'ailleurs, dans certaines organisations où la division des tâches 
+est plus poussée, les _data engineers_ sont au moins aussi
+impliqués dans la phase de modélisation que les _data scientists_. 
 
-## Principes
+C'est souvent un péché de jeunesse de penser qu'on peut résumer
+le travail du _data scientist_ exclusivement à la phase de modélisation.
+Cette dernière dépend très fortement de la qualité du travail de 
+nettoyage et structuration des données mis en oeuvre en amont. La
+mise en oeuvre de modèles complexes, qui s'accomodent de données
+peu structurées, est gourmande en ressource et coûteuse. Ce ne sont
+donc qu'un nombre limité d'acteurs qui peuvent entraîner, _ex nihilo_, 
+des grands modèles de langage[^1], capables de dépenser au moins 300 000 dollars
+dans l'entraînement d'un modèle, avant même toute phase d'inférence [@izsak2021train].
+Ces besoins computationnels pour entraîner de grands modèles de langage sont
+d'ailleurs assez gourmands en énergie, ce qui peut amener à
+des empreintes carbones non négligeables [@strubell2019energy; @arcep2019].  
 
-### Machine Learning ou Econométrie ?
+Heureusement, il est possible de mettre en oeuvre des modélisations plus
+légères (celles que nous présenterons dans les prochains chapitres)
+ou de réutiliser des modèles pré-entraînés pour les spécialiser
+sur un nouveau jeu de données (principe du [_fine tuning_](https://huggingface.co/docs/transformers/training)[^2]).
+En fait, pour être plus pertinent que des approches plus parcimonieuse,
+les techniques de _deep learning_, notamment
+les réseaux de neurone, nécessitent soit des volumes de données très
+importants (des millions voire dizaine de millions d'observations) soit
+des données à la structure complexe comme le langage naturel ou les images. 
+Dans de nombreux cas, des modèles plus simples comme les techniques d'apprentissage
+automatique (_machine learning_) suffisent largement. 
 
-Un modèle statistique est une construction mathématique qui formalise une loi
-ayant généré les données. La différence principale entre *machine learning* (ML) et économétrie
-est dans le degré de structure imposé par le modélisateur :
+[^1]: Nous reviendrons de manière épisodique 
+sur ce principe des grands modèles de langage
+qui sont devenus, en quelques années,
+centraux dans l'écosystème de la _data science_ mais sont également 
+amenés à devenir des outils grands publics, à la manière de `ChatGPT`. 
 
-- En ML,
-la structure imposée par le *data scientist* est minimale et ce sont plutôt
+[^2]: Historiquement, cette approche nécessitait de disposer de données labellisées donc d'être
+dans un cadre d'apprentissage supervisé. 
+
+    Cependant, avec l'utilisation de plus en plus 
+fréquente de données non structurées, sans _labels_, a émergé une approche intéressante
+qui ne nécessite plus forcément de labelliser des volumes importants de données en amont :
+le [_reinforcement learning with human feedback_](https://huggingface.co/blog/rlhf).
+  
+    [Cet article d'Andrew Ng](https://www.deeplearning.ai/the-batch/building-ai-systems-no-longer-requires-much-data/?ref=dl-staging-website.ghost.io) revient sur la manière dont cette approche
+change la donne dans l'entraînement ou le ré-entraînement de modèles.  
+
+## La modélisation, une approche au coeur de la statistique {.unnumbered}
+
+Un modèle statistique
+est une représentation simplifiée et structurée d'un phénomène réel,
+construite à partir d'observations regroupées dans un ensemble partiel de données. 
+
+Un modèle vise à capturer les relations et les schémas sous-jacents au sein de ces données, permettant ainsi de formuler des hypothèses, d'effectuer des prédictions et d'extrapoler des conclusions au-delà 
+de l'ensemble de données mesurées.
+Les modèles statistiques fournissent ainsi un cadre analytique pour explorer, comprendre et interpréter les informations contenues dans les données. 
+Dans le domaine de la recherche économique, ils peuvent servir à 
+associer certains paramètres structurants des modèles de comportement
+économique à des valeurs quantitatives. 
+Les modèles statistiques, comme les modèles économiques
+présentent néanmoins toujours une part d'irréalisme [@friedman1953methodology; @salmon2010probleme]
+et accepter de manière trop litérale les implications d'un modèle, même s'il
+a de bonnes performances prédictives, peut être dangereux et relever d'un biais
+scientiste. On sélectionne plutôt le moins mauvais modèle
+que le vrai processus générateur des données. 
+
+Représenter la réalité sous la forme d'un modèle est un principe à la
+base de la statistique comme discipline scientifique et ayant des
+applications dans de nombreux champs disciplinaires: économie,
+sociologie, géographique, biologie, physique, etc. 
+Selon les disciplines, le nom donné peut varier mais on retrouve
+régulièrement la même approche scientifique: le modélisateur
+construit des relations entre plusieurs variables théoriques
+ayant des contreparties empiriques afin d'expliquer tel ou tel
+processus. 
+
+Dans l'enseignement de l'ENSAE ce type d'approche empirique se retrouve
+principalement dans deux types d'approches: le *machine learning* et
+l'économétrie. La différence est certes
+sémantique - la régression linéaire peut être considérée comme une 
+technique de _machine learning_ ou d'économétrie - mais elle est
+également conceptuelle: 
+
+- Dans le domaine du _machine learning_,
+la structure imposée par le modélisateur est minimale et ce sont plutôt
 les algorithmes qui, sur des critères de performance statistique, vont
-déterminer une loi mathématique qui correspond aux données.
-
+amener à choisir une loi mathématique qui correspond au mieux aux données ;
 - En économétrie,
 les hypothèses de structure des lois sont plus fortes (même dans un cadre semi ou non-paramétrique) et sont plus souvent imposées
 par le modélisateur.
 
-L'adoption du _Machine Learning_ dans la littérature économique a été longue
+Dans cette partie du cours, nous allons principalement
+parler de _machine learning_ car il s'agit d'une perspective
+plus opérationnel que l'économétrie qui est plus directement associée
+à des concepts statistiques complexes comme la théorie asymptotique. 
+
+L'adoption du _machine learning_ dans la littérature économique a été longue
 car la structuration des données est souvent le
-pendant empirique d'hypothèses théoriques sur le comportement des acteurs ou des marchés [@athey2019machine]. 
+pendant empirique d'hypothèses théoriques sur le comportement des acteurs ou des marchés [@athey2019machine; @charpentier2018econometrics].
 Pour caricaturer, l’économétrie s’attacherait à comprendre la causalité de certaines variables sur une autre.
 Cela implique que ce qui intéresse l'économètre
 est principalement de l'estimation des paramètres (et l'incertitude
 sur l'estimation de ceux-ci) qui permettent de quantifier l'effet d'une
 variation d'une variable sur une autre. 
 Toujours pour caricaturer, 
-le _Machine Learning_ se focaliserait
+le _machine learning_ se focaliserait
 sur un simple objectif prédictif en exploitant les relations de corrélations entre les variables.
 Dans cette perspective, l'important n'est pas la causalité mais le fait qu'une variation
 de $x$% d'une variable permette d'anticiper un changement de $\beta x$ de la variable
 d'intérêt ; peu importe la raison.
-Cette approche est néanmoins caricaturale: la recherche est très dynamique 
+@MullainathanJEP ont ainsi, pour simplifier, proposé la différence fondamentale qui 
+suit: l'économétrie se préoccupe de $\widehat{\beta}$ là où le _machine learning_
+se focalise sur $\widehat{y}$. Les deux sont bien-sûr reliés dans un cadre
+linéaire mais cette différence d'approche a des implications importantes
+sur la structure des modèles étudiés, notamment leur parcimonie[^3]. 
+
+[^3]: Comme nous l'avons dit, cette différenciation est un peu 
+caricaturale, notamment maintenant que les économistes sont
+plus familiarisés aux concepts d'évaluation de performance
+prédictive sur des sous-ensembles d'apprentissage et de test (mais
+l'évolution est lente). 
+
+    La recherche en _machine learning_ est quant à elle très dynamique 
 sur la question de l'explicabilité et de l'interprétabilité
-des modèles de _Machine Learning_. Certaines approches sont reliées
-à des notions théoriques
-comme les [valeurs de Shapley](https://shap.readthedocs.io/en/latest/index.html).
+des modèles de _machine learning_, notamment autour du concept
+de [valeurs de Shapley](https://shap.readthedocs.io/en/latest/index.html).
 
 
 
-### Apprentissage supervisé ou non supervisé ?
+## Quelques définitions {.unnumbered}
 
-On distingue généralement deux types de méthodes, selon qu'on dispose d'information, dans l'échantillon
-d'apprentissage, sur les valeurs cibles *y* (on utilisera parfois le terme *label*) :
+Dans cette partie du cours nous allons employer un certain nombre
+de termes devenus familiers aux praticiens du _machine learning_
+mais qui méritent d'être explicités. 
 
-* **apprentissage supervisé** : la valeur cible est connue et peut-être utilisée pour évaluer la qualité d'un modèle 
+### _Machine learning_ et _deep learning_ {.unnumbered}
 
-*Ex : modèles de prédiction du type régression / classification : SVM, kNN, arbres de classification...*
+Jusqu'à présent nous avons beaucoup utilisé, sans le définir, le
+concept de _machine learning_, dont la traduction française est
+apprentissage automatique mais le terme anglo-saxon est suffisamment
+utilisé pour être considéré comme standard.
 
-* **apprentissage non supervisé** : la valeur cible est inconnue et ce sont des critères statistiques qui vont amener
+Le _machine learning_ est un ensemble de techniques algorithmiques 
+qui permettent aux ordinateurs d'apprendre, à partir d'exemples, à ajuster un modèle
+sans avoir explicitement défini celui-ci. A partir d'algorithmes itératifs et d'une
+métrique de performance, des règles de classification ou de prédiction vont permettre
+de mettre en relation des caractéristiques (_features_) avec une variable d'intérêt (_label_)[^4]. 
+
+[^4]: Pour faire l'analogie avec le cadre économétrique, les _features_ sont les variables explicatives
+ou _covariates_ (la matrice $X$) et le _label_ est la variable expliquée ($y$).
+
+De nombreux algorithmes existent et se distinguent sur la manière d'introduire une structure plus ou
+moins formelle dans la relation entre les variables observées. Nous n'allons voir que quelques
+uns de ces algorithmes: _support vector machine_ (SVM), régression logistique, arbres de décision, forêts
+aléatoires, etc. Simples à mettre en oeuvre grâce à la librairie `Scikit-Learn`, ils permettront
+déjà de comprendre la démarche originale du _machine learning_ que vous pourrez approfondir
+ultérieurement.  
+
+Au sein de la grande famille des algorithmes de _machine learning_, tendent de plus à plus à devenir
+autonomes les techniques de réseaux de neurone. Les techniques qui s'appuient sur les réseaux de neurone sont regroupés
+dans une famille qu'on
+appelle _deep learning_ (apprentissage profond en Français).
+Ces réseaux sont inspirés du fonctionnement du cerveau humain et sont composés de nombreuses couches de neurones interconnectés. 
+La structure canonique bien connue est illustrée dans la @fig-nn. 
+Le _deep learning_ est intéressant pour créer des modèles capables d'apprendre de représentations
+de données complexes et abstraites à partir de données brutes,
+ce qui évite parfois la complexe tâche de définir manuellement des caractéristiques spécifiques à cibler.
+Les champs de l'analyse d'image (_computer vision_) ou du traitement du langage naturel sont les principaux
+cas d'application de ces méthodes.
+
+
+::: {#fig-nn layout-ncol=2}
+![](https://www.lebigdata.fr/wp-content/uploads/2019/04/reseau-de-neurones-fonctionnement.jpg)
+
+Exemple de structure d'un réseau de neurone ([source: lebigdata.fr](https://www.lebigdata.fr/wp-content/uploads/2019/04/reseau-de-neurones-fonctionnement.jpg))
+:::
+
+Nous n'allons pas vraiment parler dans ce cours de _deep learning_ car ces modèles, pour être pertinents, nécessitent
+soit des données structurées d'un volume important (ce qui est rarement disponible
+en _open data_) soit des cas d'usage spécifiques, plus avancés que ne le permet
+un cours d'introduction. L'organisation `HuggingFace`, créatrice de la 
+plateforme du même nom facilitant la réutilisation de modèles de _deep learning_
+propose d'excellents cours sur le sujet, notamment sur
+le [traitement du langage naturel (NLP)](https://huggingface.co/learn/nlp-course/chapter1/2?fw=pt). 
+Nous ferons traitement du langage naturel dans la [prochaine partie](content/NLP/) de ce cours mais
+de manière plus modeste en revenant sur les concepts nécessaires avant de mettre en oeuvre
+une modélisation sophistiquée du langage. 
+
+
+### Apprentissage supervisé ou non supervisé  {.unnumbered} 
+
+
+Une ligne de clivage importante entre les méthodes à mettre en oeuvre est le fait d'observer ou non
+le _label_ (la variable $y$) qu'on désire modéliser. 
+
+Prenons par exemple un site de commerce qui dispose
+d'informations sur ses clients comme l'âge, le sexe, le lieu de résidence. 
+Ce site peut désirer 
+exploiter cette information de différentes manières pour modéliser le comportement d'achat. 
+
+En premier lieu, ce site peut désirer
+anticiper le volume d'achat d'un nouveau client ayant certaines caractéristiques. 
+Dans ce cas, il est possible d'utiliser les montants dépensés par d'autres clients en fonction de leurs
+caractéristiques. L'information pour notre nouveau client n'est pas mesurée mais elle peut s'appuyer
+sur un ensemble d'observations de la même variable.
+
+Mais il est tout à fait possible d'entraîner un modèle sur un _label_ qu'on ne mesure pas, en supposant
+qu'il fasse sens. Par exemple notre site de commerce peut désirer déterminer, en fonction des
+caractéristiques de notre nouveau client et de sa clientèle existante, s'il appartient à tel ou 
+tel groupe de consommateurs: les dépensiers, les économes... Bien sûr on ne sait jamais _a priori_
+à quel groupe appartient un consommateur mais le rapprochement entre consommateurs ayant un comportement
+similaire permettra de donner du sens à cette catégorie. Dans ce cas, l'algorithme apprendra à reconnaître
+quelles caractéristiques sont structurantes dans la constitution de groupes au comportement similaire et
+permettra d'associer tout nouveau consommateur à un groupe. 
+
+Ces deux exemples illustrent l'approche différente selon qu'on essaie de construire des modèles
+sur un _label_ observé ou non. Cela constitue même l'une des dualités fondamentale dans les
+techniques de _machine learning_: 
+
+* __Apprentissage supervisé__ : la valeur cible est connue et peut-être utilisée pour évaluer la qualité d'un modèle ;
+* __Apprentissage non supervisé__ : la valeur cible est inconnue et ce sont des critères statistiques qui vont amener
 à sélectionner la structure de données la plus plausible. 
 
-*Ex : modèles de réduction de dimension ou de clustering (PCA, kmeans...)*
+Cette partie du cours illustrera ces deux approches de manière différente à partir du même
+jeu de données, les résultats des élections américaines.
+Dans le cas de l'apprentissage supervisé, nous chercherons à modéliser directement
+le résultat des candidats aux élections (soit le score soit le gagnant). Dans 
+le cas de l'apprentissage non supervisé, nous essaierons de regrouper les 
+territoires au comportement de vote similaire en fonction de facteurs
+socio-démographiques. 
 
-## Panorama d'un éco-système vaste
 
-Grâce aux principaux packages de Machine Learning (`scikit`), Deep Learning (`keras`, `pytorch`, `TensorFlow`...) et économétrie  (`statsmodels`), la modélisation est extrêmement simplifiée. Cela ne doit pas faire oublier l'importance de la structuration et de la préparation des données. Souvent, l'étape la plus cruciale est le choix du modèle le plus adapté à la structure des données.
+### Classification et régression
 
-L'aide-mémoire suivante, issue de l'aide de `scikit-learn`, concernant les modèles de Machine Learning peut déjà donner de premiers enseignements sur les différentes familles de modèles:
+Une deuxième dualité fondamentale qui est déterminante dans le choix de la méthode de _machine learning_
+à mettre en oeuvre est la nature du _label_. S'agit-il d'une variable continue ou d'une variable
+discrète c'est-à-dire prenant un nombre limité de modalités ? 
 
+Cette différence de nature entre les données amène à distinguer deux types d'approche:
+
+- Dans les problématiques de __classification__, où notre label $y$ a un nombre fini de valeurs[^5],
+on cherche à prédire dans quelle classe ou à quel groupe il est possible de rattacher nos données. 
+Par exemple, si vous prenez du café le matin, faites-vous parti du groupe des personnes ronchon au lever ?
+Les métriques de performance utilisent généralement la proportion de bonnes ou mauvaises classification
+pour estimer la qualité d'un modèle. 
+- Dans les problématiques de __régression__, où notre label est une grandeur numérique, on
+cherche à prédire directement la valeur de notre variable dans le modèle. Par exemple, si vous
+avez tel ou tel âge, quel est votre dépense quotidienne en _fast food_. Les métriques
+de performance sont généralement des moyennes plus ou moins sophistiquées d'écarts entre
+la prédiction et la valeur observée. 
+
+[^5]: Nous allons nous focaliser sur le cas binaire, le plus simple. Dans ce type de problèmes,
+la variable $y$ a deux modalités: gagnant-perdant, 0-1, oui-non... Néanmoins il existe de 
+nombreux cas d'usage où la variable dispose de plus de modalités, par exemples des
+scores de satisfaction entre 0 et 5 ou A et D. La mise en oeuvre de modèles est plus
+complexe mais l'idée générale est souvent de se ramener à un ensemble de modèles dichotomiques
+pour pouvoir appliquer des métriques simples et stables. 
+
+
+En résumé, l'aide-mémoire suivante, issue de l'aide de `Scikit-Learn`, peut déjà donner de premiers enseignements sur les différentes familles de modèles:
+
+::: {#fig-algos-scikit layout-ncol=2}
 ![](https://scikit-learn.org/stable/_static/ml_map.png)
 
+Une _cheatsheet_ des algorithmes disponibles dans [`Scikit-Learn`](https://scikit-learn.org)
+:::
 
-## Données
+
+## Données {.unnumbered}
 
 La plupart des exemples de cette partie s'appuient sur les résultats des
 élections US 2020 au niveau comtés. Plusieurs bases sont utilisées pour 
@@ -105,14 +315,14 @@ with open('get_data.py', 'r') as f:
       print(line, end='')
 ```
 
-## Contenu de la partie
+Cette partie n'est absolument pas exhaustive. Elle constitue un point
+d'entrée dans le sujet à partir d'une série d'exemples sur un fil rouge. 
+De nombreux modèles plus appronfondis, que ce soit en économétrie ou en _machine learning_ 
+mériteraient d'être évoqués. Pour les personnes désirant en savoir plus sur les 
+modèles économétriques, qui seront moins évoqués que ceux de _machine learning_
+je recommande la lecture de @Turrell2021.
 
-{{< list_children >}}
 
-Autres champs:
-* maximum vraisemblance
-* stats bayésiennes
-* semi et non paramétrique: méthodes noyaux, GAM
 
 ## Références
 
