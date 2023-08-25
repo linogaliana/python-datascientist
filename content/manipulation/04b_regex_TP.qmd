@@ -1,0 +1,812 @@
+---
+title: "Maîtriser les expressions régulières"
+date: 2023-07-08T13:00:00Z
+draft: false
+weight: 70
+slug: regex
+tags:
+  - regex
+  - pandas
+  - re
+  - Manipulation
+  - Tutoriel
+categories:
+  - Tutoriel
+  - Manipulation
+type: book
+description: |
+  Les expressions régulières fournissent un cadre très pratique pour manipuler
+  de manière flexible des données textuelles. Elles sont très utiles
+  notamment pour les tâches de traitement naturel du langage (__NLP__)
+  ou le nettoyage de données textuelles.
+image: https://d2h1bfu6zrdxog.cloudfront.net/wp-content/uploads/2022/04/img_625491e9ce092.png
+---
+
+::: {.cell .markdown}
+```{python}
+#| echo: false
+#| output: 'asis'
+#| include: true
+#| eval: true
+
+import sys
+sys.path.insert(1, '../../') #insert the utils module
+from utils import print_badges
+
+#print_badges(__file__)
+print_badges("content/manipulation/04b_regex_TP.qmd")
+```
+:::
+
+## Introduction
+
+`Python` offre énormément de fonctionalités très pratiques pour la manipulation de données
+textuelles. C'est l'une des raisons de son
+succès dans la communauté du traitement automatisé du langage (NLP, voir partie dédiée). 
+
+Dans les chapitres précédents, nous avons parfois été amenés à chercher des éléments textuels basiques. Cela était possible avec la méthode `str.find` du package `Pandas` qui constitue une version vectorisée de la méthode `find`
+de base. Nous avons d'ailleurs
+pu utiliser cette dernière directement, notamment lorsqu'on a fait du _webscraping_. 
+
+Cependant, cette fonction de recherche
+trouve rapidement ses limites. 
+Par exemple, si on désire trouver à la fois les occurrences d'un terme au singulier
+et au pluriel, il sera nécessaire d'utiliser
+au moins deux fois la méthode `find`.
+Pour des verbes conjugués, cela devient encore plus complexe, en particulier si ceux-ci changent de forme selon le sujet. 
+ 
+Pour des expressions compliquées, il est conseillé d'utiliser les __expressions régulières__,
+ou _"regex"_. C'est une fonctionnalité qu'on retrouve dans beaucoup de langages. C'est une forme de grammaire qui permet de rechercher des expressions.
+
+Une partie du contenu de cette partie
+est une adaptation de la
+[documentation collaborative sur `R` nommée `utilitR`](https://www.book.utilitr.org/textdata.html#regex) à laquelle j'ai participé. Ce chapitre reprend aussi du contenu du
+livre [_R for Data Science_](https://r4ds.hadley.nz/regexps.html) qui présente un chapitre 
+très pédagogique sur les regex.
+
+Nous allons utiliser le _package_ `re` pour illustrer nos exemples d'expressions
+régulières. Il s'agit du package de référence, qui est utilisé, en arrière-plan,
+par `Pandas` pour vectoriser les recherches textuelles. 
+
+```{python}
+import re
+import pandas as pd
+```
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint</h3>
+```
+
+**Les expressions régulières (*regex*) sont notoirement difficiles à maîtriser.** Il existe des outils qui facilitent le travail avec les expressions régulières.
+
+- L'outil de référence pour ceci est [https://regex101.com/] qui permet de tester des `regex` en `Python`
+tout en ayant une explication qui accompagne ce test
+
+- De même pour [ce site](https://ole.michelsen.dk/tools/regex/) qui comporte une cheat sheet en bas de la page. 
+
+- Les jeux de [Regex Crossword](https://regexcrossword.com/) permettent d'apprendre les expressions régulières en s'amusant
+
+
+Il peut être pratique de demander à des IA assistantes, comme `Github Copilot` ou `ChatGPT`, une
+première version d'une regex en expliquant le contenu qu'on veut extraire.
+Cela peut faire économiser pas mal de temps, sauf quand l'IA fait preuve d'une confiance excessive
+et vous propose avec aplomb une regex totalement fausse...
+
+```{=html}
+</div>
+```
+:::
+
+
+## Principe
+
+**Les expressions régulières sont un outil permettant de décrire un ensemble de chaînes de caractères possibles selon une syntaxe précise, et donc de définir un motif (ou `pattern`).** Les expressions régulières servent par exemple lorsqu'on veut extraire une partie d'une chaîne de caractères, ou remplacer une partie d'une chaîne de caractères. Une expression régulière prend la forme d'une chaîne de caractères, qui peut contenir à la fois des éléments littéraux et des caractères spéciaux qui ont un sens logique. 
+
+Par exemple, `"ch.+n"` est une expression régulière qui décrit le motif suivant: la chaîne littérale `ch`, suivi de n'importe quelle chaîne d'au moins un caractère (`.+`), suivie de la lettre `n`. Dans la chaîne `"J'ai un chien."`, la sous-chaîne `"chien"` correspond à ce motif. De même pour `"chapeau ron"` dans `"J'ai un chapeau rond"`. En revanche, dans la chaîne `"La soupe est chaude."`, aucune sous-chaîne ne correpsond à ce motif (car aucun `n` n'apparaît après le `ch`).
+
+Pour s'en convaincre, nous pouvons déjà regarder
+les deux premiers cas:
+
+```{python}
+pattern = "ch.+n"
+print(re.search(pattern, "J'ai un chien."))
+print(re.search(pattern, "J'ai un chapeau rond."))
+```
+
+Cependant, dans le dernier cas, nous ne trouvons pas
+le _pattern_ recherché:
+
+```{python}
+print(re.search(pattern, "La soupe est chaude."))
+```
+
+La regex précédente comportait deux types de caractères:
+
+- les _caractères littéraux_: lettres et nombres qui sont reconnus de manière littérale
+- les _méta-caractères_: symboles qui ont un sens particulier dans les regex.
+
+Les principaux _méta-caractères_ sont `.`, `+`, `*`, `[`, `]`, `^` et `$` mais il
+en existe beaucoup d'autres.
+Parmi cet ensemble, on utilise principalement les quantifieurs (`.`, `+`, `*`...),
+les classes de caractères (ensemble qui sont délimités par `[` et `]`)
+ou les ancres (`^`, `$`...)
+
+Dans l'exemple précédent, 
+nous retrouvions deux quantifieurs accolés `.+`. Le premier (`.`) signifie n'importe quel caractère[^1]. Le deuxième (`+`) signifie _"répète le pattern précédent"_.
+Dans notre cas, la combinaison `.+` permet ainsi de répéter n'importe quel caractère avant de trouver un _n_. 
+Le nombre de fois est indeterminé: cela peut ne pas être pas nécessaire d'intercaler des caractères avant le _n_ 
+ou cela peut être nécessaire d'en intercepter plusieurs:
+
+```{python}
+print(re.search(pattern, "J'ai un chino"))
+print(re.search(pattern, "J'ai un chiot très mignon."))
+```
+
+[^1]: N'importe quel caractère à part le retour à la ligne (`\n`). Ceci est à garder en tête, j'ai déjà perdu des heures à chercher pourquoi mon `.` ne capturait pas ce que je voulais qui s'étalait sur plusieurs lignes...
+
+### Classes de caractères
+
+Lors d’une recherche, on s’intéresse aux caractères et souvent aux classes de caractères : on cherche un chiffre, une lettre, un caractère dans un ensemble précis ou un caractère qui n’appartient pas à un ensemble précis. Certains ensembles sont prédéfinis, d’autres doivent être définis à l’aide de crochets.
+
+Pour définir un ensemble de caractères, il faut écrire cet ensemble entre crochets. Par exemple, `[0123456789]` désigne un chiffre. Comme c’est une séquence de caractères consécutifs, on peut résumer cette écriture en `[0-9]`. 
+
+Par
+exemple, si on désire trouver tous les _pattern_ qui commencent par un `c` suivi 
+d'un `h` puis d'une voyelle (a, e, i, o, u), on peut essayer
+cette expression régulière. 
+
+```{python}
+re.findall("[c][h][aeiou]", "chat, chien, veau, vache, chèvre")
+```
+
+Il serait plus pratique d'utiliser `Pandas` dans ce cas pour isoler les 
+lignes qui répondent à la condition logique (en ajoutant les accents
+qui ne sont pas compris sinon):
+
+```{python}
+import pandas as pd
+txt = pd.Series("chat, chien, veau, vache, chèvre".split(", "))
+txt.str.match("ch[aeéèiou]")
+```
+
+Cependant, l'usage ci-dessus des classes de caractères
+n'est pas le plus fréquent. 
+On privilégie celles-ci pour identifier des
+pattern complexe plutôt qu'une suite de caractères littéraux.
+Les tableaux d'aide mémoire illustrent une partie des
+classes de caractères les plus fréquentes
+(`[:digit:]` ou `\d`...)
+
+### Quantifieurs
+
+Nous avons rencontré les quantifieurs avec notre première expression
+régulière. Ceux-ci contrôlent le nombre de fois 
+qu'un _pattern_ est rencontré. 
+
+Les plus fréquents sont: 
+
+- `?` : 0 ou 1 match ;
+- `+` : 1 ou plus de matches ;
+- `*` : 0 or more matches. 
+
+Par exemple, `colou?r` permettra de matcher à la fois l'écriture américaine et anglaise
+
+```{python}
+re.findall("colou?r", "Did you write color or colour?")
+```
+
+Ces quantifiers peuvent bien-sûr être associés à 
+d'autres types de caractères, notamment les classes de caractères. 
+Cela peut être extrèmement pratique.
+Par exemple, `\d+` permettra de capturer un ou plusieurs chiffres, `\s?`
+permettra d'ajouter en option un espace,
+`[\w]{6,8}` un mot entre six et huit lettres qu’on écrira...
+
+Il est aussi possible de définir le nombre de répétitions
+avec `{}`:
+
+- `{n}` matche exactement _n_ fois ;
+- `{n,}` matche au moins _n_ fois ;
+- `{n,m}` matche entre _n_ et _m_ fois.
+
+Cependant, la répétition des termes
+ne s'applique par défaut qu'au dernier
+caractère précédent le quantifier. 
+On peut s'en convaincre avec l'exemple ci-dessus:
+
+```{python}
+print(re.match("toc{4}","toctoctoctoc"))
+```
+
+Pour pallier ce problème, il existe les parenthèses.
+Le principe est le même qu'avec les règles numériques:
+les parenthèses permettent d'introduire une hiérarchie. 
+Pour reprendre l'exemple précédent, on obtient
+bien le résultat attendu grâce aux parenthèses:
+
+```{python}
+print(re.match("(toc){4}","toctoctoctoc"))
+print(re.match("(toc){5}","toctoctoctoc"))
+print(re.match("(toc){2,4}","toctoctoctoc"))
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
+
+L’algorithme des expressions régulières essaye toujours de faire correspondre le plus grand morceau à l’expression régulière. 
+
+Par exemple, soit une chaine de caractère HTML: 
+
+```{python}
+s = "<h1>Super titre HTML</h1>"
+```
+
+L'expression régulière `re.findall("<.*>", s)` correspond, potentiellement,
+à trois morceaux : 
+
+*  ``<h1>``
+*  ``</h1>``
+* ``<h1>Super titre HTML</h1>``
+
+C'est ce dernier qui sera choisi, car le plus grand. Pour 
+sélectionner le plus petit, 
+il faudra écrire les multiplicateurs comme ceci : `*?`, `+?`.
+En voici quelques exemples:
+
+```{python}
+s = "<h1>Super titre HTML</h1>\n<p><code>Python</code> est un langage très flexible</p>"
+print(re.findall("<.*>", s))
+print(re.findall("<p>.*</p>", s))
+print(re.findall("<p>.*?</p>", s))
+print(re.compile("<.*?>").findall(s))
+```
+
+```{=html}
+</div>
+```
+:::
+
+### Aide-mémoire
+
+Le tableau ci-dessous peut servir d'aide-mémoire
+sur les regex:
+
+|Expression régulière|Signification |
+|------------------|---------------------------------|
+|`"^"`             | Début de la chaîne de caractères |
+|`"$"`             | Fin de la chaîne de caractères |
+|`"\\."`           | Un point |
+|`"."`             | N'importe quel caractère |
+|`".+"`            | N'importe quelle suite de caractères non vide |
+|`".*"`            | N'importe quelle suite de caractères, éventuellement vi
+|`"[:alnum:]"`     | Un caractère alphanumérique |
+|`"[:alpha:]"`     | Une lettre |
+|`"[:digit:]"`     | Un chiffre |
+|`"[:lower:]"`     | Une lettre minuscule |
+|`"[:punct:]"`     | Un signe de ponctuation |
+|`"[:space:]"`     | un espace |
+|`"[:upper:]"`     | Une lettre majuscule |
+|`"[[:alnum:]]+"`  | Une suite d'au moins un caractère alphanumérique |
+|`"[[:alpha:]]+"`  | Une suite d'au moins une lettre |
+|`"[[:digit:]]+"`  | Une suite d'au moins un chiffre |
+|`"[[:lower:]]+"`  | Une suite d'au moins une lettre minuscule |
+|`"[[:punct:]]+"`  | Une suite d'au moins un signe de ponctuation |
+|`"[[:space:]]+"`  | Une suite d'au moins un espace |
+|`"[[:upper:]]+"`  | Une suite d'au moins une lettre majuscule |
+|`"[[:alnum:]]*"`  | Une suite de caractères alphanumériques, éventuellement vide |
+|`"[[:alpha:]]*"`  | Une suite de lettres, éventuellement vide |
+|`"[[:digit:]]*"`  | Une suite de chiffres, éventuellement vide |
+|`"[[:lower:]]*"`  | Une suite de lettres minuscules, éventuellement vide |
+|`"[[:upper:]]*"`  | Une suite de lettres majuscules, éventuellement vide |
+|`"[[:punct:]]*"`  | Une suite de signes de ponctuation, éventuellement vide
+|`"[^[:alpha:]]+"` | Une suite d'au moins un caractère autre qu'une lettre |
+|`"[^[:digit:]]+"` | Une suite d'au moins un caractère autre qu'un chiffre |
+|`"\|"`             | L'une des expressions `x` ou `y` est présente          |
+|`[abyz]`         | Un seul des caractères spécifiés  |
+|`[abyz]+`        | Un ou plusieurs des caractères spécifiés (éventuellement répétés) |   
+|`[^abyz]`        | Aucun des caractères spécifiés n'est présent  |
+
+
+Certaines classes de caractères bénéficient d'une syntaxe plus légère car
+elles sont très fréquentes. Parmi-celles:
+
+|Expression régulière|Signification |
+|------------------|---------------------------------|
+| `\d`             | N'importe quel chiffre  |
+| `\D`             | N'importe quel caractère qui n'est pas un caractère |
+| `\s`             | N'importe quel espace (espace, tabulation, retour à la ligne) |
+| `\S`             | N'importe quel caractère qui n'est pas un espace |
+| `\w`             | N'importe quel type de mot (lettres et nombres)
+| `\W`             | N'importe quel ensemble qui n'est pas un mot (lettres et nombres)
+
+
+Dans l'exercice suivant, vous allez pouvoir mettre en pratique
+les exemples précédents sur une `regex` un peu plus complète.
+Cet exercice ne nécessite pas la connaissance des subtilités 
+du _package_ `re`, vous n'aurez besoin que de `re.findall`.
+
+Cet exercice utilisera la chaine de caractère suivante:
+
+```{python}
+s = """date 0 : 14/9/2000
+date 1 : 20/04/1971     date 2 : 14/09/1913     date 3 : 2/3/1978
+date 4 : 1/7/1986     date 5 : 7/3/47     date 6 : 15/10/1914
+date 7 : 08/03/1941     date 8 : 8/1/1980     date 9 : 30/6/1976"""
+s
+```
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1</h3>
+```
+
+1. On va d'abord s'occuper d'extraire le jour de naissance. 
+    + Le premier chiffre du jour est 0, 1, 2 ou 3. Traduire cela sous la forme d'une séquence `[X-X]`
+    + Le deuxième chiffre du jour est lui entre 0 et 9. Traduire cela sous la séquence adéquate
+    + Remarquez que le premier jour est facultatif. Intercaler entre les deux classes de caractère adéquate 
+     le quantifieur qui convient
+    + Ajouter le slash à la suite du motif
+    + Tester avec `re.findall`. Vous devriez obtenir beaucoup plus d'échos que nécessaire.
+      C'est normal, à ce stade la 
+      regex n'est pas encore finalisée
+2. Suivre la même logique pour les mois en notant que les mois du calendrier grégorien ne dépassent
+  jamais la première dizaine. Tester avec `re.findall`
+3. De même pour les années de naissance en notant que jusqu'à preuve du contraire, pour des personnes vivantes
+aujourd'hui, les millénaires concernés sont restreints. Tester avec `re.findall`
+4. Cette regex n'est pas naturelle, on pourrait très bien se satisfaire de classes de
+caractères génériques `\d` même si elles pourraient, en pratique, nous sélectionner des
+dates de naissance non possibles (`43/78/4528` par exemple). Cela permettrait
+d'alléger la regex afin de la rendre plus intelligible. Ne pas oublier l'utilité des quantifieurs.
+5. Comment adapter la regex pour qu'elle soit toujours valide pour nos cas mais permette aussi de
+capturer les dates de type `YYYY/MM/DD` ? Tester sur `1998/07/12`
+```{=html}
+</div>
+```
+:::
+
+A l'issue de la question 1, vous devriez avoir ce résultat :
+
+```{python}
+#| echo: false
+re.findall("[0-3]?[0-9]/", s)
+```
+
+A l'issue de la question 2, vous devriez avoir ce résultat, qui
+commence à prendre forme:
+
+```{python}
+#| echo: false
+re.findall("[0-3]?[0-9]/[0-1]?[0-9]", s)
+```
+
+A l'issue de la question 3, on parvient bien
+à extraire les dates :
+
+```{python}
+#| echo: false
+# Question 3
+re.findall("[0-3]?[0-9]/[0-1]?[0-9]/[0-2]?[0-9]?[0-9][0-9]", s)
+```
+
+```{python}
+#| echo: false
+#| output: false
+# Question 4
+re.findall("\d{1,2}/\d{1,2}/\d{2,4}", s)
+```
+
+Si tout va bien, à la question 5, votre regex devrait 
+fonctionner: 
+```{python}
+#| echo: false
+# Question 5
+re.findall("\d{1,4}/\d{1,2}/\d{1,4}", s + "\n 1998/07/12")
+```
+
+
+## Principales fonctions de `re`
+
+Voici un tableau récapitulatif des principales
+fonctions du package `re` suivi d'exemples.
+
+Nous avons principalement
+utilisé jusqu'à présent `re.findall` qui est
+l'une des fonctions les plus pratiques du _package_.
+`re.sub` et `re.search` sont également bien pratiques.
+Les autres sont moins vitales mais peuvent dans des
+cas précis être utiles. 
+
+| Fonction         | Objectif        |
+|------------------|-----------------|
+| `re.match(<regex>, s)` | Trouver et renvoyer le __premier__ _match_ de l'expression régulière `<regex>` __à partir du début__ du _string_ `s` |
+| `re.search(<regex>, s)` | Trouver et renvoyer le __premier__ _match_ de l'expression régulière `<regex>` __quelle que soit sa position__ dans le _string_ `s` | 
+| `re.finditer(<regex>, s)` | Trouver et renvoyer un itérateur stockant tous les _matches_ de l'expression régulière `<regex>` __quelle que soit leur(s) position(s)__ dans le _string_ `s`. En général, on effectue ensuite une boucle sur cet itérateur | 
+| `re.findall(<regex>, s)` | Trouver et renvoyer **tous les _matches_** de l'expression régulière `<regex>` __quelle que soit leur(s) position(s)__ dans le _string_ `s` sous forme de __liste__ | 
+| `re.sub(<regex>, new_text, s)` | Trouver et __remplacer tous__ les _matches_ de l'expression régulière `<regex>` __quelle que soit leur(s) position(s)__ dans le _string_ `s` |
+
+Pour illustrer ces fonctions, voici quelques exemples:
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>re.match</code> 👇</summary>
+```
+
+`re.match` ne peut servir qu'à capturer un _pattern_ en début
+de _string_. Son utilité est donc limitée. 
+Capturons néanmoins `toto` :
+
+```{python}
+re.match("(to){2}", "toto à la plage")
+```
+
+```{=html}
+</details>
+```
+:::
+
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>re.search</code> 👇</summary>
+```
+
+`re.search` est plus puissant que `re.match`, on peut
+capturer des termes quelle que soit leur position
+dans un _string_. Par exemple, pour capturer _age_:
+
+```{python}
+re.search("age", "toto a l'age d'aller à la plage")
+```
+
+Et pour capturer exclusivement _"age"_ en fin 
+de _string_:
+
+```{python}
+re.search("age$", "toto a l'age d'aller à la plage")
+```
+
+
+```{=html}
+</details>
+```
+:::
+
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>re.finditer</code> 👇</summary>
+```
+
+`re.finditer` est, à mon avis,
+moins pratique que `re.findall`. Son utilité
+principale par rapport à `re.findall` 
+est de capturer la position dans un champ textuel:
+
+```{python}
+s = "toto a l'age d'aller à la plage"
+for match in re.finditer("age", s):
+    start = match.start()
+    end = match.end()
+    print(f'String match "{s[start:end]}" at {start}:{end}')
+```
+
+
+```{=html}
+</details>
+```
+:::
+
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>re.sub</code> 👇</summary>
+```
+
+`re.sub` permet de capturer et remplacer des expressions. 
+Par exemple, remplaçons _"age"_ par _"âge"_. Mais attention,
+il ne faut pas le faire lorsque le motif est présent dans _"plage"_.
+On va donc mettre une condition négative: capturer _"age"_ seulement
+s'il n'est pas en fin de _string_ (ce qui se traduit en _regex_ par `?!$`)
+
+```{python}
+re.sub("age(?!$)", "âge", "toto a l'age d'aller à la plage")
+```
+
+
+```{=html}
+</details>
+```
+:::
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Quand utiliser <code>re.compile</code> et les raw strings ?</h3>
+```
+
+`re.compile` peut être intéressant lorsque
+vous utilisez une expression régulière plusieurs fois dans votre code.
+Cela permet de compiler l'expression régulière en un objet reconnu par `re`,
+ce qui peut être plus efficace en termes de performance lorsque l'expression régulière
+est utilisée à plusieurs reprises ou sur des données volumineuses.
+
+Les chaînes brutes (_raw string_) sont des chaînes de caractères spéciales en `Python`,
+qui commencent par `r`. Par exemple `r"toto à la plage"`. 
+Elles peuvent être intéressantes
+pour éviter que les caractères d'échappement ne soient interprétés par `Python`
+Par exemple, si vous voulez chercher une chaîne qui contient une barre oblique inverse `\` dans une chaîne, vous devez utiliser une chaîne brute pour éviter que la barre oblique inverse ne soit interprétée comme un caractère d'échappement (`\t`, `\n`, etc.).
+Le testeur [https://regex101.com/](https://regex101.com/) suppose d'ailleurs que
+vous utilisez des _raw string_, cela peut donc être utile de s'habituer à les utiliser.
+
+```{=html}
+</div>
+```
+:::
+
+## Généralisation avec `Pandas`
+
+Les méthodes de `Pandas` sont des extensions de celles de `re`
+qui évitent de faire une boucle pour regarder,
+ligne à ligne, une regex. En pratique, lorsqu'on traite des
+`DataFrames`, on utilise plutôt l'API Pandas que `re`. Les
+codes de la forme `df.apply(lambda x: re.<fonction>(<regex>,x), axis = 1)`
+sont à bannir car très peu efficaces. 
+
+Les noms changent parfois légèrement par rapport à leur 
+équivalent `re`.
+
+| Méthode | Description |
+|------------------|---------------|
+| `str.count()`    | Compter le nombre d'occurrences du _pattern_ dans chaque ligne |
+| `str.replace()`  | Remplacer le _pattern_ par une autre valeur. Version vectorisée de `re.sub()` |
+| `str.contains()` | Tester si le _pattern_ apparaît, ligne à ligne. Version vectorisée de `re.search()` |
+| `str.extract()`  | Extraire les groupes qui répondent à un  _pattern_ et les renvoyer dans une colonne |
+| `str.findall()`  | Trouver et renvoyer toutes les occurrences d'un _pattern_. Si une ligne comporte plusieurs échos, une liste est renvoyée. Version vectorisée de `re.findall()` |
+
+A ces fonctions, s'ajoutent les méthodes `str.split()` et `str.rsplit()` qui sont bien pratiques.
+
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>str.count</code> 👇</summary>
+```
+
+On peut compter le nombre de fois qu'un _pattern_ apparaît avec
+`str.count`
+
+```{python}
+df = pd.DataFrame({"a": ["toto", "titi"]})
+df['a'].str.count("to")
+```
+
+```{=html}
+</details>
+```
+:::
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>str.replace</code> 👇</summary>
+```
+
+Remplaçons le motif _"ti"_ en fin de phrase
+
+```{python}
+df = pd.DataFrame({"a": ["toto", "titi"]})
+df['a'].str.replace("ti$", " punch")
+```
+
+```{=html}
+</details>
+```
+:::
+
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>str.contains</code> 👇</summary>
+```
+
+Vérifions les cas où notre ligne termine par _"ti"_:
+
+```{python}
+df = pd.DataFrame({"a": ["toto", "titi"]})
+df['a'].str.contains("ti$")
+```
+
+```{=html}
+</details>
+```
+:::
+
+::: {.cell .markdown}
+```{=html}
+<details><summary>Exemple de <code>str.findall</code> 👇</summary>
+```
+
+```{python}
+df = pd.DataFrame({"a": ["toto", "titi"]})
+df['a'].str.findall("to")
+```
+
+```{=html}
+</details>
+```
+:::
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-danger" role="alert">
+<i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+```
+
+A l'heure actuelle, il n'est pas nécessaire d'ajouter l'argument `regex = True` mais cela 
+devrait être le cas dans une future version de `Pandas`.
+Cela peut valoir le coup de s'habituer à l'ajouter. 
+
+```{=html}
+</div>
+```
+:::
+
+
+
+## Pour en savoir plus
+
+- [documentation collaborative sur `R` nommée `utilitR`](https://www.book.utilitr.org/textdata.html#regex)
+- [_R for Data Science_](https://r4ds.hadley.nz/regexps.html)
+- [_Regular Expression HOWTO_ dans la documentation officielle de `Python`](https://docs.python.org/3/howto/regex.html)
+- L'outil de référence [https://regex101.com/] pour tester des expressions régulières
+- [Ce site](https://ole.michelsen.dk/tools/regex/) qui comporte une cheat sheet en bas de la page. 
+- Les jeux de [Regex Crossword](https://regexcrossword.com/) permettent d'apprendre les expressions régulières en s'amusant
+
+
+## Exercices supplémentaires
+
+### Extraction d'adresses email
+
+Il s'agit d'un usage classique des _regex_
+
+```{python}
+text_emails = 'Hello from toto@gmail.com to titi.grominet@yahoo.com about the meeting @2PM'
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice : extraction d'adresses email</h3>
+```
+
+Utiliser la structure d'une adresse mail `[XXXX]@[XXXX]` pour récupérer 
+ce contenu
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+#| echo: false
+
+# \S` désigne tout caractère différent d'un espace 
+# `+` présence de l'ensemble de caractères qui précède entre 1 fois et l'infini
+liste_emails = re.findall('\S+@\S+', text_emails)     
+print(liste_emails)
+```
+
+### Extraire des années depuis un `DataFrame` `Pandas`
+
+L'objectif général de l'exercice est de nettoyer des colonnes d'un DataFrame en utilisant des expressions régulières.
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice</h3>
+```
+
+La base en question contient des livres de la British Library et quelques informations les concernant. Le jeu de données est disponible ici : https://raw.githubusercontent.com/realpython/python-data-cleaning/master/Datasets/BL-Flickr-Images-Book.csv
+
+La colonne "Date de Publication" n'est pas toujours une année, il y a parfois d'autres informations. Le but de l'exercice est d'avoir **une date de publication du livre propre** et de regarder la **distribution des années de publications**. 
+
+Pour ce faire, vous pouvez :
+
+* Soit choisir de réaliser l'exercice sans aide. Votre **lecture de l'énoncé s'arrête donc ici**. Vous devez alors faire attention à bien regarder vous-même la base de données et la transformer avec attention. 
+
+* Soit suivre les différentes étapes qui suivent pas à pas.
+
+```{=html}
+<details><summary>Version guidée 👇</summary>
+```
+
+1. Lire les données depuis l'url `https://raw.githubusercontent.com/realpython/python-data-cleaning/master/Datasets/BL-Flickr-Images-Book.csv`. Attention au séparateur
+2. Ne garder que les colonnes `['Identifier', 'Place of Publication', 'Date of Publication', 'Publisher', 'Title', 'Author']`
+3. Observer la colonne _'Date of Publication'_ et remarquer le problème sur certaines lignes (par exemple la ligne 13)
+4. Commencez par regarder le nombre d'informations manquantes. On ne pourra pas avoir mieux après la regex, et normalement on ne devrait pas avoir moins...
+5. Déterminer la forme de la regex pour une date de publication. A priori, il y a 4 chiffres qui forment une année.
+Utiliser la méthode `str.extract()` avec l'argument `expand = False` (pour ne conserver que la première date concordant avec notre _pattern_)?
+6. On a 2 `NaN` qui n'étaient pas présents au début de l'exercice. Quels sont-ils et pourquoi ? 
+7. Quelle est la répartition des dates de publications dans le jeu de données ? Vous pouvez par exemple afficher un histogramme grâce à la méthode `plot` avec l'argument `kind ="hist"`.
+
+```{=html}
+</summary>
+```
+
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+#| echo: false
+
+# Question 1
+data_books = pd.read_csv('https://raw.githubusercontent.com/realpython/python-data-cleaning/master/Datasets/BL-Flickr-Images-Book.csv',sep=',')
+```
+
+```{python}
+#| echo: false
+
+# Question 2
+data_books=data_books[['Identifier', 'Place of Publication',
+       'Date of Publication', 'Publisher', 'Title', 'Author']]
+```
+
+Voici par exemple le problème qu'on demande de détecter à la question 3 :
+
+```{python}
+#| echo: false
+
+# Question 3
+data_books[['Date of Publication',"Title"]].iloc[13:20]
+```
+
+```{python}
+#| echo: false
+
+# Question 4
+data_books['Date of Publication'].isna().sum()
+```
+
+Grâce à notre regex (question 5), on obtient ainsi un `DataFrame` plus conforme à nos attentes
+
+```{python}
+#| echo: false
+
+# Question 5
+expression = "([0-2][0-9][0-9][0-9])"
+data_books['year'] = data_books['Date of Publication'].str.extract(expression, expand=False)
+
+data_books.loc[~(data_books['Date of Publication'] == data_books['year']), ['Date of Publication', 'year']]
+```
+
+Quant aux nouveaux `NaN`,
+il s'agit de lignes qui ne contenaient pas de chaînes de caractères qui ressemblaient à des années:
+
+```{python}
+#| echo: false
+data_books.loc[~data_books['Date of Publication'].isna() & data_books['year'].isna(), ['Date of Publication', 'year']]
+```
+
+Enfin, on obtient l'histogramme suivant des dates de publications:
+
+```{python}
+#| echo: false
+pd.to_numeric(data_books['year'], downcast='integer').plot(kind ="hist")
+```
+
+
+
+
+
