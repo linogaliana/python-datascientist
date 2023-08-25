@@ -13,9 +13,7 @@ list_files = [fl for fl in list_files if fl.endswith("ipynb")]
 print(list_files)
 
 def hack_name(fl, direction):
-    basename = fl.rsplit("/", maxsplit=1)[0]
-    newname = f"{basename}.ipynb"
-    newname = newname.replace("content", direction)
+    newname = fl.replace("content", direction)
     newname = newname.replace("_site", ".")
     return newname
 
