@@ -8,7 +8,7 @@ print(direction)
 
 list_files = glob.glob(f"_site/content/**/*.ipynb", recursive=True)
 list_files = [fl for fl in list_files if not fl.endswith("_index.ipynb")]
-list_files = [fl for fl in list_files if fl.endswith("index.ipynb")]
+list_files = [fl for fl in list_files if fl.endswith("ipynb")]
 
 print(list_files)
 
