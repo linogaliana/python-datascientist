@@ -2,7 +2,7 @@ import os
 import glob
 import shutil
 
-os.chdir("python-datascientist/content/course")
+os.chdir("python-datascientist/content/")
 
 directory = "annexes"
 
