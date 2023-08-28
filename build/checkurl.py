@@ -5,7 +5,7 @@ import pandas as pd
 path = os.getcwd()
 
 checker = UrlChecker(
-        path=path + "/content/modelisation",
+        path=path + "/content/manipulation",
         file_types=[".qmd", ".py", ".md"],
         print_all=False
     )
@@ -13,4 +13,4 @@ checker = UrlChecker(
 checker.run()
 
 df = pd.DataFrame(checker.results['failed'], columns = ["failed"])
-df.to_csv()
+df.to_csv("diagnostic.csv")
