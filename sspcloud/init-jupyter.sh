@@ -9,9 +9,9 @@ WORK_DIR="/home/onyxia/work"
 CLONE_DIR="${WORK_DIR}/repo-git"
 if [[ "$3" == "correction" ]];
 then 
-  COURSE_DIR="${CLONE_DIR}/corrections/course"
+  COURSE_DIR="${CLONE_DIR}/corrections"
 else
-  COURSE_DIR="${CLONE_DIR}/notebooks/course"
+  COURSE_DIR="${CLONE_DIR}/notebooks"
 fi
 
 # Clone course repository
