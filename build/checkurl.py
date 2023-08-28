@@ -5,7 +5,7 @@ import pandas as pd
 path = os.getcwd()
 
 checker = UrlChecker(
-        path=path + "/content/manipulation",
+        path=path + "/content",
         file_types=[".qmd", ".py", ".md"],
         print_all=False
     )
