@@ -11,6 +11,8 @@ import re
 
 import nltk
 from nltk.corpus import stopwords
+from wordcloud import STOPWORDS
+
 nltk.download('stopwords')
 stop_words = set(stopwords.words('french'))
 
@@ -33,7 +35,16 @@ def grey_color_func(word, font_size, position, orientation, random_state=None,
     return "hsl(0, 0%%, %d%%)" % random.randint(60, 100)
 
 def make_wordcloud(corpus):
-    wc = wordcloud.WordCloud(mask=book_mask, max_words=2000, margin=10, contour_width=3, contour_color='white')
+    wc = wordcloud.WordCloud(
+        mask=book_mask,
+        max_words=2000,
+        margin=10,
+        contour_width=3,
+        contour_color='black',
+        stopwords = STOPWORDS.union({'df','x','print'}),
+        #background_color="white",
+        font_path='./CabinSketch-Bold.ttf'
+    )
     wc.generate(corpus).recolor(color_func=grey_color_func, random_state=3)
     return wc
 
@@ -48,6 +59,11 @@ def clean_file(text):
     s = re.sub(r'(?s)(---)(.*?)(---)', "", s) #remove header
     s = re.sub(r"```\{python\}","", s) #remove python chunk header
     s = re.sub(r'`', '', s)
+    s = re.sub(r'<[^>]*>', '', s)
+    s = re.sub(r'<[^>]*>', '', s)
+    s = re.sub(r'\{.*?\}','', s)
+    s = re.sub(r':::','',s)
+    s = re.sub(r'(https?://|www\.)\S+','',s)
     return s
 
 list_content = [read_file(fl) for fl in list_files]
@@ -61,8 +77,8 @@ corpus = " ".join(corpus)
 
 path = './word.png'
 
-fig = plt.figure()
 
+fig = plt.figure()
 plt.imshow(make_wordcloud(corpus), interpolation='bilinear')
 plt.axis("off")
 plt.tight_layout()
