@@ -43,7 +43,7 @@ def make_wordcloud(corpus):
         contour_color='black',
         stopwords = STOPWORDS.union({'df','x','print'}),
         #background_color="white",
-        font_path='./CabinSketch-Bold.ttf'
+        font_path='./build/CabinSketch-Bold.ttf'
     )
     wc.generate(corpus).recolor(color_func=grey_color_func, random_state=3)
     return wc
