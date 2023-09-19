@@ -22,7 +22,7 @@ description: |
   `seaborn` et `plotly` pour représenter des statistiques
   sur les décomptes de vélo à Paris.
 plotly: true
-image: featured_matplotlib.png
+image: drawing.png
 ---
 
 ::: {.cell .markdown}
@@ -99,14 +99,22 @@ Il s'agit d'une extraction, qui commence à dater, des données disponibles
 sur le site où seules les colonnes
 qui servent à cet exercice ont été conservées.
 
-Nous proposons
-de télécharger ces données et les enregistrer dans un fichier sur le disque
-dur local avant de l'importer[^1]. Cependant, nous n'allons pas faire
-cela manuellement mais nous allons plutôt utiliser 
-{{< fa brands r-project >}}. Effectuer ce type d'action de manière
-manuelle serait une mauvaise pratique du point de vue de la reproductibilité.
+## Premières productions graphiques avec l'API `Matplotlib` de `Pandas`
 
-## Premier graphique avec l'API `matplotlib` de `pandas`
+Chercher à produire une visualisation parfaite du premier coup est
+illusoire. Il est beaucoup plus réaliste d'améliorer graduellement 
+une représentation graphique afin, petit à petit, de mettre en 
+avant les effets de structure dans un jeu de données. 
+
+Nous allons donc commencer par nous représenter la distribution
+des passages aux principales stations de mesure.
+Pour cela nous allons produire
+rapidement un _barplot_ puis l'améliorer graduellement. 
+
+Dans cette partie, nous allons ainsi
+reproduire les deux premiers graphiques de la
+[page d'analyse des données](https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/dataviz/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name):
+*Les 10 compteurs avec la moyenne horaire la plus élevée* et *Les 10 compteurs ayant comptabilisés le plus de vélos*. Les valeurs chiffrées des graphiques seront différentes de celles de la page en ligne, c'est normal, nous travaillons sur des données plus anciennes. 
 
 ::: {.cell .markdown}
 ```{=html}
@@ -114,7 +122,13 @@ manuelle serait une mauvaise pratique du point de vue de la reproductibilité.
 <h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1 : Importer les données et produire un premier graphique</h3>
 ```
 
-1. Importer les données de compteurs de vélos. Vous pouvez utiliser l'url <https://minio.lab.sspcloud.fr/projet-formation/diffusion/python-datascientist/bike.csv>. ⚠️ Il s'agit de données
+Les données comportent plusieurs dimensions pouvant faire l'objet d'une 
+analyse statistique. Il est donc nécessaire dans un premier temps
+de synthétiser celles-ci par des agrégations afin d'avoir un
+graphique lisible. 
+
+1. Importer les données de compteurs de vélos. Vous pouvez utiliser l'url <https://minio.lab.sspcloud.fr/projet-formation/diffusion/python-datascientist/bike.csv>. 
+⚠️ Il s'agit de données
 compressées au format `gzip`, il faut donc utiliser l'option `compression = 'gzip'`
 
 ```{python}
@@ -123,11 +137,40 @@ compressées au format `gzip`, il faut donc utiliser l'option `compression = 'gz
 
 #1. Importation des données de vélo
 import pandas as pd
-df = pd.read_csv("https://minio.lab.sspcloud.fr/projet-formation/diffusion/python-datascientist/bike.csv", compression = 'gzip')
+
+url = "https://minio.lab.sspcloud.fr/projet-formation/diffusion/python-datascientist/bike.csv"
+df = pd.read_csv(url, compression = 'gzip')
 ```
 
+<details>
+<summary>
+</summary>
+Premières lignes nécessaires pour cet exercice :
 ```{python}
+#| echo: false
 df.head()
+```
+</details>
+
+2. Garder les dix bornes à la moyenne la plus élevée ;
+
+```{python}
+df1 = (
+    df
+    .groupby('Nom du compteur')
+    .agg({'Comptage horaire': "mean"})
+    .sort_values('Comptage horaire', ascending = False)
+    .head(10)
+)
+```
+
+<details>
+<summary>
+Les 10 principales stations à l'issue de la question 2
+</summary>
+```{python}
+#| echo: false
+df1.head()
 ```
 
 2. En premier lieu, sans se préoccuper des éléments de style ni des labels des
@@ -143,7 +186,6 @@ Les valeurs chiffrées des graphiques seront différentes de celles de la page e
 #2. Reproduction des graphiques
 
 ## Graphique 1 : Les 10 compteurs avec la moyenne horaire la plus élevée
-df1 = df.groupby('Nom du compteur').agg({'Comptage horaire': "mean"}).sort_values('Comptage horaire', ascending = False).head(10)
 p1 = df1.sort_values('Comptage horaire').plot(kind = "barh", figsize = (25,5), color = 'red')
 
 ## Graphique 2 : Les 10 compteurs ayant comptabilisés le plus de vélos
