@@ -43,9 +43,12 @@ la page de l'*open data* de la ville de Paris
 
 Ce TP vise à initier:
 
-* Aux packages [matplotlib](https://matplotlib.org/) et
-[seaborn](https://seaborn.pydata.org/) pour la construction de graphiques figés
-* Au package [plotly](https://plotly.com/python/) pour les graphiques 
+* Aux packages [`matplotlib`](https://matplotlib.org/) et
+[`seaborn`](https://seaborn.pydata.org/) pour la construction de graphiques figés. Il
+est également possible de s'appuyer sur [`plotnine`](https://plotnine.readthedocs.io/en/stable/index.html),
+qui est une implémentation en `Python` du _package_ `R` [`ggplot2`](https://ggplot2.tidyverse.org/)
+pour ce type de représentation.
+* Au package [`plotly`](https://plotly.com/python/) pour les graphiques 
 dynamiques, au format _web_
 
 Nous verrons par la suite la manière de construire des cartes facilement avec
@@ -436,7 +439,7 @@ transmettent la même information mais avec moins de bruit
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 3 (bis) : reproduire la figure 2 avec un _lollipop chart_</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 3 (bis) : reproduire la figure 2 avec un <i>lollipop chart</i></h3>
 ```
 
 En suivant l'approche graduelle de l'exercice 2,
@@ -465,110 +468,116 @@ plt.ylabel('La somme des vélos comptabilisés sur la période sélectionnée')
 
 ## Premières agrégations temporelles
 
-TO BE CLEANED
+On va maintenant se concentrer sur la dimension spatiale de notre
+jeu de données à travers deux approches:
+
+- Un diagramme en barre synthétisant l'information de notre jeu de données
+de manière mensuelle ;
+- Des séries instructives sur la dynamique temporelle. Cela sera l'objet de la prochaine partie ;
+
+
+Pour commencer, reproduisons la troisième figure qui est, encore une fois, 
+un _barplot_. La première question implique une première rencontre avec
+une donnée temporelle à travers une opération assez classique en séries
+temporelles: changer le format d'une date pour pouvoir faire une agrégation
+à un pas de temps plus large. 
+
 
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4 : reproduire la figure 3</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4: barplot des comptages mensuels</h3>
 ```
 
-```{python}
-#| include: false
-#| echo: false
+1. Utiliser `to_datetime` du package `Pandas` pour transformer la variable `Date et heure de comptage`
+en horodatage car le type de celle-ci a été mal interprété à la lecture du fichier. 
+Le format à utiliser est `%Y-%m-%dT%H:%M:%SZ`. Il peut être nécessaire d'utiliser également l'option `errors='coerce'`
+2. Créer une variable `month`
+dont le format respecte, par exemple, le schéma `2019-08` grâce à la bonne option de la méthode `dt.to_period`
+3. Appliquer les conseils précédents pour construire et améliorer
+graduellement un graphique afin d'obtenir une figure similaire
+à la 3e production sur la page de l'_open data_ parisien.
+4. Question optionnelle: représenter la même information sous forme de _lollipop_
 
-# 1. Refaire le graphique : Les 10 compteurs ayant comptabilisés le plus de vélos
-sns.set_style("ticks", {"xtick.color": "green"})
-g = sns.catplot(x='Comptage horaire', y='Nom du compteur', data=df2, kind = "bar", height = 5, aspect = 4, color = "green")
-g.set_axis_labels('La somme des vélos comptabilisés sur la période sélectionnée', 'Nom du compteur')
-plt.title('Les 10 compteurs ayant comptabilisés le plus de vélos')
-#plt.savefig('top10_bike.png', bbox_inches='tight')
+```{=html}
+</div>
 ```
+:::
 
 ```{python}
-#| echo: false
-g.figure.get_figure()
-```
-
-2. Les graphiques qui suivent vont nécessiter un peu d'agilité dans la gestion des dates. Il faut en effet commencer par créer une variable temporelle (vous pouvez la nommer
-`timestamp`) et la transformer en variable mensuelle (grâce à
-`dt.to_period('M')`) et l'appeler `month`. Vous pouvez essayer de le faire vous même ou cliquer
-ci-dessous pour la solution.  
-
-<details><summary>Solution</summary>
-```{python}
+# Questions 1 et 2
 df['timestamp'] = pd.to_datetime(df['Date et heure de comptage'], format='%Y-%m-%dT%H:%M:%SZ', errors='coerce')
 df['month'] = df['timestamp'].dt.to_period('M')
 ```
 
-</details>
-
-3. Refaire le graphique *Moyenne mensuelle des comptages vélos*. 
+```{python}
+# Question 3
+df3 = df.groupby('month').agg({'Comptage horaire':'mean'}).reset_index()
+df3 = df3.rename(columns = {"Comptage horaire": "value"})
+df3.head(2)
+```
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
+from plotnine import *
 
-# 3. Refaire le graphique : Moyenne mensuelle des comptages vélos
+# Question 3: version plotnine
+figure3 = (
+    ggplot(df3) +
+    geom_bar(aes(x = "month", y = "value"), fill = "#ffcd00", stat = "identity") +
+    labs(x = "Date et heure de comptage", y = "Moyenne mensuelle du comptage par heure\nsur la période sélectionnée",
+       title = "Moyenne mensuelle des comptages vélos") +
+       theme_minimal() +
+       theme(
+        axis_text_x = element_text(angle = 45, hjust = 1),
+        axis_title_y = element_text(color = "#ffcd00", face = "bold"),
+        plot_title = element_text(hjust = 0.5)
+        )
+    )
+
+# Question 3: version seaborn
 sns.set_style("whitegrid")
 df3 = df.groupby('month').agg({'Comptage horaire':'mean'}).reset_index()
 g = sns.catplot(x='month', y='Comptage horaire', data=df3, kind = "bar", height = 5, aspect = 4, color = "yellow")
 g.set_axis_labels('Date et heure de comptage', 'Moyenne mensuelle du comptage par heure sur la période sélectionnée')
 plt.title('Moyenne mensuelle des comptages vélos')
-#plt.savefig('top10_bike_sns.png', bbox_inches='tight')
 ```
 
 ```{python}
-#| echo: false
-g.figure.get_figure()
+figure3
 ```
 
-4. Refaire le graphique *Moyenne journalière des comptages vélos* (créer d'abord une variable de jour avec `.dt.day`)
-
+Si vous préférez représenter cela sous forme de _lollipop_[^notecouleur]:
 
 ```{python}
-#| include: false
-#| echo: false
-
-# 4. Refaire le graphique : Moyenne journalière des comptages vélos
-plt.clf()
-df['day'] = df.timestamp.dt.date
-df4 = df.groupby('day').agg({'Comptage horaire':'mean'}).reset_index()
-ax = sns.lineplot(x='day', y='Comptage horaire', data=df4, color = "magenta")
-l1 = ax.lines[0]
-x1 = l1.get_xydata()[:, 0]
-y1 = l1.get_xydata()[:, 1]
-ax.fill_between(x1, y1, color="magenta", alpha=0.3)
+(ggplot(df3, aes(x = "month", y = "Comptage horaire")) +
+  geom_segment(aes(xend = "month", yend = 0)) +
+  geom_point( color="#ffcd00", size=4) +
+  labs(x = "Date et heure de comptage", y = "Moyenne mensuelle du comptage par heure\nsur la période sélectionnée",
+       title = "Moyenne mensuelle des comptages vélos") +
+  theme_minimal() +
+  theme(axis_text_x = element_text(angle = 45, hjust = 1),
+        plot_title = element_text(hjust = 0.5))
+)
 ```
 
-```{python}
-#| echo: false
-ax.get_figure()
+[^notecouleur]: J'ai retiré la couleur sur l'axe des ordonnées qui, je trouve,
+apporte peu à la figure voire dégrade la compréhension du message. 
+
+## Première série temporelle
+
+Il est plus commun de représenter sous forme de série
+les données ayant une dimension temporelle.
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 5: barplot des comptages mensuels</h3>
 ```
 
-5. Refaire le graphique *Comptages vélo au cours des 7 derniers jours* (de l'échantillon)
-
-
-
-```{python}
-#| include: false
-#| echo: false
-
-# 5. Refaire le graphique : Comptages vélo au cours des 7 derniers jours
-df['Date'] = pd.to_datetime(df['day'])
-df['NewDate'] = pd.to_datetime(df.Date) - pd.to_timedelta(7, unit="D")
-df5 = df[df.Date >= (max(df['NewDate']))]
-df5 = df5.groupby('Date').agg({'Comptage horaire': 'sum'}).reset_index()
-df5['date_formatted'] = df5['Date'].dt.strftime('%Y-%m-%d')
-g = sns.catplot(y='Comptage horaire', x='date_formatted', data=df5, kind = "bar", height = 10, aspect = 2, color = "lightblue")
-g
-```
-
-
-```{python}
-#| echo: false
-g.figure.get_figure()
-```
+1. Créer une variable `day` qui transforme l'horodatage en format journalier
+du type `2021-05-01` avec `dt.day`.
+2. Reproduire la figure de la page d'_open data_
 
 
 ```{=html}
@@ -576,10 +585,38 @@ g.figure.get_figure()
 ```
 :::
 
+```{python}
+df['day'] = df.timestamp.dt.date
+moyenne_quotidienne = df.groupby('day', as_index=False).agg({'Comptage horaire':'mean'})
+moyenne_quotidienne['day'] = pd.to_datetime(moyenne_quotidienne['day'])
+```
+
+```{python}
+# Version plotnine
+figure4 = (ggplot(moyenne_quotidienne, aes(x = "day", y = 'Comptage horaire')) +
+  geom_line(color = "magenta") +
+  geom_area(fill="magenta", alpha = 0.6) +
+  labs(x = "Date et heure de comptage (Jour)", y = "Moyenne journalière du comptage par heure\nsur la période sélectionnée",
+       title = "Moyenne journalière des comptages vélos") +
+  theme_minimal() +
+  theme(axis_text_x = element_text(angle = 45, hjust = 1),
+        plot_title = element_text(hjust = 0.5))
+)
+
+
+# Version matplotlib
+plt.clf()
+ax = sns.lineplot(x='day', y='Comptage horaire', data=moyenne_quotidienne, color = "magenta")
+l1 = ax.lines[0]
+x1 = l1.get_xydata()[:, 0]
+y1 = l1.get_xydata()[:, 1]
+ax.fill_between(x1, y1, color="magenta", alpha=0.3)
+```
+
 
 ## Des graphiques dynamiques avec `Plotly`
 
-Le package `Plotly` est une surcouche à la librairie Javascript 
+Le package `Plotly` est une surcouche à la librairie `Javascript` 
 `Plotly.js` qui permet de créer et manipuler des objets graphiques de manière
 très flexible afin de produire des objets réactifs sans avoir à recourir
 à Javascript.
