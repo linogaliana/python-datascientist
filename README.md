@@ -33,7 +33,7 @@ _data science_ que des personnes à la recherche de contenu plus avancé :
 
 1. __Manipulation de données__ : manipulation de données standards (`Pandas`), données géographiques (`Geopandas`), récupération de données (webscraping, API)...
 1. __Visualisation de données__ : visualisations classiques (`Matplotlib`, `Seaborn`), cartographie, visualisations réactives (`Plotly`, `Folium`)
-1. __Modélisation__: _machine learning_ (`Scikit`), économétrie
+1. __Modélisation__ : _machine learning_ (`Scikit`), économétrie
 1. __Traitement de données textuelles__ (NLP): découverte de la tokenisation avec `NLTK` et `SpaCy`, modélisation...
 1. **Introduction à la _data science_ moderne**: _cloud computing_, `ElasticSearch`, intégration continue...
 
@@ -44,7 +44,7 @@ centralisatrice [`data.gouv`](https://www.data.gouv.fr) ou du site
 _web_ de l'[Insee](https://www.insee.fr)) ou de données
 américaines.
 
-Un bon complément du contenu du site web est le cours que nous donnons avec Romain Avouac ([@avouacr](https://github.com/avouacr)) en dernière année de l'ENSAE plus tourné autour de la mise en production de projets _data-science_: [https://ensae-reproductibilite.github.io/website/](https://ensae-reproductibilite.github.io/website/)
+Un bon complément du contenu du site web est le cours que nous donnons avec Romain Avouac ([@avouacr](https://github.com/avouacr)) en dernière année de l'ENSAE plus tourné autour de la mise en production de projets _data-science_ : [https://ensae-reproductibilite.github.io/website/](https://ensae-reproductibilite.github.io/website/)
 
 
 <details>
