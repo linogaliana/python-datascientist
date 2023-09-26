@@ -266,7 +266,7 @@ Cela appauvrit grandement la carte de Paris.
 petite_couronne = download_vectorfile_url_all(
     crs = 4326,
     values = ["75", "92", "93", "94"],
-    borders="COMMUNE",
+    borders="COMMUNE_ARRONDISSEMENT",
     vectorfile_format="topojson",
     filter_by="DEPARTEMENT",
     source="EXPRESS-COG-CARTO-TERRITOIRE",
@@ -613,3 +613,62 @@ base
 ```
 
 ## Jointures spatiales
+
+Les jointures attributaires fonctionnent comme avec un `Pandas` classique.
+Pour conserver un objet spatial *in fine*, il faut faire attention à utiliser en premier (base de gauche) l'objet `Geopandas`.
+En revanche, l'un des intérêts des objets `Geopandas` est qu'on peut également faire une jointure sur la dimension spatiale grâce à plusieurs fonctions. 
+
+La documentation à laquelle se référer est [ici](https://geopandas.org/mergingdata.html#spatial-joins). 
+Une version pédagogique pour `R` se trouve dans la documentation [`utilitR`](https://www.book.utilitr.org/03_fiches_thematiques/fiche_donnees_spatiales#joindre-des-donn%C3%A9es-g%C3%A9ographiques-et-attributaires). 
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4: Associer les stations aux communes et arrondissements auxquels elles appartiennent</h3>
+```
+
+Dans cet exercice, on va supposer que :
+
+- les localisations des stations `velib` 
+sont stockées dans un _dataframe_ nommé `stations`
+- les données administratives
+sont dans un _dataframe_ nommé `petite_couronne`.
+
+1. Faire une jointure spatiale pour enrichir les données de stations en y ajoutant des informations de `petite_couronne`. Appeler cet objet `stations_info`
+2. Créer les objets `stations_19e` et `arrondissement_19e` pour stocker, respectivement, 
+les stations appartenant au 19e et les limites de l'arrondissement
+2. Représenter la carte des stations du 19e arrondissement avec le code suivant:
+
+```python
+base = petite_couronne.loc[petite_couronne['INSEE_DEP']=="75"].boundary.plot(edgecolor = "k", linewidth=0.5)
+arrondissement_19e.boundary.plot(ax = base, edgecolor = "red", linewidth=0.9)
+stations_19.plot(ax = base, color = "red", alpha = 0.4)
+base
+```
+
+```{=html}
+</div>
+```
+:::
+
+```{python}
+#1.  Jointure spatiale entre stations et data_paris
+stations = stations.to_crs(2154)
+petite_couronne = petite_couronne.to_crs(2154)
+
+stations_info = gpd.sjoin(stations, petite_couronne, predicate = 'within')
+stations_info.head()
+```
+
+```{python}
+stations_19 = stations_info.loc[stations_info['NOM'].str.contains("19e")]
+arrondissement_19e = petite_couronne.loc[stations_info['NOM'].str.contains("19e")]
+```
+
+```{python}
+base = petite_couronne.loc[petite_couronne['INSEE_DEP']=="75"].boundary.plot(edgecolor = "k", linewidth=0.5)
+arrondissement_19e.boundary.plot(ax = base, edgecolor = "red", linewidth=0.9)
+stations_19.plot(ax = base, color = "red", alpha = 0.4)
+base
+```
