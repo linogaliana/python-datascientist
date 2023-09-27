@@ -667,8 +667,13 @@ base = petite_couronne.loc[petite_couronne['INSEE_DEP']=="75"].boundary.plot(edg
 arrondissement_19e.boundary.plot(ax = base, edgecolor = "red", linewidth=0.9)
 stations_19.plot(ax = base, color = "red", alpha = 0.4)
 base.set_axis_off()
+base.set_title("Les stations Vélib du 19e arrondissement")
 base
 ```
+
+3. Compter le nombre de stations velib et le nombre de places velib par arrondissement ou commune. Représenter sur une carte chacune des informations
+4. Représenter les mêmes informations mais en densité (diviser par la surface de l'arrondissement ou commune en km2)
+
 
 ```{=html}
 </div>
@@ -693,9 +698,51 @@ base = petite_couronne.loc[petite_couronne['INSEE_DEP']=="75"].boundary.plot(edg
 arrondissement_19e.boundary.plot(ax = base, edgecolor = "red", linewidth=0.9)
 stations_19.plot(ax = base, color = "red", alpha = 0.4)
 base.set_axis_off()
+base.set_title("Les stations Vélib du 19e arrondissement")
 base
 ```
 
+
+```{python}
+stations_agg = (
+  stations_info
+  .groupby("INSEE_COG")
+  .agg({"stationcode": "nunique", "capacity": "sum"})
+  .reset_index()
+)
+
+petite_couronne['area'] = petite_couronne.area
+petite_couronne_count = petite_couronne.merge(
+  stations_agg
+).to_crs(2154)
+
+petite_couronne_count['density'] = petite_couronne_count.area.div(1e6)
+petite_couronne_count['density'] = petite_couronne_count['stationcode']*petite_couronne_count['density']
+```
+
+Carte obtenue à la question 3:
+
+```{python}
+petite_couronne_count = petite_couronne_count.loc[petite_couronne_count["INSEE_DEP"]== "75"]
+aplat = petite_couronne_count.plot(
+    column = "capacity", cmap="coolwarm", legend=True)
+aplat.set_axis_off()
+aplat
+```
+
+Avec la carte de la question 3, basée sur des aplats de couleurs (choropleth map), le lecteur est victime d’une illusion classique. Les arrondissements les plus visibles sur la carte sont les plus grands. D’ailleurs c’est assez logique qu’ils soient également mieux pourvus en velib. Même si l’offre de velib est probablement plus reliée à la densité de population et d’équipements, on peut penser que l’effet taille joue et qu’ainsi on est victime d’une illusion avec la carte précédente.
+
+
+Si on représente plutôt la capacité sous forme de densité, pour tenir compte de la taille différente des arrondissements, les conclusions sont inversées et correspondent mieux aux attentes d’un modèle centr-périphérie. Les arrondissements centraux sont mieux pourvus, cela se voit encore mieux avec des ronds proportionnels plutôt qu’une carte chorolèpthe.
+
+
+```{python}
+petite_couronne_count = petite_couronne_count.loc[petite_couronne_count["INSEE_DEP"] == 75]
+aplat = petite_couronne_count.plot(
+    column = "density", cmap="coolwarm", legend=True)
+aplat.set_axis_off()
+aplat
+```
 
 ## Exercice supplémentaire
 
