@@ -19,8 +19,7 @@ description: |
   ce chapitre vise à illustrer les fonctionalités du _package_ 
   à partir de données d'émissions de gaz à effet de serre
   de l'[`Ademe`](https://data.ademe.fr/). 
-echo: true
-output: false
+echo: false
 image: featured_tp_pandas.png
 ---
 
@@ -100,11 +99,15 @@ import pynsee.download
 
 ### Import d'un csv de l'Ademe
 
+L'URL d'accès aux données peut être conservé dans une variable _ad hoc_:
 
 ```{python}
 #| echo: true
 url = "https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert"
 ```
+
+L'objectif du premier exercice est de se familiariser à l'import et l'affichage de données
+avec `Pandas`. 
 
 ::: {.cell .markdown}
 ```{=html}
@@ -123,8 +126,10 @@ url = "https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffem
 <summary>
 En cas de blocage à la question 1
 </summary>
+
 Lire la documentation de `read_csv` (très bien faite) ou chercher des exemples
 en ligne pour découvrir cette fonction.
+
 </details>
 
 
@@ -147,6 +152,7 @@ emissions = pd.read_csv(url, sep=",")
 ```
 
 ```{python}
+#| output: false
 #| label: exo1-q2
 # Question 2
 emissions.head(2)
@@ -168,7 +174,7 @@ emissions.head(6).sample(n = 100, replace = True, weights = [0.5] + [0.1]*5)
 ## Premières manipulations de données
 
 Le chapitre précédent évoquait quelques manipulations traditionnelles
-de données. 
+de données. Les principales sont rappelées ici:
 
 ::: {layout-ncol=2}
 
@@ -185,15 +191,17 @@ de données.
 
 La _cheatsheet_ suivante est très pratique puisqu'elle illustre ces différentes
 fonctions. Il est recommandé de régulièrement
-la consulter (cliquer sur l'image pour zoomer 🔎) :
+la consulter :
 
 ![Cheasheet `Pandas`](https://cdn-images-1.medium.com/max/2000/1*YhTbz8b8Svi22wNVvqzneg.jpeg){width=70%}
 
+L'objectif du prochain exercice est de se familiariser aux principales manipulations de données
+sur un sous-ensemble de la table des émissions de gaz carbonique. 
 
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2: Découverte des verbes de `dplyr` pour manipuler des données</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2: Découverte des verbes de <code>Pandas</code> pour manipuler des données</h3>
 ```
 
 En premier lieu, on propose de se familiariser avec les opérations sur
@@ -207,7 +215,7 @@ les colonnes.
 Indice pour cette question
 </summary>
 
-![](./select_pandas.png)
+![](./select_pandas.png){fig-width=50%}
 
 </details>
 
@@ -222,7 +230,7 @@ manière suivante:
 Indice pour cette question
 </summary>
 
-![](./rename_pandas.png)
+![](./rename_pandas.png){fig-width=50%}
 
 </details>
 
@@ -240,7 +248,7 @@ pour transformer les valeurs manquantes en 0.
 Indice pour cette question
 </summary>
 
-![](mutate_pandas.png)
+![](mutate_pandas.png){fig-width=50%}
 
 </details>
 
@@ -254,12 +262,23 @@ du plus gros pollueur au plus petit par département (du 01 au 95).
 Indice pour cette question
 </summary>
 
-![](arrange_pandas.png)
+![](arrange_pandas.png){fig-width=50%}
 
 </details>
 
+6. Ne conserver que les communes appartenant aux départements 13 ou 31. 
+Ordonner ces communes du plus gros pollueur au plus petit.
 
-6. Calculer les émissions totales par départements
+<details>
+<summary>
+Indice pour cette question
+</summary>
+
+![](./filter_pandas.png){fig-width=50%}
+
+</details>
+
+7. Calculer les émissions totales par départements
 
 <details>
 <summary>
@@ -278,6 +297,7 @@ Indice pour cette question
 :::
 
 ```{python}
+#| output: false
 # Question 1
 emissions_copy = emissions.loc[
   :,
@@ -299,28 +319,42 @@ emissions_copy['dep'] = emissions_copy['code_insee'].str[:2]
 emissions_copy['transports_total'] = emissions_copy['transports'] + emissions_copy['transports_international']
 
 # Question 5
-emissions_copy.sort_values("transports_total", ascending = False)
+data_sorted = emissions_copy.sort_values("transports_total", ascending = False)
+data_sorted
 emissions_copy.sort_values(by = ["dep","transports_total"], ascending = [True, False])
+
+# Question 6
+emissions_hg_bdr = (emissions_copy
+    .loc[emissions_copy['dep'].isin(["13","31"])]
+    .sort_values("transports", ascending = False)
+)
+
+# Question 7
+emissions_copy.groupby("dep").agg({"transports_total": "sum"})
 ```
+
+A la question 5, quand on ordonne les communes exclusivement à partir de la variable
+`transports_total`, on obtient ainsi:
 
 ```{python}
-df = emissions.copy()
+data_sorted.head(3)
 ```
 
-
-<!--- old ----->
-
-Pour les données de cadrage au niveau communal (source Insee), le package `pynsee` facilite grandement la vie. 
-La liste des données disponibles est [ici](https://inseefrlab.github.io/DoReMIFaSol/articles/donnees_dispo.html).
-En l'occurrence, on va utiliser les données Filosofi (données de revenus) au niveau communal de 2016. 
-Le point d'entrée principal de la fonction `pynsee` est la fonction `download_file`.
-Le code pour télécharger les données est le suivant :
+A la question 6, on obtient ce classement :
 
 ```{python}
-#| echo: true
-
-df_city = pynsee.download.download_file("FILOSOFI_COM_2016")
+emissions_hg_bdr.head(3)
 ```
+
+
+### Import des données de l'Insee
+
+En ce qui concerne nos informations communales, on va utiliser l'une des
+sources de l'Insee les plus utilisées : les données [`Filosofi`](https://www.insee.fr/fr/metadonnees/source/serie/s1172). 
+Afin de faciliter la récupération de celles-ci, nous allons
+utiliser le _package_ communautaire `pynsee` :
+
+
 
 ::: {.cell .markdown}
 ```{=html}
@@ -328,13 +362,29 @@ df_city = pynsee.download.download_file("FILOSOFI_COM_2016")
 <h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
 ```
 
+Le _package_ `pynsee` comporte deux principaux points d'entrée:
+
+- Les API de l'Insee, ce qui sera illustré dans le chapitre consacré.
+- Quelques jeux de données directement issus du site web de
+l'Insee ([insee.fr](https://www.insee.fr/fr/accueil))
+
+Dans ce chapitre, nous allons exclusivement utiliser cette deuxième
+approche. Cela se fera par le module `pynsee.download`.  
+
+La liste des données disponibles depuis ce _package_ est [ici](https://inseefrlab.github.io/DoReMIFaSol/articles/donnees_dispo.html).
 La fonction `download_file` attend un identifiant unique
 pour savoir quelle base de données aller chercher et
 restructurer depuis le
 site [insee.fr](https://www.insee.fr/fr/accueil). 
 
+<details>
+<summary>
+Connaître la liste des bases disponibles
+</summary>
+
 Pour connaître la liste des bases disponibles, vous
-pouvez utiliser la fonction `meta = pynsee.get_file_list()`. 
+pouvez utiliser la fonction `meta = pynsee.get_file_list()`
+après avoir fait `import pynsee`. 
 Celle-ci renvoie un `DataFrame` dans lequel on peut
 rechercher, par exemple grâce à une recherche
 de mot clé: 
@@ -350,152 +400,65 @@ Ici, `meta['label'].str.contains(r"Filosofi.*2016")` signifie:
 "_`pandas` trouve moi tous les labels où sont contenus les termes Filosofi et 2016._"
  (`.*` signifiant "_peu m'importe le nombre de mots ou caractères entre_")
 
+</details>
 
 ```{=html}
 </div>
 ```
 :::
 
+On va utiliser les données Filosofi (données de revenus) au niveau communal de 2016. 
+Ce n'est pas la même année que les données d'émission de CO2, ce n'est donc pas parfaitement rigoureux,
+mais cela permettra tout de même d'illustrer 
+les principales fonctionnalités de `Pandas`
 
-Cette première approche exploratoire donne une idée assez précise de la manière dont les données sont organisées.
-On remarque ainsi une différence entre `df` et `df_city` quant aux valeurs manquantes :
-la première base est relativement complète, la seconde comporte beaucoup de valeurs manquantes.
-Autrement dit, si on désire exploiter `df_city`, il faut faire attention à la variable choisie.
+Le point d'entrée principal de la fonction `pynsee` est la fonction `download_file`.
 
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2: structure des données</h3>
-```
-
-
-La première chose à vérifier est le format des données,
-afin d'identifier des types de variables qui ne conviennent pas
-
-Ici, comme c'est `pandas` qui a géré automatiquement les types de variables,
-il y a peu de chances que les types ne soient pas adéquats mais une vérification ne fait pas de mal.
-
-1. Vérifier les types des variables.
-S'assurer que les types des variables communes aux deux bases sont cohérents.
-Pour les variables qui ne sont pas en type `float` alors qu'elles devraient l'être, modifier leur type.
-
-Ensuite, on vérifie les dimensions des `DataFrames` et la structure de certaines variables clés.
-En l'occurrence, les variables fondamentales pour lier nos données sont les variables communales.
-Ici, on a deux variables géographiques: un code commune et un nom de commune. 
-
-2. Vérifier les dimensions des DataFrames
-
-3. Vérifier le nombre de valeurs uniques des variables géographiques dans chaque base. Les résultats apparaissent-ils cohérents ?
-
-4. Identifier dans `df_city` les noms de communes qui correspondent à plusieurs codes communes et sélectionner leurs codes. En d'autres termes, identifier les `CODGEO` tels qu'il existe des doublons de `LIBGEO` et les stocker dans un vecteur `x` (conseil: faire attention à l'index de `x`)
-
-On se focalise temporairement sur les observations où le libellé comporte plus de deux codes communes différents
-
-5. Regarder dans `df_city` ces observations
-
-6. Pour mieux y voir, réordonner la base obtenue par order alphabétique
-
-7. Déterminer la taille moyenne (variable nombre de personnes: `NBPERSMENFISC16`) et quelques statistiques descriptives de ces données.
-Comparer aux mêmes statistiques sur les données où libellés et codes communes coïncident
-
-8. Vérifier les grandes villes (plus de 100 000 personnes),
-la proportion de villes pour lesquelles un même nom est associé à différents codes commune.
-
-9. Vérifier dans `df_city` les villes dont le libellé est égal à Montreuil.
-Vérifier également celles qui contiennent le terme 'Saint-Denis'
-
-```{=html}
-</div>
-```
-:::
+Le code pour télécharger les données est le suivant :
 
 ```{python}
-#| echo: false
-
-# Question 1
-print("base df")
-print(df.dtypes)
-print("\nbase df_city")
-print(df_city.dtypes)
-
-# Il faut changer les types de toutes les variables de df_city à l'exception des codes et libellés de commune.
-df_city[df_city.columns[2:len(df_city.columns)]] = df_city[df_city.columns[2:len(df_city.columns)]].apply(pd.to_numeric)
-print("\nbase df_city corrigée")
-print(df_city.dtypes)
+#| echo: true
+#| output: false
+from pynsee.download import download_file
+filosofi = download_file("FILOSOFI_COM_2016")
 ```
+
+Le _DataFrame_ en question a l'aspect suivant :
 
 ```{python}
-#| echo: false
-
-# Question 2
-print(df.shape)
-print(df_city.shape)
+filosofi.sample(5)
 ```
+
+Un simple coup d'oeil sur les données
+donne une idée assez précise de la manière dont les données sont organisées.
+On remarque que certaines variables de `filosofi` semblent avoir beaucoup de valeurs manquantes
+alors que d'autres semblent complètes. 
+Si on désire exploiter `filosofi`, il faut faire attention à la variable choisie.
+
 
 ```{python}
-#| echo: false
-
-# Question 3
-print(df[['INSEE commune', 'Commune']].nunique())
-print(df_city[['CODGEO', 'LIBGEO']].nunique())
-# Résultats dont l'ordre de grandeur est proche. Dans les deux cas, #(libelles) < #(code)
+df = emissions.copy()
+df_city = filosofi.copy()
 ```
 
-```{python}
-#| echo: false
+Notre objectif à terme va être de relier l'information contenue entre ces
+deux jeux de données. En effet, sinon, nous risquons d'être frustré: nous allons
+vouloir en savoir plus sur les émissions de gaz carbonique mais seront très
+limités dans les possibilités d'analyse sans ajout d'une information annexe
+issue de `filosofi`.  
 
-# Question 4
-x = df_city.groupby('LIBGEO').count()['CODGEO']
-x = x[x>1]
-x = x.reset_index()
-x
-```
-
-```{python}
-#| echo: false
-# Question 5
-df_city[df_city['LIBGEO'].isin(x['LIBGEO'])]
-```
-
-```{python}
-#| echo: false
-# Question 6
-df_city[df_city['LIBGEO'].isin(x['LIBGEO'])].sort_values('LIBGEO')
-```
-
-```{python}
-#| echo: false
-# Question 7
-print(df_city[df_city['LIBGEO'].isin(x['LIBGEO'])]['NBPERSMENFISC16'].describe())
-print(df_city[~df_city['LIBGEO'].isin(x['LIBGEO'])]['NBPERSMENFISC16'].describe())
-```
-
-```{python}
-#| echo: false
-# Question 8
-df_big_city = df_city[df_city['NBPERSMENFISC16']>100000].copy()
-df_big_city['probleme'] = df_big_city['LIBGEO'].isin(x['LIBGEO'])
-df_big_city['probleme'].mean()
-df_big_city[df_big_city['probleme']]
-```
-
-```{python}
-#| echo: false
-# Question 9
-df_city[df_city.LIBGEO == 'Montreuil']
-df_city[df_city.LIBGEO.str.contains('Saint-Denis')].head(10)
-```
-
-Ce petit exercice permet de se rassurer car les libellés dupliqués
-sont en fait des noms de commune identiques mais qui ne sont pas dans le même département.
-Il ne s'agit donc pas d'observations dupliquées.
-On se fiera ainsi aux codes communes, qui eux sont uniques.
 
 ## Les indices
 
-Les indices sont des éléments spéciaux d'un DataFrame puisqu'ils permettent d'identifier certaines observations.
+Les indices sont des éléments spéciaux d'un `DataFrame` puisqu'ils permettent d'identifier certaines observations.
 Il est tout à fait possible d'utiliser plusieurs indices, par exemple si on a des niveaux imbriqués.
+
+Pour le moment, on va prendre comme acquis que les codes communes (dits aussi codes Insee) permettent
+d'identifier de manière unique une commune. Un exercice ultérieur permettra de s'en assurer. 
+
+`Pandas` propose un système d'indice qui permet d'ordonner les variables mais également de gagner
+en efficacité sur certains traitements, comme des recherches d'observations. Le prochain 
+exercice illustre cette fonctionnalité. 
 
 
 ::: {.cell .markdown}
@@ -505,23 +468,26 @@ Il est tout à fait possible d'utiliser plusieurs indices, par exemple si on a d
 ```
 
 
-A partir de l'exercice précédent, on peut se fier aux codes communes.
+On suppose ici qu'on peut se fier aux codes communes.
 
 1. Fixer comme indice la variable de code commune dans les deux bases.
 Regarder le changement que cela induit sur le *display* du `DataFrame`
 
 2. Les deux premiers chiffres des codes communes sont le numéro de département.
-Créer une variable de département `dep` dans `df` et dans `df_city`
+Créer une variable de département `dep` dans `emissions` et `filosofi`
 
 3. Calculer les émissions totales par secteur pour chaque département.
-Mettre en log ces résultats dans un objet `df_log`.
-Garder 5 départements et produire un `barplot`
+Mettre en _log_ ces résultats dans un objet `emissions_log`.
+Garder 5 départements et produire un `barplot` grâce à la méthode _plot_ (la
+figure n'a pas besoin d'être vraiment propre, c'est seulement pour illustrer
+cette méthode)
 
-4. Repartir de `df`.
+4. Repartir de `emissions`.
 Calculer les émissions totales par département et sortir la liste
 des 10 principaux émetteurs de CO2 et des 5 départements les moins émetteurs.
-Sans faire de *merge*,
-regarder les caractéristiques de ces départements (population et niveau de vie)
+Essayer de comprendre pourquoi ce sont ces départements qui apparaissent en tête
+du classement. Pour cela, il peut être utile de regarder les caractéristiques de ces
+départements dans `filosofi`
 
 ```{=html}
 </div>
@@ -529,110 +495,100 @@ regarder les caractéristiques de ces départements (population et niveau de vie
 :::
 
 ```{python}
-#| echo: false
+#| output: false
+
 # Question 1
-display(df)
-df = df.set_index('INSEE commune')
-display(df)
+display(emissions)
+emissions = emissions.set_index('INSEE commune')
+display(emissions)
 
-display(df_city)
-df_city =  df_city.set_index('CODGEO') 
-display(df_city)
+display(filosofi)
+filosofi =  filosofi.set_index('CODGEO') 
+display(filosofi)
 ```
 
 ```{python}
-#| echo: false
+#| output: false
+
 # Question 2
-df['dep'] = df.index.str[:2]
-df_city['dep'] = df_city.index.str[:2]
+emissions['dep'] = emissions.index.str[:2]
+filosofi['dep'] = filosofi.index.str[:2]
 ```
 
 ```{python}
-#| echo: false
+#| output: false
+
 # Question 3
-df_log = df.groupby('dep').sum(numeric_only = True).apply(np.log)
-print(df_log.head())
-df_log.sample(5).plot(kind = "bar")
+emissions_log = emissions.groupby('dep').sum(numeric_only = True).apply(np.log)
+print(emissions_log.head())
+emissions_log.sample(5).plot(kind = "barh")
 ```
 
 ```{python}
 #| echo: false
 # Question 4
 ## Emissions totales par département (df)
-df_emissions = df.reset_index().set_index(['INSEE commune','dep']).sum(axis = 1, numeric_only = True).groupby('dep').sum(numeric_only = True)
-#df.reset_index().groupby('dep').sum(numeric_only = True).sum(axis = 1, numeric_only = True).head() #version simplifiee ?
-gros_emetteurs = df_emissions.sort_values(ascending = False).head(10)
-petits_emetteurs = df_emissions.sort_values().head(5)
+emissions_totales = (
+  emissions
+  .reset_index()
+  .groupby("dep")
+  .sum(numeric_only = True)
+  .sum(axis = 1, numeric_only = True)
+)
+gros_emetteurs = emissions_totales.sort_values(ascending = False).head(10)
+petits_emetteurs = emissions_totales.sort_values().head(5)
 
 ## Caractéristiques des départements (df_city)
 print("gros emetteurs")
-print(df_city[df_city['dep'].isin(gros_emetteurs.index)][['NBPERSMENFISC16','MED16']].mean())
+display(
+  filosofi.loc[
+    filosofi['dep'].isin(gros_emetteurs.index), ['NBPERSMENFISC16','MED16']
+    ].mean(numeric_only = True)
+  )
 print("\npetits emetteurs")
-print(df_city[df_city['dep'].isin(petits_emetteurs.index)][['NBPERSMENFISC16','MED16']].mean())
+display(
+  filosofi.loc[
+    filosofi['dep'].isin(gros_emetteurs.index), ['NBPERSMENFISC16','MED16']
+    ].mean(numeric_only = True)
+  )
 # Les petits emetteurs sont en moyenne plus pauvres et moins peuplés que les gros emetteurs
 ```
 
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4: performance des indices</h3>
-```
+En pratique, l'utilisation des indices en `Pandas` peut être piégeuse, notamment lorsqu'on
+associe des sources de données.  
+Il est plutôt recommandé de ne pas les utiliser ou de les utiliser avec parcimonie,
+cela pourra éviter de mauvaises surprises. 
 
-Un des intérêts des indices est qu'ils permettent des agrégations efficaces. 
-
-1. Repartir de `df` et créer une copie `df_copy = df.copy()` et `df_copy2 = df.copy()` afin de ne pas écraser le DataFrame `df`
-
-2. Utiliser la variable `dep` comme indice pour `df_copy` et retirer tout index pour `df_copy2`
-
-3. Importer le module `timeit` et comparer le temps d'exécution de la somme par secteur, pour chaque département, des émissions de CO2
-
-```{=html}
-</div>
-```
-:::
-
-```{python}
-#| echo: false
-# Question 1
-df_copy = df.copy()
-df_copy2 = df.copy()
-```
-
-```{python}
-#| echo: false
-# Question 2
-df_copy = df_copy.set_index('dep')
-df_copy2 = df_copy2.reset_index()
-```
-
-```{python}
-#| echo: false
-#| eval: false
-# Question 3
-%timeit df_copy.drop('Commune', axis = 1).groupby('dep').sum(numeric_only = True)
-%timeit df_copy2.drop('Commune', axis = 1).groupby('dep').sum(numeric_only = True)
-# Le temps d'exécution est plus lent sur la base sans index par département.
-```
 
 ## Restructurer les données
 
-On présente généralement deux types de données : 
+Quand on a plusieurs informations pour un même individu ou groupe, on
+retrouve généralement deux types de structure de données : 
     
 * format __wide__ : les données comportent des observations répétées, pour un même individu (ou groupe), dans des colonnes différentes 
 * format __long__ : les données comportent des observations répétées, pour un même individu, dans des lignes différentes avec une colonne permettant de distinguer les niveaux d'observations
 
-Un exemple de la distinction entre les deux peut être pris à l'ouvrage de référence d'Hadley Wickham, *R for Data Science*:
+Un exemple de la distinction entre les deux peut être pris à l'ouvrage de référence d'Hadley Wickham, [*R for Data Science*](https://r4ds.hadley.nz/):
 
-![](https://d33wubrfki0l68.cloudfront.net/3aea19108d39606bbe49981acda07696c0c7fcd8/2de65/images/tidy-9.png)
+![Données _long_ et _wide_](https://d33wubrfki0l68.cloudfront.net/3aea19108d39606bbe49981acda07696c0c7fcd8/2de65/images/tidy-9.png)
 
 
 L'aide mémoire suivante aidera à se rappeler les fonctions à appliquer si besoin:
 
-![](reshape.png)
+![](reshape.png){fig-width=60%}
 
 Le fait de passer d'un format *wide* au format *long* (ou vice-versa)
 peut être extrêmement pratique car certaines fonctions sont plus adéquates sur une forme de données ou sur l'autre.
-En règle générale, avec `Python` comme avec `R`, les formats *long* sont souvent préférables.
+
+En règle générale, avec `Python` comme avec `R`, les __formats *long* sont souvent préférables__.
+Les formats _wide_ sont plutôt pensés pour des tableurs comme `Excel` ou on dispose d'un nombre réduit
+de lignes à partir duquel faire des tableaux croisés dynamiques. 
+
+Le prochain exercice propose donc une telle restructuration de données. 
+Les données de l'ADEME, et celles de l'Insee également, sont au format
+_wide_. 
+Le prochain exercice illustre l'intérêt de faire la conversion _long_ $\to$ _wide_
+avant de faire un graphique.
 
 ::: {.cell .markdown}
 ```{=html}
@@ -640,7 +596,7 @@ En règle générale, avec `Python` comme avec `R`, les formats *long* sont souv
 <h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 5: Restructurer les données: wide to long</h3>
 ```
 
-1. Créer une copie des données de l'`ADEME` en faisant `df_wide = df.copy()`
+1. Créer une copie des données de l'`ADEME` en faisant `df_wide = emissions.copy()`
 
 2. Restructurer les données au format *long* pour avoir des données d'émissions par secteur en gardant comme niveau d'analyse la commune (attention aux autres variables identifiantes).
 
@@ -654,20 +610,20 @@ En règle générale, avec `Python` comme avec `R`, les formats *long* sont souv
 :::
 
 ```{python}
-#| echo: false
+#| output: false
 #| label: question1
 # Question 1
 
-df_wide = df.copy()
-df_wide[['Commune','dep', "Agriculture", "Tertiaire"]].head() 
+emissions_wide = emissions.copy()
+emissions_wide[['Commune','dep', "Agriculture", "Tertiaire"]].head() 
 ```
 
 ```{python}
-#| echo: false
+#| output: false
 #| label: question2
 # Question 2
 
-df_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
+emissions_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
                           var_name = "secteur", value_name = "emissions")
 ```
 
@@ -676,41 +632,97 @@ df_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
 #| label: question3
 # Question 3
 
-(df_wide.reset_index()
- .melt(id_vars = ['INSEE commune','Commune','dep'],
-                          var_name = "secteur", value_name = "emissions")
- .groupby('secteur').sum(numeric_only = True).plot(kind = "barh")
+emissions_totales = (emissions_wide.reset_index()
+ .melt(
+    id_vars = ['INSEE commune','Commune','dep'],
+    var_name = "secteur", value_name = "emissions"
+    )
+ .groupby('secteur')
+ .sum(numeric_only = True)
 )
+
+emissions_totales.plot(kind = "barh")
 ```
 
 ```{python}
-#| echo: false
+#| output: false
 #| label: question4
 # Question 4
 
-(df_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
-                          var_name = "secteur", value_name = "emissions")
- .groupby(['secteur','dep']).sum(numeric_only=True).reset_index().sort_values(['dep','emissions'], ascending = False).groupby('dep').head(1)
+top_commune_dep = (
+  emissions_wide
+  .reset_index()
+  .melt(
+    id_vars = ['INSEE commune','Commune','dep'],
+    var_name = "secteur", value_name = "emissions")
+ .groupby(['secteur','dep'])
+ .sum(numeric_only=True).reset_index()
+ .sort_values(['dep','emissions'], ascending = False)
+ .groupby('dep').head(1)
 )
 ```
+
+## Combiner les données
+
+### Travail préliminaire
+
+Jusqu'à présent lorsque nous avons produit des statistiques descriptives,
+celles-ci étaient univariées, c'est-à-dire que nous produisions de l'information
+sur une variable mais nous ne la mettions pas en lien avec une autre. Pourtant,
+on est rapidement amené à désirer expliquer certaines statistiques agrégées à partir
+de caractéristiques issues d'une autre source de données. Cela implique
+donc d'associer des jeux de données,
+autrement dit de mettre en lien deux jeux de données
+présentant le même niveau d'information. 
+
+On appelle ceci faire un _merge_ ou un _join_. De manière illustrée,
+ceci revient à effectuer ce type d'opération:
+
+![](https://pandas.pydata.org/docs/_images/merging_concat_axis1_inner.png)
+
+
+Avant de faire ceci, il est néanmoins nécessaire de s'assurer que les variables
+communes entre les bases de données présentent le bon niveau d'information. 
 
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 6: long to wide</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 3: structure des données</h3>
 ```
 
-Cette transformation est moins fréquente car appliquer des fonctions par groupe, comme nous le verrons par la suite, est très simple. 
+La première chose à vérifier est le format des données,
+afin d'identifier des types de variables qui ne correspondraient pas
+entre les bases de données.
+Une vérification ne fait pas de mal.
 
-1. Repartir de `df_wide = df.copy()
+1. Vérifier les types des variables.
+S'assurer que les types des variables communes aux deux bases sont cohérents.
+Pour les variables qui ne sont pas en type `float` alors qu'elles devraient l'être, modifier leur type.
 
-2. Reconstruire le DataFrame, au format long, des données d'émissions par secteur en gardant comme niveau d'analyse la commune puis faire la somme par département et secteur
+Ensuite, on vérifie les dimensions des `DataFrames` et la structure de certaines variables clés.
+En l'occurrence, les variables fondamentales pour lier nos données sont les variables communales.
+Ici, on a deux variables géographiques: un code commune et un nom de commune. 
 
-3. Passer au format *wide* pour avoir une ligne par secteur et une colonne par département
+2. Vérifier les dimensions des _DataFrames_.
 
-4. Calculer, pour chaque secteur, la place du département dans la hiérarchie des émissions nationales
+3. Vérifier le nombre de valeurs uniques des variables géographiques dans chaque base. Les résultats apparaissent-ils cohérents ?
 
-5. A partir de là, en déduire le rang médian de chaque département dans la hiérarchie des émissions et regarder les 10 plus mauvais élèves, selon ce critère.
+4. Identifier dans `filosofi` les noms de communes qui correspondent à plusieurs codes communes et sélectionner leurs codes. En d'autres termes, identifier les `CODGEO` tels qu'il existe des doublons de `LIBGEO` et les stocker dans un vecteur `x` (conseil: faire attention à l'index de `x`).
+
+On se focalise temporairement sur les observations où le libellé comporte plus de deux codes communes différents
+
+5. Regarder dans `filosofi` ces observations.
+
+6. Pour mieux y voir, réordonner la base obtenue par order alphabétique.
+
+7. Déterminer la taille moyenne (variable nombre de personnes: `NBPERSMENFISC16`) et quelques statistiques descriptives de ces données.
+Comparer aux mêmes statistiques sur les données où libellés et codes communes coïncident.
+
+8. Vérifier les grandes villes (plus de 100 000 personnes),
+la proportion de villes pour lesquelles un même nom est associé à différents codes commune.
+
+9. Vérifier dans `filosofi` les villes dont le libellé est égal à Montreuil.
+Vérifier également celles qui contiennent le terme _'Saint-Denis'_.
 
 ```{=html}
 </div>
@@ -718,54 +730,101 @@ Cette transformation est moins fréquente car appliquer des fonctions par groupe
 :::
 
 ```{python}
-#| echo: false
+#| output: false
+
 # Question 1
+print("base df")
+print(df.dtypes)
+print("\nbase df_city")
+print(df_city.dtypes)
 
-df_wide = df.copy()
+# Il faut changer les types de toutes les variables de filosofi à l'exception des codes et libellés de commune.
+df_city[df_city.columns[2:len(df_city.columns)]] = df_city[df_city.columns[2:len(df_city.columns)]].apply(pd.to_numeric)
+print("\nbase df_city corrigée")
+print(df_city.dtypes)
 ```
 
 ```{python}
-#| echo: false
+#| output: false
+
 # Question 2
-
-df_long_agg = (df_wide.reset_index()
- .melt(id_vars = ['INSEE commune','Commune','dep'],
-                          var_name = "secteur", value_name = "emissions").groupby(["dep", "secteur"]).sum(numeric_only = True)
-)
-
-df_long_agg.head()
+print(df.shape)
+print(df_city.shape)
 ```
 
 ```{python}
-#| echo: false
+#| output: false
+
 # Question 3
-
-df_wide_agg = df_long_agg.reset_index().pivot_table(values = "emissions", index = "secteur", columns = "dep")
-
-df_wide_agg.head()
+print(df[['INSEE commune', 'Commune']].nunique())
+print(df_city[['CODGEO', 'LIBGEO']].nunique())
+# Résultats dont l'ordre de grandeur est proche. Dans les deux cas, #(libelles) < #(code)
 ```
 
 ```{python}
-#| echo: false
+#| output: false
+
 # Question 4
-
-df_wide_agg.rank(axis = 1)
+x = df_city.groupby('LIBGEO').count()['CODGEO']
+x = x[x>1]
+x = x.reset_index()
+x
 ```
 
 ```{python}
-#| echo: false
+#| output: false
 # Question 5
-
-df_wide_agg.rank(axis = 1).median().nlargest(10)
+df_city[df_city['LIBGEO'].isin(x['LIBGEO'])]
 ```
 
-## Combiner les données
+```{python}
+#| output: false
+# Question 6
+df_city[df_city['LIBGEO'].isin(x['LIBGEO'])].sort_values('LIBGEO')
+```
 
-Une information que l'on cherche à obtenir s'obtient de moins en moins à partir d'une unique base de données. Il devient commun de devoir combiner des données issues de sources différentes. Nous allons ici nous focaliser sur le cas le plus favorable qui est la situation où une information permet d'apparier de manière exacte deux bases de données (autrement nous serions dans une situation, beaucoup plus complexe, d'appariement flou). La situation typique est l'appariement entre deux sources de données selon un identifiant individuel ou un identifiant de code commune, ce qui est notre cas.
+```{python}
+#| output: false
+# Question 7
+print(df_city[df_city['LIBGEO'].isin(x['LIBGEO'])]['NBPERSMENFISC16'].describe())
+print(df_city[~df_city['LIBGEO'].isin(x['LIBGEO'])]['NBPERSMENFISC16'].describe())
+```
 
-Il est recommandé de lire [ce guide assez complet sur la question des jointures avec R](https://www.book.utilitr.org/03_fiches_thematiques/fiche_joindre_donnees) qui donne des recommandations également utiles en `python`.
+```{python}
+#| output: false
+# Question 8
+df_big_city = df_city[df_city['NBPERSMENFISC16']>100000].copy()
+df_big_city['probleme'] = df_big_city['LIBGEO'].isin(x['LIBGEO'])
+df_big_city['probleme'].mean()
+df_big_city[df_big_city['probleme']]
+```
 
-On utilise de manière indifférente les termes *merge* ou *join*. Le deuxième terme provient de la syntaxe SQL. En `pandas`, dans la plupart des cas, on peut utiliser indifféremment `df.join` et `df.merge`
+```{python}
+#| output: false
+# Question 9
+df_city[df_city.LIBGEO == 'Montreuil']
+df_city[df_city.LIBGEO.str.contains('Saint-Denis')].head(10)
+```
+
+Ce petit exercice permet de se rassurer car les libellés dupliqués
+sont en fait des noms de commune identiques mais qui ne sont pas dans le même département.
+Il ne s'agit donc pas d'observations dupliquées.
+On peut donc se fier aux codes communes, qui eux sont uniques.
+
+
+### Associer des données
+
+
+Une information que l'on cherche à obtenir s'obtient de moins en moins à partir d'une unique base de données. Il devient commun de devoir combiner des données issues de sources différentes. 
+
+Nous allons ici nous focaliser sur le cas le plus favorable qui est la situation où une information permet d'apparier de manière exacte deux bases de données (autrement nous serions dans une situation, beaucoup plus complexe, d'appariement flou). La situation typique est l'appariement entre deux sources de données selon un identifiant individuel ou un identifiant de code commune, ce qui est notre cas.
+
+Il est recommandé de lire [ce guide assez complet sur la question des jointures avec R](https://www.book.utilitr.org/03_fiches_thematiques/fiche_joindre_donnees) qui donne des recommandations également utiles en `Python`.
+
+Dans le langage courant du statisticien,
+on utilise de manière indifférente les termes *merge* ou *join*. Le deuxième terme provient de la syntaxe `SQL`.
+Quand on fait du `Pandas`, on utilise plutôt la commande _merge_. 
+
 
 ![](pandas_join.png)
 
@@ -776,13 +835,38 @@ On utilise de manière indifférente les termes *merge* ou *join*. Le deuxième 
 <h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 7: Calculer l'empreinte carbone par habitant</h3>
 ```
 
+En premier lieu, on va calculer l'empreinte carbone de chaque commune. 
+
+
 1. Créer une variable `emissions` qui correspond aux émissions totales d'une commune
 
-2. Faire une jointure à gauche entre les données d'émissions et les données de cadrage. Comparer les émissions moyennes des villes sans *match* (celles dont des variables bien choisies de la table de droite sont NaN) avec celles où on a bien une valeur correspondante dans la base Insee
+2. Faire une jointure à gauche entre les données d'émissions et les données de cadrage[^notebiais].
 
-3. Faire un *inner join* puis calculer l'empreinte carbone (l'émission rapportée au nombre de ménages fiscaux) dans chaque commune. Sortir un histogramme en niveau puis en log et quelques statistiques descriptives sur le sujet. 
+[^notebiais]: Idéalement, il serait nécessaire de s'assurer que cette jointure n'introduit
+pas de biais. En effet, comme nos années de référence ne sont pas forcément identiques,
+il peut y avoir un _mismatch_ entre nos deux sources. Le TP étant déjà long, nous n'allons pas dans cette voie. Les lecteurs intéressés pourront effectuer une telle analyse en exercice supplémentaire.
 
-4. Regarder la corrélation entre les variables de cadrage et l'empreinte carbone. Certaines variables semblent-elles pouvoir potentiellement influer sur l'empreinte carbone ?
+3. Calculer l'empreinte carbone (émissions totales / population).
+
+A ce stade nous pourrions avoir envie d'aller vers la modélisation pour essayer d'expliquer
+les déterminants de l'empreinte carbone à partir de variables communales. 
+Une approche inférentielle nécessite néanmoins pour être pertinente de
+vérifier en amont des statistiques descriptives.
+
+4. Sortir un histogramme en niveau puis en log de l'empreinte carbone communales.
+
+Avec une meilleure compréhension de nos données, nous nous rapprochons
+de la statistique inférentielle. Néanmoins, nous avons jusqu'à présent
+construit des statistiques univariées mais n'avons pas cherché à comprendre
+les résultats en regardant le lien avec d'autres variables. 
+Cela nous amène vers la statistique bivariée, notamment l'analyse des corrélations. 
+Ce travail est important puisque toute modélisation ultérieure consistera à 
+raffiner l'analyse des corrélations pour tenir compte des corrélations croisées
+entre multiples facteurs. On propose ici de faire cette analyse
+de manière minimale. 
+
+
+5. Regarder la corrélation entre les variables de cadrage et l'empreinte carbone. Certaines variables semblent-elles pouvoir potentiellement influer sur l'empreinte carbone ?
 
 ```{=html}
 </div>
@@ -819,22 +903,19 @@ np.log(df_merged['empreinte']).plot.hist()
 df_merged['empreinte'].describe()
 ```
 
+```{python}
+# Question 4
+df_merged['empreinte'].plot(kind = 'hist')
+np.log(df_merged['empreinte']).plot(kind = 'hist')
+```
 
 ```{python}
 #| echo: false
-# Question 4
+# Question 5
 
 df_merged.corr(numeric_only=True)['empreinte'].nlargest(10)
-# Les variables en lien avec le transport. 
+df_merged.corr(numeric_only=True)['empreinte'].plot(kind = "barh")
 ```
-
-```{python}
-#| output: false
-#| echo: false
-np.log(df_merged['empreinte']).plot.hist()
-plt.savefig("featured_tp_pandas.png")
-```
-
 
 
 ## Exercices bonus
