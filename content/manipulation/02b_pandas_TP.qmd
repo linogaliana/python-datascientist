@@ -59,20 +59,10 @@ et requêtable directement dans `Python` avec
 * Idéalement, on utiliserait directement les données
 [disponibles sur le site de l'Insee](https://www.insee.fr/fr/statistiques/3560121) mais celles-ci nécessitent un peu de travail
 de nettoyage qui n'entre pas dans le cadre de ce TP. 
-Pour faciliter l'import de données Insee, il est recommandé d'utiliser les _packages_
-[`doremifasol`](https://github.com/InseeFrLab/DoReMIFaSol) et [`insee`](https://github.com/pyr-opendatafr/R-Insee-Data) qui simplifient l'accès aux données
+Pour faciliter l'import de données Insee, il est recommandé d'utiliser le _package_
+[`pynsee`](https://pynsee.readthedocs.io/en/latest/) qui simplifie l'accès aux données
 de l'Insee disponibles sur le site web [insee.fr](https://www.insee.fr/fr/accueil)
 ou via des API. 
-
-<!-- KA : je ne comprends pas : Tu ne parles plus de Pynsee mais tu l'utilises plus bas.  -->
-
-[^notedownload]: 
-
-  `Pandas` offre la possibilité d'importer des données directement depuis un url. C'est l'option 
-  prise dans ce tutoriel. Si vous préfèrez, pour des 
-  raisons d'accès au réseau ou de performance, importer depuis un poste local,
-  vous pouvez télécharger les données et changer
-  les commandes d'import avec le chemin adéquat plutôt que l'url. 
 
 La librairie `pynsee` n'est pas installée par défaut avec `Python`. Avant de pouvoir l'utiliser,
 il est nécessaire de l'installer:
@@ -80,6 +70,7 @@ il est nécessaire de l'installer:
 ```{python}
 #| eval: false
 #| echo: true
+!pip install xlrd
 !pip install pynsee
 ```
 
@@ -446,15 +437,16 @@ Le _DataFrame_ en question a l'aspect suivant :
 filosofi.sample(5)
 ```
 
-
-`pandas` a géré automatiquement les types de variables. Il le fait relativement bien, mais une vérification est toujours utile pour les variables qui ont un statut spécifique.
+`Pandas` a géré automatiquement les types de variables. Il le fait relativement bien, mais une vérification est toujours utile pour les variables qui ont un statut spécifique.
 
 Pour les variables qui ne sont pas en type `float` alors qu’elles devraient l’être, on modifie leur type.
 
-<!-- KA : Attention ! sans cette ligne la fin du TP ne marche pas chez moi car il ne veut pas faire de somme de variables objects. Je te laisse le soin de la reformuler au format bonnes pratiques si tu le souhaites.  -->
-
 ```{python}
-filosofi[filosofi.columns[2:len(filosofi.columns)]] = filosofi[filosofi.columns[2:len(filosofi.columns)]].apply(pd.to_numeric)
+#| echo: true
+filosofi.loc[:, filosofi.columns[2:]] = (
+  filosofi.loc[:, filosofi.columns[2:]]
+  .apply(pd.to_numeric, errors='coerce')
+)
 ```
 
 
@@ -465,11 +457,6 @@ On remarque que certaines variables de `filosofi` semblent avoir beaucoup de val
 alors que d'autres semblent complètes. 
 Si on désire exploiter `filosofi`, il faut faire attention à la variable choisie.
 
-
-```{python}
-df = emissions.copy()
-df_city = filosofi.copy()
-```
 
 Notre objectif à terme va être de relier l'information contenue entre ces
 deux jeux de données. En effet, sinon, nous risquons d'être frustré : nous allons
@@ -501,6 +488,7 @@ exercice illustre cette fonctionnalité.
 On suppose ici qu'on peut se fier aux codes communes. En effet, on a un même ordre de grandeur de communes dans les deux bases. 
 
 ```{python}
+#| echo: true
 print(emissions[['INSEE commune', 'Commune']].nunique())
 print(filosofi[['CODGEO', 'LIBGEO']].nunique())
 ```
@@ -633,7 +621,7 @@ avant de faire un graphique.
 <h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 5: Restructurer les données: wide to long</h3>
 ```
 
-1. Créer une copie des données de l'`ADEME` en faisant `df_wide = emissions.copy()`
+1. Créer une copie des données de l'`ADEME` en faisant `df_wide = emissions_wide.copy()`
 
 2. Restructurer les données au format *long* pour avoir des données d'émissions par secteur en gardant comme niveau d'analyse la commune (attention aux autres variables identifiantes).
 
@@ -664,11 +652,12 @@ emissions_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
 ```
 
 ```{python}
-#| echo: false
+#| output: false
 #| label: question3
 # Question 3
 
-emissions_totales = (emissions_wide.reset_index()
+emissions_totales = (
+  emissions_wide.reset_index()
  .melt(
     id_vars = ['INSEE commune','Commune','dep'],
     var_name = "secteur", value_name = "emissions"
@@ -724,7 +713,7 @@ communes entre les bases de données présentent le bon niveau d'information.
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 3: structure des données</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 6: vérification des clés de jointure</h3>
 ```
 
 On commence par vérifier les dimensions des `DataFrames` et la structure de certaines variables clés.
@@ -737,17 +726,17 @@ Ici, on a deux variables géographiques: un code commune et un nom de commune.
 
 On se focalise temporairement sur les observations où le libellé comporte plus de deux codes communes différents
 
-3. Regarder dans `filosofi` ces observations.
+* _Question 3_. Regarder dans `filosofi` ces observations.
 
-4. Pour mieux y voir, réordonner la base obtenue par order alphabétique.
+* _Question 4_. Pour mieux y voir, réordonner la base obtenue par order alphabétique.
 
-5. Déterminer la taille moyenne (variable nombre de personnes: `NBPERSMENFISC16`) et quelques statistiques descriptives de ces données.
+* _Question 5_. Déterminer la taille moyenne (variable nombre de personnes: `NBPERSMENFISC16`) et quelques statistiques descriptives de ces données.
 Comparer aux mêmes statistiques sur les données où libellés et codes communes coïncident.
 
-6. Vérifier les grandes villes (plus de 100 000 personnes),
+* _Question 6_. Vérifier les grandes villes (plus de 100 000 personnes),
 la proportion de villes pour lesquelles un même nom est associé à différents codes commune.
 
-7. Vérifier dans `filosofi` les villes dont le libellé est égal à Montreuil.
+* _Question 7_. Vérifier dans `filosofi` les villes dont le libellé est égal à Montreuil.
 Vérifier également celles qui contiennent le terme _'Saint-Denis'_.
 
 ```{=html}
@@ -768,36 +757,50 @@ print(filosofi.shape)
 
 # Question 2
 filosofi = filosofi.reset_index(drop=False)
-x = filosofi.groupby('LIBGEO').count()['CODGEO']
-x = x[x>1]
-x = x.reset_index()
-x
+doublons = filosofi.groupby('LIBGEO').count()['CODGEO']
+doublons = doublons.loc[doublons>1]
+doublons = doublons.reset_index()
+doublons
 ```
 
 ```{python}
 #| output: false
 # Question 3
-filosofi[filosofi['LIBGEO'].isin(x['LIBGEO'])]
+filosofi.loc[
+  filosofi['LIBGEO'].isin(doublons['LIBGEO'])
+  ]
 ```
 
 ```{python}
 #| output: false
 # Question 4
-filosofi[filosofi['LIBGEO'].isin(x['LIBGEO'])].sort_values('LIBGEO')
+filosofi.loc[
+  filosofi['LIBGEO'].isin(doublons['LIBGEO'])
+  ].sort_values('LIBGEO')
 ```
 
 ```{python}
 #| output: false
 # Question 5
-print(filosofi[filosofi['LIBGEO'].isin(x['LIBGEO'])]['NBPERSMENFISC16'].describe())
-print(filosofi[~filosofi['LIBGEO'].isin(x['LIBGEO'])]['NBPERSMENFISC16'].describe())
+print(10*"--" + "Communes dupliquées" + 10*"--")
+print(
+  filosofi.loc[
+    filosofi['LIBGEO'].isin(doublons['LIBGEO']), 'NBPERSMENFISC16'
+    ].describe()
+  )
+print(10*"--" + "Communes non dupliquées" + 10*"--")
+print(
+  filosofi.loc[
+    ~filosofi['LIBGEO'].isin(doublons['LIBGEO']), 'NBPERSMENFISC16'
+    ].describe()
+  )
 ```
 
 ```{python}
 #| output: false
 # Question 6
-emissions_big_city = filosofi[filosofi['NBPERSMENFISC16']>100000].copy()
-emissions_big_city['probleme'] = emissions_big_city['LIBGEO'].isin(x['LIBGEO'])
+emissions_big_city = filosofi.loc[filosofi['NBPERSMENFISC16']>100000].copy()
+emissions_big_city['probleme'] = emissions_big_city['LIBGEO'].isin(doublons['LIBGEO'])
 emissions_big_city['probleme'].mean() 
 emissions_big_city[emissions_big_city['probleme']]
 print(100*emissions_big_city['probleme'].mean()) #8,33 %
@@ -806,8 +809,8 @@ print(100*emissions_big_city['probleme'].mean()) #8,33 %
 ```{python}
 #| output: false
 # Question 7
-filosofi[filosofi.LIBGEO == 'Montreuil']
-filosofi[filosofi.LIBGEO.str.contains('Saint-Denis')].head(10)
+filosofi[filosofi['LIBGEO'] == 'Montreuil']
+filosofi[filosofi['LIBGEO'].str.contains('Saint-Denis')].head(10)
 ```
 
 Ce petit exercice permet de se rassurer car les libellés dupliqués
