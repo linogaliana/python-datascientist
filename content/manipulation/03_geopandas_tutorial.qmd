@@ -21,7 +21,7 @@ description: |
   étend les fonctionalités de l'écosystème `Pandas` afin de permettre
   de manipuler des données géographiques complexes de manière simple.
 image: featured_geopandas_tutorial.png
-eval: false
+eval: true
 ---
 
 ::: {.cell .markdown}
@@ -106,16 +106,17 @@ Les données spatiales rassemblent classiquement deux types de données :
 
 * `2154`: système de projection Lambert 93. Il s'agit du système de projection officiel. La plupart des données diffusées par l'administration pour la métropole sont disponibles dans ce système de projection. 
 * `27572`: Lambert II étendu. Il s'agit de l'ancien système de projection officiel. Les données spatiales anciennes peuvent être dans ce format.
-* `4326`: WGS 84 ou système de pseudo-Mercator. Attention, ce n'est en réalité pas un système de projection mais un système de coordonnées (longitude / latitude) qui permet simplement un repérage angulaire sur l'ellipsoïde. Il est utilisé pour les données GPS.
+* `4326`: WGS 84 ou système de pseudo-Mercator. Attention, ce n'est en réalité pas un système de projection mais un système de coordonnées (longitude / latitude) qui permet simplement un repérage angulaire sur l'ellipsoïde. Il est utilisé pour les données GPS. Il s'agit du système le plus
+usuel, notamment quand on travaille avec des fonds de carte _web_.
 
-### De `pandas` à `geopandas`
+### De `Pandas` à `Geopandas`
 
-Le *package* `geopandas` est une boîte à outils conçue pour faciliter la manipulation de données spatiales. **La grande force de `geopandas` est qu'il permet de manipuler des données spatiales comme s'il s'agissait de données traditionnelles**, car il repose sur le standard ISO 19125 [*simple feature access*](https://en.wikipedia.org/wiki/Simple_Features) défini conjointement par l'*Open Geospatial Consortium (OGC)* et l'*International Organization for Standardization (ISO)*. 
+Le *package* `Geopandas` est une boîte à outils conçue pour faciliter la manipulation de données spatiales. **La grande force de `Geopandas` est qu'il permet de manipuler des données spatiales comme s'il s'agissait de données traditionnelles**, car il repose sur le standard ISO 19125 [*simple feature access*](https://en.wikipedia.org/wiki/Simple_Features) défini conjointement par l'*Open Geospatial Consortium (OGC)* et l'*International Organization for Standardization (ISO)*. 
 
-Par rapport à un DataFrame standard, un objet `geopandas` comporte
+Par rapport à un DataFrame standard, un objet `Geopandas` comporte
 une colonne supplémentaire: `geometry`. Elle stocke les coordonnées des
-objets géographiques (ou ensemble de coordonnées s'agissant de contours). Un objet `geopandas` hérite des propriétés d'un 
-DataFrame pandas mais propose des méthodes adaptées au traitement des données spatiales. 
+objets géographiques (ou ensemble de coordonnées s'agissant de contours). Un objet `Geopandas` hérite des propriétés d'un 
+DataFrame `Pandas` mais propose des méthodes adaptées au traitement des données spatiales. 
 
 Ainsi, grâce à  `Geopandas`, on pourra effectuer des manipulations sur les attributs des données comme avec `pandas` mais on pourra également faire des manipulations sur la dimension spatiale des données. En particulier,
 
@@ -143,16 +144,114 @@ il peut être préférable d’effectuer les opérations sur les données avant 
 
 Par rapport à un logiciel spécialisé comme `QGIS`, `Python` permettra 
 d'automatiser le traitement et la représentation des données. D'ailleurs,
-`QGIS` utilise lui-même `python`...
+`QGIS` utilise lui-même `Python`...
 
+### Résumé
 
-## Importer des données spatiales
+En résumé, un objet `GeoPandas` comporte les éléments suivantes:
 
-Les données spatiales sont plus riches que les données traditionnelles car elles
+![](https://rgeo.linogaliana.fr/slides/img/sf.png)
+
+1. Les __attributs__. Ce sont les valeurs associées à chaque niveau géographique. 
+Il s'agit de la dimension tabulaire usuelle, dont le traitement est similaire
+à celui d'un objet `Pandas` classique. 
+2. Les __géométries__. Ce sont les valeurs numériques interprétées pour représenter la dimension géographique. Elles permettent de représenter dans un certain
+référentiel (le système de référence) la dimension géographique. 
+3. Le __système de référence__. Il s'agit du système permettant de transformer les positions sur
+le globe (3 dimensions avec une boule asymétrique) en un plan en deux dimensions. 
+Il en existe une multitude, identifiables à partir d'un code EPSG (4326, 2154...). 
+Leur manipulation est facilitée par `Geopandas` qui s'appuie sur `Shapely`, de la même
+manière que `Pandas` s'appuie sur `Numpy` ou `Arrow`. 
+
+## Le système de projection cartographique
+
+### Principe
+
+Les données spatiales sont
+plus riches que les données traditionnelles car elles
 incluent, habituellement, des éléments supplémentaires pour placer dans
 un espace cartésien les objets. Cette dimension supplémentaire peut être simple
 (un point comporte deux informations supplémentaire: $x$ et $y$) ou
-assez complexe (polygones, lignes avec direction, etc.)
+assez complexe (polygones, lignes avec direction, etc.).
+
+L'analyse cartographique emprunte dès lors à la géométrieu
+des concepts
+pour représenter des objets dans l'espace. Les __projections__
+sont au coeur de la gestion des données spatiales. 
+Ces dernières consistent à transformer une position dans l'espace
+terrestre à une position sur un plan. Il s'agit donc d'une opération
+de projection d'un espace tri-dimensionnel dans un espace
+à deux dimensions. 
+
+Cette opération n'est pas neutre. L'une des conséquences du
+[théorème remarquable de Gauss](https://fr.wikipedia.org/wiki/Theorema_egregium)
+est que la surface de la Terre ne peut être cartographiée sans distortion.
+Une projection ne peut simultanément conserver intactes les distances et les 
+angles (i.e. les positions). 
+Il n'existe ainsi pas de projection universellement meilleure, ce qui ouvre
+la porte à la coexistence de nombreuses projections différentes, pensées
+pour des tâches différentes. 
+
+Comme évoqué plus haut, l'une des projections les plus connues est la
+projection _Web Mercator_ dite WGS84 (code EPSG 4326). Il 
+s'agit d'une projection conservant intacte les angles, ce
+qui implique qu'elle altère les distances. Celle-ci a en effet été
+pensée, à l'origine, pour représenter l'hémisphère Nord. Plus
+on s'éloigne de celui-ci, plus les distances sont distordues. Cela
+amène à des distorsions bien
+connues (le Groenland hypertrophié, l'Afrique de taille réduite, l'Antarctique démesuré...).
+En revanche, la projection Mercator conserve intacte les positions. 
+C'est cette propriété qui explique son utilisation dans les systèmes
+GPS et ainsi dans les fonds de carte de navigation du type _Google Maps_. 
+
+::: {.content-visible when-format="html"}
+
+Observez les variations significatives
+de proportions pour certains pays selon les projections
+choisies:
+
+```{ojs}
+html`<div>${container_projection}</div>`
+``` 
+
+{{< include "_play_with_projection.qmd" >}}
+
+```{ojs}
+width_projected_map = screen.width/2
+```
+
+:::
+
+Pour aller plus loin, la carte interactive
+suivante, construite par Nicolas Lambert, issue de
+ce [_notebook_ `Observable`](https://observablehq.com/@neocartocnrs/impact-of-projections-on-areas), illustre l'effet
+déformant de la projection Mercator, et de quelques unes autres,
+sur notre perception de la taille des pays.
+
+::: {.content-visible when-format="html"}
+
+<details>
+<summary>
+Voir la carte interactive
+</summary>
+```{ojs}
+html`<div class="grid-container">
+  <div class="viewof-projection">${viewof projectionBertin}</div>
+  <div class="viewof-mycountry">${viewof mycountry}</div>
+  <div class="map-bertin">${mapBertin}</div>
+</div>`
+```
+
+</details>
+
+```{ojs}
+import {map as mapBertin, viewof projection as projectionBertin, viewof mycountry} from "@neocartocnrs/impact-of-projections-on-areas"
+```
+
+:::
+
+
+## Importer des données spatiales
 
 Les formats les plus communs de données spatiales sont les suivants :
 
@@ -544,14 +643,16 @@ légère qui utilise pleinement les fonctionnalités de `cartiflette`).
 
 ```{python}
 #| output: false
-#| eval: false
-from cartiflette.download import get_vectorfile_ign
-france = get_vectorfile_ign(
-  borders = "COMMUNE",
-  field = "metropole",
-  source = "EXPRESS-COG-CARTO-TERRITOIRE",
-  provider="IGN"
-)
+from cartiflette.s3 import download_vectorfile_url_all
+
+france = download_vectorfile_url_all(
+      values = "metropole",
+      crs = 4326,
+      borders = "COMMUNE",
+      vectorfile_format="topojson",
+      filter_by="FRANCE_ENTIERE",
+      source="EXPRESS-COG-CARTO-TERRITOIRE",
+      year=2022)
 ```
 
 Ici, pas simplicité, ou pour réduire les temps de chargements, nous nous restreignons aux communes de la petite couronne parisienne vues précédemment (`shp_commune`). 
