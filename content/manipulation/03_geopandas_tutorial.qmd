@@ -754,27 +754,27 @@ france = download_vectorfile_url_all(
       year=2022)
 ```
 
-Ici, pas simplicité, ou pour réduire les temps de chargements, nous nous restreignons aux communes de la petite couronne parisienne vues précédemment (`shp_commune`). 
+Ici, pas simplicité, ou pour réduire les temps de chargements, nous nous restreignons aux communes de la petite couronne parisienne vues précédemment (`shp_communes`). 
 
 2. Calculons la surface totale de ce territoire (méthode `area` sur un objet `GeoPandas.GeoDataFrame` ramenée en km², attention néamoins au système de projection comme cela est expliqué plus bas)
 
 
 ```{python}
-shp_commune['surface'] = france.area.div(10**6)
+shp_communes['surface'] = shp_communes.area.div(10**6)
 ```
 
 Les plus grands départements s'obtiennent par une agrégation des
 surfaces communales :
 
 ```{python}
-shp_commune.groupby('INSEE_DEP').sum(numeric_only = True).sort_values('surface', ascending = False)
+shp_communes.groupby('INSEE_DEP').sum(numeric_only = True).sort_values('surface', ascending = False)
 ```
 
 Si on veut directement les plus
 grandes communes de la petite couronne parisienne :
 
 ```{python}
-shp_commune.sort_values('surface', ascending = False).head(10)
+shp_communes.sort_values('surface', ascending = False).head(10)
 ```
 
 Lors des étapes d'agrégation, `groupby` ne conserve pas les géométries. Autrement
@@ -787,7 +787,7 @@ attribus avec la méthode `dissolve`:
 
 ```{python}
 fig,ax = plt.subplots(figsize=(10, 10))
-shp_commune.dissolve(by='INSEE_DEP', aggfunc='sum').plot(ax = ax, column = "surface")
+shp_communes.dissolve(by='INSEE_DEP', aggfunc='sum').plot(ax = ax, column = "surface")
 ax.set_axis_off()
 ax
 ```
@@ -1044,121 +1044,4 @@ Les jointures spatiales peuvent être très gourmandes en ressources (car il peu
 </div>
 ```
 :::
-
-## Annexe
-
-### Récupération des données depuis data.gouv
-
-Avec cette méthode, les données des limites administratives demandent donc un peu de travail pour être
-importées car elles sont zippées (mais c'est un bon exercice !). 
-
-Le code suivant, dont les 
-détails apparaîtront plus clairs après la lecture de la partie
-*[webscraping](webscraping)* permet de :
-
-1. Télécharger les données avec `requests` dans un dossier temporaire
-2. Les dézipper avec le module `zipfile`
-
-La fonction suivante automatise un peu le processus :
-
-```{python}
-#| eval: false
-import requests
-import tempfile
-import zipfile
-
-url = 'https://www.data.gouv.fr/fr/datasets/r/0e117c06-248f-45e5-8945-0e79d9136165'
-temporary_location = tempfile.gettempdir()
-
-def download_unzip(url, dirname = tempfile.gettempdir(), destname = "borders"):
-  myfile = requests.get(url)
-  open("{}/{}.zip".format(dirname, destname), 'wb').write(myfile.content)
-  with zipfile.ZipFile("{}/{}.zip".format(dirname, destname), 'r') as zip_ref:
-      zip_ref.extractall(dirname + '/' + destname)
-```
-
-```{python}
-#| eval: false
-#| output: false
-
-download_unzip(url)
-```
-
-```{python}
-#| eval: false
-#| output: false
-shp_communes = gpd.read_file(temporary_location + "/borders/communes-20220101.shp")
-```
-
-Ici, les données ne sont pas projetées puisqu'elles sont dans le 
-système WSG84 (epsg: 4326) ce qui permet de facilement ajouter
-un fonds de carte `Openstreetmap` ou `Stamen` pour rendre une représentation
-graphique plus esthétique.
-En toute rigueur, pour faire une carte statique d'un pays en particulier,
-il faudrait reprojeter les données dans un système de projection adapté à la zone géographique étudiée
-(par exemple le Lambert-93 pour la France métropolitaine).
-
-On peut ainsi représenter Paris pour se donner une idée de la nature
-du shapefile utilisé :
-
-```{python}
-#| eval: false
-paris = shp_communes.loc[shp_communes['insee'].str.startswith("75")]
-
-fig,ax = plt.subplots(figsize=(10, 10))
-paris.plot(ax = ax, alpha=0.5, edgecolor='blue')
-#ctx.add_basemap(ax, crs = paris.crs.to_string())
-ax.set_axis_off()
-ax
-```
-
-On voit ainsi que les données pour Paris ne comportent pas d'arrondissement, 
-ce qui est limitant pour une analyse focalisée sur Paris. On va donc les
-récupérer sur le site d'open data de la ville de Paris et les substituer 
-à Paris :
-
-```{python}
-#| eval: false
-#| echo: true
-
-arrondissements = gpd.read_file("https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr")
-arrondissements = arrondissements.rename(columns = {"c_arinsee": "insee"})
-arrondissements['insee'] = arrondissements['insee'].astype(str)
-shp_communes = shp_communes[~shp_communes.insee.str.startswith("75")].append(arrondissements)
-```
-
-Pour produire la carte, il faudrait faire:
-
-```{python}
-#| eval: false
-paris = shp_communes.loc[shp_communes.insee.str.startswith("75")]
-
-fig,ax = plt.subplots(figsize=(10, 10))
-
-paris.plot(ax = ax, alpha=0.5, edgecolor='k')
-#ctx.add_basemap(ax, crs = paris.crs.to_string())
-ax.set_axis_off()
-ax
-```
-
-
-### Récupération des données depuis le package `pynsee`
-
-
-Pour connaître les contraintes d'installation du package `pynsee`,
-se référer à la partie de cours dédiée à `Pandas`.
-
-```{python}
-#| output: false
-#| eval: false
-
-#le téléchargement des données prend plusieurs minutes
-from pynsee.geodata import get_geodata
-shp_communes = gpd.GeoDataFrame(
-  get_geodata('ADMINEXPRESS-COG-CARTO.LATEST:commune')
-)
-shp_communes = shp_communes.rename({"insee_com": 'insee'}, axis = 'columns')
-#shp_communes = shp_communes.set_crs(3857)
-```
-
 
