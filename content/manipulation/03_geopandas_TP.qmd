@@ -68,7 +68,7 @@ Illustration du principe des données spatiales (documentation de `sf`, l'équiv
 [^noteQGIS]: D'ailleurs, le logiciel de cartographie spécialisé QGIS, s'appuie sur `Python`
 pour les manipulations de données nécessaires avant de réaliser une carte.
 
-Ce chapitre illustre à partir d’exemples pratiques certains principes centraux de l’analyse de données:
+Ce chapitre illustre à partir d’exemples pratiques certains principes centraux de l’analyse de données :
 
 - Manipulations sur les attributs des jeux de données ;
 - Manipulations géométriques ;
@@ -104,14 +104,9 @@ cellule de _notebook_ `Jupyter`, le code suivant est à exécuter:
 !pip install topojson
 ```
 
-Les instructions d'installation du package `cartiflette`
-sont quant à elles détaillées dans le chapitre
-précédent.
-
 Après installations,
 les _packages_ à importer pour progresser
 dans ce chapitre sont les suivants:
-
 
 ```{python}
 #| echo: true
@@ -119,8 +114,26 @@ dans ce chapitre sont les suivants:
 import geopandas as gpd
 import contextily as ctx
 import matplotlib.pyplot as plt
+```
+
+Les instructions d'installation du package `cartiflette`
+sont quant à elles détaillées dans le chapitre
+précédent.
+
+```{python}
+#| echo: false
+#| output: false
+!pip install requests py7zr geopandas openpyxl tqdm s3fs PyYAML xlrd
+!pip install git+https://github.com/inseefrlab/cartiflette@80b8a5a28371feb6df31d55bcc2617948a5f9b1a
+```
+
+```{python}
+#| echo: true
+#| output: false
 from cartiflette.s3 import download_vectorfile_url_all
 ```
+
+
 
 
 ## Lire et enrichir des données spatiales
@@ -229,34 +242,32 @@ communes_borders.head()
 # Il y a une colonne geometry qui contient les informations nécessaires pour connaître les contours communaux
 ```
 
-A la question 3, le CRS à obtenir est:
-
 ```{python}
+#| output: false
+
 # 3) Afficher le crs
 communes_borders.crs
 # Les données sont en WGS84, on les reprojette en lambert 93
 ```
 
-La carte du 92 est la suivante, si on ne conserve que les limites des communes :
-
 ```{python}
+#| echo: false
+
 # 4) afficher les communes du département 92
 ax = communes_borders[communes_borders['INSEE_DEP'] == "92"].boundary.plot()
 ax.set_axis_off()
 ```
 
-Quant à Paris, à l'issue de la question 5, la même carte
-aura l'aspect suivant:
-
 ```{python}
+#| echo: false
+
 # 5) Représenter la carte de Paris. Quel est le problème ?
 ax = communes_borders[communes_borders['INSEE_DEP'] == "75"].boundary.plot()
 ax.set_axis_off()
+#On remarque ainsi facilement le problème pour Paris
+#intra-muros: il manque les limites des arrondissements. 
+#Cela appauvrit grandement la carte de Paris. 
 ```
-
-On remarque ainsi facilement le problème pour Paris
-intra-muros: il manque les limites des arrondissements. 
-Cela appauvrit grandement la carte de Paris. 
 
 
 ```{python}
@@ -271,16 +282,11 @@ petite_couronne = download_vectorfile_url_all(
     filter_by="DEPARTEMENT",
     source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
+    
+petite_couronne.crs
+petite_couronne = petite_couronne.to_crs(2154)
+petite_couronne.crs
 ```
-
-La carte de Paris intra-muros est, à l'issue de la 
-question 6,
-
-```{python}
-ax = petite_couronne.boundary.plot(edgecolor = "black")
-ax.set_axis_off()
-```
-
 
 ## Le système de projection
 
@@ -310,7 +316,7 @@ width_projected_map = screen.width/2
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2: Les projections, représentations et approximations</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2 : Les projections, représentations et approximations</h3>
 ```
 
 Voici un code utilisant encore
@@ -362,6 +368,7 @@ download_vectorfile_url_all(
 
 ```{python}
 #| output: false
+# Question 1 : Tester différentes projections
 france_2154 = france.to_crs(2154)
 france_healpix = france.to_crs("+proj=healpix +lon_0=0 +a=1")
 france_5070 = france.to_crs(5070)
@@ -395,6 +402,7 @@ ax4.set_axis_off()
 ```
 
 ```{python}
+# Question 2
 france = france.to_crs(3395)
 france["superficie_4326"] = france.area
 france = france.to_crs(2154)
@@ -492,7 +500,7 @@ url = "https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/
 
 
 Dans le prochain exercice, nous proposons de créer rapidement une 
-carte comprenant trois couches:
+carte comprenant trois couches :
 
 - Les localisations de stations sous forme de points ;
 - Les bordures des communes et arrondissements pour contextualiser ;
@@ -520,7 +528,7 @@ idf = download_vectorfile_url_all(
       source="EXPRESS-COG-CARTO-TERRITOIRE",
       year=2022)
 
-petite_couronne_departements = idf.loc[idf['INSEE_DEP'].isin(["75","92","93","94"])]
+petite_couronne_departements = idf.loc[idf['INSEE_DEP'].isin(["75","92","93","94"])].to_crs(2154)
 ```
 
 ::: {.cell .markdown}
@@ -588,6 +596,7 @@ La couche de base obtenue à l'issue de la question 4.
 </summary>
 
 ```{python}
+# 4. petite couronne
 base = petite_couronne.boundary.plot(edgecolor = "black", linewidth = 0.5)
 base
 ```
@@ -601,6 +610,7 @@ Puis en y ajoutant les limites départementales (question 5).
 </summary>
 
 ```{python}
+# 5. Ajout de la couche des départements
 base = petite_couronne.boundary.plot(edgecolor = "black", linewidth = 0.5)
 petite_couronne_departements.boundary.plot(ax = base, edgecolor = "blue", linewidth = 0.7)
 base
@@ -615,6 +625,7 @@ Puis les stations (question 6).
 </summary>
 
 ```{python}
+# 6. Ajout des stations
 base = petite_couronne.boundary.plot(edgecolor = "black", linewidth = 0.5)
 petite_couronne_departements.boundary.plot(ax = base, edgecolor = "blue", linewidth = 0.7)
 principales_stations.plot(ax= base, column = "capacity", markersize = "capacity", color = "red", alpha = 0.4)
@@ -626,6 +637,7 @@ La carte finale, après mise en forme:
 
 
 ```{python}
+#7. sans axe et avec titre
 base = petite_couronne.boundary.plot(edgecolor = "black", linewidth = 0.5)
 petite_couronne_departements.boundary.plot(ax = base, edgecolor = "blue", linewidth = 0.7)
 principales_stations.plot(ax= base, column = "capacity", markersize = "capacity", color = "red", alpha = 0.4)
@@ -657,9 +669,9 @@ sont stockées dans un _dataframe_ nommé `stations`
 - les données administratives
 sont dans un _dataframe_ nommé `petite_couronne`.
 
-1. Faire une jointure spatiale pour enrichir les données de stations en y ajoutant des informations de `petite_couronne`. Appeler cet objet `stations_info`
+1. Faire une jointure spatiale pour enrichir les données de stations en y ajoutant des informations de `petite_couronne`. Appeler cet objet `stations_info`.
 2. Créer les objets `stations_19e` et `arrondissement_19e` pour stocker, respectivement, 
-les stations appartenant au 19e et les limites de l'arrondissement
+les stations appartenant au 19e et les limites de l'arrondissement.
 2. Représenter la carte des stations du 19e arrondissement avec le code suivant:
 
 ```python
@@ -682,18 +694,17 @@ base
 
 ```{python}
 #1.  Jointure spatiale entre stations et data_paris
-stations = stations.to_crs(2154)
-petite_couronne = petite_couronne.to_crs(2154)
-
 stations_info = gpd.sjoin(stations, petite_couronne, predicate = 'within')
 ```
 
 ```{python}
+#2. 19e arrondissement
 stations_19 = stations_info.loc[stations_info['NOM'].str.contains("19e")]
 arrondissement_19e = petite_couronne.loc[petite_couronne['NOM'].str.contains("19e")]
 ```
 
 ```{python}
+# 3. Carto du 19e 
 base = petite_couronne.loc[petite_couronne['INSEE_DEP']=="75"].boundary.plot(edgecolor = "k", linewidth=0.5)
 arrondissement_19e.boundary.plot(ax = base, edgecolor = "red", linewidth=0.9)
 stations_19.plot(ax = base, color = "red", alpha = 0.4)
@@ -703,7 +714,11 @@ base
 ```
 
 
+
+Carte obtenue à la question 4 :
+
 ```{python}
+#4. Calcul et carte des capacity
 stations_agg = (
   stations_info
   .groupby("INSEE_COG")
@@ -711,18 +726,10 @@ stations_agg = (
   .reset_index()
 )
 
-petite_couronne['area'] = petite_couronne.area
 petite_couronne_count = petite_couronne.merge(
   stations_agg
 ).to_crs(2154)
 
-petite_couronne_count['density'] = petite_couronne_count['area'].div(1e6)
-petite_couronne_count['density'] = petite_couronne_count['capacity']*petite_couronne_count['density']
-```
-
-Carte obtenue à la question 3:
-
-```{python}
 petite_couronne_count = petite_couronne_count.loc[petite_couronne_count["INSEE_DEP"]== "75"]
 aplat = petite_couronne_count.plot(
     column = "capacity", cmap="coolwarm", legend=True)
@@ -730,18 +737,24 @@ aplat.set_axis_off()
 aplat
 ```
 
-Avec la carte de la question 3, basée sur des aplats de couleurs (choropleth map), le lecteur est victime d’une illusion classique. Les arrondissements les plus visibles sur la carte sont les plus grands. D’ailleurs c’est assez logique qu’ils soient également mieux pourvus en velib. Même si l’offre de velib est probablement plus reliée à la densité de population et d’équipements, on peut penser que l’effet taille joue et qu’ainsi on est victime d’une illusion avec la carte précédente.
+Avec la carte de la question 4, basée sur des aplats de couleurs (choropleth map), le lecteur est victime d’une illusion classique. Les arrondissements les plus visibles sur la carte sont les plus grands. D’ailleurs c’est assez logique qu’ils soient également mieux pourvus en velib. Même si l’offre de velib est probablement plus reliée à la densité de population et d’équipements, on peut penser que l’effet taille joue et qu’ainsi on est victime d’une illusion avec la carte précédente.
 
 
-Si on représente plutôt la capacité sous forme de densité, pour tenir compte de la taille différente des arrondissements, les conclusions sont inversées et correspondent mieux aux attentes d’un modèle centr-périphérie. Les arrondissements centraux sont mieux pourvus, cela se voit encore mieux avec des ronds proportionnels plutôt qu’une carte chorolèpthe.
-
+Si on représente plutôt la capacité sous forme de densité, pour tenir compte de la taille différente des arrondissements, les conclusions sont inversées et correspondent mieux aux attentes d’un modèle centre-périphérie. Les arrondissements centraux sont mieux pourvus, cela se voit encore mieux avec des ronds proportionnels plutôt qu’une carte chorolèpthe.
 
 ```{python}
+#5. Calcul et carte des area et density
+petite_couronne_count['area'] = petite_couronne_count.area
+
+petite_couronne_count['density'] = petite_couronne_count['area'].div(1e6)
+petite_couronne_count['density'] = petite_couronne_count['capacity']*petite_couronne_count['density']
+
 aplat = petite_couronne_count.plot(
     column = "density", cmap="coolwarm", legend=True)
 aplat.set_axis_off()
 aplat
 ```
+
 
 ## Exercice supplémentaire
 
