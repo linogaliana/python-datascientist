@@ -21,5 +21,5 @@ git clone --depth 1 $REPO_URL $CLONE_DIR
 # Put relevant notebook in formation dir
 cp "${COURSE_DIR}/${SECTION}/${CHAPTER}.ipynb" "${WORK_DIR}"
 
-# Open the relevant notebook when starting VScode
-code ${COURSE_DIR}/${SECTION}/${CHAPTER}.ipynb
+# Remove useless repository
+rm -rf $CLONE_DIR
