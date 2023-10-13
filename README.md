@@ -10,7 +10,7 @@
 <a href="http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
 <a href="https://github.dev/linogaliana/python-datascientist/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/static/v1?logo=visualstudiocode&label=&message=Open%20in%20Visual%20Studio%20Code&labelColor=2c2c32&color=007acc&logoColor=007acc" alt="githubdev"></a>
 
-[![Slack](https://img.shields.io/badge/Slack-Join%20Discussions-purple?logo=Slack)](https://join.slack.com/t/pythonensae2a/shared_invite/zt-w6hxiqep-D5SZZadUdB5018b1~gXjQg)
+
 [![DOI](https://zenodo.org/badge/280161677.svg)](https://zenodo.org/badge/latestdoi/280161677)
 
 
