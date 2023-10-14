@@ -1,4 +1,4 @@
 #!/bin/bash
 
 sudo apt-get update && \
-    sudo apt install graphviz
+    sudo apt install -y graphviz
