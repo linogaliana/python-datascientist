@@ -301,9 +301,13 @@ de comprendre la structure d'une page web et dissocier les éléments exportable
 
 
 ```{python}
-import urllib
+!pip install -q lxml
+
 import bs4
+import lxml
 import pandas
+import urllib
+
 from urllib import request
 ```
 
@@ -684,7 +688,7 @@ center = gdf[['latitude', 'longitude']].mean().values.tolist()
 sw = gdf[['latitude', 'longitude']].min().values.tolist()
 ne = gdf[['latitude', 'longitude']].max().values.tolist()
 
-m = folium.Map(location = center, tiles='Stamen Toner')
+m = folium.Map(location = center, tiles='openstreetmap')
 
 # I can add marker one by one on the map
 for i in range(0,len(gdf)):
@@ -1173,8 +1177,7 @@ navigateur Google Chrome minimaliste.
 La version de [chromedriver](https://sites.google.com/a/chromium.org/chromedriver/)
 doit être `>= 2.36` et dépend de la version de `Chrome` que vous avez sur votre environnement
 de travail. Pour installer cette version minimaliste de `Chrome` sur un environnement
-`Linux`, vous pouvez
-vous référer à l'encadré dédié
+`Linux`, vous pouvez vous référer à l'encadré dédié.
 
 
 ::: {.cell .markdown}
@@ -1194,6 +1197,8 @@ Sur `Colab`, vous pouvez utiliser les commandes suivantes :
 !cp /usr/lib/chromium-browser/chromedriver /usr/bin
 ```
 
+<br>
+
 Si vous êtes sur le `SSP Cloud`, vous pouvez
 exécuter les commandes suivantes :
 
@@ -1208,10 +1213,11 @@ import chromedriver_autoinstaller
 chromedriver_autoinstaller.install()
 ```
 
+<br>
+
 Vous pouvez ensuite installer `Selenium`.
-Par
-exemple, depuis une
-cellule de `Notebook`:
+Par exemple, depuis une
+cellule de `Notebook` :
 
 ```{python}
 #| output: false
@@ -1226,21 +1232,20 @@ cellule de `Notebook`:
 Après avoir installé `Chromium`, 
 il est nécessaire d'indiquer à `Python` où
 le trouver. Si vous êtes sur `Linux` et que vous
-avez suivi les consignes précédentes, vous
-pouvez faire:
+avez suivi les consignes précédentes, vous pouvez faire :
 
 ```{python}
 #| output: false
-import sys
-sys.path.insert(0,'/usr/lib/chromium-browser/chromedriver')
 import selenium
-path_to_web_driver = "chromedriver"
+from webdriver_manager.chrome import ChromeDriverManager
+
+path_to_web_driver = ChromeDriverManager().install()
 ```
 
 En premier lieu, il convient d'initialiser le comportement
 de `Selenium` en répliquant les paramètres
 du navigateur. Pour cela, on va d'abord initialiser
-notre navigateur avec quelques options:
+notre navigateur avec quelques options :
 
 ```{python}
 #| output: false
@@ -1252,16 +1257,11 @@ from selenium.webdriver.common.keys import Keys
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--headless')
 chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
 #chrome_options.add_argument('--verbose') 
 ```
 
-```{python}
-#| include: false
-# specific pour usage dans docker container
-chrome_options.add_argument('--disable-dev-shm-usage')
-```
-
-Puis on lance le navigateur:
+Puis on lance le navigateur :
 
 ```{python}
 #| output: false
@@ -1373,13 +1373,17 @@ from selenium.webdriver.common.keys import Keys
 # on ouvre la page internet du jeu 2048
 service = Service(executable_path=path_to_web_driver)
 
-browser = webdriver.Chrome(service=service)
+browser = webdriver.Chrome(service=service,
+                           options=chrome_options)
 browser.get('https://play2048.co//')
 
 # Ce qu'on va faire : une boucle qui répète inlassablement la même chose : haut / droite / bas / gauche
 
 # on commence par cliquer sur la page pour que les touches sachent 
-browser.find_element("class name", 'grid-container').click()
+button = browser.find_element("class name", 'grid-container')
+browser.execute_script("arguments[0].click();", button)
+time.sleep(0.5)
+
 grid = browser.find_element("tag name", 'body')
 
 # pour savoir quels coups faire à quel moment, on crée un dictionnaire
