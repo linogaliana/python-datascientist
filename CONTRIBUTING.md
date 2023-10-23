@@ -26,7 +26,7 @@ N'oubliez pas de restaurer la version d'origine
 du `quarto.yml` avant de faire la _pull request_ !
 
 Pour visualiser le _notebook_ qui sera généré à l'issue des
-modifications, la commande à exécuter est la suivante:
+modifications, la commande à exécuter est la suivante :
 
 ```shell
 quarto render chemin_du_fichier/fichier.qmd --to ipynb
@@ -34,7 +34,7 @@ quarto render chemin_du_fichier/fichier.qmd --to ipynb
 
 puis ouvrir le `.ipynb` obtenu. 
 
-La correction peut être prévisualisée de la manière suivante:
+La correction peut être prévisualisée de la manière suivante :
 
 ```shell
 quarto render --execute -M echo:true
@@ -63,7 +63,7 @@ pip install -r requirements.txt
 ```
 
 Pour les contributeurs hors de cet environnement (dommage !), 
-il est nécessaire en premier lieu d'avoir les éléments suivants:
+il est nécessaire en premier lieu d'avoir les éléments suivants :
 
 - Une version récente de `Quarto`, _a minima_ la `1.3.450`.
 - `Jupyter` et un outil de gestion des environnements `Python` (`miniconda` par exemple).
