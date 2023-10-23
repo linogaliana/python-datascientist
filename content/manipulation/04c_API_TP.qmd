@@ -109,7 +109,7 @@ avec restrictions d'accès.
 
 
 Voici les éléments importants à avoir en tête sur les requêtes (j'emprunte encore
-à [`utilitR`](https://www.book.utilitr.org/api.html)):
+à [`utilitR`](https://www.book.utilitr.org/api.html)) :
 
 * Le __point d’entrée__ d’un service offert par une API se présente sous la forme d’une URL (adresse web).
 Chaque service proposé par une API a sa propre URL. Par exemple, dans le cas de l’OpenFood Facts,
@@ -160,11 +160,11 @@ package `request`
 sur un url dont la structure est la suivante :
 
 - il commencera par `https://koumoul.com/data-fair/api/v1/datasets/dpe-france/values/` ;
-- il sera ensuite suivi par des paramètres de recherche? Le champ `{field}` 
-commande ainsi généralement par un `?` qui permet ensuite de spécifier des paramètres
+- il sera ensuite suivi par des paramètres de recherche. Le champ `{field}` 
+commence ainsi généralement par un `?` qui permet ensuite de spécifier des paramètres
 sous la forme `nom_parameter=value`
 
-A la lecture de la documentation, les premiers paramètres qu'on désire:
+A la lecture de la documentation, les premiers paramètres qu'on désire :
 
 - Le nombre de pages, ce qui nous permet d'obtenir un certain nombre d'échos. On
 va seulement récupérer 10 pages ce qui correspond à une centaine d'échos. On va
@@ -177,7 +177,8 @@ fichiers
 on va récupérer les données dont le code commune est `01450`. D'après la doc, 
 il convient de passer le code commune sous le format:
 `code_insee_commune_actualise:{code_commune}`. Pour éviter tout risque de 
-mauvais formatage, on va utiliser `%3A%` pour signifier `:`
+mauvais formatage, on va utiliser `%3A` pour signifier `:`,  `%2A` pour signifier `*` et 
+`%22` pour signifier `"`.
 - D'autres paramètres annexes, suggérés par la documentation
 
 Cela nous donne ainsi un URL dont la structure est la suivante :
@@ -191,14 +192,14 @@ url_api = f"{api_root}?page=1&after=10&format=json&q_mode=simple&qs=code_insee_c
 
 Si vous introduisez cet URL dans votre navigateur, vous devriez aboutir
 sur un `JSON` non formaté[^1]. En `Python`,
-on peut utiliser `requests` pour récupérer les données[^2]:
+on peut utiliser `requests` pour récupérer les données[^2] :
 
 
 [^1]: Le JSON est un format très apprécié dans le domaine du *big data*
 car il permet de stocker de manière intelligente des données
 de structures diverses. Il 
 s'agit d'un des formats privilégiés du paradigme No-SQL pour lequel
-cet [excellent cours](http://b3d.bdpedia.fr/) propose plus de détails
+cet [excellent cours](http://b3d.bdpedia.fr/) propose plus de détails.
 
 [^2]: Suivant les API, nous avons soit besoin de rien de plus si nous parvenons directement à obtenir un json, soit devoir utiliser un *parser* comme `BeautifulSoup` dans le cas contraire. Ici, le JSON peut être formaté relativement aisément. 
 
@@ -268,7 +269,7 @@ def interactive_map_dpe(dpe):
     sw = dpe[['latitude', 'longitude']].min().values.tolist()
     ne = dpe[['latitude', 'longitude']].max().values.tolist()
 
-    m = folium.Map(location = center, tiles='Stamen Toner')
+    m = folium.Map(location = center, tiles='OpenStreetMap')
 
     # I can add marker one by one on the map
     for i in range(0,len(dpe)):
@@ -288,55 +289,6 @@ m = interactive_map_dpe(dpe)
 #| eval: false
 # Afficher la carte
 m
-```
-
-On remarque un problème dans les données : un logement qui n'a
-rien à voir avec les autres. Il faudrait donc idéalement
-nettoyer un peu le jeu de données pour filtrer en fonction de
-limites géographiques. 
-
-Un des paramètres qui peut permettre ceci est `geo_distance`.
-Pour commencer, on va tricher un petit peu pour déterminer 
-les longitudes et latitudes de départ. Idéalement, on 
-récupérerait le découpage de la commune et utiliserait, par 
-exemple, le centroid de cette commune. Cela nécessite
-néanmoins l'appel à une autre API que nous n'avons
-pour le moment pas décrite. Nous allons donc
-nous contenter d'utiliser les longitudes et latitudes
-du point médian et fixer un rayon de plusieurs kilomètres
-pour exclure les points aberrants. 
-
-```{python}
-x_median = dpe['longitude'].median()
-y_median = dpe['latitude'].median()
-```
-
-La documentation nous informe du format à utiliser:
-
-> Le format est 'lon,lat,distance'. La distance optionnelle (0 par défaut) et est exprimée en mètres.
-
-```{python}
-param_distance = f'{x_median},{y_median},1000'
-print(param_distance)
-```
-
-Notre requête devient ainsi:
-
-```{python}
-url_api = f"{api_root}?page=1&after=10&format=json&q_mode=simple&qs=code_insee_commune_actualise" + "%3A%22" + f"{code_commune}" + "%22" + f"&size={size}&select=" + "%2A&sampling=neighbors" + f"&geodistance={param_distance}"
-print(url_api)
-```
-
-```{python}
-dpe_geo_filter = get_dpe_from_url(url_api)
-m_geo_filter = interactive_map_dpe(dpe)
-```
-
-```{python}
-#| echo : true
-#| eval: false
-# Afficher la carte
-m_geo_filter
 ```
 
 ### Un catalogue incomplet d'API existantes
