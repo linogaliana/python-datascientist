@@ -150,45 +150,103 @@ C'est cela qui rendra l'approche des pipelines particulièrement utile
 pour la *grid search*:
 
 ```{python}
+#| eval: true
 from sklearn.model_selection import GridSearchCV
 param_grid = {"reduce_dim__n_components":[2, 5, 10], "clf__C":[0.1, 10, 100]}
 grid_search = GridSearchCV(pipe, param_grid=param_grid)
+grid_search
 ```
 
-```{python}
-#| eval: asis
-#| echo: false
-print(estimator_html_repr(grid_search))
-```
-
-
+Ces _pipelines_ sont initialisés sans données, il s'agit d'une structure formelle
+que nous allons ensuite ajuster en entraînant des modèles. 
 
 ### Données utilisées
 
-Nous allons utiliser les données de transactions immobilières DVF pour chercher
+Nous allons utiliser les données
+de transactions immobilières [DVF](https://app.dvf.etalab.gouv.fr/) pour chercher
 la meilleure manière de prédire, sachant les caractéristiques d'un bien, son
 prix.
 
-Ces données peuvent être importées directement depuis [`data.gouv`](https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres/):
+Ces données sont mises à disposition
+sur [`data.gouv`](https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres/).
+Néanmoins, le format csv n'étant pas pratique pour importer des jeux de données
+volumineux, nous proposons de privilégier la version `Parquet` mise à 
+disposition par Eric Mauvière sur [`data.gouv`](https://www.data.gouv.fr/fr/datasets/dvf-2022-format-parquet/#/discussions).
+L'approche la plus efficace pour lire ces données est
+d'utiliser `DuckDB` afin de lire le fichier, extraire les colonnes
+d'intérêt puis passer à `Pandas` (pour en savoir plus sur
+l'intérêt de `DuckDB` pour lire des fichiers volumineux, vous pouvez
+consulter [ce post de blog](https://ssphub.netlify.app/post/parquetrp/) ou
+[celui-ci](https://www.icem7.fr/outils/3-explorations-bluffantes-avec-duckdb-1-interroger-des-fichiers-distants/) écrit
+par Eric Mauvière). 
+
+Même si, en soi, les gains de temps sont faibles car `DuckDB` optimise
+les requêtes HTTPS nécessaires à l'import des données, nous proposons 
+de télécharger les données pour réduire les besoins de bande passante. 
+
+```{python}
+#| eval: false
+import requests
+import os
+
+url = "https://www.data.gouv.fr/fr/datasets/r/56bde1e9-e214-408b-888d-34c57ff005c4"
+file_name = "dvf.parquet"
+
+# Check if the file already exists
+if not os.path.exists(file_name):
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        with open(file_name, "wb") as f:
+            f.write(response.content)
+        print("Téléchargement réussi.")
+    else:
+        print(f"Échec du téléchargement. Code d'état : {response.status_code}")
+else:
+    print(f"Le fichier '{file_name}' existe déjà. Aucun téléchargement nécessaire.")
+```
+
+En premier lieu, puisque cela va faciliter les requêtes SQL ultérieures, on crée
+une vue: 
+
+```{python}
+#| eval: false
+duckdb.sql(f'CREATE TEMP VIEW dvf AS SELECT * FROM read_parquet("dvf.parquet")')
+duckdb.sql(f"SELECT * FROM dvf LIMIT 5")
+```
+
+Les variables que nous allons conserver sont les suivantes, nous allons les reformater
+pour la suite de l'exercice
+
+```{python}
+#| eval: false
+xvars = ["Date mutation", "Valeur fonciere", 'Nombre de lots', 'Code type local', 'Nombre pieces principales']
+xvars = ", ".join([f'"{s}"' for s in xvars])
+```
+
+```{python}
+#| eval: false
+mutations = duckdb.sql(
+    f'''
+    SELECT
+    date_part('month', "Date mutation") AS month,
+    substring("Code postal", 1, 2) AS dep,
+    {xvars},
+    COLUMNS('Surface Carrez.*')
+    FROM dvf
+    '''
+).to_df()
+```
 
 ```{python}
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 
-mutations = pd.read_csv('https://www.data.gouv.fr/fr/datasets/r/3004168d-bec4-44d9-a781-ef16f41856a2', sep = "|", decimal=",")
-```
+colonnes_surface = mutations.columns[mutations.columns.str.startswith('Surface Carrez')]
+mutations.loc[:, colonnes_surface] = mutations.loc[:, colonnes_surface].replace({',': '.'}, regex=True).astype(float).fillna(0)
 
-On propose d'enrichir la base de quelques variables qui pourraient servir
-ultérieurement:
-
-```{python}
-mutations['Date mutation'] = pd.to_datetime(mutations['Date mutation'], format = "%d/%m/%Y")
-mutations['year'] = mutations['Date mutation'].dt.year
-mutations['month'] = mutations['Date mutation'].dt.month
-mutations['dep'] = mutations['Code postal'].astype(str).str[:2]
 mutations['lprix'] = np.log(mutations["Valeur fonciere"])
+mutations['surface'] = mutations.loc[:, colonnes_surface].sum(axis = 1).astype(int)
 ```
 
 Si vous travaillez avec les données de 2020, n'oubliez pas
@@ -199,6 +257,9 @@ indicatrice entre les dates en question:
 ```{python}
 mutations['confinement'] = mutations['Date mutation'].between(pd.to_datetime("2020-03-17"), pd.to_datetime("2020-05-03")).astype(int)
 ```
+
+
+
 
 Les données DVF proposent une observation par transaction. Ces transactions
 peuvent concerner plusieurs lots.
@@ -250,26 +311,23 @@ explicatives (les *features*) et les hyperparamètres du modèle
 ### Définition des ensembles train/test
 
 Nous allons donc nous restreindre à un sous-ensemble de colonnes dans un
-premier temps :
-
-```{python}
-xvars = ['dep', 'Nombre de lots', 'Code type local', 'surface', 'Nombre pieces principales']
-xvars2 = pd.Series(xvars).str.replace(" ","_").tolist()
-
-mutations2 = mutations.loc[:, xvars + ["Valeur fonciere"]]
-```
+premier temps.
 
 Nous allons également ne conserver que les transactions inférieures à 5 millions
 d'euros (on anticipe que celles ayant un montant supérieur sont des transactions
 exceptionnelles dont le mécanisme de fixation du prix diffère)
 
 ```{python}
+mutations2 = mutations.drop(colonnes_surface.tolist() + ["Date mutation", "lprix"], axis = "columns").copy()
+
 mutations2  = mutations2.dropna()
 mutations2 = mutations2.loc[mutations2['Valeur fonciere'] < 5e6] #keep only values below 10 millions
 
 mutations2.columns = mutations2.columns.str.replace(" ", "_")
-numeric_features = mutations2.columns[~mutations2.columns.isin(['dep','Code_type_local', 'confinement'])].tolist()
-categorical_features = ['dep','Code_type_local']
+numeric_features = mutations2.columns[~mutations2.columns.isin(['dep','Code_type_local', 'confinement', 'month', 'Valeur_fonciere'])].tolist()
+
+#numeric_features = mutations2.drop(['dep','Code_type_local', 'confinement']).columns.tolist()
+categorical_features = ['dep','Code_type_local','month']
 ```
 
 Au passage, nous avons abandonné la variable de code postal pour privilégier
