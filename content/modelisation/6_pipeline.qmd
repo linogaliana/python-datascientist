@@ -211,15 +211,17 @@ une vue:
 
 ```{python}
 #| eval: false
+import duckdb
 duckdb.sql(f'CREATE TEMP VIEW dvf AS SELECT * FROM read_parquet("dvf.parquet")')
 duckdb.sql(f"SELECT * FROM dvf LIMIT 5")
 ```
 
-Les variables que nous allons conserver sont les suivantes, nous allons les reformater
+Les variables que nous allons conserver sont les suivantes,
+nous allons les reformater
 pour la suite de l'exercice
 
 ```{python}
-#| eval: false
+#| eval: true
 xvars = ["Date mutation", "Valeur fonciere", 'Nombre de lots', 'Code type local', 'Nombre pieces principales']
 xvars = ", ".join([f'"{s}"' for s in xvars])
 ```
@@ -251,17 +253,23 @@ mutations['surface'] = mutations.loc[:, colonnes_surface].sum(axis = 1).astype(i
 
 Si vous travaillez avec les données de 2020, n'oubliez pas
 d'intégrer l'effet
-confinement strict dans vos modèles. Pour cela, vous pouvez créer une variable
+confinement strict dans vos modèles. 
+Pour cela, vous pouvez créer une variable
 indicatrice entre les dates en question:
 
 ```{python}
-mutations['confinement'] = mutations['Date mutation'].between(pd.to_datetime("2020-03-17"), pd.to_datetime("2020-05-03")).astype(int)
+mutations['confinement'] = (
+    mutations['Date mutation']
+    .between(pd.to_datetime("2020-03-17"), pd.to_datetime("2020-05-03"))
+    .astype(int)
+)
 ```
 
+Comme nous travaillons sur les données de 2022,
+nous pouvons nous passer de celle-ci. 
 
-
-
-Les données DVF proposent une observation par transaction. Ces transactions
+Les données DVF proposent une observation par transaction.
+Ces transactions
 peuvent concerner plusieurs lots.
 Pour simplifier,
 on va créer une variable de surface qui agrège les différentes informations
@@ -273,17 +281,13 @@ en question sont très corrélées les unes entre elles :
 #| echo: true
 corr = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].corr()
 fig, ax = plt.subplots(1)
-g = sns.heatmap(corr, ax=ax, 
-            xticklabels=corr.columns.values,
-            yticklabels=corr.columns.values, cmap='coolwarm', annot=True, fmt=".2f")
+g = sns.heatmap(
+    corr, ax=ax, 
+    xticklabels=corr.columns.values,
+    yticklabels=corr.columns.values, cmap='coolwarm', annot=True, fmt=".2f"
+)
 g
 ```
-
-
-```{python}
-g.figure.get_figure()
-```
-
 
 
 Les agréger revient à supposer que le modèle de fixation des prix est le même
@@ -308,7 +312,7 @@ Pour le moment, on va prendre comme acquis un certain nombre de variables
 explicatives (les *features*) et les hyperparamètres du modèle
 
 
-### Définition des ensembles train/test
+### Définition des ensembles _train_/_test_
 
 Nous allons donc nous restreindre à un sous-ensemble de colonnes dans un
 premier temps.
@@ -318,20 +322,20 @@ d'euros (on anticipe que celles ayant un montant supérieur sont des transaction
 exceptionnelles dont le mécanisme de fixation du prix diffère)
 
 ```{python}
-mutations2 = mutations.drop(colonnes_surface.tolist() + ["Date mutation", "lprix"], axis = "columns").copy()
+mutations2 = mutations.drop(colonnes_surface.tolist() + ["Date mutation", "lprix", "confinement"], axis = "columns").copy()
 
 mutations2  = mutations2.dropna()
-mutations2 = mutations2.loc[mutations2['Valeur fonciere'] < 5e6] #keep only values below 10 millions
+mutations2 = mutations2.loc[mutations2['Valeur fonciere'] < 5e6] #keep only values below 5 millions
 
 mutations2.columns = mutations2.columns.str.replace(" ", "_")
-numeric_features = mutations2.columns[~mutations2.columns.isin(['dep','Code_type_local', 'confinement', 'month', 'Valeur_fonciere'])].tolist()
+numeric_features = mutations2.columns[~mutations2.columns.isin(['dep','Code_type_local', 'month', 'Valeur_fonciere'])].tolist()
 
 #numeric_features = mutations2.drop(['dep','Code_type_local', 'confinement']).columns.tolist()
 categorical_features = ['dep','Code_type_local','month']
 ```
 
 Au passage, nous avons abandonné la variable de code postal pour privilégier
-la commune afin de réduire la dimension de notre jeu de données. Si on voulait
+le département afin de réduire la dimension de notre jeu de données. Si on voulait
 vraiment avoir un bon modèle, il faudrait faire autrement car le code postal
 est probablement un très bon prédicteur du prix d'un bien, une fois que
 les caractéristiques du bien sont contrôlées.
@@ -346,11 +350,15 @@ from sklearn.model_selection import train_test_split
 
 mutations2 = mutations2.groupby('dep').sample(frac = 0.2, random_state = 123)
 
-X_train, X_test, y_train, y_test = train_test_split(mutations2[xvars2], mutations2[["Valeur_fonciere"]].values.ravel(), test_size = 0.2, random_state = 0, stratify=mutations2[['dep']])
+X_train, X_test, y_train, y_test = train_test_split(
+    mutations2.drop("Valeur_fonciere", axis = 1),
+    mutations2[["Valeur_fonciere"]].values.ravel(),
+    test_size = 0.2, random_state = 0, stratify=mutations2[['dep']]
+)
 ```
 
 
-### Définition du premier pipeline
+### Définition du premier _pipeline_
 
 Nous allons donc partir d'un *random forest* avec des valeurs d'hyperparamètres
 données. 
@@ -398,26 +406,15 @@ Pour cela, nous allons utiliser la liste `numeric_features` définie précédemm
 Pour cela, nous allons utiliser la liste `categorical_features`
 2. __Random forest__ : nous allons appliquer l'estimateur `regr` défini plus haut
 
-J'ajoute en commentaire un exemple de comment s'introduirait une imputation
-de valeurs manquantes. La version 1.0 de `scikit` facilite l'intégration
-d'étapes complexes dans les pipelines[^4]. Si vous utilisez une 
-version antérieure à la 1.0 de `scikit`, vous pouvez vous rendre dans
-la section [Annexe](#annexe) pour avoir des exemples de définition alternative
-(attention cependant, vous ne pourrez récupérer le nom des *features*
-transformées comme ici, ce qui peut pénaliser l'analyse d'importance
-de variables)
-
-[^4]: Voir ce [*thread stackoverflow*](https://stackoverflow.com/questions/54646709/sklearn-pipeline-get-feature-names-after-onehotencode-in-columntransformer)
-
 
 ```{python}
-from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.compose import make_column_transformer
 
 numeric_pipeline = make_pipeline(
-  #SimpleImputer(),
+  SimpleImputer(),
   StandardScaler()
 )
 transformer = make_column_transformer(
@@ -437,17 +434,9 @@ sur données réelles dont les types divergent.
 On peut visualiser le graphe et ainsi se représenter la manière dont
 ce _pipeline_ opère:
 
-~~~python
-pipe
-~~~
-
 ```{python}
-#| eval: asis
-#| echo: false
-print(estimator_html_repr(pipe))
+pipe
 ```
-
-
 
 Maintenant, il ne reste plus qu'à estimer notre modèle sur l'ensemble
 d'entraînement. C'est très simple avec un _pipeline_ : il suffit d'utiliser
@@ -490,7 +479,7 @@ on va pouvoir facilement afficher le nom des colonnes en question (et donc
 comprendre les *features* déterminantes)
 
 L'importance va être définie à partir 
-de la mesure d'impureté[^3]
+de la mesure d'impureté[^3].
 
 [^3]: Extrait de [ce blog](https://mljar.com/blog/feature-importance-in-random-forest/):
 Gini importance (or mean decrease impurity), which is computed from the Random Forest structure. Let’s look how the Random Forest is constructed. It is a set of Decision Trees. Each Decision Tree is a set of internal nodes and leaves. In the internal node, the selected feature is used to make decision how to divide the data set into two separate sets with similars responses within. The features for internal nodes are selected with some criterion, which for classification tasks can be gini impurity or infomation gain, and for regression is variance reduction. We can measure how each feature decrease the impurity of the split (the feature with highest decrease is selected for internal node). For each feature we can collect how on average it decreases the impurity. The average over all trees in the forest is the measure of the feature importance. 
@@ -529,11 +518,11 @@ nombre de lots, ont une importance moindre.
 <div class="alert alert-info" role="alert">
 <h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
 ```
-Idéalement, on utiliserait `yellowbrick` pour représenter l'importance des variables
+Idéalement, on utiliserait `Yellowbrick` pour représenter l'importance des variables
 Mais en l'état actuel du *pipeline* on a beaucoup de variables dont le poids
 est nul qui viennent polluer la visualisation. Vous pouvez 
 consulter la
-[documentation de `yellowbrick` sur ce sujet](https://www.scikit-yb.org/en/latest/api/model_selection/importances.html)
+[documentation de `Yellowbrick` sur ce sujet](https://www.scikit-yb.org/en/latest/api/model_selection/importances.html)
 ```{=html}
 </div>
 ```
