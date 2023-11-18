@@ -24,6 +24,7 @@ description: |
   Ce chapitre illustre les enjeux de la classification à partir de
   ce modèle sur les données de vote aux élections présidentielles US de 2020.
 image: featured.png
+echo: false
 ---
 
 ::: {.cell .markdown}
@@ -167,7 +168,16 @@ with open('featured.png', 'wb') as out_file:
 :::
 
 
-## Exercice
+## Application
+
+Pour appliquer un modèle de classification, il nous faut
+trouver une variable dichotomique. Le choix naturel est
+de prendre la variable dichotomique qu'est la victoire ou 
+défaite d'un des partis. 
+
+Même si les Républicains ont perdu en 2020, ils l'ont emporté
+dans plus de comtés (moins peuplés). Nous allons considérer
+que la victoire des Républicains est notre _label_ 1 et la défaite _0_.
 
 ```{python}
 # packages utiles
@@ -187,6 +197,7 @@ from sklearn.model_selection import cross_val_score
 2. En utilisant la fonction prête à l'emploi nommée `train_test_split` de la librairie `sklearn.model_selection`,
 créer des échantillons de test (20 % des observations) et d'estimation (80 %) avec comme *features*: `'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"` et comme *label* la variable `y`. 
 
+*Note: Il se peut que vous ayez le warning suivant:*
 
 > A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel()
 
@@ -209,26 +220,20 @@ créer des échantillons de test (20 % des observations) et d'estimation (80 %) 
 
 
 ```{python}
-#| include: false
-#| echo: false
-
 # 1. Création de la dummy y de victoire des républicains
 votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
 ```
 
 
 ```{python}
-#| include: false
-#| echo: false
-
 #2. Création des échantillons d'entraînement et de validation
 xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
 
-df = votes[["y"] + xvars]
+df = votes.loc[:, ["y"] + xvars]
 
 X_train, X_test, y_train, y_test = train_test_split(
     df[xvars],
-    df[['y']].values.ravel(), test_size=0.2, random_state=0
+    df[['y']].values.ravel(), test_size=0.2, random_state=123
 )
 #X_train.head()
 #y_test
@@ -239,9 +244,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 
 ```{python}
-#| include: false
-#| echo: false
-
 # 3. Entraînement du modèle et performances
 clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
 y_pred = clf.predict(X_test)
@@ -262,9 +264,7 @@ le classifieur avec `C = 1`
 devrait avoir les performances suivantes :
 
 ```{python}
-#| echo: false
 #| output: asis
-
 out = pd.DataFrame.from_dict({"Accuracy": [sc_accuracy], "Recall": [sc_recall],
                         "Precision": [sc_precision], "F1": [sc_f1]}, orient = "index", columns = ["Score"])
 print(out.to_markdown())
@@ -272,8 +272,7 @@ print(out.to_markdown())
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 4. Matrice de confusion
 predictions = clf.predict(X_test)
@@ -300,8 +299,7 @@ prend cette forme:
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 5. Refaire les questions précédentes avec des variables normalisées.
 import sklearn.preprocessing as preprocessing
@@ -339,7 +337,6 @@ A l'issue de la question 6,
 le nouveau classifieur avec devrait avoir les performances suivantes :
 
 ```{python}
-#| echo: false
 #| output: asis
 
 out = pd.DataFrame.from_dict({"Accuracy": [sc_accuracy], "Recall": [sc_recall],
@@ -352,7 +349,6 @@ print(out.to_markdown())
 
 ```{python}
 #| include: false
-#| echo: false
 
 # 6. Refaire les questions en changeant la variable X.
 votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
