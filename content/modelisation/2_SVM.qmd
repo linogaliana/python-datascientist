@@ -1,7 +1,6 @@
 ---
 title: "Classification: premier modèle avec les SVM"
 date: 2023-07-15T13:00:00Z
-draft: false
 weight: 30
 slug: SVM
 tags:
@@ -15,17 +14,17 @@ tags:
 categories:
   - Modélisation
   - Exercice
-type: book
 description: |
   La classification permet d'attribuer une classe d'appartenance (_label_
   dans la terminologie du _machine learning_)
   discrète à des données à partir de certaines variables explicatives
   (_features_ dans la même terminologie).
   Les algorithmes de classification sont nombreux. L'un des plus intuitifs et
-  les plus fréquemment rencontrés est le `SVM` (*Support Vector Machine*).
+  les plus fréquemment rencontrés sont les _SVM_ (*Support Vector Machine*).
   Ce chapitre illustre les enjeux de la classification à partir de
   ce modèle sur les données de vote aux élections présidentielles US de 2020.
 image: featured.png
+echo: false
 ---
 
 ::: {.cell .markdown}
@@ -44,21 +43,26 @@ print_badges("content/modelisation/2_SVM.qmd")
 ```
 :::
 
+Pour pouvoir importer les données, 
+nous allons importer les données suivantes:
+
+```{python}
+#| eval: false
+!pip install --upgrade xlrd
+!pip install geopandas
+```
+
 Nous allons partir du même jeu de données que précédemment,
 c'est-à-dire les résultats des élections US 2020 présentés dans l'[introduction
 de cette partie](index.qmd): les données de vote aux élections présidentielles américaines
 croisées à des variables sociodémographiques.
 Le code 
-est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/modelisation/get_data.py).
+est disponible [sur `Github`](https://github.com/linogaliana/python-datascientist/blob/master/content/modelisation/get_data.py).
 
 
 ```{python}
 #| echo: true
-#| message: false
-#| warning: false
-
-#!pip install --upgrade xlrd #colab bug verson xlrd
-#!pip install geopandas
+#| output: false
 
 import requests
 
@@ -78,9 +82,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 ```
 
-## La méthode des SVM (Support Vector Machines)
+## La méthode des _SVM_ (_Support Vector Machines_)
 
-L'une des méthodes de *Machine Learning* les plus utilisées en classification est les SVM.
+L'une des méthodes de *machine learning* les
+plus utilisées en classification sont les SVM (_Support Vector Machines_).
 Il s'agit de trouver, dans un système de projection adéquat (noyau ou *kernel*),
 les paramètres de l'hyperplan (en fait d'un hyperplan à marges maximales)
 séparant les classes de données :
@@ -93,8 +98,28 @@ séparant les classes de données :
 <h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Formalisation mathématique</h3>
 ```
 
-On peut, sans perdre de généralité, supposer que le problème consiste à supposer l'existence d'une loi de probabilité $\mathbb{P}(x,y)$ ($\mathbb{P} \to \{-1,1\}$) qui est inconnue. Le problème de discrimination
-vise à construire un estimateur de la fonction de décision idéale qui minimise la probabilité d'erreur, autrement dit $\theta = \arg\min_\Theta \mathbb{P}(h_\theta(X) \neq y |x)$
+Les SVM sont l'une des méthodes de _machine learning_ les plus intuitives
+du fait de l'interprétation géométrique simple de la méthode. Il s'agit
+aussi d'un des algorithmes de _machine learning_ à la formalisation
+la moins complexe pour les praticiens ayant des notions en statistique
+traditionnelle. Cette boîte revient dessus. Néanmoins,
+celle-ci n'est pas nécessaire à la compréhension du chapitre.
+En _machine learning_, plus que les détails mathématiques, l'important
+est d'avoir des intuitions. 
+
+L'objectif des SVM est, rappelons-le, de trouver un hyperplan qui permette
+de séparer les différentes classes au mieux. Par exemple, dans un espace
+à deux dimensions, il s'agit de trouver une droite avec des marges
+qui permette de séparer au mieux l'espace en partie avec
+des _labels_ homogènes.
+
+On peut, sans perdre de généralité,
+supposer que le problème consiste à supposer l'existence d'une loi de probabilité $\mathbb{P}(x,y)$ ($\mathbb{P} \to \{-1,1\}$) qui est inconnue. Le problème de discrimination
+vise à construire un estimateur de la fonction de décision idéale qui minimise la probabilité d'erreur, autrement dit 
+
+$$
+\theta = \arg\min_\Theta \mathbb{P}(h_\theta(X) \neq y |x)
+$$
 
 Les SVM les plus simples sont les SVM linéaires. Dans ce cas, on suppose qu'il existe un séparateur linéaire qui permet d'associer chaque classe à son signe:
 
@@ -103,9 +128,10 @@ h_\theta(x) = \text{signe}(f_\theta(x)) ; \text{ avec } f_\theta(x) = \theta^T x
 $$
 avec $\theta \in \mathbb{R}^p$ et $w \in \mathbb{R}$. 
 
-![](https://en.wikipedia.org/wiki/File:SVM_margin.png)
+![](https://upload.wikimedia.org/wikipedia/commons/7/72/SVM_margin.png)
 
-Lorsque des observations sont linéairement séparables, il existe une infinité de frontières de décision linéaire séparant les deux classes. Le "meilleur" choix est de prendre la marge maximale permettant de séparer les données. La distance entre les deux marges est $\frac{2}{||\theta||}$. Donc maximiser cette distance entre deux hyperplans revient à minimiser $||\theta||^2$ sous la contrainte $y_i(\theta^Tx_i + b) \geq 1$. 
+Lorsque des observations sont linéairement séparables,
+il existe une infinité de frontières de décision linéaire séparant les deux classes. Le _"meilleur"_ choix est de prendre la marge maximale permettant de séparer les données. La distance entre les deux marges est $\frac{2}{||\theta||}$. Donc maximiser cette distance entre deux hyperplans revient à minimiser $||\theta||^2$ sous la contrainte $y_i(\theta^Tx_i + b) \geq 1$. 
 
 
 Dans le cas non linéairement séparable, la *hinge loss* $\max\big(0,y_i(\theta^Tx_i + b)\big)$ permet de linéariser la fonction de perte:
@@ -142,7 +168,16 @@ with open('featured.png', 'wb') as out_file:
 :::
 
 
-## Exercice
+## Application
+
+Pour appliquer un modèle de classification, il nous faut
+trouver une variable dichotomique. Le choix naturel est
+de prendre la variable dichotomique qu'est la victoire ou 
+défaite d'un des partis. 
+
+Même si les Républicains ont perdu en 2020, ils l'ont emporté
+dans plus de comtés (moins peuplés). Nous allons considérer
+que la victoire des Républicains est notre _label_ 1 et la défaite _0_.
 
 ```{python}
 # packages utiles
@@ -162,6 +197,7 @@ from sklearn.model_selection import cross_val_score
 2. En utilisant la fonction prête à l'emploi nommée `train_test_split` de la librairie `sklearn.model_selection`,
 créer des échantillons de test (20 % des observations) et d'estimation (80 %) avec comme *features*: `'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"` et comme *label* la variable `y`. 
 
+*Note: Il se peut que vous ayez le warning suivant:*
 
 > A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel()
 
@@ -184,26 +220,20 @@ créer des échantillons de test (20 % des observations) et d'estimation (80 %) 
 
 
 ```{python}
-#| include: false
-#| echo: false
-
 # 1. Création de la dummy y de victoire des républicains
 votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
 ```
 
 
 ```{python}
-#| include: false
-#| echo: false
-
 #2. Création des échantillons d'entraînement et de validation
 xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
 
-df = votes[["y"] + xvars]
+df = votes.loc[:, ["y"] + xvars]
 
 X_train, X_test, y_train, y_test = train_test_split(
     df[xvars],
-    df[['y']].values.ravel(), test_size=0.2, random_state=0
+    df[['y']].values.ravel(), test_size=0.2, random_state=123
 )
 #X_train.head()
 #y_test
@@ -214,9 +244,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 
 ```{python}
-#| include: false
-#| echo: false
-
 # 3. Entraînement du modèle et performances
 clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
 y_pred = clf.predict(X_test)
@@ -237,9 +264,7 @@ le classifieur avec `C = 1`
 devrait avoir les performances suivantes :
 
 ```{python}
-#| echo: false
 #| output: asis
-
 out = pd.DataFrame.from_dict({"Accuracy": [sc_accuracy], "Recall": [sc_recall],
                         "Precision": [sc_precision], "F1": [sc_f1]}, orient = "index", columns = ["Score"])
 print(out.to_markdown())
@@ -247,8 +272,7 @@ print(out.to_markdown())
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 4. Matrice de confusion
 predictions = clf.predict(X_test)
@@ -275,8 +299,7 @@ prend cette forme:
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 5. Refaire les questions précédentes avec des variables normalisées.
 import sklearn.preprocessing as preprocessing
@@ -314,7 +337,6 @@ A l'issue de la question 6,
 le nouveau classifieur avec devrait avoir les performances suivantes :
 
 ```{python}
-#| echo: false
 #| output: asis
 
 out = pd.DataFrame.from_dict({"Accuracy": [sc_accuracy], "Recall": [sc_recall],
@@ -327,7 +349,6 @@ print(out.to_markdown())
 
 ```{python}
 #| include: false
-#| echo: false
 
 # 6. Refaire les questions en changeant la variable X.
 votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
