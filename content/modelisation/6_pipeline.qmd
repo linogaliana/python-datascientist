@@ -749,9 +749,9 @@ Les statistiques obtenues par le biais de cette _variable importance_
 sont un peu rudimentaires mais permettent déjà de comprendre
 le problème de notre modèle. 
 
-On voit donc qu'une des variables déterminante est un effet fixe
-géographique (qui servent à ajuster de la différence de prix entre
-Paris et le reste de la France), une autre variable
+On voit donc que deux de nos variables déterminantes sont des effets fixes
+géographiques (qui servent à ajuster de la différence de prix entre
+Paris et les Hauts de Seine et le reste de la France), une autre variable
 est un effet fixe type de bien. Les deux variables qui pourraient introduire
 de la variabilité, à savoir la surface et, dans une moindre mesure, le 
 nombre de lots, ont une importance moindre. 
@@ -767,6 +767,7 @@ Mais en l'état actuel du *pipeline* on a beaucoup de variables dont le poids
 est nul qui viennent polluer la visualisation. Vous pouvez 
 consulter la
 [documentation de `Yellowbrick` sur ce sujet](https://www.scikit-yb.org/en/latest/api/model_selection/importances.html)
+
 ```{=html}
 </div>
 ```
@@ -776,10 +777,11 @@ Les prédictions peuvent nous suggérer également
 qu'il y a un problème:
 
 ```{python}
+#| eval: true
+#| echo: true
 compar = pd.DataFrame([y_test, pipe.predict(X_test)]).T
 compar.columns = ['obs','pred']
 compar['diff'] = compar.obs - compar.pred
-
 
 g = sns.relplot(data = compar, x = 'obs', y = 'pred', color = "royalblue", alpha = 0.8)
 g.set(ylim=(0, 2e6), xlim=(0, 2e6),
@@ -788,6 +790,86 @@ g.set(ylim=(0, 2e6), xlim=(0, 2e6),
       ylabel='Predicted values')
 g.ax.axline(xy1=(0, 0), slope=1, color="red", dashes=(5, 2))
 ```
+
+## Restriction du champ du modèle
+
+Mettre en oeuvre un bon modèle de prix au niveau France entière
+est complexe. Nous allons donc nous restreindre au champ suivant:
+les appartements dans Paris.
+
+```{python}
+#| echo: true
+#| eval: true
+mutations_paris = mutations.drop(
+    colonnes_surface.tolist() + ["Date mutation", "lprix"], # ajouter "confinement" si données 2020
+    axis = "columns"
+    ).copy()
+
+mutations_paris = mutations_paris.loc[mutations_paris['Valeur fonciere'] < 5e6] #keep only values below 5 millions
+
+mutations_paris.columns = mutations_paris.columns.str.replace(" ", "_")
+mutations_paris  = mutations_paris.dropna(subset = ['dep','Code_type_local','month'])
+mutations_paris = mutations_paris.loc[mutations_paris['dep'] == "75"]
+mutations_paris = mutations_paris.loc[mutations_paris['Code_type_local'] == 2].drop(['dep','Code_type_local'], axis = "columns")
+mutations_paris.loc[mutations_paris['surface']>0]
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4 : Pipeline plus simple</h3>
+```
+
+Reprendre les codes précédents et reconstruire notre _pipeline_ sur 
+la nouvelle base
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+#| eval: true
+mutations_paris = mutations.drop(
+    colonnes_surface.tolist() + ["Date mutation", "lprix"], # ajouter "confinement" si données 2020
+    axis = "columns"
+    ).copy()
+
+mutations_paris = mutations_paris.loc[mutations_paris['Valeur fonciere'] < 5e6] #keep only values below 5 millions
+
+mutations_paris.columns = mutations_paris.columns.str.replace(" ", "_")
+mutations_paris  = mutations_paris.dropna(subset = ['dep','Code_type_local','month'])
+mutations_paris = mutations_paris.loc[mutations_paris['dep'] == "75"]
+mutations_paris = mutations_paris.loc[mutations_paris['Code_type_local'] == 2].drop(['dep','Code_type_local'], axis = "columns")
+mutations_paris.loc[mutations_paris['surface']>0]
+
+
+numeric_features = mutations_paris.columns[~mutations_paris.columns.isin(['month', 'Valeur_fonciere'])].tolist()
+categorical_features = ['month']
+
+numeric_pipeline = make_pipeline(
+  SimpleImputer(),
+  StandardScaler()
+)
+transformer = make_column_transformer(
+    (numeric_pipeline, numeric_features[:-1]),
+    (OneHotEncoder(sparse = False, handle_unknown = "ignore"), categorical_features))
+pipe = Pipeline(steps=[('preprocessor', transformer),
+                      ('randomforest', regr)])
+
+X_train, X_test, y_train, y_test = train_test_split(
+    mutations_paris.drop("Valeur_fonciere", axis = 1),
+    mutations_paris[["Valeur_fonciere"]].values.ravel(),
+    test_size = 0.2, random_state = 123
+)
+
+pd.DataFrame(
+    pipe["randomforest"].feature_importances_, 
+    index = pipe[:-1].get_feature_names_out()
+)
+```
+
 
 
 ## Recherche des hyperparamètres optimaux avec une validation croisée
