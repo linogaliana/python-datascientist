@@ -1,10 +1,8 @@
 ---
 title: "Premier pas vers l'industrialisation avec les pipelines scikit"
-date: 2020-10-20T13:00:00Z
-draft: false
+date: 2023-10-20T13:00:00Z
 weight: 60
 slug: pipeline-scikit
-type: book
 tags:
   - scikit
   - Machine Learning
@@ -15,13 +13,15 @@ categories:
   - Modélisation
   - Tutoriel
 description: |
-  Les _pipelines_ `scikit` permettent d'intégrer de manière très flexible
+  Les _pipelines_ `Scikit` permettent d'intégrer de manière très flexible
   un ensemble d'opérations de pre-processing et d'entraînement de modèles
   dans une chaîne d'opérations. Il s'agit d'une approche particulièrement
   appropriée pour réduire la difficulté à changer d'algorithme ou pour
   faciliter la ré-application d'un code à de nouvelles données.
 eval: false
+echo: false
 image: featured.png
+bibliography: ../../reference.bib
 ---
 
 
@@ -75,19 +75,26 @@ de [_"Mise en production de projets data science"_](https://ensae-reproductibili
 qui vise à simplifier la mise en oeuvre opérationnelle de
 projets utilisant des techniques de _machine learning_.  
 
+```{python}
+#| echo: true
+#| eval: true
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import pandas as pd
+```
 
+### Les _pipelines_ `Scikit`
 
-### Les _pipelines_ `scikit`
-
-Heureusement, `scikit` propose un excellent outil pour proposer un cadre
+Heureusement, `Scikit` propose un excellent outil pour proposer un cadre
 général pour créer une chaîne de production *machine learning*. Il
 s'agit des
 [_pipelines_](https://scikit-learn.org/stable/modules/compose.html). 
 Ils présentent de nombreux intérêts, parmi lesquels:
 
-* Ils sont très __pratiques__ et __lisibles__. On rentre des données en entrée, on n'appelle qu'une seule fois les méthodes `fit` et `predict` ce qui permet de s'assurer une gestion cohérente des transformations de variables, par exemple après l'appel d'un `StandardScaler`
-* La __modularité__ rend aisée la mise à jour d'un pipeline et renforce la capacité à le réutiliser
-* Ils permettent de facilement chercher les hyperparamètres d'un modèle. Sans *pipeline*, écrire un code qui fait du *tuning* d'hyperparamètres peut être pénible. Avec les *pipelines*, c'est une ligne de code. 
+* Ils sont très __pratiques__ et __lisibles__. On rentre des données en entrée, on n'appelle qu'une seule fois les méthodes `fit` et `predict` ce qui permet de s'assurer une gestion cohérente des transformations de variables, par exemple après l'appel d'un `StandardScaler` ;
+* La __modularité__ rend aisée la mise à jour d'un pipeline et renforce la capacité à le réutiliser ;
+* Ils permettent de facilement chercher les hyperparamètres d'un modèle. Sans *pipeline*, écrire un code qui fait du *tuning* d'hyperparamètres peut être pénible. Avec les *pipelines*, c'est une ligne de code ;
 * La __sécurité__ d'être certain que les étapes de preprocessing sont bien appliquées aux jeux de données désirés avant l'estimation. 
 
 
@@ -130,6 +137,7 @@ transformation inverse).
 
 
 ```{python}
+#| echo: true
 #| eval: true
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
@@ -150,6 +158,7 @@ C'est cela qui rendra l'approche des pipelines particulièrement utile
 pour la *grid search*:
 
 ```{python}
+#| echo: true
 #| eval: true
 from sklearn.model_selection import GridSearchCV
 param_grid = {"reduce_dim__n_components":[2, 5, 10], "clf__C":[0.1, 10, 100]}
@@ -185,6 +194,7 @@ les requêtes HTTPS nécessaires à l'import des données, nous proposons
 de télécharger les données pour réduire les besoins de bande passante. 
 
 ```{python}
+#| echo: true
 #| eval: false
 import requests
 import os
@@ -210,9 +220,17 @@ En premier lieu, puisque cela va faciliter les requêtes SQL ultérieures, on cr
 une vue: 
 
 ```{python}
-#| eval: false
+#| echo: true
+#| eval: true
 import duckdb
-duckdb.sql(f'CREATE TEMP VIEW dvf AS SELECT * FROM read_parquet("dvf.parquet")')
+duckdb.sql(f'CREATE OR REPLACE VIEW dvf AS SELECT * FROM read_parquet("dvf.parquet")')
+```
+
+Les données prennent la forme suivante:
+
+```{python}
+#| echo: true
+#| eval: true
 duckdb.sql(f"SELECT * FROM dvf LIMIT 5")
 ```
 
@@ -221,13 +239,19 @@ nous allons les reformater
 pour la suite de l'exercice
 
 ```{python}
+#| echo: true
 #| eval: true
-xvars = ["Date mutation", "Valeur fonciere", 'Nombre de lots', 'Code type local', 'Nombre pieces principales']
+xvars = [
+    "Date mutation", "Valeur fonciere",
+    'Nombre de lots', 'Code type local',
+    'Nombre pieces principales'
+]
 xvars = ", ".join([f'"{s}"' for s in xvars])
 ```
 
 ```{python}
-#| eval: false
+#| echo: true
+#| eval: true
 mutations = duckdb.sql(
     f'''
     SELECT
@@ -238,26 +262,52 @@ mutations = duckdb.sql(
     FROM dvf
     '''
 ).to_df()
-```
-
-```{python}
-import numpy as np
-import pandas as pd
 
 colonnes_surface = mutations.columns[mutations.columns.str.startswith('Surface Carrez')]
 mutations.loc[:, colonnes_surface] = mutations.loc[:, colonnes_surface].replace({',': '.'}, regex=True).astype(float).fillna(0)
-
-mutations['lprix'] = np.log(mutations["Valeur fonciere"])
-mutations['surface'] = mutations.loc[:, colonnes_surface].sum(axis = 1).astype(int)
 ```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
+
+Le fichier `Parquet` mis à disposition sur `data.gouv` présente une incohérence de mise en forme de
+certaines colonnes à cause des virgules qui empêchent le formattage sous forme de colonne
+numérique.
+
+Le code ci-dessus effectue la conversion adéquate au niveau de `Pandas`. 
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+#| echo: true
+#| eval: true
+mutations.head(2)
+```
+
+<details>
+<summary>
+Introduire un effet confinement
+</summary>
 
 Si vous travaillez avec les données de 2020, n'oubliez pas
 d'intégrer l'effet
-confinement strict dans vos modèles. 
-Pour cela, vous pouvez créer une variable
+confinement dans vos modèles puisque cela a lourdement
+affecté les possibilités de transaction sur cette période, donc
+l'effet potentiel de certaines variables explicatives du prix. 
+
+Pour introduire cet effet, vous pouvez créer une variable
 indicatrice entre les dates en question:
 
 ```{python}
+#| echo: true
+#| eval: false
 mutations['confinement'] = (
     mutations['Date mutation']
     .between(pd.to_datetime("2020-03-17"), pd.to_datetime("2020-05-03"))
@@ -268,34 +318,73 @@ mutations['confinement'] = (
 Comme nous travaillons sur les données de 2022,
 nous pouvons nous passer de celle-ci. 
 
+</details>
+
+
+
 Les données DVF proposent une observation par transaction.
 Ces transactions
-peuvent concerner plusieurs lots.
+peuvent concerner plusieurs lots. Par exemple, un appartement
+avec garage et cave comportera trois lots. 
+
 Pour simplifier,
 on va créer une variable de surface qui agrège les différentes informations
-de surface disponibles dans le jeu de données. En effet, les variables
-en question sont très corrélées les unes entre elles :
+de surface disponibles dans le jeu de données.
+Les agréger revient à supposer que le modèle de fixation des prix est le même
+entre chaque lot. C'est une hypothèse simplificatrice qu'une personne plus 
+experte du marché immobilier, ou qu'une approche propre de sélection
+de variable pourrait amener à nier. En effet, les variables
+en question sont faiblement corrélées les unes entre elles, à quelques
+exceptions près (@fig-corr-surface):
+
 
 ```{python}
-#| include: false
 #| echo: true
-corr = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].corr()
+#| eval: true
+#| output: false
+
+corr = mutations.loc[
+    :,
+    mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()
+]
+corr.columns = corr.columns.str.replace("Carrez du ", "")
+corr = corr.corr()
+
+mask = np.triu(np.ones_like(corr, dtype=bool))
+
+cmap = sns.diverging_palette(230, 20, as_cmap=True)
+```
+
+```{python}
+#| echo: true
+#| eval: true
+#| fig-cap: Matrice de corrélation des variables de surface
+#| label: fig-corr-surface
+
 fig, ax = plt.subplots(1)
 g = sns.heatmap(
     corr, ax=ax, 
+    mask=mask,
+    vmax=.3, center=0,
+    square=True, linewidths=.5, cbar_kws={"shrink": .5},
     xticklabels=corr.columns.values,
-    yticklabels=corr.columns.values, cmap='coolwarm', annot=True, fmt=".2f"
+    yticklabels=corr.columns.values, cmap=cmap, annot=True, fmt=".2f"
 )
 g
 ```
 
+```{python}
+#| echo: true
+#| eval: true
+mutations['lprix'] = np.log(mutations["Valeur fonciere"])
+mutations['surface'] = mutations.loc[:, colonnes_surface].sum(axis = 1).astype(int)
+```
 
-Les agréger revient à supposer que le modèle de fixation des prix est le même
-entre chaque lot. C'est une hypothèse simplificatrice qu'une personne plus 
-experte du marché immobilier, ou qu'une approche propre de sélection
-de variable pourrait amener à nier 
+
 
 ```{python}
+#| echo: true
+#| eval: true
 mutations['surface'] = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].sum(axis = 1)
 ```
 
@@ -309,28 +398,78 @@ Notre premier *pipeline* va nous permettre d'intégrer ensemble:
 2. Une étape d'estimation du prix en utilisant un modèle de *random forest*
 
 Pour le moment, on va prendre comme acquis un certain nombre de variables
-explicatives (les *features*) et les hyperparamètres du modèle
+explicatives (les *features*) et les hyperparamètres du modèle.
+
+L'algorithme des _random forest_ est une technique statistique basée sur
+les arbres de décision. Elle a été définie explicitement par l'un
+des pionniers du _machine learning_, @breiman2001random. 
+Il s'agit d'une [méthode ensembliste](https://en.wikipedia.org/wiki/Ensemble_learning)
+puisqu'elle consiste à utiliser plusieurs algorithmes (en l'occurrence des arbres
+de décision) pour obtenir une meilleure prédiction que ne le permettraient
+chaque modèle isolément.  
+
+Les _random forest_ sont une méthode d'aggrégation[^2] d'arbres de décision. 
+On calcule $K$ arbres de décision et en tire, par une méthode d'agrégation,
+une règle de décision moyenne qu'on va appliquer pour tirer une
+prédiction de nos données. 
+
+[^2]: Les _random forest_ sont l'une des principales méthodes
+ensemblistes. Outre cette approche, les plus connues sont
+le [_bagging_ (_boostrap aggregating_)](https://en.wikipedia.org/wiki/Bootstrap_aggregating) et le _boosting_
+qui consistent à choisir la prédiction à privilégier
+selon des algorithmes de choix différens.
+Par exemple le _bagging_ est une technique basée sur le vote majoritaire [@breiman1996bagging]. 
+Cette technique s'inspire du _bootstrap_ qui, en économétrie,
+consiste à ré-estimer sur *K* sous-échantillons
+aléatoires des données un estimateur afin d'en tirer, par exemple, un intervalle
+de confiance empirique à 95%. Le principe du _bagging_ est le même. On ré-estime
+_K_ fois notre estimateur (par exemple un arbre de décision) et propose une 
+règle d'agrégation pour en tirer une règle moyennisée et donc une prédiction. 
+Le _boosting_ fonctionne selon un principe différent, basé sur
+l'optimisation de combinaisons de classifieurs faibles. 
+
+![](https://miro.medium.com/v2/resize:fit:720/format:webp/1*jE1Cb1Dc_p9WEOPMkC95WQ.png)
+
+L'un des intérêts
+des *random forest* est qu'il existe des méthodes pour déterminer 
+l'importance relative de chaque variable dans la prédiction. 
 
 
-### Définition des ensembles _train_/_test_
+Nous allons ici partir d'un *random forest* avec des valeurs d'hyperparamètres
+données, à savoir la profondeur de l'arbre. 
+
+### Définition des ensembles _train_ et _test_
 
 Nous allons donc nous restreindre à un sous-ensemble de colonnes dans un
 premier temps.
 
-Nous allons également ne conserver que les transactions inférieures à 5 millions
+Nous allons également ne conserver que les
+transactions inférieures à 5 millions
 d'euros (on anticipe que celles ayant un montant supérieur sont des transactions
 exceptionnelles dont le mécanisme de fixation du prix diffère)
 
 ```{python}
-mutations2 = mutations.drop(colonnes_surface.tolist() + ["Date mutation", "lprix", "confinement"], axis = "columns").copy()
+#| echo: true
+#| eval: true
+mutations2 = mutations.drop(
+    colonnes_surface.tolist() + ["Date mutation", "lprix"], # ajouter "confinement" si données 2020
+    axis = "columns"
+    ).copy()
 
-mutations2  = mutations2.dropna()
 mutations2 = mutations2.loc[mutations2['Valeur fonciere'] < 5e6] #keep only values below 5 millions
 
 mutations2.columns = mutations2.columns.str.replace(" ", "_")
-numeric_features = mutations2.columns[~mutations2.columns.isin(['dep','Code_type_local', 'month', 'Valeur_fonciere'])].tolist()
+mutations2  = mutations2.dropna(subset = ['dep','Code_type_local','month'])
+```
 
-#numeric_features = mutations2.drop(['dep','Code_type_local', 'confinement']).columns.tolist()
+Notre _pipeline_ va incorporer deux types de variables: les variables
+catégorielles et les variables numériques. 
+Ces différents types vont bénéficier d'étapes de _preprocessing_
+différentes. 
+
+```{python}
+#| eval: true
+numeric_features = mutations2.columns[~mutations2.columns.isin(['dep','Code_type_local', 'month', 'Valeur_fonciere'])].tolist()
 categorical_features = ['dep','Code_type_local','month']
 ```
 
@@ -340,61 +479,57 @@ vraiment avoir un bon modèle, il faudrait faire autrement car le code postal
 est probablement un très bon prédicteur du prix d'un bien, une fois que
 les caractéristiques du bien sont contrôlées.
 
-Nous allons stratifier notre échantillonage de train/test par département
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1 : Découpage des échantillons</h3>
+```
+
+Nous allons stratifier notre échantillonage de _train/test_ par département
 afin de tenir compte, de manière minimale, de la géographie. 
 Pour accélérer les calculs pour ce tutoriel, nous n'allons considérer que
-20% des transactions observées sur chaque département.
+30% des transactions observées sur chaque département.
+
+Voici le code pour le faire:
+
+
+```python
+mutations2 = mutations2.groupby('dep').sample(frac = 0.1, random_state = 123)
+```
+
+Avec la fonction adéquate de `Scikit`, faire un découpage de `mutations2`
+en _train_ et _test sets_
+en suivant les consignes suivantes:
+
+- 20% des données dans l'échantillon de _test_ ;
+- L'échantillonnage est stratifié par départements ;
+- Pour avoir des résultats reproductibles, choisir une racine égale à 123.
+
+```{=html}
+</div>
+```
+:::
+
 
 ```{python}
+#| eval: true
 from sklearn.model_selection import train_test_split
 
-mutations2 = mutations2.groupby('dep').sample(frac = 0.2, random_state = 123)
+mutations2 = mutations2.groupby('dep').sample(frac = 0.1, random_state = 123)
 
 X_train, X_test, y_train, y_test = train_test_split(
     mutations2.drop("Valeur_fonciere", axis = 1),
     mutations2[["Valeur_fonciere"]].values.ravel(),
-    test_size = 0.2, random_state = 0, stratify=mutations2[['dep']]
+    test_size = 0.2, random_state = 123, stratify=mutations2[['dep']]
 )
 ```
 
 
 ### Définition du premier _pipeline_
 
-Nous allons donc partir d'un *random forest* avec des valeurs d'hyperparamètres
-données. 
-
-Les _random forest_ sont une méthode d'aggrégation[^2] d'arbres de décision. 
-On calcule $K$ arbres de décision et en tire, par une méthode d'agrégation,
-une règle de décision moyenne qu'on va appliquer pour tirer une
-prédiction de nos données. 
-
-[^2]: En _machine learning_ on retrouve un principe inspiré du
-_bootstrap_
-qui permet d'agréger un ensemble d'estimateurs en un estimateur _"moyennisé"_.
-Il s'agit du [*bagging*](https://en.wikipedia.org/wiki/Bootstrap_aggregating).
-En économétrie, le _bootstrap_ consiste à ré-estimer sur *K* sous-échantillons
-aléatoires des données un estimateur afin d'en tirer, par exemple, un intervalle
-de confiance empirique à 95%. Le principe du _bagging_ est le même. On ré-estime
-_K_ fois notre estimateur (par exemple un arbre de décision) et propose une 
-règle d'agrégation pour en tirer une règle moyennisée et donc une prédiction. 
-
-
-![](https://upload.wikimedia.org/wikipedia/commons/7/76/Random_forest_diagram_complete.png)
-
-C'est un article de Léo Breiman (2001)[^3], statisticien à Berkeley, qui
-est à l'origine du succès des *random forests*. L'un des intérêts
-des *random forest* est qu'il existe des méthodes pour déterminer 
-l'importance relative de chaque variable dans la prédiction. 
-
-[^3]: Breiman L (2001). _"Random Forests". Machine Learning_. 45 (1): 5–32.
-
 Pour commencer, nous allons fixer la taille des arbres de décision avec
 l'hyperparamètre `max_depth = 2`. 
-
-```{python}
-from sklearn.ensemble import RandomForestRegressor
-regr = RandomForestRegressor(max_depth=2, random_state=123)
-```
 
 Notre _pipeline_ va intégrer les étapes suivantes :
 
@@ -404,10 +539,41 @@ Pour cela, nous allons utiliser la liste `numeric_features` définie précédemm
     + Les variables catégorielles vont être explosées avec un *one hot encoding*
 (méthode `OneHotEncoder` de `scikit`)
 Pour cela, nous allons utiliser la liste `categorical_features`
-2. __Random forest__ : nous allons appliquer l'estimateur `regr` défini plus haut
+2. __Random forest__ : nous allons appliquer l'estimateur _ad hoc_ de `Scikit`.
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2 : Construction d'un premier pipeline formel</h3>
+```
+
+1. Initialiser un _random forest_ de profondeur 2. Fixer la racine à 123 pour avoir des résultats reproductibles.
+2. La première étape du _pipeline_ (nommer cette couche _preprocessor_) consiste à appliquer les étapes de _preprocessing_ adaptées à chaque type de variables:
+    - Pour les variables numériques, appliquer une étape d'imputation à la moyenne puis standardiser celles-ci
+    - Pour les variables catégorielles, appliquer un [_one hot encoding_](https://en.wikipedia.org/wiki/One-hot)
+3. Appliquer comme couche de sortie le modèle défini plus tôt.
+
+_💡 Il est recommandé de s'aider de la documentation de `Scikit`. Si vous avez besoin d'un indice supplémentaire, consulter le pipeline présenté ci-dessous._
+
+```{=html}
+</div>
+```
+:::
+
 
 
 ```{python}
+#| eval: true
+#| label: exo2-q1
+# Question 1
+from sklearn.ensemble import RandomForestRegressor
+regr = RandomForestRegressor(max_depth=2, random_state=123)
+```
+
+
+
+```{python}
+#| eval: true
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import make_pipeline, Pipeline
@@ -424,6 +590,12 @@ pipe = Pipeline(steps=[('preprocessor', transformer),
                       ('randomforest', regr)])
 ```
 
+A l'issue de cet exercice, nous devrions obtenir le _pipeline_ suivant.
+
+```{python}
+#| eval: true
+pipe
+```
 
 Nous avons construit ce pipeline sous forme de couches successives. La couche
 `randomforest` prendra automatiquement le résultat de la couche `preprocessor`
@@ -431,58 +603,116 @@ en _input_. La couche `features` permet d'introduire de manière relativement
 simple (quand on a les bonnes méthodes) la complexité du *preprocessing*
 sur données réelles dont les types divergent. 
 
-On peut visualiser le graphe et ainsi se représenter la manière dont
-ce _pipeline_ opère:
+A cette étape, rien n'a encore été estimé. 
+C'est très simple à mettre en oeuvre
+avec un _pipeline_. 
 
-```{python}
-pipe
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 3 : Mise en oeuvre du pipeline</h3>
 ```
 
-Maintenant, il ne reste plus qu'à estimer notre modèle sur l'ensemble
-d'entraînement. C'est très simple avec un _pipeline_ : il suffit d'utiliser
-de mettre à jour le _pipeline_ avec la méthode `fit`
+1. Estimer les paramètres du modèle sur le jeu d'entraînement
+2. Observer la manière dont les données d'entraînement sont transformées
+par l'étape de _preprocessing_ avec les méthodes adéquates sur 4 observations de `X_train`
+tirées aléatoirement
+3. Utiliser ce modèle pour prédire le prix sur l'échantillon de test. A partir de ces quelques prédictions,
+quel semble être le problème ?
+4. Observer la manière dont ce _preprocessing_ peut s'appliquer sur deux exemples fictifs :
+    + Un appartement (`code_type_local = 2`) dans le 75, vendu au mois de mai, unique lot de la vente avec 3 pièces, faisant 75m² ;
+    + Une maison (`code_type_local = 1`) dans le 06, vendue en décembre, dans une transaction avec 2 lots. La surface complète est de 180m² et le bien comporte 6 pièces. 
+5. Déduire sur ces deux exemples le prix prédit par le modèle. 
+6. Calculer et interpréter le RMSE sur l'échantillon de test. Ce modèle est-il satisfaisant ? 
+
+```{=html}
+</div>
+```
+:::
+
 
 ```{python}
-#| include: false
-#| echo: true
+#| eval: true
 pipe.fit(X_train, y_train)
 ```
 
-On peut utiliser le nom du pipeline en conjonction de certaines méthodes
-pour appliquer cette étape sur un jeu de données pour visualiser
-l'effet de la transformation.
-
-Par exemple, pour visualiser le jeu de données transformé avant l'étape
-d'estimation, on peut 
-faire
-
 ```{python}
-pipe[:-1].fit_transform(X_train)
+#| eval: true
+# Question 2
+pipe[:-1].transform(X_train.sample(4))
 ```
 
-De même, si on veut récupérer le nom des *features* en sortie du preprocessing,
-on utilisera la méthode `.get_feature_names_out` qui est bien pratique
-(c'est cette méthode qui est plus complexe à appeler dans les versions `scikit`
-ancienne qui nous a fait privilégier le *pipeline* ci-dessous)
+```{python}
+#| eval: true
+# Question 4
+pipe.predict(X_test)
+```
+
 
 ```{python}
-features_names=pipe['preprocessor'].get_feature_names_out()
-features_names
+#| eval: true
+# Question 5
+X_fictif = pd.DataFrame(
+    {
+        "month": [3, 12],
+        "dep": ["75", "06"],
+        "Nombre_de_lots": [1, 2],
+        "Code_type_local": [2, 1],
+        "Nombre_pieces_principales": [3., 6.],
+        "surface": [75., 180.]
+    }
+)
+pipe[:-1].transform(X_fictif)
+pipe.predict(X_fictif)
+```
+
+
+```{python}
+#| eval: true
+from sklearn.metrics import mean_squared_error
+
+np.sqrt(
+    mean_squared_error(
+        pipe.predict(X_test),
+        y_test
+    )
+)
 ```
 
 
 ### _Variable importance_
+ 
+
+Les prédictions semblent avoir une assez faible variance, comme si des variables
+de seuils intervenaient. Nous allons donc devoir essayer de comprendre pourquoi. 
+
+La _"variable importance"_ 
+se réfère à la mesure de l'influence de chaque variable d'entrée sur la performance du modèle. 
+L'impureté fait référence à l'incertitude ou à l'entropie présente dans un ensemble de données.
+Dans le contexte des _random forest_, cette mesure est souvent calculée en évaluant la réduction moyenne de l'impureté des nœuds de décision causée par une variable spécifique. 
+Cette approche permet de quantifier l'importance des variables dans le processus de prise de décision du modèle, offrant ainsi des intuitions sur les caractéristiques les plus informatives pour la prédiction (plus de détails [sur ce blog](https://mljar.com/blog/feature-importance-in-random-forest/)). 
 
 On ne va représenter, parmi notre ensemble important de colonnes, que celles
 qui ont une importance non nulle. Grâce à notre vecteur `features_names`,
 on va pouvoir facilement afficher le nom des colonnes en question (et donc
-comprendre les *features* déterminantes)
+comprendre les *features* déterminantes).
 
-L'importance va être définie à partir 
-de la mesure d'impureté[^3].
 
-[^3]: Extrait de [ce blog](https://mljar.com/blog/feature-importance-in-random-forest/):
-Gini importance (or mean decrease impurity), which is computed from the Random Forest structure. Let’s look how the Random Forest is constructed. It is a set of Decision Trees. Each Decision Tree is a set of internal nodes and leaves. In the internal node, the selected feature is used to make decision how to divide the data set into two separate sets with similars responses within. The features for internal nodes are selected with some criterion, which for classification tasks can be gini impurity or infomation gain, and for regression is variance reduction. We can measure how each feature decrease the impurity of the split (the feature with highest decrease is selected for internal node). For each feature we can collect how on average it decreases the impurity. The average over all trees in the forest is the measure of the feature importance. 
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4 : Compréhension du modèle</h3>
+```
+
+
+```{=html}
+</div>
+```
+:::
+
+
+
+
 
 ```{python}
 #| include: false
@@ -490,10 +720,15 @@ Gini importance (or mean decrease impurity), which is computed from the Random F
 importances = pipe['randomforest'].feature_importances_
 std = np.std([tree.feature_importances_ for tree in pipe['randomforest'].estimators_], axis=0)
 
-forest_importances = pd.Series(importances[importances>0], index=features_names[importances>0])
+forest_importances = pd.DataFrame(importances, index=features_names, columns = ["mdi"])
+forest_importances['std'] = std
+forest_importances
+
 
 fig, ax = plt.subplots()
-forest_importances.plot.bar(yerr=std[importances>0], ax=ax)
+forest_importances.loc[forest_importances['mdi']>0, 'mdi'].plot.bar(
+    yerr = forest_importances.loc[forest_importances['mdi']>0, 'std'], ax = ax
+)
 ax.set_title("Feature importances using MDI")
 ax.set_ylabel("Mean decrease in impurity")
 fig.tight_layout()
@@ -504,6 +739,8 @@ fig.tight_layout()
 ax
 ```
 
+Les statistiques obtenues par le biais de cette _variable importance_
+sont un peu rudimentaires
 
 On voit donc que deux variables déterminantes sont des effets fixes
 géographiques (qui servent à ajuster de la différence de prix entre
