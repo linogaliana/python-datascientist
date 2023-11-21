@@ -638,6 +638,7 @@ pipe.fit(X_train, y_train)
 
 ```{python}
 #| eval: true
+#| output: false
 # Question 2
 pipe[:-1].transform(X_train.sample(4))
 ```
@@ -704,6 +705,14 @@ comprendre les *features* déterminantes).
 <h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4 : Compréhension du modèle</h3>
 ```
 
+1. Récupérer la _feature importance_ directement depuis la couche adaptée de votre _pipeline_
+2. Utiliser le code suivant pour calculer l'intervalle de confiance de cette mesure d'importance:
+
+```python
+std = np.std([tree.feature_importances_ for tree in pipe['randomforest'].estimators_], axis=0)
+```
+
+3. Représenter les variables d'importance non nulle. Qu'en concluez-vous ?
 
 ```{=html}
 </div>
@@ -711,19 +720,18 @@ comprendre les *features* déterminantes).
 :::
 
 
-
+Le graphique d'importance des variables que vous devriez obtenir à l'issue
+de cet exercice est le suivant. 
 
 
 ```{python}
-#| include: false
-#| echo: true
+#| eval: true
+feature_names = pipe[:-1].get_feature_names_out()
 importances = pipe['randomforest'].feature_importances_
 std = np.std([tree.feature_importances_ for tree in pipe['randomforest'].estimators_], axis=0)
 
 forest_importances = pd.DataFrame(importances, index=features_names, columns = ["mdi"])
 forest_importances['std'] = std
-forest_importances
-
 
 fig, ax = plt.subplots()
 forest_importances.loc[forest_importances['mdi']>0, 'mdi'].plot.bar(
@@ -740,11 +748,12 @@ ax
 ```
 
 Les statistiques obtenues par le biais de cette _variable importance_
-sont un peu rudimentaires
+sont un peu rudimentaires mais permettent déjà de comprendre
+le problème de notre modèle. 
 
-On voit donc que deux variables déterminantes sont des effets fixes
-géographiques (qui servent à ajuster de la différence de prix entre
-Paris et les Hauts de Seine et le reste de la France), une autre variable
+On voit donc qu'une des variables déterminante est un effet fixe
+géographique (qui servent à ajuster de la différence de prix entre
+Paris et le reste de la France), une autre variable
 est un effet fixe type de bien. Les deux variables qui pourraient introduire
 de la variabilité, à savoir la surface et, dans une moindre mesure, le 
 nombre de lots, ont une importance moindre. 
@@ -765,33 +774,14 @@ consulter la
 ```
 :::
 
-
-### Prédiction
-
-L'analyse de l'importance de variables permet de mieux comprendre
-le fonctionnement interne des *random forests*. 
-
-On obtient un modèle dont les performances sont les suivantes :
+Les prédictions peuvent nous suggérer également
+qu'il y a un problème:
 
 ```{python}
-from sklearn.metrics import mean_squared_error
-
-
 compar = pd.DataFrame([y_test, pipe.predict(X_test)]).T
 compar.columns = ['obs','pred']
 compar['diff'] = compar.obs - compar.pred
 
-print("Le RMSE sur le jeu de test est {:,}".format(
-   int(np.sqrt(mean_squared_error(y_test, pipe.predict(X_test))))
-))
-```
-
-Le RMSE n'est pas très bon. Pour comprendre pourquoi, représentons
-notre nuage de point des valeurs observées et prédites:
-
-```{python}
-#| include: false
-#| echo: true
 
 g = sns.relplot(data = compar, x = 'obs', y = 'pred', color = "royalblue", alpha = 0.8)
 g.set(ylim=(0, 2e6), xlim=(0, 2e6),
@@ -799,15 +789,6 @@ g.set(ylim=(0, 2e6), xlim=(0, 2e6),
       xlabel='Observed values',
       ylabel='Predicted values')
 g.ax.axline(xy1=(0, 0), slope=1, color="red", dashes=(5, 2))
-```
-
-C'est très décevant. La prédiction a trop peu de variabilité pour capturer
-la variance des prix observée. Cela vient du fait que les variables
-ayant de l'importance dans la prédiction sont principalement des effets fixes,
-qui ne permettent donc qu'une variabilité limitée.
-
-```{python}
-g.figure.get_figure()
 ```
 
 
