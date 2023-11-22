@@ -1,10 +1,8 @@
 ---
 title: "Premier pas vers l'industrialisation avec les pipelines scikit"
-date: 2020-10-20T13:00:00Z
-draft: false
+date: 2023-10-20T13:00:00Z
 weight: 60
 slug: pipeline-scikit
-type: book
 tags:
   - scikit
   - Machine Learning
@@ -15,13 +13,15 @@ categories:
   - Modélisation
   - Tutoriel
 description: |
-  Les _pipelines_ `scikit` permettent d'intégrer de manière très flexible
+  Les _pipelines_ `Scikit` permettent d'intégrer de manière très flexible
   un ensemble d'opérations de pre-processing et d'entraînement de modèles
   dans une chaîne d'opérations. Il s'agit d'une approche particulièrement
   appropriée pour réduire la difficulté à changer d'algorithme ou pour
-  faciliter la ré-application d'un code à de nouvelles données
+  faciliter la ré-application d'un code à de nouvelles données.
 eval: false
+echo: false
 image: featured.png
+bibliography: ../../reference.bib
 ---
 
 
@@ -41,24 +41,74 @@ print_badges("content/modelisation/6_pipeline.qmd")
 ```
 :::
 
-## Pourquoi utiliser les pipelines ?
+Pour lire les données de manière efficace, nous 
+proposons d'utiliser le _package_ `duckdb`. 
+Pour l'installer, voici la commande: 
+
+```{python}
+#| eval: true
+#| output: false
+#| echo: true
+!pip install duckdb
+```
+
+## Pourquoi utiliser les _pipelines_ ?
+
+### Définitions préalables
+
+Ce chapitre nous amènera à explorer plusieurs écosystèmes, pour lesquels on retrouve quelques buzz-words dont voici les définitions :
+
+| Terme | Définition |
+|-------|------------|
+| _DevOps_ | Mouvement en ingénierie informatique et une pratique technique visant à l’unification du développement logiciel (dev) et de l’administration des infrastructures informatiques (ops) |
+| _MLOps_ | Ensemble de pratiques qui vise à déployer et maintenir des modèles de machine learning en production de manière fiable et efficace |
+
+Ce chapitre fera des références régulières au cours
+de 3e année de l'ENSAE 
+[_"Mise en production de projets data science"_](https://ensae-reproductibilite.github.io/website/).
+
+
+### Objectif
 
 Les chapitres précédents ont permis de montrer des bouts de code 
 épars pour entraîner des modèles ou faire du _preprocessing_.
 Cette démarche est intéressante pour tâtonner mais risque d'être coûteuse
-ultérieurement s'il est nécessaire d'ajouter une étape de preprocessing 
+ultérieurement s'il est nécessaire d'ajouter une étape de _preprocessing_
 ou de changer d'algorithme.
 
-Heureusement, `scikit` propose un excellent outil pour proposer un cadre
+Les _pipelines_ sont pensés pour simplifier la mise en production 
+ultérieure d'un modèle de _machine learning_. 
+Ils sont au coeur de la démarche de _MLOps_ qui est
+présentée
+dans le cours de 3e année de l'ENSAE
+de [_"Mise en production de projets data science"_](https://ensae-reproductibilite.github.io/website/).
+qui vise à simplifier la mise en oeuvre opérationnelle de
+projets utilisant des techniques de _machine learning_.  
+
+```{python}
+#| echo: true
+#| eval: true
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import pandas as pd
+```
+
+### Les _pipelines_ `Scikit`
+
+Heureusement, `Scikit` propose un excellent outil pour proposer un cadre
 général pour créer une chaîne de production *machine learning*. Il
 s'agit des
 [_pipelines_](https://scikit-learn.org/stable/modules/compose.html). 
 Ils présentent de nombreux intérêts, parmi lesquels:
 
-* Ils sont très __pratiques__ et __lisibles__. On rentre des données en entrée, on n'appelle qu'une seule fois les méthodes `fit` et `predict` ce qui permet de s'assurer une gestion cohérente des transformations de variables, par exemple après l'appel d'un `StandardScaler`
-* La __modularité__ rend aisée la mise à jour d'un pipeline et renforce la capacité à le réutiliser
-* Ils permettent de facilement chercher les hyperparamètres d'un modèle. Sans *pipeline*, écrire un code qui fait du *tuning* d'hyperparamètres peut être pénible. Avec les *pipelines*, c'est une ligne de code. 
+* Ils sont très __pratiques__ et __lisibles__. On rentre des données en entrée, on n'appelle qu'une seule fois les méthodes `fit` et `predict` ce qui permet de s'assurer une gestion cohérente des transformations de variables, par exemple après l'appel d'un `StandardScaler` ;
+* La __modularité__ rend aisée la mise à jour d'un pipeline et renforce la capacité à le réutiliser ;
+* Ils permettent de facilement chercher les hyperparamètres d'un modèle. Sans *pipeline*, écrire un code qui fait du *tuning* d'hyperparamètres peut être pénible. Avec les *pipelines*, c'est une ligne de code ;
 * La __sécurité__ d'être certain que les étapes de preprocessing sont bien appliquées aux jeux de données désirés avant l'estimation. 
+
+
+
 
 
 ::: {.cell .markdown}
@@ -97,49 +147,17 @@ transformation inverse).
 
 
 ```{python}
+#| echo: true
+#| eval: true
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 
 estimators = [('reduce_dim', PCA()), ('clf', SVC())]
 pipe = Pipeline(estimators)
-```
-
-```{python}
-#| echo: false
-from sklearn.utils import estimator_html_repr
-```
-
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-warning" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint</h3>
-```
-Il est pratique de visualiser un *pipeline* sous forme de DAG.
-Pour cela, dans un notebook, on utilise la configuration
-suivante:
-
-~~~python
-#| eval: false
-from sklearn import set_config
-set_config(display='diagram') 
-~~~
-
-```{=html}
-</div>
-```
-:::
-
-~~~python
 pipe
-~~~
-
-```{python}
-#| eval: false
-#| echo: false
-print(estimator_html_repr(pipe))
 ```
+
 
 
 Au sein d'une étape de *pipeline*, les paramètres d'un estimateur
@@ -150,87 +168,242 @@ C'est cela qui rendra l'approche des pipelines particulièrement utile
 pour la *grid search*:
 
 ```{python}
+#| echo: true
+#| eval: true
 from sklearn.model_selection import GridSearchCV
 param_grid = {"reduce_dim__n_components":[2, 5, 10], "clf__C":[0.1, 10, 100]}
 grid_search = GridSearchCV(pipe, param_grid=param_grid)
+grid_search
 ```
 
-```{python}
-#| eval: asis
-#| echo: false
-print(estimator_html_repr(grid_search))
-```
-
-
+Ces _pipelines_ sont initialisés sans données, il s'agit d'une structure formelle
+que nous allons ensuite ajuster en entraînant des modèles. 
 
 ### Données utilisées
 
-Nous allons utiliser les données de transactions immobilières DVF pour chercher
+Nous allons utiliser les données
+de transactions immobilières [DVF](https://app.dvf.etalab.gouv.fr/) pour chercher
 la meilleure manière de prédire, sachant les caractéristiques d'un bien, son
 prix.
 
-Ces données peuvent être importées directement depuis [`data.gouv`](https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres/):
+Ces données sont mises à disposition
+sur [`data.gouv`](https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres/).
+Néanmoins, le format csv n'étant pas pratique pour importer des jeux de données
+volumineux, nous proposons de privilégier la version `Parquet` mise à 
+disposition par Eric Mauvière sur [`data.gouv`](https://www.data.gouv.fr/fr/datasets/dvf-2022-format-parquet/#/discussions).
+L'approche la plus efficace pour lire ces données est
+d'utiliser `DuckDB` afin de lire le fichier, extraire les colonnes
+d'intérêt puis passer à `Pandas` (pour en savoir plus sur
+l'intérêt de `DuckDB` pour lire des fichiers volumineux, vous pouvez
+consulter [ce post de blog](https://ssphub.netlify.app/post/parquetrp/) ou
+[celui-ci](https://www.icem7.fr/outils/3-explorations-bluffantes-avec-duckdb-1-interroger-des-fichiers-distants/) écrit
+par Eric Mauvière). 
+
+Même si, en soi, les gains de temps sont faibles car `DuckDB` optimise
+les requêtes HTTPS nécessaires à l'import des données, nous proposons 
+de télécharger les données pour réduire les besoins de bande passante. 
 
 ```{python}
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
+#| echo: true
+#| eval: false
+import requests
+import os
 
-mutations = pd.read_csv('https://www.data.gouv.fr/fr/datasets/r/3004168d-bec4-44d9-a781-ef16f41856a2', sep = "|", decimal=",")
+url = "https://www.data.gouv.fr/fr/datasets/r/56bde1e9-e214-408b-888d-34c57ff005c4"
+file_name = "dvf.parquet"
+
+# Check if the file already exists
+if not os.path.exists(file_name):
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        with open(file_name, "wb") as f:
+            f.write(response.content)
+        print("Téléchargement réussi.")
+    else:
+        print(f"Échec du téléchargement. Code d'état : {response.status_code}")
+else:
+    print(f"Le fichier '{file_name}' existe déjà. Aucun téléchargement nécessaire.")
 ```
 
-On propose d'enrichir la base de quelques variables qui pourraient servir
-ultérieurement:
+En premier lieu, puisque cela va faciliter les requêtes SQL ultérieures, on crée
+une vue: 
 
 ```{python}
-mutations['Date mutation'] = pd.to_datetime(mutations['Date mutation'], format = "%d/%m/%Y")
-mutations['year'] = mutations['Date mutation'].dt.year
-mutations['month'] = mutations['Date mutation'].dt.month
-mutations['dep'] = mutations['Code postal'].astype(str).str[:2]
-mutations['lprix'] = np.log(mutations["Valeur fonciere"])
+#| echo: false
+#| eval: true
+import duckdb
+# version remote
+url = "https://www.data.gouv.fr/fr/datasets/r/56bde1e9-e214-408b-888d-34c57ff005c4"
+duckdb.sql(f'CREATE OR REPLACE VIEW dvf AS SELECT * FROM read_parquet("{url}")')
 ```
+
+
+```{python}
+#| echo: true
+#| eval: false
+import duckdb
+duckdb.sql(f'CREATE OR REPLACE VIEW dvf AS SELECT * FROM read_parquet("dvf.parquet")')
+```
+
+Les données prennent la forme suivante:
+
+```{python}
+#| echo: true
+#| eval: true
+duckdb.sql(f"SELECT * FROM dvf LIMIT 5")
+```
+
+Les variables que nous allons conserver sont les suivantes,
+nous allons les reformater
+pour la suite de l'exercice
+
+```{python}
+#| echo: true
+#| eval: true
+xvars = [
+    "Date mutation", "Valeur fonciere",
+    'Nombre de lots', 'Code type local',
+    'Nombre pieces principales'
+]
+xvars = ", ".join([f'"{s}"' for s in xvars])
+```
+
+```{python}
+#| echo: true
+#| eval: true
+mutations = duckdb.sql(
+    f'''
+    SELECT
+    date_part('month', "Date mutation") AS month,
+    substring("Code postal", 1, 2) AS dep,
+    {xvars},
+    COLUMNS('Surface Carrez.*')
+    FROM dvf
+    '''
+).to_df()
+
+colonnes_surface = mutations.columns[mutations.columns.str.startswith('Surface Carrez')]
+mutations.loc[:, colonnes_surface] = mutations.loc[:, colonnes_surface].replace({',': '.'}, regex=True).astype(float).fillna(0)
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
+
+Le fichier `Parquet` mis à disposition sur `data.gouv` présente une incohérence de mise en forme de
+certaines colonnes à cause des virgules qui empêchent le formattage sous forme de colonne
+numérique.
+
+Le code ci-dessus effectue la conversion adéquate au niveau de `Pandas`. 
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+#| echo: true
+#| eval: true
+mutations.head(2)
+```
+
+::: {.cell .markdown}
+<details>
+<summary>
+Introduire un effet confinement
+</summary>
 
 Si vous travaillez avec les données de 2020, n'oubliez pas
 d'intégrer l'effet
-confinement strict dans vos modèles. Pour cela, vous pouvez créer une variable
+confinement dans vos modèles puisque cela a lourdement
+affecté les possibilités de transaction sur cette période, donc
+l'effet potentiel de certaines variables explicatives du prix. 
+
+Pour introduire cet effet, vous pouvez créer une variable
 indicatrice entre les dates en question:
 
-```{python}
-mutations['confinement'] = mutations['Date mutation'].between(pd.to_datetime("2020-03-17"), pd.to_datetime("2020-05-03")).astype(int)
+```python
+mutations['confinement'] = (
+    mutations['Date mutation']
+    .between(pd.to_datetime("2020-03-17"), pd.to_datetime("2020-05-03"))
+    .astype(int)
+)
 ```
 
-Les données DVF proposent une observation par transaction. Ces transactions
-peuvent concerner plusieurs lots.
+Comme nous travaillons sur les données de 2022,
+nous pouvons nous passer de cette variable. 
+
+</details>
+:::
+
+
+Les données DVF proposent une observation par transaction.
+Ces transactions
+peuvent concerner plusieurs lots. Par exemple, un appartement
+avec garage et cave comportera trois lots. 
+
 Pour simplifier,
 on va créer une variable de surface qui agrège les différentes informations
-de surface disponibles dans le jeu de données. En effet, les variables
-en question sont très corrélées les unes entre elles :
-
-```{python}
-#| include: false
-#| echo: true
-corr = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].corr()
-fig, ax = plt.subplots(1)
-g = sns.heatmap(corr, ax=ax, 
-            xticklabels=corr.columns.values,
-            yticklabels=corr.columns.values, cmap='coolwarm', annot=True, fmt=".2f")
-g
-```
-
-
-```{python}
-g.figure.get_figure()
-```
-
-
-
+de surface disponibles dans le jeu de données.
 Les agréger revient à supposer que le modèle de fixation des prix est le même
 entre chaque lot. C'est une hypothèse simplificatrice qu'une personne plus 
 experte du marché immobilier, ou qu'une approche propre de sélection
-de variable pourrait amener à nier 
+de variable pourrait amener à nier. En effet, les variables
+en question sont faiblement corrélées les unes entre elles, à quelques
+exceptions près (@fig-corr-surface):
+
 
 ```{python}
+#| echo: true
+#| eval: true
+#| output: false
+
+corr = mutations.loc[
+    :,
+    mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()
+]
+corr.columns = corr.columns.str.replace("Carrez du ", "")
+corr = corr.corr()
+
+mask = np.triu(np.ones_like(corr, dtype=bool))
+
+cmap = sns.diverging_palette(230, 20, as_cmap=True)
+```
+
+```{python}
+#| echo: true
+#| eval: true
+#| fig-cap: Matrice de corrélation des variables de surface
+#| label: fig-corr-surface
+
+fig, ax = plt.subplots(1)
+g = sns.heatmap(
+    corr, ax=ax, 
+    mask=mask,
+    vmax=.3, center=0,
+    square=True, linewidths=.5, cbar_kws={"shrink": .5},
+    xticklabels=corr.columns.values,
+    yticklabels=corr.columns.values, cmap=cmap, annot=True, fmt=".2f"
+)
+g
+```
+
+```{python}
+#| echo: true
+#| eval: true
+mutations['lprix'] = np.log(mutations["Valeur fonciere"])
+mutations['surface'] = mutations.loc[:, colonnes_surface].sum(axis = 1).astype(int)
+```
+
+
+
+```{python}
+#| echo: true
+#| eval: true
 mutations['surface'] = mutations.loc[:, mutations.columns[mutations.columns.str.startswith('Surface Carrez')].tolist()].sum(axis = 1)
 ```
 
@@ -244,91 +417,138 @@ Notre premier *pipeline* va nous permettre d'intégrer ensemble:
 2. Une étape d'estimation du prix en utilisant un modèle de *random forest*
 
 Pour le moment, on va prendre comme acquis un certain nombre de variables
-explicatives (les *features*) et les hyperparamètres du modèle
+explicatives (les *features*) et les hyperparamètres du modèle.
 
-
-### Définition des ensembles train/test
-
-Nous allons donc nous restreindre à un sous-ensemble de colonnes dans un
-premier temps :
-
-```{python}
-xvars = ['dep', 'Nombre de lots', 'Code type local', 'surface', 'Nombre pieces principales']
-xvars2 = pd.Series(xvars).str.replace(" ","_").tolist()
-
-mutations2 = mutations.loc[:, xvars + ["Valeur fonciere"]]
-```
-
-Nous allons également ne conserver que les transactions inférieures à 5 millions
-d'euros (on anticipe que celles ayant un montant supérieur sont des transactions
-exceptionnelles dont le mécanisme de fixation du prix diffère)
-
-```{python}
-mutations2  = mutations2.dropna()
-mutations2 = mutations2.loc[mutations2['Valeur fonciere'] < 5e6] #keep only values below 10 millions
-
-mutations2.columns = mutations2.columns.str.replace(" ", "_")
-numeric_features = mutations2.columns[~mutations2.columns.isin(['dep','Code_type_local', 'confinement'])].tolist()
-categorical_features = ['dep','Code_type_local']
-```
-
-Au passage, nous avons abandonné la variable de code postal pour privilégier
-la commune afin de réduire la dimension de notre jeu de données. Si on voulait
-vraiment avoir un bon modèle, il faudrait faire autrement car le code postal
-est probablement un très bon prédicteur du prix d'un bien, une fois que
-les caractéristiques du bien sont contrôlées.
-
-Nous allons stratifier notre échantillonage de train/test par département
-afin de tenir compte, de manière minimale, de la géographie. 
-Pour accélérer les calculs pour ce tutoriel, nous n'allons considérer que
-20% des transactions observées sur chaque département.
-
-```{python}
-from sklearn.model_selection import train_test_split
-
-mutations2 = mutations2.groupby('dep').sample(frac = 0.2, random_state = 123)
-
-X_train, X_test, y_train, y_test = train_test_split(mutations2[xvars2], mutations2[["Valeur_fonciere"]].values.ravel(), test_size = 0.2, random_state = 0, stratify=mutations2[['dep']])
-```
-
-
-### Définition du premier pipeline
-
-Nous allons donc partir d'un *random forest* avec des valeurs d'hyperparamètres
-données. 
+L'algorithme des _random forest_ est une technique statistique basée sur
+les arbres de décision. Elle a été définie explicitement par l'un
+des pionniers du _machine learning_, @breiman2001random. 
+Il s'agit d'une [méthode ensembliste](https://en.wikipedia.org/wiki/Ensemble_learning)
+puisqu'elle consiste à utiliser plusieurs algorithmes (en l'occurrence des arbres
+de décision) pour obtenir une meilleure prédiction que ne le permettraient
+chaque modèle isolément.  
 
 Les _random forest_ sont une méthode d'aggrégation[^2] d'arbres de décision. 
 On calcule $K$ arbres de décision et en tire, par une méthode d'agrégation,
 une règle de décision moyenne qu'on va appliquer pour tirer une
 prédiction de nos données. 
 
-[^2]: En _machine learning_ on retrouve un principe inspiré du
-_bootstrap_
-qui permet d'agréger un ensemble d'estimateurs en un estimateur _"moyennisé"_.
-Il s'agit du [*bagging*](https://en.wikipedia.org/wiki/Bootstrap_aggregating).
-En économétrie, le _bootstrap_ consiste à ré-estimer sur *K* sous-échantillons
+[^2]: Les _random forest_ sont l'une des principales méthodes
+ensemblistes. Outre cette approche, les plus connues sont
+le [_bagging_ (_boostrap aggregating_)](https://en.wikipedia.org/wiki/Bootstrap_aggregating) et le _boosting_
+qui consistent à choisir la prédiction à privilégier
+selon des algorithmes de choix différens.
+Par exemple le _bagging_ est une technique basée sur le vote majoritaire [@breiman1996bagging]. 
+Cette technique s'inspire du _bootstrap_ qui, en économétrie,
+consiste à ré-estimer sur *K* sous-échantillons
 aléatoires des données un estimateur afin d'en tirer, par exemple, un intervalle
 de confiance empirique à 95%. Le principe du _bagging_ est le même. On ré-estime
 _K_ fois notre estimateur (par exemple un arbre de décision) et propose une 
 règle d'agrégation pour en tirer une règle moyennisée et donc une prédiction. 
+Le _boosting_ fonctionne selon un principe différent, basé sur
+l'optimisation de combinaisons de classifieurs faibles. 
 
+![](https://miro.medium.com/v2/resize:fit:720/format:webp/1*jE1Cb1Dc_p9WEOPMkC95WQ.png)
 
-![](https://upload.wikimedia.org/wikipedia/commons/7/76/Random_forest_diagram_complete.png)
-
-C'est un article de Léo Breiman (2001)[^3], statisticien à Berkeley, qui
-est à l'origine du succès des *random forests*. L'un des intérêts
+L'un des intérêts
 des *random forest* est qu'il existe des méthodes pour déterminer 
 l'importance relative de chaque variable dans la prédiction. 
 
-[^3]: Breiman L (2001). _"Random Forests". Machine Learning_. 45 (1): 5–32.
+
+Nous allons ici partir d'un *random forest* avec des valeurs d'hyperparamètres
+données, à savoir la profondeur de l'arbre. 
+
+### Définition des ensembles _train_ et _test_
+
+Nous allons donc nous restreindre à un sous-ensemble de colonnes dans un
+premier temps.
+
+Nous allons également ne conserver que les
+transactions inférieures à 5 millions
+d'euros (on anticipe que celles ayant un montant supérieur sont des transactions
+exceptionnelles dont le mécanisme de fixation du prix diffère)
+
+```{python}
+#| echo: true
+#| eval: true
+mutations2 = mutations.drop(
+    colonnes_surface.tolist() + ["Date mutation", "lprix"], # ajouter "confinement" si données 2020
+    axis = "columns"
+    ).copy()
+
+mutations2 = mutations2.loc[mutations2['Valeur fonciere'] < 5e6] #keep only values below 5 millions
+
+mutations2.columns = mutations2.columns.str.replace(" ", "_")
+mutations2  = mutations2.dropna(subset = ['dep','Code_type_local','month'])
+```
+
+Notre _pipeline_ va incorporer deux types de variables: les variables
+catégorielles et les variables numériques. 
+Ces différents types vont bénéficier d'étapes de _preprocessing_
+différentes. 
+
+```{python}
+#| eval: true
+numeric_features = mutations2.columns[~mutations2.columns.isin(['dep','Code_type_local', 'month', 'Valeur_fonciere'])].tolist()
+categorical_features = ['dep','Code_type_local','month']
+```
+
+Au passage, nous avons abandonné la variable de code postal pour privilégier
+le département afin de réduire la dimension de notre jeu de données. Si on voulait
+vraiment avoir un bon modèle, il faudrait faire autrement car le code postal
+est probablement un très bon prédicteur du prix d'un bien, une fois que
+les caractéristiques du bien sont contrôlées.
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1 : Découpage des échantillons</h3>
+```
+
+Nous allons stratifier notre échantillonage de _train/test_ par département
+afin de tenir compte, de manière minimale, de la géographie. 
+Pour accélérer les calculs pour ce tutoriel, nous n'allons considérer que
+30% des transactions observées sur chaque département.
+
+Voici le code pour le faire:
+
+
+```python
+mutations2 = mutations2.groupby('dep').sample(frac = 0.1, random_state = 123)
+```
+
+Avec la fonction adéquate de `Scikit`, faire un découpage de `mutations2`
+en _train_ et _test sets_
+en suivant les consignes suivantes:
+
+- 20% des données dans l'échantillon de _test_ ;
+- L'échantillonnage est stratifié par départements ;
+- Pour avoir des résultats reproductibles, choisir une racine égale à 123.
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+#| eval: true
+from sklearn.model_selection import train_test_split
+
+mutations2 = mutations2.groupby('dep').sample(frac = 0.1, random_state = 123)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    mutations2.drop("Valeur_fonciere", axis = 1),
+    mutations2[["Valeur_fonciere"]].values.ravel(),
+    test_size = 0.2, random_state = 123, stratify=mutations2[['dep']]
+)
+```
+
+
+### Définition du premier _pipeline_
 
 Pour commencer, nous allons fixer la taille des arbres de décision avec
 l'hyperparamètre `max_depth = 2`. 
-
-```{python}
-from sklearn.ensemble import RandomForestRegressor
-regr = RandomForestRegressor(max_depth=2, random_state=123)
-```
 
 Notre _pipeline_ va intégrer les étapes suivantes :
 
@@ -338,37 +558,63 @@ Pour cela, nous allons utiliser la liste `numeric_features` définie précédemm
     + Les variables catégorielles vont être explosées avec un *one hot encoding*
 (méthode `OneHotEncoder` de `scikit`)
 Pour cela, nous allons utiliser la liste `categorical_features`
-2. __Random forest__ : nous allons appliquer l'estimateur `regr` défini plus haut
+2. __Random forest__ : nous allons appliquer l'estimateur _ad hoc_ de `Scikit`.
 
-J'ajoute en commentaire un exemple de comment s'introduirait une imputation
-de valeurs manquantes. La version 1.0 de `scikit` facilite l'intégration
-d'étapes complexes dans les pipelines[^4]. Si vous utilisez une 
-version antérieure à la 1.0 de `scikit`, vous pouvez vous rendre dans
-la section [Annexe](#annexe) pour avoir des exemples de définition alternative
-(attention cependant, vous ne pourrez récupérer le nom des *features*
-transformées comme ici, ce qui peut pénaliser l'analyse d'importance
-de variables)
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2 : Construction d'un premier pipeline formel</h3>
+```
 
-[^4]: Voir ce [*thread stackoverflow*](https://stackoverflow.com/questions/54646709/sklearn-pipeline-get-feature-names-after-onehotencode-in-columntransformer)
+1. Initialiser un _random forest_ de profondeur 2. Fixer la racine à 123 pour avoir des résultats reproductibles.
+2. La première étape du _pipeline_ (nommer cette couche _preprocessor_) consiste à appliquer les étapes de _preprocessing_ adaptées à chaque type de variables:
+    - Pour les variables numériques, appliquer une étape d'imputation à la moyenne puis standardiser celles-ci
+    - Pour les variables catégorielles, appliquer un [_one hot encoding_](https://en.wikipedia.org/wiki/One-hot)
+3. Appliquer comme couche de sortie le modèle défini plus tôt.
+
+_💡 Il est recommandé de s'aider de la documentation de `Scikit`. Si vous avez besoin d'un indice supplémentaire, consulter le pipeline présenté ci-dessous._
+
+```{=html}
+</div>
+```
+:::
+
 
 
 ```{python}
-from sklearn.pipeline import make_pipeline
+#| eval: true
+#| label: exo2-q1
+# Question 1
+from sklearn.ensemble import RandomForestRegressor
+regr = RandomForestRegressor(max_depth=2, random_state=123)
+```
+
+
+
+```{python}
+#| eval: true
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.compose import make_column_transformer
 
 numeric_pipeline = make_pipeline(
-  #SimpleImputer(),
+  SimpleImputer(),
   StandardScaler()
 )
 transformer = make_column_transformer(
-    (numeric_pipeline, numeric_features[:-1]),
+    (numeric_pipeline, numeric_features),
     (OneHotEncoder(sparse = False, handle_unknown = "ignore"), categorical_features))
 pipe = Pipeline(steps=[('preprocessor', transformer),
                       ('randomforest', regr)])
 ```
 
+A l'issue de cet exercice, nous devrions obtenir le _pipeline_ suivant.
+
+```{python}
+#| eval: true
+pipe
+```
 
 Nous avons construit ce pipeline sous forme de couches successives. La couche
 `randomforest` prendra automatiquement le résultat de la couche `preprocessor`
@@ -376,77 +622,138 @@ en _input_. La couche `features` permet d'introduire de manière relativement
 simple (quand on a les bonnes méthodes) la complexité du *preprocessing*
 sur données réelles dont les types divergent. 
 
-On peut visualiser le graphe et ainsi se représenter la manière dont
-ce _pipeline_ opère:
+A cette étape, rien n'a encore été estimé. 
+C'est très simple à mettre en oeuvre
+avec un _pipeline_. 
 
-~~~python
-pipe
-~~~
-
-```{python}
-#| eval: asis
-#| echo: false
-print(estimator_html_repr(pipe))
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 3 : Mise en oeuvre du pipeline</h3>
 ```
 
+1. Estimer les paramètres du modèle sur le jeu d'entraînement
+2. Observer la manière dont les données d'entraînement sont transformées
+par l'étape de _preprocessing_ avec les méthodes adéquates sur 4 observations de `X_train`
+tirées aléatoirement
+3. Utiliser ce modèle pour prédire le prix sur l'échantillon de test. A partir de ces quelques prédictions,
+quel semble être le problème ?
+4. Observer la manière dont ce _preprocessing_ peut s'appliquer sur deux exemples fictifs :
+    + Un appartement (`code_type_local = 2`) dans le 75, vendu au mois de mai, unique lot de la vente avec 3 pièces, faisant 75m² ;
+    + Une maison (`code_type_local = 1`) dans le 06, vendue en décembre, dans une transaction avec 2 lots. La surface complète est de 180m² et le bien comporte 6 pièces. 
+5. Déduire sur ces deux exemples le prix prédit par le modèle. 
+6. Calculer et interpréter le RMSE sur l'échantillon de test. Ce modèle est-il satisfaisant ? 
 
+```{=html}
+</div>
+```
+:::
 
-Maintenant, il ne reste plus qu'à estimer notre modèle sur l'ensemble
-d'entraînement. C'est très simple avec un _pipeline_ : il suffit d'utiliser
-de mettre à jour le _pipeline_ avec la méthode `fit`
 
 ```{python}
-#| include: false
-#| echo: true
+#| eval: true
 pipe.fit(X_train, y_train)
 ```
 
-On peut utiliser le nom du pipeline en conjonction de certaines méthodes
-pour appliquer cette étape sur un jeu de données pour visualiser
-l'effet de la transformation.
-
-Par exemple, pour visualiser le jeu de données transformé avant l'étape
-d'estimation, on peut 
-faire
-
 ```{python}
-pipe[:-1].fit_transform(X_train)
+#| eval: true
+#| output: false
+# Question 2
+pipe[:-1].transform(X_train.sample(4))
 ```
 
-De même, si on veut récupérer le nom des *features* en sortie du preprocessing,
-on utilisera la méthode `.get_feature_names_out` qui est bien pratique
-(c'est cette méthode qui est plus complexe à appeler dans les versions `scikit`
-ancienne qui nous a fait privilégier le *pipeline* ci-dessous)
+```{python}
+#| eval: true
+# Question 4
+pipe.predict(X_test)
+```
+
 
 ```{python}
-features_names=pipe['preprocessor'].get_feature_names_out()
-features_names
+#| eval: true
+# Question 5
+X_fictif = pd.DataFrame(
+    {
+        "month": [3, 12],
+        "dep": ["75", "06"],
+        "Nombre_de_lots": [1, 2],
+        "Code_type_local": [2, 1],
+        "Nombre_pieces_principales": [3., 6.],
+        "surface": [75., 180.]
+    }
+)
+pipe[:-1].transform(X_fictif)
+pipe.predict(X_fictif)
+```
+
+
+```{python}
+#| eval: true
+from sklearn.metrics import mean_squared_error
+
+np.sqrt(
+    mean_squared_error(
+        pipe.predict(X_test),
+        y_test
+    )
+)
 ```
 
 
 ### _Variable importance_
+ 
+
+Les prédictions semblent avoir une assez faible variance, comme si des variables
+de seuils intervenaient. Nous allons donc devoir essayer de comprendre pourquoi. 
+
+La _"variable importance"_ 
+se réfère à la mesure de l'influence de chaque variable d'entrée sur la performance du modèle. 
+L'impureté fait référence à l'incertitude ou à l'entropie présente dans un ensemble de données.
+Dans le contexte des _random forest_, cette mesure est souvent calculée en évaluant la réduction moyenne de l'impureté des nœuds de décision causée par une variable spécifique. 
+Cette approche permet de quantifier l'importance des variables dans le processus de prise de décision du modèle, offrant ainsi des intuitions sur les caractéristiques les plus informatives pour la prédiction (plus de détails [sur ce blog](https://mljar.com/blog/feature-importance-in-random-forest/)). 
 
 On ne va représenter, parmi notre ensemble important de colonnes, que celles
-qui ont une importance non nulle. Grâce à notre vecteur `features_names`,
-on va pouvoir facilement afficher le nom des colonnes en question (et donc
-comprendre les *features* déterminantes)
+qui ont une importance non nulle.
 
-L'importance va être définie à partir 
-de la mesure d'impureté[^3]
 
-[^3]: Extrait de [ce blog](https://mljar.com/blog/feature-importance-in-random-forest/):
-Gini importance (or mean decrease impurity), which is computed from the Random Forest structure. Let’s look how the Random Forest is constructed. It is a set of Decision Trees. Each Decision Tree is a set of internal nodes and leaves. In the internal node, the selected feature is used to make decision how to divide the data set into two separate sets with similars responses within. The features for internal nodes are selected with some criterion, which for classification tasks can be gini impurity or infomation gain, and for regression is variance reduction. We can measure how each feature decrease the impurity of the split (the feature with highest decrease is selected for internal node). For each feature we can collect how on average it decreases the impurity. The average over all trees in the forest is the measure of the feature importance. 
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4 : Compréhension du modèle</h3>
+```
+
+1. Récupérer la _feature importance_ directement depuis la couche adaptée de votre _pipeline_
+2. Utiliser le code suivant pour calculer l'intervalle de confiance de cette mesure d'importance:
+
+```python
+std = np.std([tree.feature_importances_ for tree in pipe['randomforest'].estimators_], axis=0)
+```
+
+3. Représenter les variables d'importance non nulle. Qu'en concluez-vous ?
+
+```{=html}
+</div>
+```
+:::
+
+
+Le graphique d'importance des variables que vous devriez obtenir à l'issue
+de cet exercice est le suivant. 
+
 
 ```{python}
-#| include: false
-#| echo: true
+#| eval: true
+features_names = pipe[:-1].get_feature_names_out()
 importances = pipe['randomforest'].feature_importances_
 std = np.std([tree.feature_importances_ for tree in pipe['randomforest'].estimators_], axis=0)
 
-forest_importances = pd.Series(importances[importances>0], index=features_names[importances>0])
+forest_importances = pd.DataFrame(importances, index=features_names, columns = ["mdi"])
+forest_importances['std'] = std
 
 fig, ax = plt.subplots()
-forest_importances.plot.bar(yerr=std[importances>0], ax=ax)
+forest_importances.loc[forest_importances['mdi']>0, 'mdi'].plot.bar(
+    yerr = forest_importances.loc[forest_importances['mdi']>0, 'std'], ax = ax
+)
 ax.set_title("Feature importances using MDI")
 ax.set_ylabel("Mean decrease in impurity")
 fig.tight_layout()
@@ -457,8 +764,11 @@ fig.tight_layout()
 ax
 ```
 
+Les statistiques obtenues par le biais de cette _variable importance_
+sont un peu rudimentaires mais permettent déjà de comprendre
+le problème de notre modèle. 
 
-On voit donc que deux variables déterminantes sont des effets fixes
+On voit donc que deux de nos variables déterminantes sont des effets fixes
 géographiques (qui servent à ajuster de la différence de prix entre
 Paris et les Hauts de Seine et le reste de la France), une autre variable
 est un effet fixe type de bien. Les deux variables qui pourraient introduire
@@ -471,43 +781,26 @@ nombre de lots, ont une importance moindre.
 <div class="alert alert-info" role="alert">
 <h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
 ```
-Idéalement, on utiliserait `yellowbrick` pour représenter l'importance des variables
+Idéalement, on utiliserait `Yellowbrick` pour représenter l'importance des variables
 Mais en l'état actuel du *pipeline* on a beaucoup de variables dont le poids
 est nul qui viennent polluer la visualisation. Vous pouvez 
 consulter la
-[documentation de `yellowbrick` sur ce sujet](https://www.scikit-yb.org/en/latest/api/model_selection/importances.html)
+[documentation de `Yellowbrick` sur ce sujet](https://www.scikit-yb.org/en/latest/api/model_selection/importances.html)
+
 ```{=html}
 </div>
 ```
 :::
 
-
-### Prédiction
-
-L'analyse de l'importance de variables permet de mieux comprendre
-le fonctionnement interne des *random forests*. 
-
-On obtient un modèle dont les performances sont les suivantes :
+Les prédictions peuvent nous suggérer également
+qu'il y a un problème:
 
 ```{python}
-from sklearn.metrics import mean_squared_error
-
-
+#| eval: true
+#| echo: true
 compar = pd.DataFrame([y_test, pipe.predict(X_test)]).T
 compar.columns = ['obs','pred']
 compar['diff'] = compar.obs - compar.pred
-
-print("Le RMSE sur le jeu de test est {:,}".format(
-   int(np.sqrt(mean_squared_error(y_test, pipe.predict(X_test))))
-))
-```
-
-Le RMSE n'est pas très bon. Pour comprendre pourquoi, représentons
-notre nuage de point des valeurs observées et prédites:
-
-```{python}
-#| include: false
-#| echo: true
 
 g = sns.relplot(data = compar, x = 'obs', y = 'pred', color = "royalblue", alpha = 0.8)
 g.set(ylim=(0, 2e6), xlim=(0, 2e6),
@@ -517,29 +810,112 @@ g.set(ylim=(0, 2e6), xlim=(0, 2e6),
 g.ax.axline(xy1=(0, 0), slope=1, color="red", dashes=(5, 2))
 ```
 
-C'est très décevant. La prédiction a trop peu de variabilité pour capturer
-la variance des prix observée. Cela vient du fait que les variables
-ayant de l'importance dans la prédiction sont principalement des effets fixes,
-qui ne permettent donc qu'une variabilité limitée.
+## Restriction du champ du modèle
+
+Mettre en oeuvre un bon modèle de prix au niveau France entière
+est complexe. Nous allons donc nous restreindre au champ suivant:
+les appartements dans Paris.
 
 ```{python}
-g.figure.get_figure()
+#| echo: true
+#| eval: true
+mutations_paris = mutations.drop(
+    colonnes_surface.tolist() + ["Date mutation", "lprix"], # ajouter "confinement" si données 2020
+    axis = "columns"
+    ).copy()
+
+mutations_paris = mutations_paris.loc[mutations_paris['Valeur fonciere'] < 5e6] #keep only values below 5 millions
+
+mutations_paris.columns = mutations_paris.columns.str.replace(" ", "_")
+mutations_paris  = mutations_paris.dropna(subset = ['dep','Code_type_local','month'])
+mutations_paris = mutations_paris.loc[mutations_paris['dep'] == "75"]
+mutations_paris = mutations_paris.loc[mutations_paris['Code_type_local'] == 2].drop(['dep','Code_type_local'], axis = "columns")
+mutations_paris.loc[mutations_paris['surface']>0]
 ```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4 : Pipeline plus simple</h3>
+```
+
+Reprendre les codes précédents et reconstruire notre _pipeline_ sur 
+la nouvelle base en mettant en oeuvre une méthode de _boosting_
+plutôt qu'une forêt aléatoire. 
+
+```{=html}
+</div>
+```
+:::
+
+A l'issue de cet exercice, vous devriez avoir des _MDI_ proches
+de celles-ci:
+
+
+```{python}
+#| eval: true
+#| label: estim-model-paris
+from sklearn.ensemble import GradientBoostingRegressor
+
+mutations_paris = mutations.drop(
+    colonnes_surface.tolist() + ["Date mutation", "lprix"], # ajouter "confinement" si données 2020
+    axis = "columns"
+    ).copy()
+
+mutations_paris = mutations_paris.loc[mutations_paris['Valeur fonciere'] < 5e6] #keep only values below 5 millions
+
+mutations_paris.columns = mutations_paris.columns.str.replace(" ", "_")
+mutations_paris  = mutations_paris.dropna(subset = ['dep','Code_type_local','month'])
+mutations_paris = mutations_paris.loc[mutations_paris['dep'] == "75"]
+mutations_paris = mutations_paris.loc[mutations_paris['Code_type_local'] == 2].drop(['dep','Code_type_local', 'Nombre_de_lots'], axis = "columns")
+mutations_paris.loc[mutations_paris['surface']>0]
+
+
+numeric_features = mutations_paris.columns[~mutations_paris.columns.isin(['month', 'Valeur_fonciere'])].tolist()
+categorical_features = ['month']
+
+reg = GradientBoostingRegressor(random_state=0)
+
+numeric_pipeline = make_pipeline(
+  SimpleImputer(),
+  StandardScaler()
+)
+transformer = make_column_transformer(
+    (numeric_pipeline, numeric_features),
+    (OneHotEncoder(sparse = False, handle_unknown = "ignore"), categorical_features))
+pipe = Pipeline(steps=[('preprocessor', transformer),
+                      ('boosting', reg)])
+
+X_train, X_test, y_train, y_test = train_test_split(
+    mutations_paris.drop("Valeur_fonciere", axis = 1),
+    mutations_paris[["Valeur_fonciere"]].values.ravel(),
+    test_size = 0.2, random_state = 123
+)
+
+pipe.fit(X_train, y_train)
+
+pd.DataFrame(
+    pipe["boosting"].feature_importances_, 
+    index = pipe[:-1].get_feature_names_out()
+)
+```
+
 
 
 ## Recherche des hyperparamètres optimaux avec une validation croisée
 
 On détecte que le premier modèle n'est pas très bon et ne nous aidera
-pas vraiment à évaluer de manière fiable la maison de nos rêves. 
+pas vraiment à évaluer de manière fiable l'appartement de nos rêves. 
 
 On va essayer de voir si notre modèle ne serait pas meilleur avec des
 hyperparamètres plus adaptés. Après tout, nous avons choisi par défaut
 la profondeur de l'arbre mais c'était un choix au doigt mouillé. 
 
-Quels sont les hyperparamètres qu'on peut essayer d'optimiser ? 
+❓️ Quels sont les hyperparamètres qu'on peut essayer d'optimiser ? 
 
 ```{python}
-pipe['randomforest'].get_params()
+#| eval: true
+pipe['boosting'].get_params()
 ```
 
 Un [détour par la documentation](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html)
@@ -547,16 +923,8 @@ nous aide à comprendre ceux sur lesquels on va jouer. Par exemple, il serait
 absurde de jouer sur le paramètre `random_state` qui est la racine du générateur
 pseudo-aléatoire. 
 
-Comme l'objectif est de se concentrer sur la démarche plus qu'essayer de
-trouver un bon modèle,
-nous allons également réduire la taille des données pour accélérer
-les calculs
-
 ```{python}
-mutations2 = mutations2.groupby('dep').sample(frac = 0.5, random_state = 123)
-
-X_train, X_test, y_train, y_test = train_test_split(mutations2[xvars2], mutations2[["Valeur_fonciere"]].values.ravel(), test_size = 0.2, random_state = 0, stratify=mutations2[['dep']])
-
+#| eval: true
 X = pd.concat((X_train, X_test), axis=0)
 Y = np.concatenate([y_train,y_test])
 ```
@@ -580,13 +948,31 @@ Comme expliqué précédemment, les paramètres s'appelent sous la forme
 La validation croisée pouvant être très consommatrice de temps, nous 
 n'allons l'effectuer que sur un nombre réduit de valeurs de notre grille.
 Il est possible de passer la liste des valeurs à passer au crible sous
-forme de liste (comme pour l'argument `max_depth` ci-dessous) ou
-sous forme d'`array` (comme pour l'argument `n_estimators`) ce qui est
+forme de liste
+(comme nous allons le proposer pour l'argument `max_depth` dans l'exercice ci-dessous) ou
+sous forme d'`array` (comme nous allons le proposer pour l'argument `n_estimators`) ce qui est
 souvent pratique pour générer un criblage d'un intervalle avec `np.linspace`.
 
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint </h3>
+```
+Les estimations sont, par défaut, menées de manière séquentielle (l'une après
+l'autre). Nous sommes cependant face à un problème
+*embarassingly parallel*. 
+Pour gagner en performance, il est recommandé d'utiliser l'argument
+`n_jobs=-1`.
+```{=html}
+</div>
+```
+:::
+
+
 ```{python}
-#| include: false
-#| echo: true
+#| output: false
+#| eval: true
+#| label: grid-search
 
 import numpy as np
 from sklearn.model_selection import GridSearchCV
@@ -596,45 +982,29 @@ import time
 start_time = time.time()
 # Parameters of pipelines can be set using ‘__’ separated parameter names:
 param_grid = {
-    "randomforest__n_estimators": np.linspace(5,25, 5).astype(int),
-    "randomforest__max_depth": [2,4]
+    "boosting__n_estimators": np.linspace(5,25, 5).astype(int),
+    "boosting__max_depth": [2,4]
 }
 grid_search = GridSearchCV(pipe, param_grid=param_grid)
 grid_search.fit(X, Y)
 
 end_time = time.time()
-print("Elapsed time : {} seconds", int(end_time - start_time))
+
+print(f"Elapsed time : {int(end_time - start_time)} seconds")
 ```
 
 ```{python}
-#| eval: false
-#| echo: false
-print(estimator_html_repr(grid_search))
-```
-
-```{python}
-#| echo: false
-print("Elapsed time : {} seconds", int(end_time - start_time))
+#| eval: true
+grid_search
 ```
 
 
-On peut récupérer les paramètres optimaux avec la méthode `best_params_`:
+
 
 ```{python}
+#| eval: true
 grid_search.best_params_
-```
-
-On pourra aussi ré-utiliser le modèle optimal de la manière suivante :
-
-~~~python
 grid_search.best_estimator_
-~~~
-
-
-```{python}
-#| eval: false
-#| echo: false
-print(estimator_html_repr(grid_search.best_estimator_))
 ```
 
 
@@ -642,19 +1012,19 @@ Toutes les performances sur les ensembles d'échantillons et de test sur la gril
 d'hyperparamètres sont disponibles dans l'attribut:
 
 ```{python}
+#| eval: true
 perf_random_forest = pd.DataFrame(grid_search.cv_results_)
 ```
 
 Regardons les résultats moyens pour chaque valeur des hyperparamètres:
 
 ```{python}
-#| include: false
-#| echo: true
+#| eval: true
 fig, ax = plt.subplots(1)
 g = sns.lineplot(data = perf_random_forest, ax = ax,
-             x = "param_randomforest__n_estimators",
+             x = "param_boosting__n_estimators",
              y = "mean_test_score",
-             hue = "param_randomforest__max_depth")
+             hue = "param_boosting__max_depth")
 g.set(xlabel='Number of estimators', ylabel='Mean score on test sample')
 g
 plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0,
@@ -662,16 +1032,8 @@ plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0,
 ```
 
 
-```{python}
-#| echo: false
-g.figure.get_figure()
-```
-
-Globalement, à profondeur d'arbre donnée, le nombre d'arbres change
-marginalement la performance (cela détériore
-la performance quand la profondeur est de 4, cela améliore quand
-on fixe la profondeur de 2).
-En revanche, changer la profondeur de l'arbre améliore la 
+Globalement, à profondeur d'arbre donnée, le nombre d'arbres affecte
+la performance. Changer la profondeur de l'arbre améliore la 
 performance de manière plus marquée.
 
 Maintenant, il nous reste à re-entraîner le modèle avec ces nouveaux
@@ -679,8 +1041,9 @@ paramètres sur l'ensemble du jeu de *train* et l'évaluer sur l'ensemble
 du jeu de *test*:
 
 ```{python}
-#| include: false
 #| echo: true
+#| output: false
+#| eval: true
 pipe_optimal = grid_search.best_estimator_
 pipe_optimal.fit(X_train, y_train)
 
@@ -692,6 +1055,7 @@ compar['diff'] = compar.obs - compar.pred
 On obtient le RMSE suivant :
 
 ```{python}
+#| eval: true
 print("Le RMSE sur le jeu de test est {:,}".format(
    int(np.sqrt(mean_squared_error(y_test, pipe_optimal.predict(X_test))))
 ))
@@ -702,6 +1066,7 @@ Et si on regarde la qualité en prédiction:
 ```{python}
 #| include: false
 #| echo: true
+#| eval: true
 g = sns.relplot(data = compar, x = 'obs', y = 'pred', color = "royalblue", alpha = 0.8)
 g.set(ylim=(0, 2e6), xlim=(0, 2e6),
       title='Evaluating estimation error on test sample',
@@ -709,10 +1074,6 @@ g.set(ylim=(0, 2e6), xlim=(0, 2e6),
       ylabel='Predicted values')
 g.ax.axline(xy1=(0, 0), slope=1, color="red", dashes=(5, 2))
 g
-```
-
-```{python}
-g.figure.get_figure()
 ```
 
 On obtient plus de variance dans la prédiction, c'est déjà un peu mieux.
@@ -723,262 +1084,8 @@ Cependant, cela reste décevant pour plusieurs raisons:
 pertinente était le prix ou une transformation de celle-ci
 (par exemple le prix au $m^2$)
 
-```{python}
-#| output: hide
-#| echo: true
-features_names=pipe_optimal['preprocessor'].get_feature_names_out()
-importances = pipe_optimal['randomforest'].feature_importances_
-std = np.std([tree.feature_importances_ for tree in pipe_optimal['randomforest'].estimators_], axis=0)
 
-forest_importances = pd.Series(importances[importances>0], index=features_names[importances>0])
-
-fig, ax = plt.subplots()
-forest_importances.plot.bar(yerr=std[importances>0], ax=ax)
-ax.set_title("Feature importances using MDI")
-ax.set_ylabel("Mean decrease in impurity")
-fig.tight_layout()
-```
-
-```{python}
-#| echo: false
-ax
-```
-
-
-### Remarque sur la performance
-
-Les estimations sont, par défaut, menées de manière séquentielle (l'une après
-l'autre). Nous sommes cependant face à un problème
-*embarassingly parallel*. 
-Pour gagner en performance, il est recommandé d'utiliser l'argument
-`n_jobs=-1`.
-
-
-### Remarque sur l'échantillonnage
-
-En l'état actuel de l'échantillonnage entre train et test au sein de la
-_grid search_,
-on est face à un problème de *data leaking* car l'échantillon
-n'est pas balancé entre nos classes (les départements).
-
-Certaines classes se 
-retrouvent hors de l'échantillon d'estimation mais dans l'échantillon de prédiction.
-Autrement dit, notre *pipeline* de *preprocessing* se retrouve à devoir
-nettoyer des valeurs qu'il ne connaît pas. 
-
-Nous avons choisi une option, dans notre *pipeline* pour se faciliter la vie
-à ce propos. Nous ne rencontrons pas d'erreur car nous avons utilisé l'option 
-`handle_unknown = "ignore"` plutôt que 
-`handle_unknown = "error"` (défaut) dans le _one hot encoding_. 
-Cette option est dangereuse et n'est pas recommandée pour un vrai _pipeline_.
-De manière générale, il vaut mieux adopter une approche de
-programmation défensive en n'hésitant pas à renvoyer une erreur si la
-structure du *DataFrame* de prédiction diffère vraiment de celle du *DataFrame*
-d'entraînement.
-
-
-Pour éviter cette erreur, il serait mieux de définir explicitement le schéma de
-validation croisée à mettre en oeuvre.
-Précédemment, nous avions utilisé un échantillonnage stratifié. 
-Cela pourrait être fait ici avec
-la méthode `StratifiedGroupKFold` (plus d'éléments à venir)
-
-~~~python
-from sklearn.model_selection import StratifiedGroupKFold
-cv = StratifiedGroupKFold(n_splits=5)
-#grid_search.fit(pd.concat((X_train, X_test), axis=0), np.concatenate([y_train,y_test]), cv = cv, groups = pd.concat((X_train, X_test), axis=0)['dep'])
-~~~
-
-## Eléments supplémentaires à venir
-
-Ce chapitre est amené à être enrichi des éléments suivants
-(cf. [#207](https://github.com/linogaliana/python-datascientist/issues/207))
-
-- [ ] Comparaison performance entre modèles grâce aux pipelines
-- [ ] Intégration d'une étape de sélection de variable dans un pipeline
-- [ ] `statsmodels` dans un pipeline
-- [ ] `Keras` dans un pipeline
-
-
-
-## Annexes : pipelines alternatifs
-
-### Préalable : quelques méthodes pour gagner en flexibilité dans le preprocessing
-
-Notre *DataFrame* comporte des types hétérogènes de variables:
-
-* Des variables numériques dont les variances sont très hétérogènes
-* Des variables textuelles qui mériteraient un recodage sous forme numérique
-* Des variables discrètes dont les modalités devraient être éclatées (_one hot encoding_)
-
-Pour gagner en flexibilité, nous allons proposer certaines méthodes qui permettent
-d'appliquer les étapes de _preprocessing_ adéquates à un sous-ensemble de 
-variables[^1]. Ces méthodes ne sont plus nécessaires dans les versions
-récentes de `scikit`.
-
-[^1]: Un certain nombre des éléments suivants ont été glannés, par ci par là,
-depuis `stackoverflow`.
-
-Pour cela, il convient d'adopter l'approche de la programmation orientée objet. 
-On va créer des classes avec des méthodes `transform` et `fit_transform`
-qui pourront ainsi être intégrées directement dans les *pipelines*, comme s'il
-s'agissait de méthodes issues de `scikit`.
-
-La première généralise `LabelEncoder` à un sous-ensemble de colonnes:
-
-```{python}
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-
-class MultiColumnLabelEncoder:
-    def __init__(self,columns = None):
-        self.columns = columns # array of column names to encode
-
-    def fit(self,X,y=None):
-        return self # not relevant here
-
-    def transform(self,X):
-        '''
-        Transforms columns of X specified in self.columns using
-        LabelEncoder(). If no columns specified, transforms all
-        columns in X.
-        '''
-        output = X.copy()
-        if self.columns is not None:
-            for col in self.columns:
-                output[col] = LabelEncoder().fit_transform(output[col])
-        else:
-            for colname,col in output.iteritems():
-                output[colname] = LabelEncoder().fit_transform(col)
-        return output
-
-    def fit_transform(self,X,y=None):
-        return self.fit(X,y).transform(X)
-```
-
-La seconde généralise cette fois le *one hot encoding* à un sous ensemble de 
-fonctions
-
-```{python}
-class MultiColumnOneHotEncoder:
-    def __init__(self,columns = None):
-        self.columns = columns # array of column names to encode
-
-    def fit(self,X,y=None):
-        return self # not relevant here
-
-    def transform(self,X):
-        '''
-        Transforms columns of X specified in self.columns using
-        LabelEncoder(). If no columns specified, transforms all
-        columns in X.
-        '''
-        output = X.copy()
-        if self.columns is not None:
-            for col in self.columns:
-                output[col] = OneHotEncoder(sparse=False).fit_transform(output[col])
-        else:
-            for colname,col in output.iteritems():
-                output[colname] = OneHotEncoder(sparse=False).fit_transform(col)
-        return output
-
-    def fit_transform(self,X,y=None):
-        return self.fit(X,y).transform(X)
-```
-
-Les méthodes suivantes vont nous permettre de passer en arguments les noms
-de colonnes pour intégrer la récupération des bonnes colonnes de nos
-dataframes dans le pipeline:
-
-```{python}
-from sklearn.base import BaseEstimator, TransformerMixin, RegressorMixin
-
-class Columns(BaseEstimator, TransformerMixin):
-    def __init__(self, names=None):
-        self.names = names
-
-    def fit(self, X, y=None, **fit_params):
-        return self
-
-    def transform(self, X):
-        return X[self.names]
-
-class Normalize(BaseEstimator, TransformerMixin):
-    def __init__(self, func=None, func_param={}):
-        self.func = func
-        self.func_param = func_param
-
-    def transform(self, X):
-        if self.func != None:
-            return self.func(X, **self.func_param)
-        else:
-            return X
-
-    def fit(self, X, y=None, **fit_params):
-        return self
-```
-
-Enfin, on va créer une méthode intermédiaire sous forme de *hack*
-(elle prend une matrice en entrée et renvoie la même matrice) 
-pour
-pouvoir facilement récupérer notre matrice de *feature* afin de vérifier
-ses caractéristiques (notamment le nombre de colonnes disponibles):
-
-```{python}
-class Collect(BaseEstimator, TransformerMixin):
-
-    def transform(self, X):
-        #print(X.shape)
-        #self.shape = shape
-        # what other output you want
-        return X
-
-    def fit(self, X, y=None, **fit_params):
-        return self
-
-```
-
-
-```{python}
-from sklearn.pipeline import make_pipeline, FeatureUnion
-from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
-from sklearn.pipeline import Pipeline
-
-pipe2 = Pipeline([
-    ("features", FeatureUnion([
-        ('numeric', make_pipeline(Columns(names=numeric_features[:-1]),StandardScaler())),
-        ('categorical', make_pipeline(Columns(names=categorical_features),OneHotEncoder(sparse=False)))
-    ])),
-    ('identity', Collect()),
-    ('randomforest', regr)
-])
-```
-
-```{python}
-#| eval: false
-#| echo: false
-print(estimator_html_repr(pipe2))
-```
-
-
-```{python}
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('numeric', StandardScaler(), numeric_features[:-1]),
-        ('categorical', OneHotEncoder(sparse=False, handle_unknown = "ignore"), categorical_features)])
-
-pipe3 = Pipeline(steps=[('preprocessor', preprocessor),
-                      ('randomforest', regr)])
-```
-
-```{python}
-#| eval: false
-#| echo: false
-print(estimator_html_repr(pipe3))
-```
 
 
 ## Références
 
-
-- Breiman L (2001). _"Random Forests". Machine Learning_. 45 (1): 5–32.
