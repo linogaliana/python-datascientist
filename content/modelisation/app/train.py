@@ -72,5 +72,5 @@ def dump_boosting_cv(data, filename='pipe.joblib'):
     return pipe_optimal
 
 if __name__ == "__main__":
-    mutations_paris = pipeline_fetch_data(data)
-    dump_boosting_cv(data)
+    mutations_paris = pipeline_fetch_data()
+    dump_boosting_cv(mutations_paris)
