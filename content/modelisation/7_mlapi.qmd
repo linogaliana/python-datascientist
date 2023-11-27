@@ -18,7 +18,7 @@ image: featured.png
 bibliography: ../../reference.bib
 ---
 
-
+:::{.cell .markdown}
 ```{python}
 #| echo: false
 #| output: 'asis'
@@ -38,10 +38,10 @@ donné à l'Université Dauphine dans le cadre
 des _PSL Data Week_. 
 
 L'objectif de ce chapitre est d'amener à développer
-une API du type de [celle-ci](dvf-simple-api.lab.sspcloud.fr).
+une API du type de [celle-ci](https://dvf-simple-api.lab.sspcloud.fr).
 
 
-<details>
+<details open>
 <summary>
 Dérouler les _slides_ associées ci-dessous ou [cliquer ici](https://linogaliana.github.io/dauphine-week-data/#/title-slide)
 pour les afficher en plein écran.
@@ -54,13 +54,163 @@ pour les afficher en plein écran.
 
 Le chapitre précédent constituait une introduction à la création
 de _pipelines_ de _machine learning_.
+Ce chapitre va aller plus loin en montrant la démarche pour le rendre
+disponible à plus grande échelle par le biais d'une API pouvant 
+être consommée avec de nouvelles données. L'objectif de celle-ci est
+de ne pas contraindre les réutilisateurs d'un modèle
+à disposer d'un environnement technique complexe
+pour pouvoir utiliser le même modèle que celui entraîné précédemment. 
+
+
+
+## Exemple de réutilisation d'un modèle sous forme d'API
+
+Un exemple d'API obtenue à l'issue de ce chapitre est
+mis à disposition sur [https://dvf-simple-api.lab.sspcloud.fr/](https://dvf-simple-api.lab.sspcloud.fr/).
+La documentation de l'API est disponible [ici](https://dvf-simple-api.lab.sspcloud.fr/docs).
+
+Cette API est utilisable dans plusieurs langages. 
+
+En `Python`, par exemple, cela donnera:
+
+```{python}
+import requests
+
+pieces_principales = 6
+surface = 50
+url = f"https://dvf-simple-api.lab.sspcloud.fr/predict?month=4&nombre_lots=1&code_type_local=2&nombre_pieces_principales={pieces_principales}&surface={surface}"
+requests.get(url).json()
+```
+
+Néanmoins, l'un des intérêts de proposer
+une API est que les utilisateurs du modèle
+ne sont pas obligés d'être des pythonistes.
+Cela accroît grandement la cible des ré-utilisateurs 
+potentiels. 
+
+Cette approche ouvre notamment la possibilité de
+faire des applications interactives qui utilisent,
+en arrière plan, notre modèle entraîné avec `Python`. 
+
+::::: {.content-visible when-format="html"}
+
+Voici un exemple, minimaliste, d'une réutilisation
+de notre modèle avec deux sélecteurs Javascript
+qui mettent à jour le prix estimé du bien. 
+
+:::: {.columns}
+
+::: {.column width="50%"}
+```{ojs}
+//| echo: false
+html`<div>Nombre de pièces</div><div>${viewof pieces_principales}</div>`
+```
+:::
+
+::: {.column width="50%"}
+```{ojs}
+//| echo: false
+html`<div>Surface de l'appartement</div><div>${surface}</div>`
+```
+:::
+
+::::
+
+```{ojs}
+//| echo: false
+viewof pieces_principales = Inputs.range([1, 12], {step: 1, value: 6})
+```
+
+```{ojs}
+//| echo: false
+viewof surface = Inputs.range([1, 300], {step: 1, value: 50})
+```
+
+
+```{ojs}
+//| echo: false
+md`${return_message}`
+```
+
+```{ojs}
+//| echo: false
+html`${url_api_print}`
+```
+
+
+
+```{ojs}
+//| echo: false
+url_api_dvf = `https://corsproxy.io/?https://dvf-simple-api.lab.sspcloud.fr/predict?month=4&nombre_lots=1&code_type_local=2&nombre_pieces_principales=${pieces_principales}&surface=${surface}`
+```
+
+```{ojs}
+//| echo: false
+url_api_print = md`[<span class="blue-underlined">https://dvf-simple-api.lab.sspcloud.fr/predict?</span>month=4&nombre_lots=1&code_type_local=2&nombre_pieces_principales=<span class="blue-underlined">${pieces_principales}</span>&surface=<span class="blue-underlined">${surface}</span>](${url_api_dvf})`
+```
+
+
+```{ojs}
+//| echo: false
+value = d3.json(url_api_dvf).then(data => {
+    // Access the 'value' property from the object
+    let originalNumber = data;
+
+    // Convert it to a floating-point number
+    let numericValue = parseFloat(originalNumber);
+
+    // Round the number
+    let roundedNumber = Math.round(numericValue).toLocaleString();
+
+    return roundedNumber;
+}).catch(error => console.error('Error:', error));
+```
+
+```{ojs}
+//| echo: false
+return_message = `Valeur estimée de l'appartement: <span class="blue2">__${value} €__</span>`
+```
+
+
+:::::
+
+
+## Etape 1: créer une application en local
+
+Mettre en place une API consiste à gravir une marche
+dans l'échelle de la reproductibilité par rapport
+à fournir un _notebook_. Ces derniers
+ne sont pas les outils les plus adaptés
+pour partager autre chose que du code, à faire tourner
+de son côté. 
+
+Il est donc naturel de sortir des _notebooks_
+lorsqu'on commence à aller vers ce niveau de mise à
+disposition.
+Par le biais de
+scripts `Python` lancés en ligne de commande, 
+construits en exportant le code du chapitre précédent
+de nos notebooks, on pourra
+créer une base de départ propre. 
+
+Il est plus naturel de privilégier une interface de développement
+généraliste comme VSCode à Jupyter lorsqu'on franchit
+ce rubicon. L'exercice suivant permettra donc 
+de créer cette première application minimale, à 
+exécuter en ligne de commande. 
+
 
 
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Mise à disposition sous forme d'API locale</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1: créer des scripts pour entraîner le modèle</h3>
 ```
+
+Le dépôt `Github` qui permet de construire l'API _from scratch_
+est [disponible ici](https://github.com/linogaliana/api-dvf).
+Nous allons emprunter quelques éléments, par-ci par-là,
+pour faire notre application en local. 
 
 - Créer un nouveau service `VSCode` sur le `SSPCloud` en paramétrant dans l'onglet
 `Networking` le port 5000 ;
@@ -71,47 +221,79 @@ mkdir app
 cd app
 ```
 
-- Depuis le menu des fichiers, créer trois fichiers dont le contenu
+Depuis le menu des fichiers, créer quatre fichiers dont le contenu
 suit:
 
-- `requirements.txt`
-- `getdvf.py`
-- `train.py`
-- `api.py`
-
-
-<details>
-<summary>
-Fichier `getdvf.py`
-</summary>
-Récupérer le contenu sur [cette page](https://raw.githubusercontent.com/linogaliana/python-datascientist/api/content/modelisation/getdvf.py)
-</details>
-
-
-<details>
-<summary>
-Fichier `train.py`
-</summary>
-Récupérer le contenu sur [cette page](https://raw.githubusercontent.com/linogaliana/python-datascientist/api/content/modelisation/train.py)
-</details>
-
-<details>
-<summary>
-Fichier `api.py`
-</summary>
-Récupérer le contenu sur [cette page](https://raw.githubusercontent.com/linogaliana/python-datascientist/api/content/modelisation/api.py)
-</details>
-
-<details>
-<summary>
-Fichier `requirements.txt`
-</summary>
-Récupérer le contenu sur [cette page](https://raw.githubusercontent.com/linogaliana/python-datascientist/api/content/modelisation/requirements_api.txt)
-</details>
+- `requirements.txt`: récupérer le contenu sur [cette page](https://raw.githubusercontent.com/linogaliana/api-dvf/main/requirements.txt) ;
+- `getdvf.py`: récupérer le contenu sur [cette page](https://raw.githubusercontent.com/linogaliana/api-dvf/main/getdvf.py) ;
+- `train.py`: récupérer le contenu sur [cette page](https://raw.githubusercontent.com/linogaliana/api-dvf/main/train.py) ;
+- `api.py`: récupérer le contenu sur [cette page](https://raw.githubusercontent.com/linogaliana/api-dvf/main/main.py).
 
 
 - Exécuter `getdvf.py` puis `train.py` pour stocker en local le modèle entraîné
 - Ajouter `model.joblib` au `.gitignore` _(si vous utilisez `Git`)_
+- Créer un script `test.py` qui contient la fonction suivante et la teste après avoir importé votre modèle (`load('pipe.joblib')` en n'oubliant pas `from joblib import load`):
+
+```{python}
+import pandas as pd
+
+def predict(
+    month: int = 3,
+    nombre_lots: int = 1,
+    code_type_local: int = 2,
+    nombre_pieces_principales: int = 3,
+    surface: float = 75
+) -> float:
+    """
+    """
+
+    df = pd.DataFrame(
+        {
+            "month": [month],
+            "Nombre_de_lots": [nombre_lots],
+            "Code_type_local": [code_type_local],
+            "Nombre_pieces_principales": [nombre_pieces_principales],
+            "surface": [surface]
+        }
+    )
+
+    prediction = model.predict(df)
+
+    return prediction
+```
+
+```{=html}
+</div>
+```
+:::
+
+## Etape 2: créer une API en local
+
+Le script précédent constitue déjà un progrès dans
+la reproductibilité. Il rend plus facile le réentraînement
+d'un modèle sur le même jeu de données. Néanmoins,
+il reste tributaire du fait que la personne désirant
+utiliser du modèle utilise `Python` et sache réentrainer
+le modèle dans les mêmes conditions que vous. 
+
+Avec `FastAPI`, nous allons très facilement pouvoir
+transformer cette application `Python` en une API. 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2: créer des scripts pour entraîner le modèle</h3>
+```
+
+- La ligne ci-dessous du script `api.py` récupère un modèle pré-entraîné enregistré sur un espace de stockage
+
+```python
+download_file("https://minio.lab.sspcloud.fr/projet-formation/diffusion/python-datascientist/pipe.joblib", 'pipe.joblib')
+```
+
+Retirer cette ligne de votre script, pour utiliser
+le modèle que vous venez d'entraîner. 
+
 - Déployer en local l'API avec la commande
 
 ```shell
@@ -123,9 +305,31 @@ se rendre sur l'URL de déploiement,
 ajouter `/docs/` à celui-ci et observer la documentation de l'API 
 - Se servir de la documentation pour tester les requêtes `/predict`
 - Récupérer l'URL d'une des requêtes proposées. La tester dans le navigateur
-et depuis `Python` avec `requests` (`requests.get(url).json()`)
-
+et depuis `Python` avec `Requests` (`requests.get(url).json()`)
+- Optionnel: faire tourner le même code dans un autre environnement que le SSPCloud (par exemple une installation de `Python` en local) pour voir que ça fonctionne de manière identique. 
 ```{=html}
 </div>
 ```
 :::
+
+
+## Aller plus loin: mettre à disposition cette API de manière pérenne
+
+L'étape précédente permettait de créer un point d'accès
+à votre modèle depuis n'importe quel type de client. A chaque
+requête de l'API, le script `api.py` était exécuté et
+renvoyait son _output_. 
+
+Ceci est déjà un saut de géant dans l'échelle de la 
+reproductibilité. Néanmoins, cela reste artisanal: si votre
+serveur local connait un problème (par exemple, vous _killez_ l'application), les clients ne recevront plus de réponse, 
+sans comprendre pourquoi. 
+
+Il est donc plus fiable de mettre en production sur des
+serveurs dédiés, qui tournent 24h/24 et qui peuvent
+également se répartir la charge de travail s'il y a
+beaucoup de demandes instantanées.
+
+Ceci dépasse néanmoins
+le cadre de ce cours et sera l'objet 
+d'un cours dédié en 3e année de l'ENSAE: ["Mise en production de projets _data science_"](https://ensae-reproductibilite.github.io/website/) donné par Romain Avouac et moi. 
