@@ -38,7 +38,7 @@ sys.path.insert(1, '../../') #insert the utils module
 from utils import print_badges
 
 #print_badges(__file__)
-print_badges("content/NLP/04_word2vec.qmd")
+print_badges("content/NLP/04_word2vec.qmd", ssp_cloud_service="pytorch")
 ```
 :::
 
@@ -63,57 +63,23 @@ Ce notebook est librement inspiré de  :
 * https://www.kaggle.com/meiyizi/spooky-nlp-and-topic-modelling-tutorial/notebook
 
 
+::: {.callout-warning title="Packages à installer"}
+Comme dans la [partie précédente](#nlp), il faut télécharger des librairies 
+spécialiséees pour le NLP, ainsi que certaines de leurs dépendances.
 
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-danger" role="alert">
-<i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+```{python}
+!pip install spacy gensim sentence_transformers pandas matplotlib seaborn
 ```
-Comme dans la [partie précédente](#nlp), il faut télécharger quelques éléments
-pour que nos librairies de NLP puissent fonctionner correctement.
 
-En premier lieu, il convient d'installer les librairies adéquates
-(`spacy`, `gensim` et `sentence_transformers`):
-
-~~~python
-!pip install spacy gensim sentence_transformers
-~~~
-
-Ensuite, comme nous allons utiliser également `spacy`, il convient de télécharger
-le corpus Anglais. Pour cela, on peut se référer à
-[la documentation de `spacy`](https://spacy.io/usage/models),
+Ensuite, comme nous allons utiliser la librairie `spaCy` avec un corpus de textes
+en Anglais, il convient de télécharger le modèle NLP pour l'Anglais. Pour cela, 
+on peut se référer à [la documentation de `spacy`](https://spacy.io/usage/models),
 extrêmement bien faite.
 
-
-- Idéalement, il faut installer le module via la ligne de commande. Dans
-une cellule de notebook `Jupyter`, faire :
-
-~~~python
+```{python}
 !python -m spacy download en_core_web_sm
-~~~
-
-- Sans accès à la ligne de commande (depuis une instance `Docker` par exemple),
-faire :
-
-~~~python
-import spacy
-spacy.cli.download("en_core_web_sm")
-~~~
-
-- Sinon, il est également possible d'installer le module en faisant pointer
-`pip install` vers le fichier adéquat sur
-[`Github`](https://github.com/explosion/spacy-models). Pour cela, taper
-
-~~~python
-pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.0.0/en_core_web_sm-3.0.0-py3-none-any.whl
-~~~
-
-
-```{=html}
-</div>
 ```
 :::
-
 
 ```{python}
 from collections import Counter
@@ -243,21 +209,6 @@ Notre échantillon initial n'est pas équilibré (*balanced*) : on retrouve plus
 certains auteurs que d'autres. Afin d'obtenir un modèle qui soit évalué au mieux, nous allons donc stratifier notre échantillon de manière à obtenir une répartition similaire d'auteurs dans nos
 ensembles d'entraînement et de test.
 
-```{python}
-X_train, X_test, y_train, y_test = train_test_split(spooky_df['text_clean'].values, 
-                                                    spooky_df['author_encoded'].values, 
-                                                    test_size=0.2, 
-                                                    random_state=33,
-                                                    stratify = spooky_df['author_encoded'].values)
-```
-
-Par exemple, les textes d'EAP représentent 40 % des échantillons d'entraînement et de test : 
-
-```{python}
-print(100*y_train.tolist().count(0)/(len(y_train)))
-print(100*y_test.tolist().count(0)/(len(y_test)))
-```
-
 Aperçu du premier élément de `X_train` : 
 
 ```{python}
@@ -385,15 +336,10 @@ Comme nous nous intéressons plus à l'effet de la vectorisation qu'à la tâche
 nous allons utiliser un algorithme de classification simple (un SVM linéaire), avec des paramètres non fine-tunés (c'est-à-dire des paramètres pas nécessairement choisis pour être les meilleurs de tous).
 
 ```{python}
-clf = LinearSVC(max_iter=10000, C=0.1)
+clf = LinearSVC(max_iter=10000, C=0.1, dual="auto")
 ```
 
 Ce modèle est connu pour être très performant sur les tâches de classification de texte, et nous fournira donc un bon modèle de référence (*baseline*). Cela nous permettra également de comparer de manière objective l'impact des méthodes de vectorisation sur la performance finale.
-
-<!-- KA : dit plus bas. -->
-<!-- On va utiliser au maximum les objets de type pipeline de `sklearn`, -->
-<!-- qui permettent de réaliser des analyses reproductibles -->
-<!-- et de fine-tuner proprement les différents hyperparamètres. -->
 
 Pour les deux premières méthodes de vectorisation
 (basées sur des fréquences et fréquences relatives des mots),
@@ -465,6 +411,33 @@ On commence par une approche __"bag-of-words"__,
 i.e. qui revient simplement à représenter chaque document par un vecteur
 qui compte le nombre d'apparitions de chaque mot du vocabulaire dans le document.
 
+Illustrons d'abord le principe à l'aide d'un exemple simple.
+
+```{python}
+corpus = [
+    'Un premier document à propos des chats.',
+    'Un second document qui parle des chiens.'
+]
+
+vectorizer = CountVectorizer()
+vectorizer.fit(corpus)
+```
+
+L'objet `vectorizer` a été "entraîné" (*fit*) sur notre corpus d'exemple contenant deux documents. Il a notamment appris le vocabulaire complet du corpus, dont on peut afficher l'ordre.
+
+```{python}
+vectorizer.get_feature_names_out()
+```
+
+L'objet `vectorizer` entraîné peut maintenant vectoriser le corpus initial, selon l'ordre du vocabulaire affiché ci-dessus.
+
+```{python}
+X = vectorizer.transform(corpus)
+print(X.toarray())
+```
+
+Quel score `F1` obtient-on finalement avec cette méthode de vectorisation sur notre problème de classification d'auteurs ?
+
 ```{python}
 cv_bow = fit_vectorizers(CountVectorizer)
 ```
@@ -476,18 +449,47 @@ qui permet de tenir compte des fréquences *relatives* des mots.
 
 Ainsi, pour un mot donné, on va multiplier la fréquence d'apparition du mot dans le document (calculé comme dans la méthode précédente) par un terme qui pénalise une fréquence élevée du mot dans le corpus. L'image ci-dessous, empruntée à Chris Albon, illustre cette mesure:
 
-![](https://chrisalbon.com/images/machine_learning_flashcards/TF-IDF_print.png)
-*Source: [Chris Albon](https://chrisalbon.com/code/machine_learning/preprocessing_text/tf-idf/)*
+![](tfidf.png)
+
+*Source: [Towards Data Science](https://towardsdatascience.com/tf-term-frequency-idf-inverse-document-frequency-from-scratch-in-python-6c2b61b78558)*
 
 La vectorisation `TF-IDF` permet donc de limiter l'influence des *stop-words*
 et donc de donner plus de poids aux mots les plus salients d'un document.
-On observe clairement que la performance de classification est bien supérieure,
-ce qui montre la pertinence de cette technique.
+Illustrons cela à nouveau avec notre corpus d'exemple de deux documents.
 
+```{python}
+corpus = [
+    'Un premier document à propos des chats.',
+    'Un second document qui parle des chiens.'
+]
+
+vectorizer = TfidfVectorizer()
+vectorizer.fit(corpus)
+```
+
+Là encore, le vectoriseur a "appris" le vocabulaire du corpus.
+
+```{python}
+vectorizer.get_feature_names_out()
+```
+
+Et peut être utilisé pour calculer les scores TF-IDF de chacun des termes des documents.
+
+```{python}
+X = vectorizer.transform(corpus)
+print(X.toarray())
+```
+
+On remarque que "chats" et "chiens" possèdent les scores les plus élevés, ce sont bien les termes les plus distinctifs. A l'inverse, les termes qui reviennent dans les deux documents ("un", "document", "des") ont un score inférieur, car ils sont beaucoup présents dans le corpus relativement.
+
+Quel score `F1` obtient-on avec cette méthode de vectorisation sur notre problème de classification d'auteurs ?
 
 ```{python}
 cv_tfidf = fit_vectorizers(TfidfVectorizer)
 ```
+
+On observe clairement que la performance de classification est bien supérieure,
+ce qui montre la pertinence de cette technique.
 
 ## Word2vec avec averaging
 
@@ -507,7 +509,7 @@ de la même manière que les composantes principales produites par une ACP.
 
 ![](w2v_vecto.png)
 
-*Source: https://medium.com/@zafaralibagh6/simple-tutorial-on-word-embedding-and-word2vec-43d477624b6d*
+*Source: [Medium](https://medium.com/@zafaralibagh6/simple-tutorial-on-word-embedding-and-word2vec-43d477624b6d)*
 
 
 __Pourquoi est-ce intéressant ?__
