@@ -6,6 +6,7 @@ def reminder_badges(
     type = ['md','html'],
     split = None,
     onyxia_only = False,
+    ssp_cloud_service="python",
     GPU=False,
     correction = False
 ):
@@ -73,13 +74,10 @@ def reminder_badges(
     if correction:
         onyxia_init_args.append("correction")
 
-    if GPU is True:
-        service_name = "jupyter-pytorch-gpu"
-    else:
-        service_name = "jupyter-python"
+    gpu_suffix = "-gpu" if GPU else ""
 
-    sspcloud_jupyter_link_launcher = f"https://datalab.sspcloud.fr/launcher/ide/{service_name}"\
-        "?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB"\
+    sspcloud_jupyter_link_launcher = f"https://datalab.sspcloud.fr/launcher/ide/jupyter-{ssp_cloud_service}{gpu_suffix}"\
+        f"?autoLaunch=true&onyxia.friendlyName=%C2%AB{chapter_no_extension}%C2%BB"\
         "&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB"\
         f"&init.personalInitArgs=%C2%AB{'%20'.join(onyxia_init_args)}%C2%BB&security.allowlist.enabled=false"
 
@@ -94,13 +92,8 @@ def reminder_badges(
     if split == 4:
         sspcloud_jupyter_link = f'{sspcloud_jupyter_link}<br>'
 
-    if GPU is True:
-        service_name = "vscode-pytorch-gpu"
-    else:
-        service_name = "vscode-python"
-
-    sspcloud_vscode_link_launcher = f"https://datalab.sspcloud.fr/launcher/ide/{service_name}"\
-        "?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB"\
+    sspcloud_vscode_link_launcher = f"https://datalab.sspcloud.fr/launcher/ide/vscode-{ssp_cloud_service}{gpu_suffix}"\
+        f"?autoLaunch=true&onyxia.friendlyName=%C2%AB{chapter_no_extension}%C2%BB"\
         "&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-vscode.sh%C2%BB"\
         f"&init.personalInitArgs=%C2%AB{'%20'.join(onyxia_init_args)}%C2%BB&security.allowlist.enabled=false"
 
@@ -174,6 +167,7 @@ def print_badges(
     onyxia_only=False,
     split=5,
     type="html",
+    ssp_cloud_service="python",
     GPU = False,
     correction=False):
       
@@ -182,6 +176,7 @@ def print_badges(
           type=type,
           split=split,
           onyxia_only=onyxia_only,
+          ssp_cloud_service=ssp_cloud_service,
           GPU=GPU,
           correction=correction
           )
