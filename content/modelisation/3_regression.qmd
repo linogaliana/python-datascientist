@@ -24,6 +24,7 @@ description: |
   `statsmodels`, on dispose de tous les outils pour satisfaire à la fois
   data scientists et économistes. 
 image: featured_regression.png
+echo: false
 ---
 
 ::: {.cell .markdown}
@@ -43,33 +44,6 @@ print_badges("content/modelisation/3_regression.qmd")
 :::
 
 
-Nous allons partir du même jeu de données que précédemment,
-c'est-à-dire les résultats des élections US 2020 présentés dans l'[introduction
-de cette partie](index.qmd) : les données de vote aux élections présidentielles américaines
-croisées à des variables sociodémographiques.
-Le code 
-est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/modelisation/get_data.py).
-
-
-```{python}
-#| echo: true
-#| message: false
-#| warning: false
-
-#!pip install --upgrade xlrd #colab bug verson xlrd
-#!pip install geopandas
-
-import requests
-
-url = 'https://raw.githubusercontent.com/linogaliana/python-datascientist/master/content/modelisation/get_data.py'
-r = requests.get(url, allow_redirects=True)
-open('getdata.py', 'wb').write(r.content)
-
-import getdata
-votes = getdata.create_votes_dataframes()
-```
-
-
 Le précédent chapitre visait à proposer un premier modèle pour comprendre
 les comtés où le parti Républicain l'emporte. La variable d'intérêt étant
 bimodale (victoire ou défaite), on était dans le cadre d'un modèle de 
@@ -87,6 +61,7 @@ croisées à des variables sociodémographiques.
 Le code 
 est disponible [sur Github](https://github.com/linogaliana/python-datascientist/blob/master/content/modelisation/get_data.py).
 
+::: {.python}
 ```{python}
 #| include: false
 #| echo: true
@@ -102,6 +77,22 @@ open('getdata.py', 'wb').write(r.content)
 
 import getdata
 votes = getdata.create_votes_dataframes()
+```
+:::
+
+Ce chapitre va utiliser plusieurs _packages_ 
+de modélisation, les principaux étant `Scikit` et `Statsmodels`. 
+Voici une suggestion d'import pour tous ces _packages_.
+
+```{python}
+#| echo: true
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+import sklearn.metrics
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 ```
 
 
@@ -164,17 +155,6 @@ $\epsilon \sim \mathcal{N}(0,\sigma^2)$ i.i.d., l'estimateur $\beta$ obtenu
 est équivalent à celui du Maximum de Vraisemblance dont la théorie asymptotique
 nous assure l'absence de biais, la variance minimale (borne de Cramer-Rao).
 
-```{python}
-# packages utiles
-import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
-import sklearn.metrics
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-```
-
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
@@ -201,7 +181,7 @@ fois on va chercher à modéliser directement le score des Républicains.
 
 1. A partir de quelques variables, par exemple, *'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"*, expliquer la variable `per_gop` à l'aide d'un échantillon d'entraînement `X_train` constitué au préalable.
 
-:warning: utiliser la variable `Median_Household_Income_2019`
+⚠️ Utiliser la variable `Median_Household_Income_2019`
 en `log` sinon son échelle risque d'écraser tout effet.
 
 2. Afficher les valeurs des coefficients, constante comprise
@@ -219,7 +199,7 @@ un problème de spécification ?
 :::
 
 ```{python}
-#| include: false
+#| output: false
 
 # 1. Régression linéaire de per_gop sur différentes variables explicatives
 xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
@@ -242,8 +222,7 @@ y_pred = ols.predict(X_test)
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 #2. Afficher les valeurs des coefficients
 print(ols.intercept_, ols.coef_)
@@ -251,8 +230,7 @@ print(ols.intercept_, ols.coef_)
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 3. Evaluer la pertinence du modèle
 
@@ -267,8 +245,7 @@ print('Coefficient of determination: %.2f'
 ```
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 #4. Nuage de points des valeurs observées
 tempdf = pd.DataFrame({"prediction": y_pred, "observed": y_test,
@@ -284,18 +261,19 @@ g.axhline(0, color = "red")
 # donc d'un problème de spécification. 
 ```
 
+Voici le nuage de points de nos erreurs: 
+
 ```{python}
-#| include: false
 g.figure.get_figure()
 ```
 
 ```{python}
-#| include: false
+#| output: false
 g.figure.get_figure().savefig("featured_regression.png")
 ```
 
 
-
+Clairement, le modèle présente un problème de spécification. 
 
 
 ```{python}
@@ -317,7 +295,8 @@ L'objectif est toujours d'expliquer le score des Républicains en fonction de qu
 variables.
 
 
-1. A partir de quelques variables, par exemple, *'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"*, expliquer la variable `per_gop`. :warning: utiliser la variable `Median_Household_Income_2019`
+1. A partir de quelques variables, par exemple, *'Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"*, expliquer la variable `per_gop`. 
+⚠️ utiliser la variable `Median_Household_Income_2019`
 en `log` sinon son échelle risque d'écraser tout effet.
 2. Afficher un tableau de régression.
 3. Evaluer la pertinence du modèle avec le R^2.
@@ -330,8 +309,7 @@ en `log` sinon son échelle risque d'écraser tout effet.
 :::
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 1. Régression linéaire de per_gop sur différentes variables explicatives
 xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
@@ -349,8 +327,7 @@ results = sm.OLS(df2[['per_gop']], X).fit()
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 2. Afficher le tableau de régression
 print(results.summary())
@@ -359,8 +336,7 @@ print(results.summary())
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 3. Calcul du R^2
 print("R2: ", results.rsquared)
@@ -369,8 +345,7 @@ print("R2: ", results.rsquared)
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 4. Nouvelle régression avec l'API formula
 results = smf.ols('per_gop ~ Unemployment_rate_2019 + I(Unemployment_rate_2019**2) + np.log(Median_Household_Income_2019)', data=df2).fit()
@@ -415,11 +390,11 @@ englober ces modèles.
 ### La régression logistique
 
 Ce modèle s'applique à une distribution binaire.
-Dans ce cas, $\mathbb{E}\_{\theta}(Y|X) = \mathbb{P}\_{\theta}(Y = 1|X)$.
+Dans ce cas, $\mathbb{E}_{\theta} (Y|X) = \mathbb{P}_{\theta} (Y = 1|X)$.
 La régression logistique peut être vue comme un modèle linéaire en probabilité :
 
 $$
-\text{logit}\bigg(\mathbb{E}\_{\theta}(Y|X)\bigg) = \text{logit}\bigg(\mathbb{P}\_{\theta}(Y = 1|X)\bigg) = X\beta
+\text{logit}\bigg(\mathbb{E}_{\theta}(Y|X)\bigg) = \text{logit}\bigg(\mathbb{P}_{\theta}(Y = 1|X)\bigg) = X\beta
 $$
 
 La fonction $\text{logit}$ est $]0,1[ \to \mathbb{R}: p \mapsto \log(\frac{p}{1-p})$.
@@ -483,8 +458,7 @@ une mesure de qualité du modèle.
 :::
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 #1. Modèle logit avec les mêmes variables que précédemment
 xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
@@ -503,15 +477,13 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 clf = LogisticRegression().fit(X_train, y_train)
 y_pred = clf.predict(X_test)
-#y_pred[:10]
+
 print(clf.intercept_, clf.coef_)
-# Lino : KA a fait un début de corrigé rapidos : à vérifier
 ```
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 from sklearn.metrics import ConfusionMatrixDisplay
 
@@ -523,19 +495,16 @@ sc_f1 = sklearn.metrics.f1_score(y_pred, y_test)
 sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
 sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
 
-#print(sc_accuracy)
-#print(sc_f1)
-#print(sc_recall)
-#print(sc_precision)
-
-# Lino : KA a fait un début de corrigé rapidos : à vérifier
+print(sc_accuracy)
+print(sc_f1)
+print(sc_recall)
+print(sc_precision)
 ```
 
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 #3. Supprimer la régularisation
 clf2 = LogisticRegression(penalty='none').fit(X_train, y_train)
@@ -543,7 +512,6 @@ y_pred2 = clf.predict(X_test)
 print(clf2.intercept_, clf2.coef_)
 # Les coefficients sont complètement différents
 
-# Lino : KA a fait un début de corrigé rapidos : à vérifier
 ```
 
 
@@ -570,8 +538,7 @@ de gagner.
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 #1. Modèle logit avec les mêmes variables que précédemment
 xvars = [
@@ -593,8 +560,7 @@ print(mylogit.summary())
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 #2. Faire un test de ratio de vraisemblance 
 logit_h0 = smf.logit(
@@ -636,13 +602,18 @@ $$
 ```
 :::
 
-<!-- ## Modèles linéaires généralisés -->
+## Pour aller plus loin
 
-<!-- TO BE COMPLETED -->
+Ce chapitre n'évoque les enjeux de la régression
+que de manière très introductive. Pour compléter ceci,
+il est recommandé d'explorer les champs suivants:
 
-<!-- ## Autres modèles de Machine Learning -->
+- Les modèles linéaires généralisés pour découvrir la régression 
+avec des hypothèses plus générales que celles que nous avons posées
+jusqu'à présent ; 
+- Les autres modèles de régression de _machine learning_ comme les forêts
+aléatoires ;
+- Les tests d'hypothèses pour aller plus loin sur ces questions que notre
+test de ratio de vraisemblance. 
 
-<!-- TO BE COMPLETED -->
-
-<!-- ## Tests d'hypothèses -->
 
