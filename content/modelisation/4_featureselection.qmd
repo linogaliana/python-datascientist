@@ -108,7 +108,7 @@ Ce programme se reformule grâce au Lagrangien est permet ainsi d'obtenir un pro
 $$
 \beta^{\text{LASSO}} = \arg \min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) + \alpha \sum_{j=1}^p |\beta_j| = \arg \min_{\beta} ||y-X\beta||_{2}^{2} + \lambda ||\beta||_1
 $$
-où $\lambda$ est une réécriture de la régularisation précédente qui dépend de $alpha$. La force de la pénalité appliquée aux modèles non parcimonieux dépend de ce paramètre. 
+où $\lambda$ est une réécriture de la régularisation précédente qui dépend de $\alpha$. La force de la pénalité appliquée aux modèles non parcimonieux dépend de ce paramètre. 
 
 ```{=html}
 </div>
@@ -119,7 +119,7 @@ où $\lambda$ est une réécriture de la régularisation précédente qui dépen
 
 Avant de se lancer dans les exercices, on va éliminer quelques colonnes redondantes, 
 celles qui concernent les votes des partis concurrents (forcément très
-corrélés au vote Républicain...)  :
+corrélées au vote Républicain...)  :
 
 ```{python}
 #| echo: true
@@ -160,13 +160,32 @@ On cherche toujours à prédire la variable `per_gop`.
   * Ne garder que les colonnes numériques (idéalement on transformerait
       les variables non numériques en numériques)
   * Remplacer les valeurs infinies par des NaN et les valeurs manquantes par 0. 
-  * Standardiser les *features* (c'est-à-dire les variables autres que la variable `per_gop`) avec `StandardScaler`
+
 2. On cherche toujours à prédire la variable `per_gop`. Créez un échantillon d'entraînement et un échantillon test. 
-3. Estimer un modèle LASSO pénalisé avec $alpha = 0.1$. Afficher les valeurs des coefficients. Quelles variables ont une valeur non nulle ?
+
+3. En vous inspirant de [cet exemple](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html), créer un _pipeline_ effectuant les étapes suivantes:
+    + Impute les valeurs manquantes à la moyenne avec `SimpleImputer()`
+    + Standardise les *features* (c'est-à-dire les variables autres que la variable `per_gop`) avec `StandardScaler`
+    + Estime un LASSO pénalisé
+3. Estimer un modèle LASSO pénalisé avec $\alpha = 0.1$. Afficher les valeurs des coefficients. Quelles variables ont une valeur non nulle ?
 4. Montrer que les variables sélectionnées sont parfois très corrélées. 
 5. Comparer la performance de ce modèle parcimonieux avec celle d'un modèle avec plus de variables 
 6. Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
 varie (parcourir $\alpha \in [0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0]$ ). 
+
+<details>
+<summary>
+Aide pour la question 1
+</summary>
+
+```python
+# Garder seulement les variables numériques
+df2 = df2.select_dtypes(include=np.number)
+# Remplacer les infinis par des NaN
+df2.replace([np.inf, -np.inf], np.nan, inplace=True)
+```
+
+</details>
 
 ```{=html}
 </div>
@@ -177,16 +196,15 @@ varie (parcourir $\alpha \in [0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0]$ 
 ```{python}
 #| output: false
 
-#1. Garder uniquement les variables numériques et standardiser.
-df2 = votes.loc[:,~votes.columns.str.endswith(('_democrat','_green','_other', 'per_point_diff', 'per_dem'))]
+df2 = votes.loc[
+  :,
+  ~votes.columns.str.endswith(
+    ('_democrat','_green','_other', 'per_point_diff', 'per_dem')
+    )
+  ]
 df2 = df2.select_dtypes(include=np.number)
 df2.replace([np.inf, -np.inf], np.nan, inplace=True)
-df2 = df2.fillna(0)
-col_names = df2.loc[:, df2.columns != 'per_gop'].columns.values
-features = df2[col_names]
-features = StandardScaler().fit(features.values).transform(features.values)
-df2[col_names] = features
-#df2.head()
+df2 = df2.loc[:,~df2.columns.duplicated()]
 ```
 
 ```{python}
@@ -195,10 +213,39 @@ df2[col_names] = features
 #2. Echantillon d'entraînement et échantillon test
 X_train, X_test, y_train, y_test = train_test_split(
     df2.drop(["per_gop"], axis = 1),
-    100*df2[['per_gop']].values.ravel(), test_size=0.2, random_state=0
+    100*df2[['per_gop']], test_size=0.2, random_state=0
 )
 ```
 
+
+```{python}
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.compose import make_column_transformer
+
+#3. Garder uniquement les variables numériques et standardiser.
+preprocessor_step1 = ColumnTransformer([
+  ('imputer', SimpleImputer(), X_train.columns.tolist())
+  ])
+preprocessor_step2 = ColumnTransformer([
+  ('scaler', StandardScaler(),  X_train.columns.tolist())
+  ])
+model = Lasso(fit_intercept=True, alpha = 0.1)  
+pipeline = Pipeline(
+    steps = [
+      ("Imputation", preprocessor_step1),
+      ("Standardisation", preprocessor_step2),
+      ('Regression LASSO', model)
+    ]
+)
+pipeline.fit(X_train, y_train)
+
+df2 = df2.fillna(0)
+features = df2[col_names]
+features = StandardScaler().fit(features.values).transform(features.values)
+df2[col_names] = features
+#df2.head()
+```
 
 
 A l'issue de la question 3,
