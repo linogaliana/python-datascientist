@@ -135,27 +135,106 @@ from sklearn.linear_model import lasso_path
 import seaborn as sns
 ```
 
+Comme nous cherchons à trouver les
+meilleurs prédicteurs du vote Républicain,
+nous allons retirer les variables
+qui sont dérivables directement de celles-ci: les scores des concurrents !
+
+
+```{python}
+#| echo: true
+import pandas as pd
+
+df2 = pd.DataFrame(votes.drop(columns='geometry'))
+df2 = df2.loc[
+  :,
+  ~df2.columns.str.endswith(
+    ('_democrat','_green','_other', 'winner', 'per_point_diff', 'per_dem')
+    )
+  ]
+
+
+df2 = df2.loc[:,~df2.columns.duplicated()]
+```
+
+Dans cet exercice, nous utiliserons
+également une fonction pour extraire 
+les variables sélectionnées par le LASSO, 
+la voici
+
+```{python}
+#| echo: true
+from sklearn.linear_model import Lasso
+from sklearn.pipeline import Pipeline
+
+def extract_features_selected(lasso: Pipeline, preprocessing_step_name: str = 'preprocess') -> pd.Series:
+    """
+    Extracts selected features based on the coefficients obtained from Lasso regression.
+
+    Parameters:
+    - lasso (Pipeline): The scikit-learn pipeline containing a trained Lasso regression model.
+    - preprocessing_step_name (str): The name of the preprocessing step in the pipeline. Default is 'preprocess'.
+
+    Returns:
+    - pd.Series: A Pandas Series containing selected features with non-zero coefficients.
+    """
+    # Check if lasso object is provided
+    if not isinstance(lasso, Pipeline):
+        raise ValueError("The provided lasso object is not a scikit-learn pipeline.")
+
+    # Extract the final transformer from the pipeline
+    lasso_model = lasso[-1]
+
+    # Check if lasso_model is a Lasso regression model
+    if not isinstance(lasso_model, Lasso):
+        raise ValueError("The final step of the pipeline is not a Lasso regression model.")
+
+    # Check if lasso model has 'coef_' attribute
+    if not hasattr(lasso_model, 'coef_'):
+        raise ValueError("The provided Lasso regression model does not have 'coef_' attribute. "
+                         "Make sure it is a trained Lasso regression model.")
+
+    # Get feature names from the preprocessing step
+    features_preprocessing = lasso[preprocessing_step_name].get_feature_names_out()
+
+    # Extract selected features based on non-zero coefficients
+    features_selec = pd.Series(features_preprocessing[np.abs(lasso_model.coef_) > 0])
+
+    return features_selec
+```
+
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
 <h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1 : Premier LASSO</h3>
 ```
 
+On cherche toujours à prédire la variable `per_gop`. Avant de faire notre estimation, nous allons créer certains objets intermédiaires qui seront utilisés pour
+définir notre _pipeline_:
 
-On cherche toujours à prédire la variable `per_gop`.
+1. Dans notre `DataFrame`, remplacer les valeurs infinies par des `NaN`. 
 
-1.  Préparez les variables à utiliser.
-  * Ne garder que les colonnes numériques (idéalement on transformerait
-      les variables non numériques en numériques)
-  * Remplacer les valeurs infinies par des NaN et les valeurs manquantes par 0. 
+2. Créez un échantillon d'entraînement et un échantillon test. 
 
-2. On cherche toujours à prédire la variable `per_gop`. Créez un échantillon d'entraînement et un échantillon test. 
+Maintenant nous pouvons passer au coeur de la définition de notre _pipeline_. 
+[Cet exemple](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html) pourra servir de source
+d'inspiration, ainsi que [celui-ci](https://www.kaggle.com/code/bextuychiev/lasso-regression-with-pipelines-tutorial). 
 
-3. En vous inspirant de [cet exemple](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html), créer un _pipeline_ effectuant les étapes suivantes:
-    + Impute les valeurs manquantes à la moyenne avec `SimpleImputer()`
-    + Standardise les *features* (c'est-à-dire les variables autres que la variable `per_gop`) avec `StandardScaler`
-    + Estime un LASSO pénalisé
-3. Estimer un modèle LASSO pénalisé avec $\alpha = 0.1$. Afficher les valeurs des coefficients. Quelles variables ont une valeur non nulle ?
+3. Créer en premier lieu les étapes
+de _preprocessing_ pour notre modèle. 
+Pour cela, il est d'usage de séparer les étapes appliquées aux variables numériques continues des autres variables, dites
+catégorielles.
+
+- Pour les __variables numériques__, imputer à la moyenne puis effectuer une standardisation ;
+- Pour les __variables catégorielles__, les techniques de régression linéaires impliquent d'utiliser une expansion par _one hot encoding_. Avant de faire ce _one hot encoding_, faire une imputation par valeur la plus fréquente.
+
+4. Finaliser le _pipeline_ en ajoutant l'étape d'estimation puis estimer un modèle LASSO pénalisé avec $\alpha = 0.1$. 
+
+En supposant que votre _pipeline_ soit dans un objet nommé `pipeline` et que la dernière étape
+est nommée `model`, vous pouvez 
+directement accéder à cette étape en utilisant l'objet `pipeline['model']`
+
+5. Afficher les valeurs des coefficients. Quelles variables ont une valeur non nulle ?
 4. Montrer que les variables sélectionnées sont parfois très corrélées. 
 5. Comparer la performance de ce modèle parcimonieux avec celle d'un modèle avec plus de variables 
 6. Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
@@ -167,13 +246,40 @@ Aide pour la question 1
 </summary>
 
 ```python
-# Garder seulement les variables numériques
-df2 = df2.select_dtypes(include=np.number)
 # Remplacer les infinis par des NaN
 df2.replace([np.inf, -np.inf], np.nan, inplace=True)
 ```
 
 </details>
+
+
+<details>
+<summary>
+Aide pour la question 3
+</summary>
+
+La définition d'un pipeline 
+suit la structure suivante,
+
+```python
+numeric_pipeline = Pipeline(steps=[
+    ('impute', #definir la methode d'imputation ici
+     ),
+    ('scale', #definir la méthode de standardisation ici
+    )
+])
+
+categorical_pipeline = #adapter le template
+
+# a vous de définir en amont numerical_features et categorical_features
+preprocessor = ColumnTransformer(transformers=[
+    ('number', numeric_pipeline, numerical_features),
+    ('category', categorical_pipeline, categorical_features)
+])
+```
+
+</details>
+
 
 ```{=html}
 </div>
@@ -183,16 +289,7 @@ df2.replace([np.inf, -np.inf], np.nan, inplace=True)
 
 ```{python}
 #| output: false
-
-df2 = votes.loc[
-  :,
-  ~votes.columns.str.endswith(
-    ('_democrat','_green','_other', 'per_point_diff', 'per_dem')
-    )
-  ]
-df2 = df2.select_dtypes(include=np.number)
 df2.replace([np.inf, -np.inf], np.nan, inplace=True)
-df2 = df2.loc[:,~df2.columns.duplicated()]
 ```
 
 ```{python}
@@ -207,59 +304,84 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 
 ```{python}
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.compose import make_column_transformer, ColumnTransformer
 
-#3. Garder uniquement les variables numériques et standardiser.
-preprocessor_step1 = ColumnTransformer([
-  ('imputer', SimpleImputer(), X_train.columns.tolist())
-  ])
-preprocessor_step2 = ColumnTransformer([
-  ('scaler', StandardScaler(),  X_train.columns.tolist())
-  ])
-model = Lasso(fit_intercept=True, alpha = 0.1)  
-pipeline = Pipeline(
-    steps = [
-      ("Imputation", preprocessor_step1),
-      ("Standardisation", preprocessor_step2),
-      ('Regression LASSO', model)
-    ]
-)
-pipeline.fit(X_train, y_train)
+numerical_features = X_train.select_dtypes(include='number').columns.tolist()
+categorical_features = X_train.select_dtypes(exclude='number').columns.tolist()
 
-df2 = df2.fillna(0)
-features = df2[col_names]
-features = StandardScaler().fit(features.values).transform(features.values)
-df2[col_names] = features
-#df2.head()
+
+numeric_pipeline = Pipeline(steps=[
+    ('impute', SimpleImputer(strategy='mean')),
+    ('scale', StandardScaler())
+])
+
+categorical_pipeline = Pipeline(steps=[
+    ('impute', SimpleImputer(strategy='most_frequent')),
+    ('one-hot', OneHotEncoder(handle_unknown='ignore', sparse=False))
+])
+
+
+preprocessor = ColumnTransformer(transformers=[
+    ('number', numeric_pipeline, numerical_features),
+    ('category', categorical_pipeline, categorical_features)
+])
+```
+
+Le _pipeline_ de _preprocessing_ (question 3) prend la forme suivante:
+
+```{python}
+preprocessor
+```
+
+Le _pipeline_ prend la forme suivante, une
+fois finalisé (question 4):
+
+```{python}
+# Question 4
+model = Lasso(fit_intercept=True, alpha = 0.1)  
+
+lasso_pipeline = Pipeline(steps=[
+    ('preprocess', preprocessor),
+    ('model', model)
+])
+lasso_pipeline.fit(X_train, y_train)
+
+lasso_pipeline
 ```
 
 
-A l'issue de la question 3,
+A l'issue de la question 5,
 les variables sélectionnées sont :
 
 ```{python}
-
-#3. Estimer un modèle LASSO et afficher les valeurs des coefficients
-lasso1 = Lasso(fit_intercept=True, alpha = 0.1).fit(X_train, y_train)
-
+# Question 5
+lasso1 = lasso_pipeline['model']
+features_selec = extract_features_selected(lasso_pipeline)
+features_selec.str.replace("(number__|category__)", "", regex = True)
 #np.abs(lasso1.coef_)
-features_selec = df2.select_dtypes(include=np.number).drop("per_gop", axis = 1).columns[np.abs(lasso1.coef_)>0].tolist()
-features_selec
-# Le modèle est assez parcimonieux puisque 
-# un sous-échantillon de variables sont sélectionnées 
-
 ```
 
-Certaines variables font sens, comme les variables d'éducation par exemple. Notamment, un des meilleurs prédicteurs pour le score des Républicains en 2020 est... le score des Républicains (et mécaniquement des démocrates) en 2016.
+
+Le modèle est assez parcimonieux puisqu'un sous-échantillon de variables sont sélectionnées 
+
+```{python}
+features_selec.str.replace("(number__|category__)", "", regex = True)
+```
+
+Certaines variables font sens, comme les variables d'éducation par exemple. Notamment, un des meilleurs prédicteurs pour le score des Républicains en 2020 est... le score des Républicains (et mécaniquement des démocrates) en 2016 et 2012.
 
 Par ailleurs, on sélectionne des variables redondantes. Une phase plus approfondie de nettoyage des données serait en réalité nécessaire.
 
 
 ```{python}
 #4. Corrélations entre les variables sélectionnées
-corr = df2[features_selec].corr()
+
+features_selected = features_selec.loc[features_selec.str.startswith("number__")].str.replace("number__", "", regex = True)
+
+corr = df2.loc[: , features_selected].corr()
 
 plt.figure()
 p = corr.style.background_gradient(cmap='coolwarm', axis=None).format('{:.2f}')
@@ -270,41 +392,87 @@ p
 ```{python}
 #| output: false
 
-#5. Faire une régression linéaire parcimonieuse et non parcimonieuse
+from sklearn.metrics import mean_squared_error, r2_score
+
+def print_regression_metrics(y_true, y_pred, model_name=""):
+    """
+    Print RMSE and R^2 for regression analysis.
+
+    Parameters:
+    - y_true (array-like): The true target values.
+    - y_pred (array-like): The predicted target values.
+    - model_name (str): Name of the regression model. Default is an empty string.
+    """
+    rmse = mean_squared_error(y_true, y_pred, squared=False)
+    rsq = r2_score(y_true, y_pred)
+
+    print(f"{model_name} Regression:")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"R^2: {rsq:.4f}")
+    
+    return rmse, rsq
+
+
+# 5. Faire une régression linéaire parcimonieuse et non parcimonieuse
 
 ## Régression parcimonieuse
-y_pred_parci = lasso1.predict(X_test)
-rmse_parci = sklearn.metrics.mean_squared_error(y_test, y_pred_parci, squared = False)
-print("rmse_parci : ", rmse_parci)
-rsq_parci = sklearn.metrics.r2_score(y_test, y_pred_parci) 
-print("rsq_parci : ", rsq_parci)
+lasso_pipeline = Pipeline(steps=[
+    ('preprocess', ColumnTransformer(transformers=[
+        ('number', numeric_pipeline, numerical_features)
+    ])),
+    ('model', Lasso())
+])
+
+lasso_pipeline.fit(X_train, y_train)
+
+y_pred_parci = lasso_pipeline.predict(X_test)
+rmse_parci, rsq_parci = print_regression_metrics(
+  y_test, y_pred_parci,
+  "Régression parcimonieuse"
+) 
+
 
 ## Régression non parcimonieuse
-ols = LinearRegression().fit(X_train, y_train)
-y_pred_nonparci = ols.predict(X_test)
-rmse_nonparci = sklearn.metrics.mean_squared_error(y_test, y_pred_nonparci, squared = False)
-print("rmse_nonparci : ", rmse_nonparci)
-rsq_nonparci = sklearn.metrics.r2_score(y_test, y_pred_nonparci) 
-print("rsq_nonparci : ", rsq_nonparci)
+ols_pipeline = Pipeline(steps=[
+    ('preprocess', ColumnTransformer(transformers=[
+        ('number', numeric_pipeline, numerical_features)
+    ])),
+    ('scaler', StandardScaler()),  # Add scaling for LinearRegression
+    ('model', LinearRegression())
+])
 
-# Le modèle parcimonieux est (légèrement) plus performant. 
+ols_pipeline.fit(X_train, y_train)
 
+y_pred_nonparci = ols_pipeline.predict(X_test)
+
+rmse_parci, rsq_parci = print_regression_metrics(
+  y_test, y_pred_nonparci,
+  "Régression non parcimonieuse"
+) 
 ```
 
-```{python}
-#| output: false
-#| eval: false
 
-### Autres exemples Lino : 
+Le modèle parcimonieux est (légèrement) plus performant
+
+```{python}
+pd.DataFrame({
+  "parcimonieux": [rmse_parci, rsq_parci, len(features_selected)],
+  "non parcimonieux": [rmse_nonparci, rsq_nonparci, ols_pipeline[-1].coef_.shape[1] + 1]},
+  index = ['RMSE', 'R2', 'Nombre de paramètres']
+)
+```
+
+D'ailleurs, on pourrait déjà remarquer
+que régresser le score de 2020 sur celui
+de 2016 amène déjà à de très bonnes
+performances explicatives, ce qui suggère
+que le vote se comporte comme un processus
+autorégressif:
+
+```{python}
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-print(smf.ols("per_gop ~ share_2016_republican", data = df2).fit().summary())
-
-# Performance du modèle déjà bonne avec une variable explicative
-# Par la suite : se contenter de variables moins bonnes mais qui
-# présentent un intérêt pour la sélection
-df2 = votes.loc[:,~votes.columns.str.endswith(("_republican",'_democrat','_green','_other', 'per_point_diff', 'per_dem'))]
-df2 = df[[c for c in df.columns if c not in cols_to_exclude] + ['rep16_frac']]
+smf.ols("per_gop ~ share_2016_republican", data = df2).fit().summary()
 ```
 
 
@@ -314,10 +482,20 @@ df2 = df[[c for c in df.columns if c not in cols_to_exclude] + ['rep16_frac']]
 
 #6. Utilisation de lasso_path
 my_alphas = np.array([0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0])
-alpha_for_path, coefs_lasso, _ = lasso_path(X_train,y_train,alphas=my_alphas)
+
+preprocessed_features = pd.DataFrame(
+      numeric_pipeline.fit_transform(X_train.drop(columns = categorical_features))
+  )
+
+alpha_for_path, coefs_lasso, _ = lasso_path(
+  preprocessed_features,
+  y_train,
+  alphas=my_alphas)
 #print(coefs_lasso)
 nb_non_zero = np.apply_along_axis(func1d=np.count_nonzero,arr=coefs_lasso,axis=0)
-print(nb_non_zero)
+nb_non_zero = pd.DataFrame(
+  nb_non_zero
+).sum(axis = 0)
 
 ## graphique
 
@@ -354,15 +532,16 @@ prédire le résultat Républicain :
 #| output: false
 from sklearn.linear_model import LassoCV
 
-df3 = df2.select_dtypes(include=np.number)
-df3.replace([np.inf, -np.inf], np.nan, inplace=True)
-df3 = df3.fillna(0)
-scaler = StandardScaler()
-yindex = df3.columns.get_loc("per_gop")
-df3_scale = scaler.fit(df3).transform(df3)
-# X_train, X_test , y_train, y_test = train_test_split(np.delete(data, yindex, axis = 1),data[:,yindex], test_size=0.2, random_state=0)
-
-lcv = LassoCV(alphas=my_alphas, fit_intercept=False,random_state=0,cv=5).fit(np.delete(df3_scale, yindex, axis = 1), df3_scale[:,yindex])
+lcv = (
+  LassoCV(
+    alphas=my_alphas,
+    fit_intercept=False,
+    random_state=0,
+    cv=5
+    ).fit(
+      preprocessed_features, y_train
+    )
+)
 ```
 
 ```{python}
@@ -370,27 +549,35 @@ print("alpha optimal :", lcv.alpha_)
 ```
 
 ```{python}
-lasso2 = Lasso(fit_intercept=True, alpha = lcv.alpha_).fit(X_train,y_train)
-features_selec2 = df2.select_dtypes(include=np.number).drop("per_gop", axis = 1).columns[np.abs(lasso2.coef_)>0].tolist()
+model = Lasso(
+  fit_intercept=False, 
+  alpha = lcv.alpha_
+)  
+
+lasso_pipeline = Pipeline(steps=[
+    ('preprocess', preprocessor),
+    ('model', model)
+])
+
+
+lasso_optimal = lasso_pipeline.fit(X_train,y_train)
+
+features_selec2 = extract_features_selected(lasso_optimal)
 ```
 
 
 Les variables sélectionnées sont : 
 
 ```{python}
-print(features_selec2)
+features_selec2.str.replace("(number__|category__)", "", regex = True)
 ```
 
-
-```{python}
-df2.select_dtypes(include=np.number).drop("per_gop", axis = 1).columns[np.abs(lasso2.coef_)>0]
-nlasso = sum(np.abs(lasso2.coef_)>0)
-```
 
 ```{python}
 #| echo: false
 #| output: asis
-print("Cela correspond à un modèle avec {} variables sélectionnées.".format(int(nlasso)))
+n_var_selected = features_selec2.shape[0]
+print(f"Cela correspond à un modèle avec {n_var_selected} variables sélectionnées.")
 ```
 
 
