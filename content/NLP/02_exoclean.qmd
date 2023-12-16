@@ -26,20 +26,8 @@ image: featured_nlp_exo.png
 echo: false
 ---
 
-::: {.cell .markdown}
-```{python}
-#| echo: false
-#| output: 'asis'
-#| include: true
-#| eval: true
-
-import sys
-sys.path.insert(1, '../../') #insert the utils module
-from utils import print_badges
-
-#print_badges(__file__)
-print_badges("content/NLP/02_exoclean.qmd")
-```
+::: {.content-visible when-format="html"}
+{{< include "../../build/_printBadges.qmd" >}}
 :::
 
 
@@ -102,13 +90,12 @@ Illustration de l'intérêt des _embeddings_ [@galianafuzzy]
 
 Cette page évoquera les principales librairies pour faire du NLP, notamment : 
 
-* [WordCloud](https://github.com/amueller/word_cloud)
 * [NLTK](https://www.nltk.org/)
 * [SpaCy](https://spacy.io/)
-* [Keras](https://keras.io/)
-* [TensorFlow](https://www.tensorflow.org/)
 
-Il faudra également installer les librairies `Gensim` et `Pywaffle`
+A celles-ci s'ajoute des librairies de représentations graphiques
+synthétiques comme [WordCloud](https://github.com/amueller/word_cloud),
+`Gensim` et `Pywaffle`.
 
 ::: {.cell .markdown}
 ```{=html}
@@ -477,13 +464,22 @@ count_words = pd.DataFrame({'counter' : train
 count_words[['word','count']] = pd.DataFrame(count_words['counter'].tolist(),
 index=count_words.index)
 count_words = count_words.reset_index()
-g = sns.FacetGrid(count_words, row="Author")
-g.map_dataframe(sns.barplot, x="word", y="count")
 ```
 
+
 ```{python}
-g.figure.get_figure()
+import plotly.express as px
+
+def figure_count_occurrence(author):
+    fig = px.bar(
+        count_words.loc[count_words['Author'] == author],
+        x='word', y='count')
+    fig.show()
+
+for authors in train["Author"].unique():
+    figure_count_occurrence(authors)
 ```
+
 
 On voit ici que ce sont des mots communs, comme *"the"*, *"of"*, etc. sont très
 présents. Mais ils sont peu porteurs d'information, on peut donc les éliminer
@@ -562,15 +558,20 @@ Commençons par représenter la relation entre la fréquence et le rang:
 ```{python}
 #| output: false
 #| echo: true
-g = sns.lmplot(y = "freq", x = "rank", hue = 'Author', data = count_words, fit_reg = False)
-g.set(xscale="log", yscale="log")
-g
+from plotnine import *
+
+g = (
+    ggplot(count_words) +
+    geom_point(aes(y = "freq", x = "rank", color = 'Author'), alpha = 0.4) +
+    scale_x_log10() + scale_y_log10() +
+    theme_minimal()
+)
 ```
 
 Nous avons bien, graphiquement, une relation log-linéaire entre les deux :
 
 ```{python}
-g.figure.get_figure()
+g
 ```
 
 Avec `statsmodels`, vérifions plus formellement cette relation:
