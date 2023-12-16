@@ -60,6 +60,30 @@ modèles non parcimonieux. Par exemple, le BIC.
 * construire des modèles pour lesquels la statistique d'intérêt pénalise l'absence
 de parcimonie (ce que l'on va souhaiter faire ici). 
 
+Dans ce chapitre, nous allons présenter
+les enjeux principaux de la sélection
+de variables par le biais du LASSO.
+
+Nous allons utiliser par la suite les fonctions ou
+packages suivants :
+
+```{python}
+#| echo: true
+import numpy as np
+from sklearn.svm import LinearSVC
+from sklearn.feature_selection import SelectFromModel
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import Lasso
+import sklearn.metrics
+from sklearn.linear_model import LinearRegression
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+from sklearn.linear_model import lasso_path
+import seaborn as sns
+```
+
+
 ## Principe du LASSO
 
 ### Principe général
@@ -105,36 +129,6 @@ où $\lambda$ est une réécriture de la régularisation précédente qui dépen
 
 ### Première régression LASSO
 
-Avant de se lancer dans les exercices, on va éliminer quelques colonnes redondantes, 
-celles qui concernent les votes des partis concurrents (forcément très
-corrélées au vote Républicain...)  :
-
-```{python}
-#| echo: true
-df2 = votes.loc[:,~votes.columns.str.endswith(
-  ('_democrat','_green','_other', 'per_point_diff', 'per_dem')
-  )]
-```
-
-Nous allons utiliser par la suite les fonctions ou
-packages suivants :
-
-```{python}
-#| echo: true
-import numpy as np
-from sklearn.svm import LinearSVC
-from sklearn.feature_selection import SelectFromModel
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import Lasso
-import sklearn.metrics
-from sklearn.linear_model import LinearRegression
-import matplotlib.cm as cm
-import matplotlib.pyplot as plt
-from sklearn.linear_model import lasso_path
-import seaborn as sns
-```
-
 Comme nous cherchons à trouver les
 meilleurs prédicteurs du vote Républicain,
 nous allons retirer les variables
@@ -164,6 +158,9 @@ la voici
 
 ```{python}
 #| echo: true
+#| code-fold: true
+#| code-summary: Fonction pour récupérer les variables validées par l'étape de sélection
+
 from sklearn.linear_model import Lasso
 from sklearn.pipeline import Pipeline
 
@@ -237,8 +234,6 @@ directement accéder à cette étape en utilisant l'objet `pipeline['model']`
 5. Afficher les valeurs des coefficients. Quelles variables ont une valeur non nulle ?
 4. Montrer que les variables sélectionnées sont parfois très corrélées. 
 5. Comparer la performance de ce modèle parcimonieux avec celle d'un modèle avec plus de variables 
-6. Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
-varie (parcourir $\alpha \in [0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0]$ ). 
 
 <details>
 <summary>
@@ -365,7 +360,10 @@ features_selec.str.replace("(number__|category__)", "", regex = True)
 ```
 
 
-Le modèle est assez parcimonieux puisqu'un sous-échantillon de variables sont sélectionnées 
+Le modèle est assez parcimonieux puisqu'un sous-échantillon de nos
+variables initiales (d'autant que nos variables catégorielles
+ont été éclatées en de nombreuses variables
+par le _one hot encoding_):
 
 ```{python}
 features_selec.str.replace("(number__|category__)", "", regex = True)
@@ -377,6 +375,7 @@ Par ailleurs, on sélectionne des variables redondantes. Une phase plus approfon
 
 
 ```{python}
+#| output: false
 #4. Corrélations entre les variables sélectionnées
 
 features_selected = features_selec.loc[features_selec.str.startswith("number__")].str.replace("number__", "", regex = True)
@@ -452,9 +451,10 @@ rmse_nonparci, rsq_nonparci = print_regression_metrics(
 ```
 
 
-Le modèle parcimonieux est (légèrement) plus performant
+Le modèle parcimonieux est (légèrement) plus performant:
 
 ```{python}
+#| output: asis
 pd.DataFrame({
   "parcimonieux": [rmse_parci, rsq_parci, len(features_selected)],
   "non parcimonieux": [rmse_nonparci, rsq_nonparci, ols_pipeline[-1].coef_.shape[1] + 1]},
@@ -470,11 +470,52 @@ que le vote se comporte comme un processus
 autorégressif:
 
 ```{python}
+#| echo: true
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 smf.ols("per_gop ~ share_2016_republican", data = df2).fit().summary()
 ```
 
+## Rôle de la pénalisation $\alpha$ sur la sélection de variables
+
+Nous avons jusqu'à présent pris l'hyperparamètre $\alpha$
+comme donné. Quel rôle joue-t-il dans les conclusions de
+notre modélisation ? Pour cela, nous pouvons 
+explorer l'effet que sa valeur peut avoir sur le nombre
+de variables passant l'étape de sélection.  
+
+Pour le prochain
+exercice, nous allons considérer exclusivement
+les variables quantitatives pour accélérer les calculs. 
+En effet, avec des modèles non parcimonieux, les multiples
+modalités de nos variables catégorielles rendent le problème
+d'optimisation difficilement tractable. 
+
+```{python}
+#| echo: true
+preprocessed_features = pd.DataFrame(
+      numeric_pipeline.fit_transform(
+        X_train.drop(columns = categorical_features)
+      )
+  )
+```
+
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2 : Rôle du paramètre de pénalisation</h3>
+```
+
+Utiliser la fonction `lasso_path` pour évaluer le nombre de paramètres sélectionnés par LASSO lorsque $\alpha$
+varie (parcourir $\alpha \in [0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0]$ ). 
+
+
+```{=html}
+</div>
+```
+:::
 
 
 ```{python}
@@ -482,10 +523,6 @@ smf.ols("per_gop ~ share_2016_republican", data = df2).fit().summary()
 
 #6. Utilisation de lasso_path
 my_alphas = np.array([0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0])
-
-preprocessed_features = pd.DataFrame(
-      numeric_pipeline.fit_transform(X_train.drop(columns = categorical_features))
-  )
 
 alpha_for_path, coefs_lasso, _ = lasso_path(
   preprocessed_features,
@@ -505,13 +542,14 @@ p = sns.lineplot(y=nb_non_zero, x=alpha_for_path)
 p.set(title = r"Number variables and regularization parameter ($\alpha$)", xlabel=r'$\alpha$', ylabel='Nb. de variables')
 ```
 
+La relation que vous devriez obtenir entre $\alpha$ et 
+le nombre de paramètres est celle-ci:
+
 ```{python}
-#| echo: false
 p.figure.get_figure()
 ```
 
 On voit que plus $\alpha$ est élevé, moins le modèle sélectionne de variables.
-
 
 
 
@@ -544,11 +582,19 @@ lcv = (
 )
 ```
 
+On peut récupérer le _"meilleur"_ $\alpha$:
+
 ```{python}
+#| echo: true
 print("alpha optimal :", lcv.alpha_)
 ```
 
+Celui-ci peut être
+utilisé pour faire tourner un nouveau _pipeline_:
+
 ```{python}
+#| echo: true
+#| output: false
 model = Lasso(
   fit_intercept=False, 
   alpha = lcv.alpha_
@@ -565,11 +611,12 @@ lasso_optimal = lasso_pipeline.fit(X_train,y_train)
 features_selec2 = extract_features_selected(lasso_optimal)
 ```
 
-
 Les variables sélectionnées sont : 
 
 ```{python}
-features_selec2.str.replace("(number__|category__)", "", regex = True)
+pd.DataFrame(
+  features_selec2.str.replace("(number__|category__)", "", regex = True)
+)
 ```
 
 
