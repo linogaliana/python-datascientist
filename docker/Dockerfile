@@ -18,7 +18,7 @@ COPY requirements.sh .
 
 # Install graphviz
 RUN pip install -r requirements.txt && \
-    chmod +x requirements.sh &&
+    chmod +x requirements.sh && \
     /requirements.sh
 
 RUN pip freeze 
