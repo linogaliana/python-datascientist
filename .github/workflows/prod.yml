@@ -5,14 +5,47 @@ on:
     branches:
       - main
       - master
-      - light
-      - cloud
+      - docker
 
 jobs:
+  docker:
+    if: "!contains(github.event.commits[0].message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Set up QEMU
+        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
+        uses: docker/setup-qemu-action@v1
+      -
+        name: Set up Docker Buildx
+        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Login to DockerHub
+        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Build and push
+        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
+        id: docker_build
+        uses: docker/build-push-action@v2
+        env:
+          GITHUB_PAT: ${{ secrets.PAT }}
+        with:
+          file: "docker/Dockerfile"
+          push: true
+          tags: linogaliana/python-datascientist:master
+      -
+        name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}  
   pages:
     name: Render-Blog
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
+    needs: docker
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
       - uses: actions/checkout@v2
@@ -31,3 +64,61 @@ jobs:
           git config --global user.email quarto-github-actions-publish@example.com
           git config --global user.name "Quarto GHA Workflow Runner"
           quarto publish gh-pages . --no-render --no-browser
+  enonces:
+    name: Render notebooks
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    needs: docker
+    if: ${{ !github.event.pull_request.head.repo.fork }}    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Configure safe.directory  # Workaround for actions/checkout#760
+        run: |
+          git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+          git config --global --add safe.directory /__w/python-datascientist/python-datascientist-notebooks
+      - shell: bash
+        run: |
+          ls
+          conda info
+          conda list
+      - name: Convert in ipynb with Quarto
+        run: |
+         find content -type f -name "*.qmd" >> diff
+         cat diff
+         python build/tweak_render.py
+         python build/pimp_notebook.py
+         quarto render content --to ipynb
+         mkdir -p temp_notebooks
+         mkdir -p temp_notebooks/notebooks
+         python build/move_files.py temp_notebooks/notebooks
+         quarto render content --to ipynb --execute -M echo:true
+         mkdir -p temp_notebooks/corrections
+         python build/move_files.py temp_notebooks/corrections
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Source enonce
+          path: content/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Enonces
+          path: temp_notebooks/notebooks/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Enonces
+          path: temp_notebooks/corrections/
+      - name: Pushes to another repository
+        uses: linogaliana/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          source-directory: 'temp_notebooks/'
+          destination-repository-username: 'linogaliana'
+          destination-repository-name: 'python-datascientist-notebooks'
+          user-email: lino.galiana@insee.fr
+          destination-github-username: linogaliana
+          #target-branch: test
+          create-target-branch-if-needed: true
+          reset-repo: true
