@@ -16,29 +16,30 @@ local github_repo = "https://github.com/linogaliana/python-datascientist/commit"
 -- functions that are not themselves considered shortcodes 
 return {
     ["rev-history"] = function(args, kwargs)
-        -- An example for future use (taken from quarto docs)...
-        -- local cmdArgs = ""
-        -- local short = pandoc.utils.stringify(kwargs["short"])
-        -- if short == "true" then cmdArgs = cmdArgs .. "--short " end
-
-
-        local header =  "| tag | date | author | description |\n"
-        local divider = "|:----|:-----|:-------|:------------|\n"
-
+        local header = "<thead><tr>" ..
+            "<th>SHA</th>" ..
+            "<th>Date</th>" ..
+            "<th>Author</th>" .. 
+            "<th>Description</th>" ..
+            "</tr></thead>\n"
+        local divider = "<tbody>"
+        
         -- run the command
         local filename = quarto.doc.input_file
-        --local formatting = "[%h]($repo/%h)
-        local raw_cmd = "log --follow --pretty=format:\"| [%h]($repo/%h) | %ar | %an | %s | \" -- "
+        local raw_cmd = "log --follow --pretty=format:\"<tr><td>[%h]($repo/%h)</td><td>%ad</td><td>%an</td><td>%s</td></tr>\" --date=format:'%Y-%m-%d %H:%M:%S' -- "
         local raw_cmd_sub = string.gsub(raw_cmd, "$repo", github_repo)
         local cmd = raw_cmd_sub .. filename
-        --local cmd = "for-each-ref --format='| %(refname:short) | %(authordate:short) | %(authorname) | %(subject) |' refs/heads/master"
         local tags = git(cmd)
-
+        
         -- return as string
         if tags ~= nil then
             return pandoc.read(
-                "<details> \n <summary>View commit history for this file</summary> \n" ..
-                header .. divider .. tags .. "\n\n" .. "</details>"
+                "<div class=\"git-details\">\n <details> \n " ..
+                "<summary>View commit history for this file</summary> \n" ..
+                "<table class='commit-table' border='1'>" ..
+                header .. divider .. tags ..
+                "</tbody></table>\n\n" ..
+                "</details>\n</div>"
             ).blocks
         else
             return pandoc.Null()
