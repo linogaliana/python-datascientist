@@ -1,6 +1,6 @@
 import os
 import yaml
-from tweak_markdown import read_file
+from tweak_markdown import read_file, write_file
 
 def process_quarto_config(quarto_config_file):
     with open(quarto_config_file, 'r', encoding='utf-8') as yml_file:
@@ -20,8 +20,7 @@ def append_meta_to_file(filename):
         
     combined_content = '\n\n'.join(combined_content)
 
-    with open(filename, 'a', encoding='utf-8') as output:
-        output.write(combined_content)
+    write_file(filename, combined_content)
 
 
 list_qmd = process_quarto_config("_quarto.yml")
