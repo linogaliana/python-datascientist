@@ -34,12 +34,9 @@ return {
         -- return as string
         if tags ~= nil then
             return pandoc.read(
-                "<div class=\"git-details\">\n <details> \n " ..
-                "<summary>View commit history for this file</summary> \n" ..
                 "<table class='commit-table' border='1'>" ..
                 header .. divider .. tags ..
-                "</tbody></table>\n\n" ..
-                "</details>\n</div>"
+                "</tbody></table>\n\n"
             ).blocks
         else
             return pandoc.Null()

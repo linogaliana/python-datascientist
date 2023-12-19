@@ -17,8 +17,8 @@ return {
         -- return as string
         if piplist ~= nil and piplist ~= "" then
             return pandoc.read(
-                "<details> \n <summary>View <code>Python</code> environment this file has been tested on</summary> <div class = \"pip-freeze\">\n" ..
-                piplist .. "</div></details>"
+                "<div class = \"pip-freeze\">\n" ..
+                piplist .. "</div>"
             ).blocks
         else
             return "nothing returned"
