@@ -23,10 +23,10 @@ def append_meta_to_file(filename):
     with open(filename, 'a', encoding='utf-8') as output:
         output.write(combined_content)
 
-if not os.getenv("QUARTO_PROJECT_RENDER_ALL"):
-    exit()
-
 
 list_qmd = process_quarto_config("_quarto.yml")
 list_qmd = [l for l in list_qmd if l!= "index.qmd"]
-filename = list_qmd[0]
+
+if __name__ == "__main__":
+    for files in list_qmd:
+        append_meta_to_file(files)
