@@ -23,6 +23,7 @@ def append_meta_to_file(filename):
 
 list_qmd = process_quarto_config("_quarto.yml")
 list_qmd = [fileqmd for fileqmd in list_qmd if fileqmd != "index.qmd"]
+list_qmd = [fileqmd for fileqmd in list_qmd if fileqmd.startswith("_") is False]
 
 if __name__ == "__main__":
     for files in list_qmd:
