@@ -31,7 +31,7 @@ Dans ce tutoriel, nous allons utiliser les données suivantes :
 
 * [Localisations des stations velib](https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr) ;
 * [fonds de carte `AdminExpress`](https://geoservices.ign.fr/adminexpress) à
-travers un package `Python` nommé [`cartiflette`](https://github.com/InseeFrLab/cartogether)
+travers un package `Python` nommé [`cartiflette`](https://github.com/InseeFrLab/cartiflette)
 facilitant la récupération de cette source. 
 
 La représentation des données, notamment la cartographie, est présentée plus
@@ -399,7 +399,7 @@ celles de l'IGN, et leur association à des jeux de données géographiques.
 
 Le package `cartiflette` est expérimental 
 et n'est disponible que sur
-[`Github`](https://github.com/InseeFrLab/cartogether), pas sur `PyPi`.
+[`Github`](https://github.com/InseeFrLab/cartiflette), pas sur `PyPi`.
 Il est amené à évoluer rapidement et cette page sera mise à jour
 quand de nouvelles fonctionalités (notamment l'utilisation d'`API`)
 seront disponibles pour encore simplifier la récupération de
@@ -412,7 +412,7 @@ vous pouvez retirer les `!` en début de ligne):
 ```{python}
 #| eval: false
 !pip install requests py7zr geopandas openpyxl tqdm s3fs PyYAML xlrd
-!pip install git+https://github.com/inseefrlab/cartiflette@80b8a5a28371feb6df31d55bcc2617948a5f9b1a
+!pip install git+https://github.com/inseefrlab/cartiflette
 ```
 
 Ces commandes permettent de récupérer l'ensemble du code 
@@ -442,13 +442,13 @@ Les contours de cet espace peuvent être récupérés de la manière suivante :
 
 ```{python}
 #| output: false
-import cartiflette.s3 as s3
+from cartiflette.public import download_from_cartiflette
 
-shp_communes = s3.download_vectorfile_url_all(
+shp_communes = download_from_cartiflette(
     crs = 4326,
     values = ["75", "92", "93", "94"],
     borders="COMMUNE_ARRONDISSEMENT",
-    vectorfile_format="topojson",
+    vectorfile_format="geojson",
     filter_by="DEPARTEMENT",
     source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
@@ -495,19 +495,18 @@ ax.set_axis_off()
 
 Si on ne désire pas utiliser le niveau `COMMUNE_ARRONDISSEMENT`,
 il est nécessaire de mettre en oeuvre une construction du fond de
-carte en plusieurs phases.
+carte en plusieurs phases. C'est une opération un petit peu pénible, source d'erreur potentielle. Elle est illustrée ci-dessous mais il est donc recommandé de privilégier le niveau
+`COMMUNE_ARRONDISSEMENT` qui a été construit pour cela. 
 
 En premier lieu, il est nécessaire de récupérer le niveau des communes. 
 
 ```{python}
 #| output: false
-import cartiflette.s3 as s3
-
-shp_communes = s3.download_vectorfile_url_all(
+shp_communes = download_from_cartiflette(
     crs = 4326,
     values = ["75", "92", "93", "94"],
     borders="COMMUNE",
-    vectorfile_format="topojson",
+    vectorfile_format="geojson",
     filter_by="DEPARTEMENT",
     source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
@@ -539,11 +538,11 @@ disponibles
 grâce à `cartiflette`:
 
 ```{python}
-arrondissements = s3.download_vectorfile_url_all(
+arrondissements = download_from_cartiflette(
     crs = 4326,
     values = ["75"],
     borders="COMMUNE_ARRONDISSEMENT",
-    vectorfile_format="topojson",
+    vectorfile_format="geojson",
     filter_by="DEPARTEMENT",
     source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
@@ -784,14 +783,15 @@ contours des communes:
 
 ```{python}
 #| output: false
-dep = s3.download_vectorfile_url_all(
-    values = "metropole",
+dep = download_from_cartiflette(
+    values = ["France"],
     crs = 4326,
     borders = "DEPARTEMENT",
-    vectorfile_format="topojson",
+    vectorfile_format="geojson",
     filter_by="FRANCE_ENTIERE",
     source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
+dep = dep.loc[dep["INSEE_DEP"].str.len() == 2]
 
 dep["area"] = dep.to_crs(2154).area
 ```
@@ -868,11 +868,11 @@ Haute-Garonne (31), après avoir téléchargé le fonds de carte adapté,
 fera
 
 ```{python}
-communes_31 = s3.download_vectorfile_url_all(
+communes_31 = download_from_cartiflette(
+      values = ["31"],
       crs = 4326,
-      values = "31",
       borders="COMMUNE",
-      vectorfile_format="topojson",
+      vectorfile_format="geojson",
       filter_by="DEPARTEMENT",
       source="EXPRESS-COG-CARTO-TERRITOIRE",
       year=2022)
@@ -939,15 +939,15 @@ communes = communes.set_crs(2154)
 Alors que la reprojection (projection Albers : `5070`) s'obtient de la manière suivante :
 
 ```{python}
-shp_region = s3.download_vectorfile_url_all(
-    values = "metropole",
+shp_region = download_from_cartiflette(
+    values = ["France"],
     crs = 4326,
     borders = "REGION",
-    vectorfile_format="topojson",
+    vectorfile_format="geojson",
     filter_by="FRANCE_ENTIERE",
     source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
-    
+shp_region = shp_region.loc[shp_region['INSEE_REG']>10]
 fig,ax = plt.subplots(figsize=(10, 10))
 shp_region.to_crs(5070).plot(ax = ax)
 ax
