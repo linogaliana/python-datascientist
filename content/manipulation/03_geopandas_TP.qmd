@@ -93,7 +93,7 @@ vous pouvez retirer les `!` en début de ligne):
 ```{python}
 #| eval: false
 !pip install requests py7zr geopandas openpyxl tqdm s3fs PyYAML xlrd
-!pip install git+https://github.com/inseefrlab/cartiflette@80b8a5a28371feb6df31d55bcc2617948a5f9b1a
+!pip install git+https://github.com/inseefrlab/cartiflette
 ```
 
 Ces commandes permettent de récupérer l'ensemble du code 
@@ -143,13 +143,13 @@ précédent.
 #| echo: true
 #| output: false
 !pip install requests py7zr geopandas openpyxl tqdm s3fs PyYAML xlrd
-!pip install git+https://github.com/inseefrlab/cartiflette@80b8a5a28371feb6df31d55bcc2617948a5f9b1a
+!pip install git+https://github.com/inseefrlab/cartiflette
 ```
 
 ```{python}
 #| echo: true
 #| output: false
-from cartiflette.s3 import download_vectorfile_url_all
+from cartiflette.public import download_from_cartiflette
 ```
 
 
@@ -188,11 +188,11 @@ de manière simplifiée grâce au _package_
 ```{python}
 #| echo: true
 #| output: false
-communes_borders = download_vectorfile_url_all(
+communes_borders = download_from_cartiflette(
     crs = 4326,
     values = ["75", "92", "93", "94"],
     borders="COMMUNE",
-    vectorfile_format="topojson",
+    vectorfile_format="geojson",
     filter_by="DEPARTEMENT",
     source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
@@ -235,11 +235,11 @@ Convertir en Lambert 93.
 #| output: false
 
 # 1. Chargement des données de Cartiflette
-communes_borders = download_vectorfile_url_all(
+communes_borders = download_from_cartiflette(
     crs = 4326,
     values = ["75", "92", "93", "94"],
     borders="COMMUNE",
-    vectorfile_format="topojson",
+    vectorfile_format="geojson",
     filter_by="DEPARTEMENT",
     source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
@@ -285,11 +285,11 @@ ax.set_axis_off()
 #| output: false
 
 # 6. Chargement des données de Cartiflette
-petite_couronne = download_vectorfile_url_all(
+petite_couronne = download_from_cartiflette(
     crs = 4326,
     values = ["75", "92", "93", "94"],
     borders="COMMUNE_ARRONDISSEMENT",
-    vectorfile_format="topojson",
+    vectorfile_format="geojson",
     filter_by="DEPARTEMENT",
     source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
@@ -337,14 +337,16 @@ pour récupérer les frontières françaises (découpées par région):
 ```{python}
 #| output: false
 #| echo: true
-france = download_vectorfile_url_all(
-      values = "metropole",
+france = download_from_cartiflette(
+      values = ["France"],
       crs = 4326,
       borders = "REGION",
-      vectorfile_format="topojson",
+      vectorfile_format="geojson",
+      simplification=50,
       filter_by="FRANCE_ENTIERE",
       source="EXPRESS-COG-CARTO-TERRITOIRE",
       year=2022)
+france = france.loc[france['INSEE_REG']>10]
 ```
 
 1. S'amuser à représenter les limites de la France avec plusieurs projections:
@@ -365,17 +367,6 @@ pour chaque région.
 ```
 :::
 
-```{python}
-#| output: false
-france = download_vectorfile_url_all(
-      values = "metropole",
-      crs = 4326,
-      borders = "REGION",
-      vectorfile_format="topojson",
-      filter_by="FRANCE_ENTIERE",
-      source="EXPRESS-COG-CARTO-TERRITOIRE",
-      year=2022)
-```
 
 ```{python}
 #| output: false
@@ -531,16 +522,19 @@ le fonds de carte des départements de la petite couronne:
 ```{python}
 #| echo: true
 #| output: false
-idf = download_vectorfile_url_all(
-      values = "11",
+idf = download_from_cartiflette(
+      values = ["11"],
       crs = 4326,
       borders = "DEPARTEMENT",
-      vectorfile_format="topojson",
+      vectorfile_format="geojson",
       filter_by="REGION",
       source="EXPRESS-COG-CARTO-TERRITOIRE",
       year=2022)
 
-petite_couronne_departements = idf.loc[idf['INSEE_DEP'].isin(["75","92","93","94"])].to_crs(2154)
+petite_couronne_departements = (idf
+  .loc[idf['INSEE_DEP'].isin(["75","92","93","94"])]
+  .to_crs(2154)
+)
 ```
 
 ::: {.cell .markdown}
