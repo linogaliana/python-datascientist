@@ -1015,6 +1015,14 @@ for variable in ['empreinte', 'revenu', 'population']:
         lambda x: create_bar(x, max_width=75, height=20, color = colors[variable])
     )
 
+emissions_min = emissions_table.head(5).assign(grp = "5 départements les moins pollueurs").reset_index(drop=True)
+emissions_max = emissions_table.tail(5).assign(grp = "5 départements les plus pollueurs").reset_index(drop=True)
+
+emissions_table = pd.concat([
+    emissions_min,
+    emissions_max
+])
+
 emissions_table = pl.from_pandas(emissions_table)
 ```
 
@@ -1023,12 +1031,12 @@ from great_tables import GT, md
 import polars.selectors as cs
 
 (
-    GT(emissions_table)
-    .tab_header(title=md("**Empreinte carbone**"), subtitle = "Premières statistiques à affiner")
+    GT(emissions_table, groupname_col="grp", rowname_col="dep")
+    .tab_header(title=md("**Empreinte carbone**"), subtitle = md("_Premières statistiques à affiner_"))
     .fmt_number("empreinte", decimals = 2, scale_by=0.1)
     .fmt_number("population", compact=True)
-    .fmt_integer("revenu", scale_by = 1/1000)
-    .fmt_percent(cs.starts_with("raw_perc"), decimals = 2)
+    .fmt_number("revenu", compact=True, decimals = 1)
+    .fmt_percent(cs.starts_with("raw_perc"), decimals = 1)
     .cols_move(
         columns=cs.ends_with("_empreinte"),
         after="empreinte"
@@ -1045,14 +1053,35 @@ import polars.selectors as cs
         dep=md("**Département**"),
         empreinte = md("**Empreinte carbone**"),
         revenu = md("**Revenu**"),
-        population = md("**Population**")
+        population = md("**Population**"),
     )
-    .tab_spanner(label="Empreinte", columns=cs.ends_with("empreinte"))
-    .tab_spanner(label="Revenu médian", columns=cs.ends_with("revenu"))
-    .tab_spanner(label="Population", columns=cs.ends_with("population"))
+    .cols_label(
+        **{
+            val: md("_(%)_*") for val in emissions_table.select(cs.contains("raw_perc")).columns
+         }
+    )    
+    .cols_label(
+        **{
+            val: "" for val in emissions_table.select(cs.contains("bar")).columns
+         }
+    )    
+    .tab_spanner(label=md("**Empreinte**"), columns=cs.ends_with("empreinte"))
+    .tab_spanner(label=md("**Revenu médian**"), columns=cs.ends_with("revenu"))
+    .tab_spanner(label=md("**Population**"), columns=cs.ends_with("population"))
     .tab_source_note(
-        source_note=md("*Source: Données de l'Ademe*")
+        source_note=md("*__Source__: Calculs à partir des données de l'Ademe*")
     )
+    .tab_source_note(
+        source_note=md("_*__Note__: Le revenu médian présenté ici est une approximation du revenu médian du département_")
+    )
+    .tab_source_note(
+        source_note=md("*__Lecture__: Les colonnes __(%)__ présentées ci-dessus sont rapportées à la valeur maximale de la variable*")
+    )
+    .tab_options(
+        heading_background_color="#0c540c"
+    )
+    .tab_options(table_body_border_bottom_color="#0c540c")
+
 )
 ```
 
