@@ -63,6 +63,7 @@ il est nécessaire de l'installer :
 #| echo: true
 !pip install xlrd
 !pip install pynsee
+!pip install great_tables
 ```
 
 Toutes les dépendances indispensables étant installées, il suffit
@@ -90,6 +91,7 @@ Pour préparer cet exercice, le code suivant permettra de
 télécharger des données qu'on va écrire en local
 
 ```{python}
+#| echo: true
 import requests
 
 url = "https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv"
@@ -108,10 +110,10 @@ else:
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice préliminaire: Importer un CSV</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice préliminaire: Importer un CSV< (optionnel)/h3>
 ```
 
-1. Utiliser le code ci-dessus pour télécharger les données. Utiliser `Pandas` pour lire le fichier téléchargé.
+1. Utiliser le code ci-dessus ☝️ pour télécharger les données. Utiliser `Pandas` pour lire le fichier téléchargé.
 2. Chercher où les données ont été écrites. Observer la structure de ce dossier. 
 3. Créer un dossier depuis l'explorateur de fichiers (à gauche dans `Jupyter` ou `VSCode`). Déplacer le CSV et le _notebook_. Redémarrer le kernel et adaptez votre code si besoin. Refaire cette manipulation plusieurs fois avec des dossiers différents. Quel peut être le problème rencontré ?
 
@@ -127,6 +129,7 @@ cog.head(2)
 ```
 
 ```{python}
+#| output: false
 import os
 os.getcwd()
 os.listdir()
@@ -978,6 +981,80 @@ correlation['empreinte'].nlargest(10)
 correlation.set_index("index")['empreinte'].plot(kind = "barh")
 ```
 
+## Formatter des tableaux de statistiques descriptives
+
+```{python}
+emissions_table = (
+    emissions_merged
+    .rename(columns={"dep_y": "dep", "NBPERSMENFISC16": "population", "MED16": "revenu"})
+    .groupby("dep")
+    .agg({"empreinte": "sum", "revenu": "median", "population": "sum"}) #pas vraiment le revenu médian
+    .reset_index()
+    .sort_values(by = "empreinte")
+)
+```
+
+```{python}
+import polars as pl
+
+def create_bar(prop_fill: float, max_width: int, height: int, color: str = "green") -> str:
+    """Create divs to represent prop_fill as a bar."""
+    width = round(max_width * prop_fill, 2)
+    px_width = f"{width}px"
+    return f"""\
+    <div style="width: {max_width}px; background-color: lightgrey;">\
+        <div style="height:{height}px;width:{px_width};background-color:{color};"></div>\
+    </div>\
+    """
+
+colors = {'empreinte': "green", 'revenu': "red", 'population': "blue"}
+
+for variable in ['empreinte', 'revenu', 'population']:
+    emissions_table[f'raw_perc_{variable}'] = emissions_table[variable]/emissions_table[variable].max()
+    emissions_table[f'bar_{variable}'] = emissions_table[f'raw_perc_{variable}'].map(
+        lambda x: create_bar(x, max_width=75, height=20, color = colors[variable])
+    )
+
+emissions_table = pl.from_pandas(emissions_table)
+```
+
+```{python}
+from great_tables import GT, md
+import polars.selectors as cs
+
+(
+    GT(emissions_table)
+    .tab_header(title=md("**Empreinte carbone**"), subtitle = "Premières statistiques à affiner")
+    .fmt_number("empreinte", decimals = 2, scale_by=0.1)
+    .fmt_number("population", compact=True)
+    .fmt_integer("revenu", scale_by = 1/1000)
+    .fmt_percent(cs.starts_with("raw_perc"), decimals = 2)
+    .cols_move(
+        columns=cs.ends_with("_empreinte"),
+        after="empreinte"
+    )
+    .cols_move(
+        columns=cs.ends_with("_population"),
+        after="population"
+    )
+    .cols_move(
+        columns=cs.ends_with("_revenu"),
+        after="revenu"
+    )
+    .cols_label(
+        dep=md("**Département**"),
+        empreinte = md("**Empreinte carbone**"),
+        revenu = md("**Revenu**"),
+        population = md("**Population**")
+    )
+    .tab_spanner(label="Empreinte", columns=cs.ends_with("empreinte"))
+    .tab_spanner(label="Revenu médian", columns=cs.ends_with("revenu"))
+    .tab_spanner(label="Population", columns=cs.ends_with("population"))
+    .tab_source_note(
+        source_note=md("*Source: Données de l'Ademe*")
+    )
+)
+```
 
 ## Exercices bonus
 
