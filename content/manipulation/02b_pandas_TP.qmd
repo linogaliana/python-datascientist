@@ -63,6 +63,7 @@ il est nécessaire de l'installer :
 #| echo: true
 !pip install xlrd
 !pip install pynsee
+!pip install great_tables
 ```
 
 Toutes les dépendances indispensables étant installées, il suffit
@@ -90,6 +91,7 @@ Pour préparer cet exercice, le code suivant permettra de
 télécharger des données qu'on va écrire en local
 
 ```{python}
+#| echo: true
 import requests
 
 url = "https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv"
@@ -108,10 +110,10 @@ else:
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice préliminaire: Importer un CSV</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice préliminaire: Importer un CSV< (optionnel)/h3>
 ```
 
-1. Utiliser le code ci-dessus pour télécharger les données. Utiliser `Pandas` pour lire le fichier téléchargé.
+1. Utiliser le code ci-dessus ☝️ pour télécharger les données. Utiliser `Pandas` pour lire le fichier téléchargé.
 2. Chercher où les données ont été écrites. Observer la structure de ce dossier. 
 3. Créer un dossier depuis l'explorateur de fichiers (à gauche dans `Jupyter` ou `VSCode`). Déplacer le CSV et le _notebook_. Redémarrer le kernel et adaptez votre code si besoin. Refaire cette manipulation plusieurs fois avec des dossiers différents. Quel peut être le problème rencontré ?
 
@@ -127,6 +129,7 @@ cog.head(2)
 ```
 
 ```{python}
+#| output: false
 import os
 os.getcwd()
 os.listdir()
@@ -978,6 +981,198 @@ correlation['empreinte'].nlargest(10)
 correlation.set_index("index")['empreinte'].plot(kind = "barh")
 ```
 
+## Formatter des tableaux de statistiques descriptives
+
+De manière automatique un _dataframe_ `Pandas`
+est mis en forme lorsqu'il est visualisé depuis un _notebook_.
+Cette mise en forme est pratique pour voir
+les données, une tâche indispensable pour les _data scientists_
+mais ne permet pas d'aller vraiment au-delà. Dans une phase
+exploratoire, il peut être pratique d'avoir un tableau
+un peu plus complet, intégrant notamment des visualisations
+minimalistes, pour mieux connaître ses données. Dans la phase
+finale d'un projet, lorsqu'on communique sur un projet, il 
+est avantageux de disposer d'une visualisation attrative. 
+Pour ces deux besoins, les sorties des _notebooks_ sont
+une réponse peu satisfaisante, en plus de nécessiter
+le _medium_ du _notebook_ qui peut en rebuter certains. 
+
+Heureusement, le tout jeune _package_ [`great_tables`](https://posit-dev.github.io/great-tables/get-started/) permet, de manière programmatique
+et assez simple, la création de tableaux
+qui n'ont rien à envier à des productions manuelles faites dans `Excel`
+et difficilement répliquables. `great_tables` construit des tableaux
+_html_ ce qui offre une grande richesse dans la mise en forme. 
+L'exercice suivant proposera de construire un tableau avec
+ce _package_, pas à pas. 
+
+Afin de se concentrer sur la construction du tableau, 
+les préparations de données à faire en amont sont données
+directement. Nous allons repartir de ce jeu de données:
+
+```{python}
+#| echo: true
+emissions_merged.head(3)
+```
+
+Nous allons construire un tableau de statistiques
+descriptives par département mettant en parallèle
+l'empreinte carbone, le revenu médian et la population
+de chaque département
+
+```{python}
+#| echo: true
+emissions_table = (
+    emissions_merged
+    .rename(columns={"dep_y": "dep", "NBPERSMENFISC16": "population", "MED16": "revenu"})
+    .groupby("dep")
+    .agg({"empreinte": "sum", "revenu": "median", "population": "sum"}) #pas vraiment le revenu médian
+    .reset_index()
+    .sort_values(by = "empreinte")
+)
+```
+
+Dans ce tableau nous allons intégrer des barres horizontales,
+à la manière des exemples présentés [ici](https://posit-dev.github.io/great-tables/examples/). Cela se fait en incluant directement
+le code _html_ dans la colonne du _DataFrame_
+
+```{python}
+#| echo: true
+def create_bar(prop_fill: float, max_width: int, height: int, color: str = "green") -> str:
+    """Create divs to represent prop_fill as a bar."""
+    width = round(max_width * prop_fill, 2)
+    px_width = f"{width}px"
+    return f"""\
+    <div style="width: {max_width}px; background-color: lightgrey;">\
+        <div style="height:{height}px;width:{px_width};background-color:{color};"></div>\
+    </div>\
+    """
+
+colors = {'empreinte': "green", 'revenu': "red", 'population': "blue"}
+
+for variable in ['empreinte', 'revenu', 'population']:
+    emissions_table[f'raw_perc_{variable}'] = emissions_table[variable]/emissions_table[variable].max()
+    emissions_table[f'bar_{variable}'] = emissions_table[f'raw_perc_{variable}'].map(
+        lambda x: create_bar(x, max_width=75, height=20, color = colors[variable])
+    )
+```
+
+Nous ne gardons que les 5 plus petites empreintes carbone, et les 
+cinq plus importantes. 
+```{python}
+#| echo: true
+emissions_min = emissions_table.head(5).assign(grp = "5 départements les moins pollueurs").reset_index(drop=True)
+emissions_max = emissions_table.tail(5).assign(grp = "5 départements les plus pollueurs").reset_index(drop=True)
+
+emissions_table = pd.concat([
+    emissions_min,
+    emissions_max
+])
+```
+
+Enfin, pour pouvoir utiliser quelques fonctions
+pratiques pour sélectionner des colonnes à partir
+de motifs, nous allons convertir les données
+au format [`Polars`](https://pola.rs/)
+
+```{python}
+#| echo: true
+import polars as pl
+emissions_table = pl.from_pandas(emissions_table)
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 8: Un beau tableau de statistiques descriptives (exercice libre)</h3>
+```
+
+En prenant comme base ce tableau
+
+```python
+GT(emissions_table, groupname_col="grp", rowname_col="dep")
+```
+
+construire un tableau dans le style de celui ci-dessous
+
+
+```{=html}
+</div>
+```
+:::
+
+Le tableau à obtenir:
+```{python}
+from great_tables import GT, md
+import polars.selectors as cs
+
+(
+    GT(emissions_table, groupname_col="grp", rowname_col="dep")
+    .tab_header(title=md("**Empreinte carbone**"), subtitle = md("_Premières statistiques descriptives à affiner_"))
+    .fmt_number("empreinte", decimals = 2, scale_by=0.1)
+    .fmt_number("population", compact=True)
+    .fmt_number("revenu", compact=True, decimals = 1)
+    .fmt_percent(cs.starts_with("raw_perc"), decimals = 1)
+    .cols_move(
+        columns=cs.ends_with("_empreinte"),
+        after="empreinte"
+    )
+    .cols_move(
+        columns=cs.ends_with("_population"),
+        after="population"
+    )
+    .cols_move(
+        columns=cs.ends_with("_revenu"),
+        after="revenu"
+    )
+    .cols_label(
+        dep=md("**Département**"),
+        empreinte = md("**Empreinte carbone**"),
+        revenu = md("**Revenu**"),
+        population = md("**Population**"),
+    )
+    .cols_label(
+        **{
+            val: md("_(%)_*") for val in emissions_table.select(cs.contains("raw_perc")).columns
+         }
+    )    
+    .cols_label(
+        **{
+            val: "" for val in emissions_table.select(cs.contains("bar")).columns
+         }
+    )    
+    .tab_spanner(label=md("**Empreinte**"), columns=cs.ends_with("empreinte"))
+    .tab_spanner(label=md("**Revenu médian**"), columns=cs.ends_with("revenu"))
+    .tab_spanner(label=md("**Population**"), columns=cs.ends_with("population"))
+    .tab_source_note(
+        source_note=md("_*__Note__: Le revenu médian présenté ici est une approximation du revenu médian du département_.")
+    )
+    .tab_source_note(
+        source_note=md("*__Lecture__: Les colonnes __(%)__ présentées ci-dessus sont rapportées à la valeur maximale de la variable*")
+    )
+    .tab_source_note(
+        source_note=md("*__Source__: Calculs à partir des données de l'Ademe*")
+    )
+    .tab_options(
+        heading_background_color="#0c540c"
+    )
+
+)
+```
+
+Grâce à celui-ci, on peut déjà comprendre que notre définition
+de l'empreinte carbone est certainement défaillante. Il apparaît
+peu plausible que les habitants du 77 aient une empreinte 500 fois
+supérieure à celle de Paris intra-muros. La raison principale ? 
+On n'est pas sur un concept d'émissions à la consommation mais à la
+production, ce qui pénalise les espaces industriels ou les espaces
+avec des aéroports...
+
+Pour aller plus loin sur la construction de tableaux
+avec `great_tables`, vous pouvez répliquer 
+cet [exercice](https://rgeo.linogaliana.fr/exercises/eval.html)
+de production de tableaux électoraux
+que j'ai proposé pour un cours de `R` avec `gt`, l'équivalent
+de `great_tables` pour `R`.
 
 ## Exercices bonus
 
