@@ -14,6 +14,7 @@
 [![DOI](https://zenodo.org/badge/280161677.svg)](https://zenodo.org/badge/latestdoi/280161677)
 
 
+<img src="/content/gif_python.gif" width="250" />
 
 Ce dépôt `Github` <img height="18" width="18" src="https://cdn.simpleicons.org/github/00ccff99" />
 stocke les fichiers sources ayant permis de construire le site
