@@ -527,7 +527,7 @@ un fichier, nommé le `.gitignore`, suffit pour créer quelques règles
 :::
 
 
-# Principales manipulations de données
+# Explorer la structure d'un _DataFrame_
 
 `Pandas` propose donc un schéma de données assez familier aux utilisateurs
 de logiciels statistiques comme `R`. A l'instar des
@@ -558,6 +558,7 @@ des données de l'Ademe auquel les exercices précédents
 étaient dédiés. 
 
 ```{python}
+#| echo: true
 df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
 df
 ```
@@ -570,14 +571,17 @@ Les premières méthodes utiles permettent d'afficher quelques
 attributs d'un `DataFrame`.
 
 ```{python}
+#| echo: true
 df.axes
 ```
 
 ```{python}
+#| echo: true
 df.columns
 ```
 
 ```{python}
+#| echo: true
 df.index
 ```
 
@@ -585,14 +589,17 @@ Pour connaître les dimensions d'un DataFrame, on peut utiliser quelques méthod
 pratiques :
 
 ```{python}
+#| echo: true
 df.ndim
 ```
 
 ```{python}
+#| echo: true
 df.shape
 ```
 
 ```{python}
+#| echo: true
 df.size
 ```
 
@@ -601,6 +608,7 @@ on utilise la
 méthode `nunique`. Par exemple,
 
 ```{python}
+#| echo: true
 df['Commune'].nunique()
 ```
 
@@ -651,7 +659,7 @@ forme des indices de lignes ou colonnes utilisées :
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-danger" role="alert">
-<i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
 ```
 
 Les bouts de code utilisant la structure `df.ix`
@@ -707,10 +715,7 @@ des opérations mises en oeuvre.
 
 L'opération la plus classique consiste à ajouter ou retirer des variables à la table de données.
 La manière la plus simple d'opérer pour ajouter des colonnes est
-d'utiliser la réassignation. Par exemple, pour créer une variable `dep` qui correspond aux deux premiers numéros du code commune (code Insee), 
-
-`x` qui est le `log` de la
-variable `Agriculture`:
+d'utiliser la réassignation. Par exemple, pour créer une variable `dep` qui correspond aux deux premiers numéros du code commune (code Insee), il suffit de prendre la variable et lui appliquer le traitement adapté (en l'occurrence ne garder que ses deux premières caractères):
 
 ```{python}
 #| echo: true
@@ -740,7 +745,7 @@ La requête équivalente en SQL serait assez fastidieuse à écrire. Sur ce genr
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-danger" role="alert">
-<i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
 ```
 
 Cela est possible grâce à la vectorisation native des opérations de `Numpy` et à la magie `Pandas` qui réarrange tout ceci. Ce n'est pas utilisable avec n'importe quelle fonction. Pour d'autres fonctions, il faudra utiliser `assign`, généralement par le biais de _lambda functions_, des fonctions temporaires faisant office de passe plat. Par exemple, pour créer une variable selon cette approche, il faudrait faire:
@@ -779,20 +784,23 @@ df = df.drop(columns = ["eneg", "agr"])
 
 ## Réordonner les lignes
 
-La méthode `sort_values` permet de réordonner un `DataFrame`. Par exemple,
+La méthode `sort_values` permet de réordonner les observations d'un `DataFrame`, en laissant l'ordre des colonnes identiques. 
+
+Par exemple,
 si on désire classer par ordre décroissant de consommation de CO2 du secteur
 résidentiel, on fera
 
 ```{python}
 #| echo: true
 df = df.sort_values("Résidentiel", ascending = False)
+df.head(3)
 ```
 
 Ainsi, en une ligne de code, on identifie les villes où le secteur
 résidentiel consomme le plus. En SQL on ferait
 
 ```sql
-SELECT * FROM df ORDER BY "Résidentiel"
+SELECT * FROM df ORDER BY DESC "Résidentiel"
 ```
 
 ## Filter
@@ -839,7 +847,7 @@ Pour repartir de la source brute, recréeons notre jeu de données pour les exem
 ```{python}
 #| echo: true
 df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
-df
+df.head(3)
 ```
 
 
@@ -871,15 +879,26 @@ df['Commune'].count()
 df['Commune'].nunique()
 ```
 
-En SQL, la première instruction serait `SELECT COUNT(Commune) FROM df`, la seconde `SELECT COUNT DISTINCT Commune FROM df`
+En SQL, la première instruction serait `SELECT COUNT(Commune) FROM df`, la seconde `SELECT COUNT DISTINCT Commune FROM df`.
+Ici, cela ne permet donc de comprendre qu'il peut y avoir des doublons dans la colonne `Commune`, ce dont il faudra tenir compte si on désire identifier nos communes de manière unique (ce sera un sujet lorsque le prochain chapitre abordera la question du croisement des données).
 
-La cohérence de la syntaxe `Pandas` permet de faire cela pour plusieurs colonnes de manière simultanée. En SQL cela serait possible mais commence à devenir assez verbeux:
+La cohérence de la syntaxe `Pandas` permet de faire cela pour plusieurs colonnes de manière simultanée. En SQL cela serait possible mais le code à mettre en oeuvre commence à devenir assez verbeux:
 
 ```{python}
 #| echo: true
 df.loc[:, ['Commune', 'INSEE commune']].count()
+```
+
+```{python}
 df.loc[:, ['Commune', 'INSEE commune']].nunique()
 ```
+
+Avec ces deux commandes simples, on comprend donc
+que notre variable `INSEE commune` (le code Insee)
+sera plus fiable pour identifier des communes
+que les noms, qui ne sont pas forcément uniques. C'est justement l'objectif du code Insee de proposer 
+un identifiant unique, a contrario du code postal qui peut
+être partagé par plusieurs communes. 
 
 
 ### Statistiques agrégées
@@ -913,7 +932,7 @@ df.mean(numeric_only = True)
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-danger" role="alert">
-<i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
 ```
 
 La version 2.0 de `Pandas` a introduit un changement
@@ -922,7 +941,7 @@ de comportement dans les méthodes d'agrégation.
 Il est dorénavant nécessaire de préciser quand on désire
 effectuer des opérations si on désire ou non le faire
 exclusivement sur les colonnes numériques. C'est pour cette 
-raison qu'on exlicite ici l'argument `numeric_only = True`. 
+raison qu'on explicite ici l'argument `numeric_only = True`. 
 Ce comportement
 était par le passé implicite. 
 
@@ -976,13 +995,24 @@ emissions_totales['emissions (%)'] = (
 )
 ```
 
+Ce tableau n'est pas vraiment mis en forme donc encore loin d'être communiquable mais il présente déjà un intérêt dans une perspective exploratoire. Il nous permet de comprendre les secteurs les plus émetteurs, à savoir le transport, l'agriculture et l'industrie, hors énergie. Le fait que l'énergie soit relativement peu émettrice s'explique bien du fait du _mix énergétique_ français où le nucléaire représente une majorité de la production électrique. 
 
+Pour aller plus loin dans la mise en forme de ce tableau afin d'avoir des statistiques communiquables en dehors de `Python`, nous découvrirons au prochain chapitre `great_tables`. 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
 La structure de données issue de `df.sum` est assez pratique (elle est _tidy_). On pourrait faire exactement la même opération que `df.sum(numeric_only = True)` avec le code suivant:
 
 ```{python}
 df.select_dtypes(include='number').agg(func = sum)
 ```
-
+```{=html}
+</div>
+```
+:::
 
 ## Valeurs manquantes
 
@@ -997,6 +1027,7 @@ les valeurs temporelles, i.e. de type `datatime64`, les valeurs manquantes sont
 On a un comportement cohérent d'agrégation lorsqu'on combine deux colonnes dont l'une comporte des valeurs manquantes.
 
 ```{python}
+#| echo: true
 ventes = pd.DataFrame(
     {'prix': np.random.uniform(size = 5),
      'client1': [i+1 for i in range(5)],
@@ -1010,6 +1041,7 @@ ventes
 `Pandas` va bien refuser de faire l'agrégation car pour lui une valeur manquante n'est pas un zéro:
 
 ```{python}
+#| echo: true
 ventes["client1"] + ventes["client2"]
 ```
 
@@ -1017,27 +1049,35 @@ Il est possible de supprimer les valeurs manquantes grâce à `dropna()`.
 Cette méthode va supprimer toutes les lignes où il y a au moins une valeur manquante.
 
 ```{python}
+#| echo: true
 ventes.dropna()
 ```
 
 En l'occurrence, on perd deux lignes. Il est aussi possible de supprimer seulement les colonnes où il y a des valeurs manquantes
-dans un DataFrame avec `dropna()` avec le paramètre `subset`.
+dans un DataFrame avec `dropna()` en utilisant le paramètre `subset`.
 
 ```{python}
+#| echo: true
 ventes.dropna(subset=["produit"])
 ```
 
-On ne perd plus qu'une ligne.
-Il est également possible d'imputer les valeurs manquantes grâce à la méthode `fillna()`. Par exemple, si on pense que les valeurs manquantes dans `produit` sont des valeurs nulles, on pourra faire
+Cette fois on ne perd plus qu'une ligne, celle où `produit` est manquant.
+
+`Pandas` donne la possibilité d'imputer les valeurs manquantes grâce à la méthode `fillna()`. Par exemple, si on pense que les valeurs manquantes dans `produit` sont des valeurs nulles, on pourra faire
 
 ```{python}
 ventes.dropna(subset=["produit"]).fillna(0)
 ```
 
-Si on désire faire une imputation à la médiane pour la variable `client2`, on changera marginalement ce code:
+Si on désire faire une imputation à la médiane pour la variable `client2`, on changera marginalement ce code
+en encapsulant à l'intérieur le calcul de la médiane
 
 ```{python}
-ventes["client2"].fillna(ventes["client2"].median())
+(ventes["client2"]
+  .fillna(
+    ventes["client2"].median()
+  )
+)
 ```
 
 Sur des jeux de données du monde réel, il est utile d'utiliser la méthode `isna` (ou `isnull`) combinées avec `sum` ou `mean` pour connaître l'ampleur des valeurs manquantes dans un jeu de données. 
@@ -1050,7 +1090,10 @@ Cette étape préparatoire est utile pour anticiper la question de l'imputation 
 pour faire ceci mais la question de la légitimité de ces choix et de la pertinence est propre à chaque donnée. Les explorations sur les données visent à détecter des indices pour faire un choix éclairé. 
 
 
-## Exercice de synthèse
+# Exercice de synthèse
+
+Cette exercice synthétise plusieurs étapes de préparation et d'exploration de données pour mieux comprendre la structure
+du phénomène qu'on désire étudier. 
 
 ::: {.cell .markdown}
 ```{=html}
@@ -1131,6 +1174,10 @@ Indice pour cette question
 ![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/filter_pandas.png){fig-width=50%}
 
 </details>
+
+7. Calculer les émissions totales par secteur. Calculer la part de chaque secteur dans les émissions totales. Transformer en tonnes les volumes avant d'afficher les résultats
+
+8. Calculer pour chaque commune les émissions totales et la part de chaque secteur dans cette émission. Ordonner de la plus émettrice à la moins émettrice. Comprendre les facteurs pouvant expliquer ce classement. 
 
 <!-------- trop tôt
 7. Calculer les émissions totales par départements
