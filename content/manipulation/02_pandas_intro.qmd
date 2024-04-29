@@ -714,7 +714,7 @@ variable `Agriculture`:
 
 ```{python}
 #| echo: true
-df['dep'] = df['code_insee'].str[:2]
+df['dep'] = df['INSEE commune'].str[:2]
 df.head(3)
 ```
 
@@ -863,19 +863,22 @@ Si on désire, par exemple, connaître le nombre de communes dans notre jeu de d
 
 ```{python}
 #| echo: true
-df['NOM COMMUNE'].count()
-df['NOM COMMUNE'].nunique()
+df['Commune'].count()
 ```
 
+```{python}
+#| echo: true
+df['Commune'].nunique()
+```
 
-En SQL, la première instruction serait `SELECT COUNT("NOM COMMUNE") FROM df`, la seconde `SELECT DISTINCT("NOM COMMUNE") FROM df`
+En SQL, la première instruction serait `SELECT COUNT(Commune) FROM df`, la seconde `SELECT COUNT DISTINCT Commune FROM df`
 
 La cohérence de la syntaxe `Pandas` permet de faire cela pour plusieurs colonnes de manière simultanée. En SQL cela serait possible mais commence à devenir assez verbeux:
 
 ```{python}
 #| echo: true
-df.loc[:, ['NOM COMMUNE', 'id insee']].count()
-df.loc[:, ['NOM COMMUNE', 'id insee']].nunique()
+df.loc[:, ['Commune', 'INSEE commune']].count()
+df.loc[:, ['Commune', 'INSEE commune']].nunique()
 ```
 
 
@@ -899,6 +902,36 @@ df.loc[:, ['Agriculture', 'Résidentiel']].sum()
 df.loc[:, ['Agriculture', 'Résidentiel']].mean()
 ```
 
+
+Il est possible de généraliser ceci à toutes les colonnes. 
+Cependant, il est nécessaire d'introduire le paramètre `numeric_only` pour ne faire la tâche d'agrégation que sur les variables pertinentes
+
+```{python}
+df.mean(numeric_only = True)
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-danger" role="alert">
+<i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+```
+
+La version 2.0 de `Pandas` a introduit un changement
+de comportement dans les méthodes d'agrégation. 
+
+Il est dorénavant nécessaire de préciser quand on désire
+effectuer des opérations si on désire ou non le faire
+exclusivement sur les colonnes numériques. C'est pour cette 
+raison qu'on exlicite ici l'argument `numeric_only = True`. 
+Ce comportement
+était par le passé implicite. 
+
+```{=html}
+</div>
+```
+:::
+
+
 La méthode pratique à connaître est `agg`. Celle-ci permet de définir les statistiques qu'on désire calculer pour chaque variable
 
 ```{python}
@@ -907,12 +940,49 @@ df.agg(
   {
     'Agriculture': ['sum', 'mean'],
     'Résidentiel': ['mean', 'std'],
-    'nom': 'nunique'
+    'Commune': 'nunique'
   }
 )
 ```
 
-`Pandas` nous renvoie un _DataFrame_ à plusieurs niveaux avec les informations voulues. 
+
+La sortie des méthodes d'agrégation est une `Serie` indexée (les méthodes du type `df.sum()`) ou directement un `DataFrame` (la méthode `agg`). Il est en général plus pratique d'avoir un `DataFrame` qu'une `Serie` indexée si on désire retravailler le tableau pour en tirer des conclusions. Il est donc utile de transformer les sorties sous forme de `Serie` en `DataFrame` puis appliquer la méthode `reset_index` pour transformer l'indice en colonne. A partir de là, il sera possible de modifier le `DataFrame` pour rendre celui-ci plus lisible.
+
+Par exemple si on s'intéresse à la part de chaque secteur dans les émissions totales, on pourra procéder en deux temps.
+D'abord on va créer une observation par secteur représentant les émissions totales de celui-ci:
+
+```{python}
+#| echo: true
+# Etape 1: création d'un DataFrame propre
+emissions_totales = (
+  pd.DataFrame(
+    df.sum(numeric_only = True),
+    columns = ["emissions"]
+  )
+  .reset_index(names = "secteur")
+)
+emissions_totales
+```
+
+Il ne reste plus qu'à travailler _a minima_ le jeu de données afin d'avoir déjà quelques conclusions intéressantes sur la structure des émissions en France:
+
+```{python}
+emissions_totales['emissions (%)'] = (
+  100*emissions_totales['emissions']/emissions_totales['emissions'].sum()
+)
+(emissions_totales
+  .sort_values("emissions", ascending = False).
+  round()
+)
+```
+
+
+La structure de données issue de `df.sum` est assez pratique (elle est _tidy_). On pourrait faire exactement la même opération que `df.sum(numeric_only = True)` avec le code suivant:
+
+```{python}
+df.select_dtypes(include='number').agg(func = sum)
+```
+
 
 ## Valeurs manquantes
 
@@ -958,17 +1028,27 @@ ventes.dropna(subset=["produit"])
 ```
 
 On ne perd plus qu'une ligne.
-Il est également possible de remplir les valeurs manquantes grâce à la méthode `fillna()`.
+Il est également possible d'imputer les valeurs manquantes grâce à la méthode `fillna()`. Par exemple, si on pense que les valeurs manquantes dans `produit` sont des valeurs nulles, on pourra faire
 
 ```{python}
 ventes.dropna(subset=["produit"]).fillna(0)
 ```
 
+Si on désire faire une imputation à la médiane pour la variable `client2`, on changera marginalement ce code:
+
+```{python}
+ventes["client2"].fillna(ventes["client2"].median())
+```
+
 Sur des jeux de données du monde réel, il est utile d'utiliser la méthode `isna` (ou `isnull`) combinées avec `sum` ou `mean` pour connaître l'ampleur des valeurs manquantes dans un jeu de données. 
 
 ```{python}
-df.isnull().mean()
+df.isnull().mean().sort_values(ascending = False)
 ```
+
+Cette étape préparatoire est utile pour anticiper la question de l'imputation ou du filtre sur les valeurs manquantes: sont-elles _missing at random_ ou reflètent-elles un sujet sur la remontée des données ? Les choix relatifs au traitement des valeurs manquantes ne sont pas des choix méthodologiques neutres. `Pandas` donne les outils techniques
+pour faire ceci mais la question de la légitimité de ces choix et de la pertinence est propre à chaque donnée. Les explorations sur les données visent à détecter des indices pour faire un choix éclairé. 
+
 
 ## Exercice de synthèse
 
