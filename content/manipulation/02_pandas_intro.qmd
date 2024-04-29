@@ -803,6 +803,24 @@ résidentiel consomme le plus. En SQL on ferait
 SELECT * FROM df ORDER BY DESC "Résidentiel"
 ```
 
+## Résumé des principales opérations
+
+Les principales manipulations sont les suivantes:
+
+::: {layout-ncol=2}
+
+![Sélectionner des colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/select_pandas.png)
+![Renommer des colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/rename_pandas.png)
+
+![Créer de nouvelles colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/mutate_pandas.png)
+![Sélectionner des lignes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/filter_pandas.png)
+
+![Réordonner le _DataFrame_](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/arrange_pandas.png)
+
+:::
+
+
+
 ## Filter
 
 L'opération de sélection de lignes s'appelle `FILTER` en SQL. Elle s'utilise
@@ -840,7 +858,25 @@ Le code SQL équivalent peu varier selon le moteur d'exécution (`DuckDB`, `Post
 SELECT * FROM df WHERE STARTSWITH("INSEE commune", "92")
 ```
 
-## Statistiques agrégées
+## Résumé des principales opérations
+
+Les principales manipulations sont les suivantes:
+
+::: {layout-ncol=2}
+
+![Sélectionner des colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/select_pandas.png)
+![Renommer des colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/rename_pandas.png)
+
+![Créer de nouvelles colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/mutate_pandas.png)
+![Sélectionner des lignes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/filter_pandas.png)
+
+![Réordonner le _DataFrame_](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/arrange_pandas.png)
+
+:::
+
+
+
+# Statistiques agrégées
 
 Pour repartir de la source brute, recréeons notre jeu de données pour les exemples:
 
@@ -1009,6 +1045,7 @@ La structure de données issue de `df.sum` est assez pratique (elle est _tidy_).
 ```{python}
 df.select_dtypes(include='number').agg(func = sum)
 ```
+
 ```{=html}
 </div>
 ```
@@ -1093,7 +1130,17 @@ pour faire ceci mais la question de la légitimité de ces choix et de la pertin
 # Exercice de synthèse
 
 Cette exercice synthétise plusieurs étapes de préparation et d'exploration de données pour mieux comprendre la structure
-du phénomène qu'on désire étudier. 
+du phénomène qu'on désire étudier à savoir les émissions de gaz carbonique en France. 
+
+Il est recommandé de repartir d'une session vierge (dans un _notebook_ il faut faire `Restart Kernel`) pour ne pas avoir un environnement pollué par d'autres objets. Vous pouvez ensuite exécuter le code suivant pour avoir la base nécessaire:
+
+```{python}
+#| echo: true
+import pandas as pd
+
+emissions = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
+emissions.head(2)
+```
 
 ::: {.cell .markdown}
 ```{=html}
@@ -1175,9 +1222,20 @@ Indice pour cette question
 
 </details>
 
+Revenir au jeu `emission` initial
+
 7. Calculer les émissions totales par secteur. Calculer la part de chaque secteur dans les émissions totales. Transformer en tonnes les volumes avant d'afficher les résultats
 
-8. Calculer pour chaque commune les émissions totales et la part de chaque secteur dans cette émission. Ordonner de la plus émettrice à la moins émettrice. Comprendre les facteurs pouvant expliquer ce classement. 
+8. Calculer pour chaque commune les émissions totales après avoir imputé les valeurs manquantes à 0. Garder les 100 communes les plus émettrices. Calculer la part de chaque secteur dans cette émission. Comprendre les facteurs pouvant expliquer ce classement. 
+
+<details>
+<summary>
+Aide si vous êtes en difficulté sur la question 8
+</summary>
+
+Jouer avec le paramètre `axis` lors de la construction d'une statistique agrégée.
+
+</details>
 
 <!-------- trop tôt
 7. Calculer les émissions totales par départements
@@ -1249,23 +1307,45 @@ A la question 6, on obtient ce classement :
 emissions_hg_bdr.head(3)
 ```
 
+A la question 7, le tableau obtenu ressemble à
+```{python}
+# Question 7
+emissions_totales = (
+  pd.DataFrame(
+    df.sum(numeric_only = True),
+    columns = ["emissions"]
+  )
+  .reset_index(names = "secteur")
+)
+emissions_totales
+emissions_totales['emissions (%)'] = (
+  100*emissions_totales['emissions']/emissions_totales['emissions'].sum()
+)
+emissions_totales["emissions"] = emissions_totales["emissions"].div(1000)
+(emissions_totales
+  .sort_values("emissions", ascending = False)
+  .round()
+  .head(5)
+)
+```
 
+```{python}
+emissions_totales = emissions.fillna(0).sum(numeric_only=True, axis = 1).sort_values(ascending = False).head(100)
+emissions_top = emissions.iloc[emissions_totales.index].fillna(0) #<1>
+emissions_top
+```
+1. Ce serait plus simple en faisant un _merge_ mais on n'a pas encore vu cela.
 
+```{python}
+emissions_top['total'] = emissions_top.sum(numeric_only=True, axis = 1)
+secteurs = emissions_top.select_dtypes(include='number').columns
+emissions_top["Part " + secteurs] = emissions_top.loc[:, secteurs].div(emissions_top['total'], axis = 0).mul(100)
+```
 
+A l'issue de la question 8, on comprend un peu mieux les facteurs qui peuvent expliquer une forte émission au niveau communal. Si on regarde les trois principales communes émettrices, on peut remarquer qu'il s'agit de villes avec des raffineries:
 
-## Résumé des principales opérations
+```{python}
+emissions_top.head(3)
+```
 
-Les principales manipulations sont les suivantes:
-
-::: {layout-ncol=2}
-
-![Sélectionner des colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/select_pandas.png)
-![Renommer des colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/rename_pandas.png)
-
-![Créer de nouvelles colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/mutate_pandas.png)
-![Sélectionner des lignes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/filter_pandas.png)
-
-![Réordonner le _DataFrame_](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/arrange_pandas.png)
-
-:::
-
+Grâce à nos explorations minimales avec `Pandas`, on voit que ce jeu de données nous donne donc une information sur la nature du tissu productif français et des conséquences environnementales de certaines activités. 
