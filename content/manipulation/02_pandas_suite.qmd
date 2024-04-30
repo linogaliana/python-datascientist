@@ -80,10 +80,18 @@ import pynsee
 import pynsee.download
 ```
 
+Pour obtenir des résultats reproductibles, on peut fixer la racine du générateur
+pseudo-aléatoire. 
+
+```{python}
+#| echo: true
+np.random.seed(123)
+```
+
 
 ## Données utilisées
 
-Ce tutoriel continue à travailler sur le jeu de données du chapitre précédent:
+Ce tutoriel continue l'exploration du jeu de données du chapitre précédent:
 
 * Les émissions de gaz à effet de serre estimées au niveau communal par l'ADEME. Le jeu de données est 
 disponible sur [data.gouv](https://www.data.gouv.fr/fr/datasets/inventaire-de-gaz-a-effet-de-serre-territorialise/#_)
@@ -204,7 +212,7 @@ filosofi = download_file("FILOSOFI_COM_2016")
 Le _DataFrame_ en question a l'aspect suivant :
 
 ```{python}
-filosofi.sample(5)
+filosofi.sample(3)
 ```
 
 `Pandas` a géré automatiquement les types de variables. Il le fait relativement bien, mais une vérification est toujours utile pour les variables qui ont un statut spécifique.
@@ -231,3 +239,91 @@ deux jeux de données. En effet, sinon, nous risquons d'être frustré : nous al
 vouloir en savoir plus sur les émissions de gaz carbonique mais seront très
 limités dans les possibilités d'analyse sans ajout d'une information annexe
 issue de `filosofi`.  
+
+
+# Statistiques descriptives par groupe
+
+## Principe
+
+Nous avons vu, lors du chapitre précédent, comment obtenir
+une statistique agrégée simplement grâce à `Pandas`. 
+Il est néanmoins commun d'avoir des données avec des strates
+intermédiaires d'analyse pertinentes: des variables géographiques, l'appartenance à des groupes socio-démographiques liés à des caractéristiques renseignées, des indicatrices de période temporelle, etc. 
+Pour mieux comprendre la structure de ses données, les _data scientists_ sont donc souvent amenés à construire des statistiques descriptives sur des sous-groupes présents dans les données. Pour reprendre l'exemple sur les émissions, nous avions précédemment construit des statistiques d'émissions au niveau national. Mais qu'en est-il du profil d'émission des différents départements ? Pour répondre à cette question, il sera utile d'agréger nos données au niveau départemental. Ceci nous donnera une information différente du jeu de données initial (niveau communal) et du niveau le plus agrégé (niveau national).
+
+En `SQL`, il est très simple de découper des données pour
+effectuer des opérations sur des blocs cohérents et recollecter des résultats
+dans la dimension appropriée.
+La logique sous-jacente est celle du *split-apply-combine* qui est repris
+par les langages de manipulation de données, auxquels `pandas`
+[ne fait pas exception](https://pandas.pydata.org/pandas-docs/stable/user_guide/groupby.html). 
+
+L'image suivante, issue de
+[ce site](https://unlhcc.github.io/r-novice-gapminder/16-plyr/),
+représente bien la manière dont fonctionne l'approche
+`split`-`apply`-`combine`:
+
+![Split-apply-combine (Source: [unlhcc.github.io](https://unlhcc.github.io/r-novice-gapminder/16-plyr/))](https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png){fig-width=70%}
+
+En `Pandas`, on utilise `groupby` pour découper les données selon un ou
+plusieurs axes (ce [tutoriel](https://realpython.com/pandas-groupby/) sur le sujet
+est particulièrement utile).
+L'ensemble des opérations d'agrégation (comptage, moyennes, etc.) que nous avions vues précédemment peut être mise en oeuvre par groupe.
+
+Techniquement, cette opération consiste à créer une association
+entre des labels (valeurs des variables de groupe) et des
+observations. Utiliser la méthode `groupby` ne déclenche pas d'opérations avant la mise en oeuvre d'une statistique, cela créé seulement une relation formelle entre des observations et des regroupemens qui seront utilisés _a posteriori_
+
+```{python}
+#| echo: true
+filosofi["dep"] = filosofi["CODGEO"].str[:2]
+filosofi.groupby('dep').__class__
+```
+
+
+## Illustration 1: dénombrement p
+
+Pour illustrer l'application de ce principe à un comptage, on peut dénombrer le nombre de communes par département en 2023 (chaque année cette statistique change du fait des fusions de communes). Pour cela, il suffit de prendre le référentiel des communes françaises issu du code officiel géographique (COG) et dénombrer par département grâce à `count`:
+
+```{python}
+#| echo: true
+import pandas as pd
+
+url_cog_2023 = "https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv"
+cog_2023 = pd.read_csv(url_cog_2023) 
+```
+
+Grâce à ce jeu de données, sans avoir recours aux statistiques par groupe, on peut déjà savoir combien on a, respectivement, de communes, départements et régions en France:
+
+```{python}
+#| echo: true
+communes = cog_2023.loc[cog_2023['TYPECOM']=="COM"] #<1>
+communes.loc[:, ['COM', 'DEP', 'REG']].nunique()
+```
+1. On se restreint au statut "Commune" car ce fichier comporte également les codes Insee pour d'autres status, comme les "Arrondissements municipaux" de Paris, Lyon et Marseille.  
+
+Maintenant, intéressons nous aux départements ayant le plus de communes. Il s'agit de la même fonction de dénombrement où on joue, cette fois, sur le groupe à partir duquel est calculé la stratégie. 
+
+Calculer cette statistique se fait de manière assez transparente lorsqu'on connaît le principe d'un calcul de statistiques avec `Pandas`:
+
+```{python}
+#| echo: true
+communes = cog_2023.loc[cog_2023['TYPECOM']=="COM"] #<1>
+communes.groupby('DEP').agg({'COM': 'nunique'})
+```
+
+La sortie est une `Serie` indexée. Ce n'est pas très pratique comme nous avons pu l'évoquer au cours du chapitre précédent. Il est plus pratique de transformer cet objet en `DataFrame` avec `reset_index`. Enfin, avec `sort_values`, on obtient la statistique désirée:
+
+```{python}
+#| echo: true
+(
+    communes
+    .groupby('DEP')
+    .agg({'COM': 'nunique'})
+    .reset_index()
+    .sort_values('COM', ascending = False)
+)
+```
+
+## Illustration 2: agrégat par groupe
+
