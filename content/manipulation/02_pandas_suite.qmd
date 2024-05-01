@@ -482,6 +482,156 @@ Cette pratique découle du fait que de nombreux systèmes d'information prennent
 
 Cette structuration de l'information est très liée au modèle des tables relationnelles des années 1980. Aujourd'hui, il existe des modèles de données plus flexibles où l'information est empilée dans un _data lake_ sans structure _a priori_. Néanmoins ce modèle du schéma en étoile conserve une pertinence parce qu'il permet de partager l'information qu'à ceux qui en ont besoin laissant le soin à ceux qui ont besoin de lier des données entre elles de le faire. 
 
+Puisque la logique du schéma en étoile vient historiquement des bases relationnelles, il est naturel qu'il s'agisse d'une approche intrinsèquement liée à la philosophie du SQL, jusque dans le vocabulaire. On parle souvent de jointure de données, un héritage du terme `JOIN` de SQL, et la manière de décrire les jointures (_left join_, _right join_...) est directement issue des instructions SQL associées. 
+
+On parle généralement de base de gauche et de droite pour illustrer les jointures:
+
+![](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/join_initial.png){fig-width="50%"}
+
+
+
+## Mise en oeuvre avec `Pandas`
+
+En `Pandas`, la méthode la plus pratique pour associer des jeux de données à partir de caractéristiques communes est `merge`. Ses principaux arguments permettent de contrôler le comportement de jointure. Nous allons les explorer de manière visuelle. 
+
+En l'occurrence, pour notre problématique de construction de statistiques
+sur les émissions de gaz carbonique, la base de gauche sera le _DataFrame_ `emission` et la base de droite le _DataFrame_ `filosofi`:
+
+```{python}
+#| echo: true
+emissions.head(2)
+```
+
+```{python}
+#| echo: true
+filosofi.head(2)
+```
+
+On parle de clé(s) de jointure pour nommer la ou les variable(s) nécessaire(s) à la fusion de données. Ce sont les variables communes aux deux jeux de données. Il n'est pas nécessaire qu'elles aient le même nom en revanche elles doivent partager des valeurs communes autrement l'intersection entre ces deux bases est l'ensemble vide. 
+
+On peut jouer sur deux dimensions dans la jointure (ceci sera plus clair ensuite avec les exemples graphiques). 
+
+* Il existe principalement trois types de fusions: _left join_ et _right join_ ou un combo des deux selon le type de pivot qu'on désire mettre en oeuvre. 
+* Ensuite, il existe deux manières de fusionner les valeurs une fois qu'on a choisi un pivot: _inner_ ou _outer join_. Dans le premier cas, on ne conserve que les observations où les clés de jointures sont présentes dans les deux bases, dans le second on conserve toutes les observations de la clé de jointure des variables pivot quitte à avoir des valeurs manquantes si la deuxième base de données n'a pas de telles observations. 
+
+Dans les exemples ci-dessous, nous allons utiliser les codes communes et les départements comme variables de jointure. En soi, l'usage du département n'est pas nécessaire puisqu'il se déduit directement du code commune mais cela permet d'illustrer le principe des jointures sur plusieurs variables. A noter que le nom de la commune est volontairement mis de côté pour effectuer des jointures alors que c'est une information commune aux deux bases. Cependant, comme il s'agit d'un champ textuel, dont le formattage peut suivre une norme différente dans les deux bases, ce n'est pas une information fiable pour faire une jointure exacte. 
+
+Pour illustrer le principe du pivot à gauche ou à droite, on va créer deux variables identificatrices de la ligne de nos jeux de données de gauche et de droite. Cela nous permettra de trouver facilement les lignes présentes dans un jeu de données mais pas dans l'autre. 
+
+```{python}
+#| echo: true
+emissions = emissions.reset_index(names = ['id_left'])
+filosofi = filosofi.reset_index(names = ['id_right'])
+```
+
+### _Left join_
+
+Commençons avec la jointure à gauche. Comme son nom l'indique, on va prendre la variable de gauche en pivot:
+
+![](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/left_join.png)
+
+```{python}
+#| echo: true
+left_merged = emissions.merge(
+  filosofi,
+  left_on = ["INSEE commune", "dep"],
+  right_on = ["CODGEO", "dep"],
+  how = "left"
+)
+left_merged.head(3)
+```
+
+Il est recommandé de toujours expliciter les clés de jointures par le biais des arguments `left_on`, `right_on` ou `on` si les noms de variables sont communs dans les deux bases.
+Si on a des noms de variables communes entre les bases mais qu'elles ne sont pas définies comme clés de jointures, celles-ci ne seront pas utilisées pour joindre mais seront conservées avec un suffixe qui par défaut est `_x` et `_y` (paramétrable par le biais de l'argument `suffixes`). 
+
+En faisant une jointure à gauche, on doit en principe avoir autant de lignes que la base de données à gauche:
+
+```{python}
+#| echo: true
+left_merged.shape[0] == emissions.shape[0]
+```
+
+Autrement, cela est signe qu'il y a une clé dupliquée à droite. Grâce à notre variable `id_right`, on peut savoir les codes communes à droite qui n'existent pas à gauche:
+
+```{python}
+#| echo: true
+left_merged.loc[left_merged['id_right'].isna()].tail(3)
+```
+
+Cela vient du fait que nous utilisons des données qui ne sont pas de la même année de référence du code officiel géographique (2016 vs 2018). Pendant cet intervalle, il y a eu des changements de géographie, notamment des fusions de communes. Par exemple, la commune de Courcouronnes qu'on a vu ci-dessus peut être retrouvée regroupée avec Evry dans le jeu de données filosofi (base de droite):
+
+```{python}
+#| echo: true
+filosofi.loc[
+  filosofi['LIBGEO']
+  .str.lower()
+  .str.contains("courcouronnes")
+]
+```
+
+Dans un exercice de construction de statistiques publiques, on ne pourrait donc se permettre cette disjonction des années. 
+
+### _Right join__
+
+![](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/right_join.png)
+
+Le principe est le même mais cette fois c'est la base de droite qui est prise sous forme de pivot:
+
+
+```{python}
+#| echo: true
+right_merged = emissions.merge(
+  filosofi,
+  left_on = ["INSEE commune", "dep"],
+  right_on = ["CODGEO", "dep"],
+  how = "right"
+)
+right_merged.head(3)
+```
+
+On peut, comme précédemment, vérifier la cohérence des dimensions:
+
+```{python}
+#| echo: true
+right_merged.shape[0] == filosofi.shape[0]
+```
+
+Pour vérifier le nombre de lignes des données Filosofi que nous n'avons pas dans notre jeu d'émissions de gaz carbonique, on peut faire
+
+```{python}
+#| echo: true
+right_merged['id_left'].isna().mean()
+```
+
+C'est un nombre faible. Quelles sont ces observations ?
+
+```{python}
+#| echo: true
+right_merged.loc[
+  right_merged['id_left'].isna(),
+  filosofi.columns.tolist() + emissions.columns.tolist()
+]
+```
+
+Il est suprenant de voir que Paris, Lyon et Marseille sont présents
+dans la base des statistiques communales mais pas dans celles des émissions. 
+Pour comprendre pourquoi, recherchons dans nos données d'émissions les observations liées à Marseille: 
+
+```{python}
+emissions.loc[
+  emissions["Commune"]
+  .str.lower()
+  .str.contains('MARSEILLE')
+]
+```
+
+Cela vient du fait que le jeu de données des émissions de l'Ademe propose de l'information sur les arrondissements dans les trois plus grandes villes
+là où le jeu de données de l'Insee ne fait pas cette décomposition.
+
+### _Full join_
+
+
+
 
 ## Exemples d'identifiants dans les données françaises
 
