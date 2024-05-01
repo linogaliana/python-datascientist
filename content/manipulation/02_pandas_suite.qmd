@@ -15,6 +15,7 @@ description: |
   Le chapitre d'introduction à `Pandas` a permis de présenter le principe de données organisées sous une forme de _DataFrame_ et la praticité de l'écosystème `Pandas` pour effectuer des opérations simples sur un jeu de données. Ce chapitre consolide ces principes en présentant deux types de traitements classiques de la boite à outil des _data scientists_ : statistiques par groupe et associations de données. 
 bibliography: ../../reference.bib
 image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/panda_stretching.png
+echo: false
 links:
 - icon: journal-text
   name: Documentation Pandas
@@ -193,6 +194,7 @@ secteurs = emissions.select_dtypes(include='number').columns
 Les exploitations ultérieures de ces données utiliseront la dimension départementale dont nous avons montré la construction au chapitre précédent:
 
 ```{python}
+#| echo: true
 emissions['dep'] = emissions["INSEE commune"].str[:2]
 ```
 
@@ -219,6 +221,7 @@ filosofi = download_file("FILOSOFI_COM_2016")
 Le _DataFrame_ en question a l'aspect suivant :
 
 ```{python}
+#| echo: true
 filosofi.sample(3)
 ```
 
@@ -295,6 +298,7 @@ Tant qu'on n'appelle pas une action sur un `DataFrame` par groupe, du type
 une transformation qui n'est pas encore évaluée :
 
 ```{python}
+#| echo: true
 filosofi.groupby('dep')
 ```
 
@@ -360,21 +364,25 @@ Pour illustrer les agrégats par groupe nous pouvons prendre le jeu de données 
 Pour calculer le total au niveau France entière nous pouvons faire de deux manières :
 
 ```{python}
+#| echo: true
 filosofi['NBPERSMENFISC16'].sum()* 1e-6
 ```
 
 ```{python}
+#| echo: true
 filosofi.agg({"NBPERSMENFISC16": "sum"}).div(1e6)
 ```
 
 où les résultats sont reportés en millions de personnes. La logique est identique lorsqu'on fait des statistiques par groupe, il s'agit seulement de remplacer `filosofi` par `filosofi.groupby('dep')` pour créer une version partitionnée par département de notre jeu de données:
 
 ```{python}
+#| echo: true
 filosofi.groupby('dep')['NBPERSMENFISC16'].sum() #<1>
 ```
 1. Avec cette approche, il faut faire attention à l'ordre des opérations: d'abord on effectue le `groupby` puis on conserve la colonne d'intérêt
 
 ```{python}
+#| echo: true
 filosofi.groupby('dep').agg({"NBPERSMENFISC16": "sum"})
 ```
 
@@ -469,12 +477,105 @@ Schéma en étoile
 
 ## Exemples d'identifiants dans les données françaises
 
-Par exemple, pour relier les bases d'entreprises françaises, il existe un numéro unique d'identification : le [numéro Sirene](https://entreprendre.service-public.fr/vosdroits/F32135). En ce qui concerne les individus, il existe aussi un identifiant unique permettant de relier les individus dans différentes sources de données (fiscales, sociales): le NIR, aussi connu sous le nom de numéro Insee ou numéro de sécurité sociale. Cependant, _a contrario_ du numéro Sirene, celui-ci contient en lui-même plusieurs informations sensibles - en plus d'être intrinsèquement relié à la problématique sensible des droits à la sécurité sociale. Le visuel suivant indique que ce numéro comporte de nombreuses informations identifiantes
+### Sirene: l'identifiant dans les données d'entreprises
 
-![Le numéro de sécurité sociale (Source: [Améli](https://www.ameli.fr/assure/droits-demarches/principes/numero-securite-sociale))](https://www.ameli.fr/sites/default/files/styles/webp_ckeditor/public/thumbnails/image/infographie_assures-regle-identification-assures.gif.webp?itok=j2owVDrB)
+Pour relier les microdonnées d'entreprises françaises, il existe un numéro unique d'identification : le [numéro `Siren`](https://entreprendre.service-public.fr/vosdroits/F32135). Il s'agit d'un numéro d'identification dans un répertoire légal d'entreprise indispensable pour toutes démarches juridiques, fiscales... Pour les entreprises qui possèdent plusieurs établissements - par exemple dans plusieurs villes - il existe un identifiant dérivé qui s'appelle le [`Siret`](https://www.economie.gouv.fr/cedef/numero-siret): aux 9 chiffres du numéro Sirene s'ajoutent 5 chiffres d'identifications de l'établissement. D'ailleurs, les administrations publiques sont également concernées par le numéro Siren: étant amenées à effectuer des opérations de marchés (achat de matériel, locations de biens, etc.) elles disposent également d'un identifiant Siren. Etant inscrits dans des répertoires légaux pour lesquels les citoyens sont publics, les numéros Siren et les noms des entreprises associées sont disponibles en _open data_, par exemple sur [annuaire-entreprises.data.gouv.fr/](https://annuaire-entreprises.data.gouv.fr/) pour une recherche ponctuelle, sur [data.gouv.fr](https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/).
+
+Cette base Sirene est une mine d'information, parfois comique, sur les entreprises françaises. Par exemple, le site [tif.hair/](https://tif.hair/) s'est amusé à répertorier la part des salons de coiffures proposant des jeux de mots dans le nom du salon. Lorsqu'un entrepreneur déclare la création d'une entreprise, il reçoit un numéro Sirene et un code d'activité (le [code APE](https://entreprendre.service-public.fr/vosdroits/F33050)) relié à la description qu'il a déclaré de l'activité de son entreprise. Ce code permet de classer l'activité d'une entreprise dans la [Nomenclature d'activités françaises (NAF)](https://www.insee.fr/fr/information/2406147) ce qui servira à l'Insee pour la publication de statistiques sectorielles. En l'occurrence, pour les coiffeurs, le code dans la NAF est [96.02A](https://www.insee.fr/fr/metadonnees/nafr2/sousClasse/96.02A?champRecherche=false). Il est possible à partir de la base disponible en _open data_ d'avoir en quelques lignes de `Python` la liste de tous les coiffeurs puis de s'amuser à explorer ces données (objet du prochain exercice optionnel.)
+
+Le jeu de données de l'ensemble des entreprises étant assez volumineux (autour de 4Go en CSV après décompression), il est plus pratique de partir sur un jeu de données au format `Parquet`, plus optimisé (plus de détails sur ce format dans le [chapitre d'approfondissement](/content/modern-ds/s3.qmd) qui lui est consacré).
+
+Pour lire ce type de fichiers de manière optimale, il est conseillé d'utiliser la librairie `DuckDB` qui permet de ne consommer que les données nécessaires et non de télécharger l'ensemble du fichier pour n'en lire qu'une partie comme ce serait le cas avec `Pandas` (voir la fin de ce chapitre, section "Aller au-delà de `Pandas`"). La requête SQL suivante se traduit en langage naturel par l'instruction suivante: _"A partir du fichier `Parquet`, je ne veux que quelques colonnes du fichier pour les coiffeurs (APE: 96.02A) dont le nom de l'entreprise (`denominationUsuelleEtablissement`) est renseigné"_:
+
+```{python}
+#| echo: true
+#| output: false
+import duckdb
+coiffeurs = duckdb.sql("""
+  SELECT
+    siren, siret, dateDebut, enseigne1Etablissement, activitePrincipaleEtablissement, denominationUsuelleEtablissement
+  FROM
+    read_parquet('https://www.data.gouv.fr/fr/datasets/r/c67d4fb4-dc56-491f-83e4-cde858f6cdf5')
+  WHERE
+    activitePrincipaleEtablissement == '96.02A'
+    AND
+    denominationUsuelleEtablissement IS NOT NULL
+""")
+coiffeurs = coiffeurs.df() #<1>
+```
+1. On convertit le _dataframe_ `DuckDB` en `DataFrame Pandas`. 
+
+
+```{python}
+#| echo: true
+coiffeurs.head(3)
+```
+
+L'exercice suivant, optionnel, propose de s'amuser à reproduire de manière simplifiée le recensement fait par [tif.hair/](https://tif.hair/)
+des jeux de mots dans les salons de coiffure. Il permet de pratiquer quelques méthodes de manipulation textuelle, en avance de phase sur le chapitre consacré aux [expressions régulières](/content/manipulation/04b_regex_TP.qmd).
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice optionnel : les coiffeurs blagueurs </h3>
+```
+
+Dans cet exercice, nous allons considérer exclusivement la variable `denominationUsuelleEtablissement`. 
+
+1. Dans cette base, `[ND]` est un code pour valeur manquante. Comme `Python` n'a pas de raison de le savoir _a priori_ et donc d'avoir interprété ces valeurs comme étant manquantes, utiliser la méthode `replace` pour remplacer `[ND]` par un champ textuel vide. Recoder également les valeurs manquantes sous forme de champ textuel vide afin d'éviter des erreurs ultérieures liées à l'impossibilité d'appliquer certaines méthodes textuelles aux valeurs manquantes. 
+2. Rechercher toutes les observations où le terme `tif` apparaît en faisant attention à la capitalisation de la variable. Regarder quelques observations
+3. A partir de [cet exemple](https://stackoverflow.com/a/23996414/9197726), normaliser les noms des salons en retirant les caractères spéciaux et compter les jeux de mots les plus fréquents
+
+
+```{=html}
+</div>
+```
+:::
+
+
+
+```{python}
+# Question 1
+coiffeurs['denominationUsuelleEtablissement'] = coiffeurs['denominationUsuelleEtablissement'].replace('[ND]', '').fillna('')
+```
+
+Avec la question 2, on retrouve une liste de jeux de mots assez imaginatifs à partir du terme `tif`:
+
+```{python}
+# Question 2
+tif = coiffeurs.loc[
+  coiffeurs['denominationUsuelleEtablissement']
+  .str.lower()
+  .str.contains("tif", regex = True)
+]
+tif.head(10)
+```
+
+Les 5 jeux de mots les plus fréquents sont les suivants:
+
+```{python}
+(
+  tif['denominationUsuelleEtablissement']
+  .str.replace('[^a-zA-Z0-9 \n\.]', '', regex = True)
+  .value_counts()
+  .head(5)
+)
+```
+
+Bien sûr, pour aller plus loin, il faudrait mieux normaliser les données, vérifier que l'information recherchée n'est pas à cheval sur plusieurs colonnes et bien sûr faire de l'inspection visuelle pour détecter les jeux de mots cachés. Mais déjà, en quelques minutes, on a des statistiques partielles sur le phénomène des coiffeurs blagueurs.
+
+
+### Le NIR et la question de la confidentialité des identifiants individuels
+
+En ce qui concerne les individus, il existe un identifiant unique permettant de relier ceux-ci dans différentes sources de données : le [NIR](https://www.cnil.fr/fr/definition/nir-numero-dinscription-au-repertoire), aussi connu sous le nom de numéro Insee ou numéro de sécurité sociale.
+Ce numéro est nécessaire à l'administration pour la gestion des droits à prestations sociales (maladie, vieillesse, famille...). Au-delà de cette fonction qui peut être utile au quotidien, ce numéro est un identifiant individuel unique dans le [Répertoire national d'identification des personnes physiques (RNIPP)](https://www.insee.fr/fr/metadonnees/definition/c1602).
+
+Cet identifiant est principalement présent dans des bases de gestion, liées aux fiches de paie, aux prestations sociales, etc. Cependant, _a contrario_ du numéro Sirene, celui-ci contient en lui-même plusieurs informations sensibles - en plus d'être intrinsèquement relié à la problématique sensible des droits à la sécurité sociale.
+
+![Le numéro de sécurité sociale (Source: [Améli](https://www.ameli.fr/assure/droits-demarches/principes/numero-securite-sociale))](https://www.ameli.fr/sites/default/files/styles/webp_ckeditor/public/thumbnails/image/infographie_assures-regle-identification-assures.gif.webp?itok=j2owVDrB){fig-width="80%"}
  
-Pour pallier ce problème, a récémment été mis en oeuvre le [code statistique non signifiant (CSNS)](https://www.insee.fr/fr/information/7635825?sommaire=7635842) ou NIR haché, un identifiant individuel anonyme non identifiant. [TO CONTINUE]
+Pour pallier ce problème, a récémment été mis en oeuvre le [code statistique non signifiant (CSNS)](https://www.insee.fr/fr/information/7635825?sommaire=7635842) ou NIR haché, un identifiant individuel anonyme non identifiant. L'objectif de cet identifiant anonymisé est de réduire la dissémination d'une information personnelle qui permettait certes aux fonctionnaires et chercheurs de relier de manière déterministe de nombreuses bases de données mais donnait une information non indispensable aux analystes sur les personnes en question. 
 
 
-[^flou]: Autrement, on rentre dans le monde des appariements flous. Il s'agit d'approches où on ne dispose plus d'un identifiant exact pour associer deux bases mais d'une information partiellement bruitée entre deux sources pour faire cette mise en relation. Par exemple, d'un côté on aura `Coca Cola 33CL` et de l'autre `Coca Cola canette`. Le chapitre d'[ouverture aux enjeux de recherche textuelle avec `ElasticSearch`](/content/modern-ds/elastic.qmd) est consacré à cette problématique. 
+[^flou]: Autrement, on rentre dans le monde des appariements flous ou des appariements probabilistes. Les appariements flous sont des situations où on ne dispose plus d'un identifiant exact pour associer deux bases mais d'une information partiellement bruitée entre deux sources pour faire cette mise en relation. Par exemple, dans une base de données produit on aura `Coca Cola 33CL` et dans une autre `Coca Cola canette` mais sous ces deux noms sont cachés le même produit. Le chapitre d'[ouverture aux enjeux de recherche textuelle avec `ElasticSearch`](/content/modern-ds/elastic.qmd) est consacré à cette problématique. Les appariements probabilistes sont un autre type d'approche. Dans ceux-ci, on associe des observations dans deux bases non pas sur la base d'un identifiant mais sur la distance entre un ensemble de caractéristiques dans les deux bases. Cette technique est très utilisée dans les statistiques médicales ou dans l'évaluation de politiques publiques sur la base du [_propensity score matching_](https://en.wikipedia.org/wiki/Propensity_score_matching).
 
