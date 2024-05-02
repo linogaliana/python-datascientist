@@ -182,7 +182,8 @@ Comme expliqué au chapitre précédent, ces données peuvent être importées t
 #| echo: true
 import pandas as pd
 
-emissions = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
+url = "https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert"
+emissions = pd.read_csv(url)
 emissions.head(2)
 ```
 
@@ -1495,6 +1496,11 @@ Les autres solutions techniques peuvent être pertinentes si on désire traiter 
 Une autre force de `Polars` est la syntaxe plus cohérente, qui bénéficie du recul d'une quinzaine d'années d'existence de `Pandas` et d'une petite dizaine d'années de `dplyr` (le _package_ de manipulation de données au sein du paradigme du _tidyverse_ en `R`). Pour reprendre l'exemple précédent, il n'est plus nécessaire de forcer la référence au _DataFrame_, dans une chaîne d'exécution toutes les références ultérieures seront faites au regard du _DataFrame_ de départ
 
 ```{python}
+#| eval: false
+!pip install polars
+```
+
+```{python}
 #| echo: true
 import polars as pl
 emissions_polars = pl.from_pandas(emissions)
@@ -1506,4 +1512,60 @@ emissions_polars = pl.from_pandas(emissions)
 )
 ```
 
-Pour découvrir `Polars`, de nombreuses ressources en ligne sont accessibles, notamment [ce _notebook_](https://github.com/InseeFrLab/ssphub/blob/main/post/polars/polars-tuto.ipynb) construit pour le réseau des _data scientists_ de la statistique publique
+Pour découvrir `Polars`, de nombreuses ressources en ligne sont accessibles, notamment [ce _notebook_](https://github.com/InseeFrLab/ssphub/blob/main/post/polars/polars-tuto.ipynb) construit pour le réseau des _data scientists_ de la statistique publique. 
+
+## `DuckDB`
+
+_DuckDB_ est le nouveau venu dans l'écosystème de l'analyse de données repoussant les limites des données pouvant être traitées avec `Python` sans passer par des outils _big data_ comme `Spark`.
+_DuckDB_ est la quintessence d'un nouveau paradigme, celui du [_"Big data is dead"_](https://motherduck.com/blog/big-data-is-dead/), où on peut traiter des données de volumétrie importante sans recourir à des infrastructures imposantes.
+
+Outre sa grande efficacité, puisqu'avec _DuckDB_ on peut traiter des données d'une volumétrie supérieure à la mémoire vive de l'ordinateur ou du serveur, _DuckDB_ présente l'avantage de proposer une syntaxe uniforme quelle que soit le langage qui appelle _DuckDB_ (`Python`, `R`, `C++` ou `Javascript`). _DuckDB_ privilégie la syntaxe SQL pour traiter les données avec de nombreuses fonctions pré-implementées pour simplifier certaines transformations de données (par exemple pour les [données textuelles](https://duckdb.org/docs/sql/functions/char.html), les [données temporelles](https://duckdb.org/docs/sql/functions/time), etc.).
+
+Par rapport à d'autres systèmes s'appuyant sur SQL, comme [`PostGreSQL`](https://www.bing.com/search?go=Rechercher&q=PostGreSQL&qs=ds&form=QBRE), `DuckDB` est très simple d'installation, ce n'est qu'une librairie `Python` là où beaucoup d'outils comme `PostGreSQL` nécessite une infrastructure adaptée. 
+
+```{python}
+#| eval: false
+!pip install duckdb
+```
+
+Pour reprendre l'exemple précédent, on peut utiliser directement le code SQL précédent
+
+```{python}
+#| echo: true
+import duckdb
+duckdb.sql(
+  """
+  SELECT "INSEE commune", "Commune"
+  FROM emissions
+  WHERE dep=='12' AND Routier>500
+  LIMIT 5
+  """)
+```
+
+Ici la clause `FROM emissions` vient du fait qu'on peut directement exécuter du SQL depuis un objet `Pandas` par le biais de `DuckDB`. Si on fait la lecture directement dans la requête, celle-ci se complexifie un petit peu mais la logique est la même
+
+```{python}
+#| echo: true
+import duckdb
+duckdb.sql(
+  f"""
+  SELECT "INSEE commune", "Commune"
+  FROM read_csv_auto("{url}")
+  WHERE
+    substring("INSEE commune",1,2)=='12'
+    AND
+    Routier>500
+  LIMIT 5
+  """)
+```
+
+Le rendu du _DataFrame_  est légèrement différent de `Pandas` car, comme `Polars` et de nombreux systèmes de traitement de données volumineuses, `DuckDB` repose sur l'évaluation différée et donc ne présente en _display_ qu'un échantillon de données. 
+`DuckDB` et `Polars` sont d'ailleurs très bien intégrés l'un à l'autre. On peut très bien faire du SQL sur un objet `Polars` via `DuckDB` ou appliquer des fonctions `Polars` sur un objet initialement lu avec `DuckDB`.
+
+L'un des intérêts de `DuckDB` est son excellente intégration  avec  l'écosystème `Parquet`, le format de données déjà mentionné qui devient un standard dans le partage de données (il s'agit, par exemple, de la pierre angulaire du partage de données sur la plateforme _HuggingFace_). Pour en savoir plus sur `DuckDB` et découvrir son intérêt pour lire les données du recensement de la population française, vous pouvez consulter [ce post de blog](https://ssphub.netlify.app/post/parquetrp/). 
+
+## `Spark` et le _big data_
+
+`DuckDB` a repoussé les frontières du _big data_ qu'on peut définir comme le volume de données à partir duquel on ne peut plus traiter celles-ci sur une machine sans mettre en oeuvre une stratégie de parallélisation.
+
+Néanmoins, pour les données très volumineuses, `Python` est très bien armé grâce à la librairie [`PySpark`](https://spark.apache.org/docs/latest/api/python/index.html). Celle-ci est une API en Python pour le langage `Spark`, un langage _big data_ basé sur Scala. Ce paradigme est construit sur l'idée que les utilisateurs de `Python` y accèdent par le biais de _cluster_ avec de nombreux noeuds pour traiter la donnée de manière parallèle. Celle-ci sera lue par blocs, qui seront traités en parallèle en fonction du nombre de noeuds parallèles. L'API DataFrame de `Spark` présente une syntaxe proche de celle des paradigmes précédents avec une ingénieurie plus complexe en arrière-plan liée à la parallélisation native. 
