@@ -36,6 +36,8 @@ Ce chapitre consolide ainsi les principes vus précédemment en raffinant les tr
 
 Effectuer ce travail de manière simple, fiable et efficace est indispensable pour les _data scientists_ tant cette tâche est courante. Heureusement `Pandas` permet de faire cela très bien avec des données structurées. Nous verrons dans les prochains chapitres, mais aussi dans l'ensemble de la [partie sur le traitement des données textuelles](/content/nlp/index.qmd), comment faire avec des données moins structurées.
 
+Grâce à ce travail, nous allons approfondir notre compréhension d'un phénomène réel par le biais de statistiques descriptives fines. Cela est une étape indispensable avant de basculer vers la [statistique inférentielle](https://fr.wikipedia.org/wiki/Inf%C3%A9rence_statistique#:~:text=L'inf%C3%A9rence%20statistique%20est%20l,%3A%20la%20probabilit%C3%A9%20d'erreur.), l'approche qui consiste à formaliser et généraliser des liens de corrélation ou de causalité entre des caractéristiques observées et un phénomène.  
+
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
@@ -467,6 +469,112 @@ Cependant, on reste limité dans notre capacité à interpréter les statistique
 
 Dans la suite de ce chapitre, nous envisagerons une première voie qui est le croisement avec des données complémentaires. On appelle ceci un enrichissement de données. Ces données peuvent être des observations à un niveau identique à celui de la source d'origine. Par exemple, l'un des croisements les plus communs est d'associer une base client à une base d'achats afin de mettre en regard un comportement d'achat avec des caractéristiques pouvant expliquer celui-ci. Les associations de données peuvent aussi se faire à des niveaux conceptuels différents, en général à un niveau plus agrégé pour contextualiser la donnée plus fine et comparer une observation à des mesures dans un groupe similaire. Par exemple, on peut associer des temps et des modes de transports individuels à ceux d'une même classe d'âge ou de personnes résidant dans la même commune pour pouvoir comparer la différence entre certains individus et un groupe sociodémographique similaire. 
 
+# Restructurer les données
+
+## Principe
+
+Quand on a plusieurs informations pour un même individu ou groupe, on
+retrouve généralement deux types de structure de données : 
+    
+* format __wide__ : les données comportent des observations répétées, pour un même individu (ou groupe), dans des colonnes différentes 
+* format __long__ : les données comportent des observations répétées, pour un même individu, dans des lignes différentes avec une colonne permettant de distinguer les niveaux d'observations
+
+Un exemple de la distinction entre les deux peut être pris à l'ouvrage de référence d'Hadley Wickham, [*R for Data Science*](https://r4ds.hadley.nz/):
+
+![Données _long_ et _wide_ (Source:  [*R for Data Science*](https://r4ds.hadley.nz/))](https://d33wubrfki0l68.cloudfront.net/3aea19108d39606bbe49981acda07696c0c7fcd8/2de65/images/tidy-9.png)
+
+L'aide mémoire suivante aidera à se rappeler les fonctions à appliquer si besoin :
+
+![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/reshape.png){fig-width=60%}
+
+Le fait de passer d'un format *wide* au format *long* (ou vice-versa)
+peut être extrêmement pratique car certaines fonctions sont plus adéquates sur une forme de données ou sur l'autre.
+
+En règle générale, avec `Python` comme avec `R`, les __formats *long* sont souvent préférables__.
+Les formats _wide_ sont plutôt pensés pour des tableurs comme `Excel` ou on dispose d'un nombre réduit
+de lignes à partir duquel faire des tableaux croisés dynamiques. 
+
+## Exercice d'application
+
+Les données de l'ADEME, et celles de l'Insee également, sont au format
+_wide_. 
+Le prochain exercice illustre l'intérêt de faire la conversion _long_ $\to$ _wide_
+avant de faire un graphique avec la méthode `plot` vue au chapitre précédent
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 5: Restructurer les données : wide to long</h3>
+```
+
+1. Créer une copie des données de l'`ADEME` en faisant `df_wide = emissions_wide.copy()`
+
+2. Restructurer les données au format *long* pour avoir des données d'émissions par secteur en gardant comme niveau d'analyse la commune (attention aux autres variables identifiantes).
+
+3. Faire la somme par secteur et représenter graphiquement
+
+4. Garder, pour chaque département, le secteur le plus polluant
+
+```{=html}
+</div>
+```
+:::
+
+```{python}
+#| output: false
+#| label: question1
+# Question 1
+
+emissions_wide = emissions.copy()
+emissions_wide[['Commune','dep', "Agriculture", "Tertiaire"]].head() 
+```
+
+```{python}
+#| output: false
+#| label: question2
+# Question 2
+emissions_wide.reset_index().melt(id_vars = ['INSEE commune','Commune','dep'],
+                          var_name = "secteur", value_name = "emissions")
+```
+
+```{python}
+#| output: false
+#| label: question3
+# Question 3
+
+emissions_totales = (
+  emissions_wide.reset_index()
+ .melt(
+    id_vars = ['INSEE commune','Commune','dep'],
+    var_name = "secteur", value_name = "emissions"
+    )
+ .groupby('secteur')
+ .sum(numeric_only = True)
+)
+
+emissions_totales.plot(kind = "barh")
+```
+
+```{python}
+#| output: false
+#| label: question4
+# Question 4
+
+top_commune_dep = (
+  emissions_wide
+  .reset_index()
+  .melt(
+    id_vars = ['INSEE commune','Commune','dep'],
+    var_name = "secteur", value_name = "emissions"
+  )
+ .groupby(['secteur','dep'])
+ .sum(numeric_only=True).reset_index()
+ .sort_values(['dep','emissions'], ascending = False)
+ .groupby('dep').head(1)
+)
+display(top_commune_dep)
+```
+
 
 # Joindre des données
 
@@ -544,6 +652,16 @@ left_merged.head(3)
 Il est recommandé de toujours expliciter les clés de jointures par le biais des arguments `left_on`, `right_on` ou `on` si les noms de variables sont communs dans les deux bases.
 Si on a des noms de variables communes entre les bases mais qu'elles ne sont pas définies comme clés de jointures, celles-ci ne seront pas utilisées pour joindre mais seront conservées avec un suffixe qui par défaut est `_x` et `_y` (paramétrable par le biais de l'argument `suffixes`). 
 
+La syntaxe `Pandas` étant directement inspirée de SQL, on a une traduction assez transparente de l'instruction ci-dessus en SQL:
+
+```sql
+SELECT *
+FROM emissions
+LEFT JOIN filosofi
+  ON emissions.`INSEE commune` = filosofi.CODGEO
+  AND emissions.dep = filosofi.dep;
+```
+
 En faisant une jointure à gauche, on doit en principe avoir autant de lignes que la base de données à gauche:
 
 ```{python}
@@ -589,6 +707,16 @@ right_merged = emissions.merge(
 right_merged.head(3)
 ```
 
+L'instruction équivalente en SQL serait
+
+```sql
+SELECT *
+FROM filosofi
+RIGHT JOIN emissions
+  ON filosofi.CODGEO = emissions.`INSEE commune`
+  AND filosofi.dep = emissions.dep;
+```
+
 On peut, comme précédemment, vérifier la cohérence des dimensions:
 
 ```{python}
@@ -600,7 +728,7 @@ Pour vérifier le nombre de lignes des données Filosofi que nous n'avons pas da
 
 ```{python}
 #| echo: true
-right_merged['id_left'].isna().mean()
+right_merged['id_left'].isna().sum()
 ```
 
 C'est un nombre faible. Quelles sont ces observations ?
@@ -618,6 +746,7 @@ dans la base des statistiques communales mais pas dans celles des émissions.
 Pour comprendre pourquoi, recherchons dans nos données d'émissions les observations liées à Marseille: 
 
 ```{python}
+#| echo: true
 emissions.loc[
   emissions["Commune"]
   .str.lower()
@@ -628,10 +757,95 @@ emissions.loc[
 Cela vient du fait que le jeu de données des émissions de l'Ademe propose de l'information sur les arrondissements dans les trois plus grandes villes
 là où le jeu de données de l'Insee ne fait pas cette décomposition.
 
+### _Inner join_
+
+![](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/inner_join.png)
+
+Il s'agit du jeu de données où les clés sont retrouvées à l'intersection des deux tables. 
+
+```{python}
+#| echo: true
+inner_merged = emissions.merge(
+  filosofi,
+  left_on = ["INSEE commune", "dep"],
+  right_on = ["CODGEO", "dep"],
+  how = "inner"
+)
+inner_merged.head(3)
+```
+
+En SQL, cela donne
+
+```sql
+SELECT *
+FROM emissions
+INNER JOIN filosofi
+  ON emissions.`INSEE commune` = filosofi.CODGEO
+  AND emissions.dep = filosofi.dep;
+```
+
+Le nombre de lignes dans notre jeu de données peut être comparé au jeu de droite et de gauche:
+
+```{python}
+#| echo: true
+inner_merged.shape[0] == (
+  left_merged.shape[0] - left_merged['id_right'].isna().sum()
+)
+```
+
+```{python}
+#| echo: true
+inner_merged.shape[0] == (
+  right_merged.shape[0] - right_merged['id_left'].isna().sum()
+)
+```
+
+
 ### _Full join_
 
+Le _full join_ est un pivot à gauche puis à droite pour les informations qui n'ont pas été trouvées
 
+![](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/full_join.png)
 
+```{python}
+#| echo: true
+full_merged = emissions.merge(
+  filosofi,
+  left_on = ["INSEE commune", "dep"],
+  right_on = ["CODGEO", "dep"],
+  how = "outer"
+)
+full_merged.head(3)
+```
+
+Comme d'habitude, la traduction en SQL est presque immédiate:
+
+```sql
+SELECT *
+FROM emissions
+FULL OUTER JOIN filosofi
+  ON emissions.`INSEE commune` = filosofi.CODGEO
+  AND emissions.dep = filosofi.dep;
+```
+
+Cette fois, on a une combinaison de nos trois jeux de données initiaux:
+
+* Le _inner join_ ;
+* Le _left join_ sur les observations sans clé de droite ;
+* Le _right join_ sur les observations sans clé de gauche ;
+
+```{python}
+#| echo: true
+(
+  full_merged['id_left'].isna().sum() + full_merged['id_right'].isna().sum()
+) == (
+  left_merged['id_right'].isna().sum() + right_merged['id_left'].isna().sum()
+)
+```
+
+### En résumé
+
+![](https://external-preview.redd.it/yOLzCR0qSzul2WpjQorxINB0xpU3_N9twmFVsgbGJwQ.jpg?auto=webp&s=4feedc91302ba635b3028a21b98d047def5cdc2b){fig-align="center"}
 
 ## Exemples d'identifiants dans les données françaises
 
@@ -737,3 +951,408 @@ Pour pallier ce problème, a récémment été mis en oeuvre le [code statistiqu
 
 [^flou]: Autrement, on rentre dans le monde des appariements flous ou des appariements probabilistes. Les appariements flous sont des situations où on ne dispose plus d'un identifiant exact pour associer deux bases mais d'une information partiellement bruitée entre deux sources pour faire cette mise en relation. Par exemple, dans une base de données produit on aura `Coca Cola 33CL` et dans une autre `Coca Cola canette` mais sous ces deux noms sont cachés le même produit. Le chapitre d'[ouverture aux enjeux de recherche textuelle avec `ElasticSearch`](/content/modern-ds/elastic.qmd) est consacré à cette problématique. Les appariements probabilistes sont un autre type d'approche. Dans ceux-ci, on associe des observations dans deux bases non pas sur la base d'un identifiant mais sur la distance entre un ensemble de caractéristiques dans les deux bases. Cette technique est très utilisée dans les statistiques médicales ou dans l'évaluation de politiques publiques sur la base du [_propensity score matching_](https://en.wikipedia.org/wiki/Propensity_score_matching).
 
+## Exercices d'application
+
+### Pourquoi a-t-on besoin d'un code commune quand on a déjà son nom ?
+
+Cet exercice va revenir un peu en arrière afin de saisir pourquoi nous avons pris comme hypothèse ci-dessus que le code commune était la clé de jointure.
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 6: vérification des clés de jointure</h3>
+```
+
+On commence par vérifier les dimensions des `DataFrames` et la structure de certaines variables clés.
+En l'occurrence, les variables fondamentales pour lier nos données sont les variables communales.
+Ici, on a deux variables géographiques: un code commune et un nom de commune. 
+
+1. Vérifier les dimensions des _DataFrames_.
+
+2. Identifier dans `filosofi` les noms de communes qui correspondent à plusieurs codes communes et sélectionner leurs codes. En d'autres termes, identifier les `LIBGEO` tels qu'il existe des doublons de `CODGEO` et les stocker dans un vecteur `x` (conseil: faire attention à l'index de `x`).
+
+On se focalise temporairement sur les observations où le libellé comporte plus de deux codes communes différents
+
+* _Question 3_. Regarder dans `filosofi` ces observations.
+
+* _Question 4_. Pour mieux y voir, réordonner la base obtenue par order alphabétique.
+
+* _Question 5_. Déterminer la taille moyenne (variable nombre de personnes: `NBPERSMENFISC16`) et quelques statistiques descriptives de ces données.
+Comparer aux mêmes statistiques sur les données où libellés et codes communes coïncident.
+
+* _Question 6_. Vérifier les grandes villes (plus de 100 000 personnes),
+la proportion de villes pour lesquelles un même nom est associé à différents codes commune.
+
+* _Question 7_. Vérifier dans `filosofi` les villes dont le libellé est égal à Montreuil.
+Vérifier également celles qui contiennent le terme _'Saint-Denis'_.
+
+```{=html}
+</div>
+```
+:::
+
+```{python}
+#| output: false
+
+# Question 1
+print(emissions.shape)
+print(filosofi.shape)
+```
+
+```{python}
+#| output: false
+
+# Question 2
+filosofi = filosofi.reset_index(drop=False)
+doublons = filosofi.groupby('LIBGEO').count()['CODGEO']
+doublons = doublons.loc[doublons>1]
+doublons = doublons.reset_index()
+doublons
+```
+
+```{python}
+#| output: false
+# Question 3
+filosofi.loc[
+  filosofi['LIBGEO'].isin(doublons['LIBGEO'])
+  ]
+```
+
+```{python}
+#| output: false
+# Question 4
+filosofi.loc[
+  filosofi['LIBGEO'].isin(doublons['LIBGEO'])
+  ].sort_values('LIBGEO')
+```
+
+```{python}
+#| output: false
+# Question 5
+print(10*"--" + "Communes dupliquées" + 10*"--")
+print(
+  filosofi.loc[
+    filosofi['LIBGEO'].isin(doublons['LIBGEO']), 'NBPERSMENFISC16'
+    ].describe()
+  )
+print(10*"--" + "Communes non dupliquées" + 10*"--")
+print(
+  filosofi.loc[
+    ~filosofi['LIBGEO'].isin(doublons['LIBGEO']), 'NBPERSMENFISC16'
+    ].describe()
+  )
+```
+
+```{python}
+#| output: false
+# Question 6
+emissions_big_city = filosofi.loc[filosofi['NBPERSMENFISC16']>100000].copy()
+emissions_big_city['probleme'] = emissions_big_city['LIBGEO'].isin(doublons['LIBGEO'])
+emissions_big_city['probleme'].mean() 
+emissions_big_city[emissions_big_city['probleme']]
+print(100*emissions_big_city['probleme'].mean()) #8,33 %
+```
+
+```{python}
+#| output: false
+# Question 7
+filosofi[filosofi['LIBGEO'] == 'Montreuil']
+filosofi[filosofi['LIBGEO'].str.contains('Saint-Denis')].head(10)
+```
+
+Ce petit exercice permet donc de se rassurer car les libellés dupliqués
+sont en fait des noms de commune identiques mais qui ne sont pas dans le même département.
+Il ne s'agit donc pas d'observations dupliquées.
+On peut donc se fier aux codes communes, qui eux sont uniques.
+
+### Calculer une empreinte carbone grâce à l'association entre des sources
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 7: Calculer l'empreinte carbone par habitant</h3>
+```
+
+En premier lieu, on va calculer l'empreinte carbone de chaque commune. 
+
+
+1. Créer une variable `emissions` qui correspond aux émissions totales d'une commune
+
+2. Faire une jointure à gauche entre les données d'émissions et les données de cadrage[^notebiais].
+
+3. Calculer l'empreinte carbone (émissions totales / population). 
+
+A ce stade nous pourrions avoir envie d'aller vers la modélisation pour essayer d'expliquer
+les déterminants de l'empreinte carbone à partir de variables communales. 
+Une approche inférentielle nécessite néanmoins pour être pertinente de
+vérifier en amont des statistiques descriptives.
+
+4. Sortir un histogramme en niveau puis en log de l'empreinte carbone communale.
+
+Avec une meilleure compréhension de nos données, nous nous rapprochons
+de la statistique inférentielle. Néanmoins, nous avons jusqu'à présent
+construit des statistiques univariées mais n'avons pas cherché à comprendre
+les résultats en regardant le lien avec d'autres variables. 
+Cela nous amène vers la statistique bivariée, notamment l'analyse des corrélations. 
+Ce travail est important puisque toute modélisation ultérieure consistera à 
+raffiner l'analyse des corrélations pour tenir compte des corrélations croisées
+entre multiples facteurs. On propose ici de faire cette analyse
+de manière minimale. 
+
+
+5. Regarder la corrélation entre les variables de cadrage et l'empreinte carbone. Certaines variables semblent-elles pouvoir potentiellement influer sur l'empreinte carbone ?
+
+```{=html}
+</div>
+```
+:::
+
+[^notebiais]: Idéalement, il serait nécessaire de s'assurer que cette jointure n'introduit
+pas de biais. En effet, comme nos années de référence ne sont pas forcément identiques,
+il peut y avoir un _mismatch_ entre nos deux sources. Le TP étant déjà long, nous n'allons pas dans cette voie.
+Les lecteurs intéressés pourront effectuer une telle analyse en exercice supplémentaire.
+
+```{python}
+#| output: false
+# Question 1
+
+emissions['emissions'] = emissions.sum(axis = 1, numeric_only = True)
+```
+
+```{python}
+#| output: false
+# Question 2
+
+emissions_merged = (
+    emissions.reset_index()
+    .merge(filosofi, left_on = "INSEE commune", right_on = "CODGEO")
+)
+```
+
+```{python}
+#| output: false
+# Question 3
+
+emissions_merged['empreinte'] = emissions_merged['emissions']/emissions_merged['NBPERSMENFISC16']
+emissions_merged['empreinte'] = emissions_merged['empreinte'].astype(float)
+```
+
+```{python}
+#| output: false
+# Question 4
+
+emissions_merged['empreinte'].plot(kind = 'hist')
+np.log(emissions_merged['empreinte']).plot(kind = 'hist')
+emissions_merged['empreinte'].describe()
+```
+
+A l'issue de la question 5, le graphique des corrélations est le suivant :
+
+```{python}
+#| output: false
+# Question 5
+
+correlation = emissions_merged.corr(numeric_only=True)['empreinte']
+correlation = correlation.reset_index()
+correlation = correlation.loc[~correlation['index'].isin(["empreinte","emissions"])]
+correlation['empreinte'].nlargest(10)
+```
+
+```{python}
+correlation.set_index("index")['empreinte'].plot(kind = "barh")
+```
+
+# Formatter des tableaux de statistiques descriptives
+
+Un _dataframe_ `Pandas`
+est automatiquement mis en forme lorsqu'il est visualisé depuis un _notebook_ sous forme de table HTML à la mise en forme minimaliste.
+Cette mise en forme est pratique pour voir
+les données, une tâche indispensable pour les _data scientists_
+mais ne permet pas d'aller vraiment au-delà. 
+
+Dans une phase
+exploratoire, il peut être pratique d'avoir un tableau
+un peu plus complet, intégrant notamment des visualisations
+minimalistes, pour mieux connaître ses données. Dans la phase
+finale d'un projet, lorsqu'on communique sur un projet, il 
+est avantageux de disposer d'une visualisation attrative. 
+Pour ces deux besoins, les sorties des _notebooks_ sont
+une réponse peu satisfaisante, en plus de nécessiter
+le _medium_ du _notebook_ qui peut en rebuter certains. 
+
+Heureusement, le tout jeune _package_ [`great_tables`](https://posit-dev.github.io/great-tables/get-started/) permet, simplement, de manière programmatique, la création de tableaux
+qui n'ont rien à envier à des productions manuelles fastidieuses faites dans `Excel`
+et difficilement répliquables. Ce _package_ est un portage en `Python` du _package_ [`GT`](https://gt.rstudio.com/).
+`great_tables` construit des tableaux
+_html_ ce qui offre une grande richesse dans la mise en forme et permet une excellente intégration avec [`Quarto`](https://quarto.org/), l'outil de publication reproductible développé par 
+L'exercice suivant proposera de construire un tableau avec
+ce _package_, pas à pas. 
+
+Afin de se concentrer sur la construction du tableau, 
+les préparations de données à faire en amont sont données
+directement. Nous allons repartir de ce jeu de données:
+
+```{python}
+#| echo: true
+emissions_merged.head(3)
+```
+
+Nous allons construire un tableau de statistiques
+descriptives par département mettant en parallèle
+l'empreinte carbone, le revenu médian et la population
+de chaque département
+
+```{python}
+#| echo: true
+emissions_table = (
+    emissions_merged
+    .rename(columns={"dep_y": "dep", "NBPERSMENFISC16": "population", "MED16": "revenu"})
+    .groupby("dep")
+    .agg({"empreinte": "sum", "revenu": "median", "population": "sum"}) #pas vraiment le revenu médian
+    .reset_index()
+    .sort_values(by = "empreinte")
+)
+```
+
+Dans ce tableau nous allons intégrer des barres horizontales,
+à la manière des exemples présentés [ici](https://posit-dev.github.io/great-tables/examples/). Cela se fait en incluant directement
+le code _html_ dans la colonne du _DataFrame_
+
+```{python}
+#| echo: true
+def create_bar(prop_fill: float, max_width: int, height: int, color: str = "green") -> str:
+    """Create divs to represent prop_fill as a bar."""
+    width = round(max_width * prop_fill, 2)
+    px_width = f"{width}px"
+    return f"""\
+    <div style="width: {max_width}px; background-color: lightgrey;">\
+        <div style="height:{height}px;width:{px_width};background-color:{color};"></div>\
+    </div>\
+    """
+
+colors = {'empreinte': "green", 'revenu': "red", 'population': "blue"}
+
+for variable in ['empreinte', 'revenu', 'population']:
+    emissions_table[f'raw_perc_{variable}'] = emissions_table[variable]/emissions_table[variable].max()
+    emissions_table[f'bar_{variable}'] = emissions_table[f'raw_perc_{variable}'].map(
+        lambda x: create_bar(x, max_width=75, height=20, color = colors[variable])
+    )
+```
+
+Nous ne gardons que les 5 plus petites empreintes carbone, et les 
+cinq plus importantes. 
+```{python}
+#| echo: true
+emissions_min = emissions_table.head(5).assign(grp = "5 départements les moins pollueurs").reset_index(drop=True)
+emissions_max = emissions_table.tail(5).assign(grp = "5 départements les plus pollueurs").reset_index(drop=True)
+
+emissions_table = pd.concat([
+    emissions_min,
+    emissions_max
+])
+```
+
+Enfin, pour pouvoir utiliser quelques fonctions
+pratiques pour sélectionner des colonnes à partir
+de motifs, nous allons convertir les données
+au format [`Polars`](https://pola.rs/)
+
+```{python}
+#| echo: true
+import polars as pl
+emissions_table = pl.from_pandas(emissions_table)
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 8: Un beau tableau de statistiques descriptives (exercice libre)</h3>
+```
+
+En prenant comme base ce tableau
+
+```python
+GT(emissions_table, groupname_col="grp", rowname_col="dep")
+```
+
+construire un tableau dans le style de celui ci-dessous
+
+
+```{=html}
+</div>
+```
+:::
+
+Le tableau à obtenir:
+```{python}
+from great_tables import GT, md
+import polars.selectors as cs
+
+(
+    GT(emissions_table, groupname_col="grp", rowname_col="dep")
+    .tab_header(title=md("**Empreinte carbone**"), subtitle = md("_Premières statistiques descriptives à affiner_"))
+    .fmt_number("empreinte", decimals = 2, scale_by=0.1)
+    .fmt_number("population", compact=True)
+    .fmt_number("revenu", compact=True, decimals = 1)
+    .fmt_percent(cs.starts_with("raw_perc"), decimals = 1)
+    .cols_move(
+        columns=cs.ends_with("_empreinte"),
+        after="empreinte"
+    )
+    .cols_move(
+        columns=cs.ends_with("_population"),
+        after="population"
+    )
+    .cols_move(
+        columns=cs.ends_with("_revenu"),
+        after="revenu"
+    )
+    .cols_label(
+        dep=md("**Département**"),
+        empreinte = md("**Empreinte carbone**"),
+        revenu = md("**Revenu**"),
+        population = md("**Population**"),
+    )
+    .cols_label(
+        **{
+            val: md("_(%)_*") for val in emissions_table.select(cs.contains("raw_perc")).columns
+         }
+    )    
+    .cols_label(
+        **{
+            val: "" for val in emissions_table.select(cs.contains("bar")).columns
+         }
+    )    
+    .tab_spanner(label=md("**Empreinte**"), columns=cs.ends_with("empreinte"))
+    .tab_spanner(label=md("**Revenu médian**"), columns=cs.ends_with("revenu"))
+    .tab_spanner(label=md("**Population**"), columns=cs.ends_with("population"))
+    .tab_source_note(
+        source_note=md("_*__Note__: Le revenu médian présenté ici est une approximation du revenu médian du département_.")
+    )
+    .tab_source_note(
+        source_note=md("*__Lecture__: Les colonnes __(%)__ présentées ci-dessus sont rapportées à la valeur maximale de la variable*")
+    )
+    .tab_source_note(
+        source_note=md("*__Source__: Calculs à partir des données de l'Ademe*")
+    )
+    .tab_options(
+        heading_background_color="#0c540c"
+    )
+
+)
+```
+
+Grâce à celui-ci, on peut déjà comprendre que notre définition
+de l'empreinte carbone est certainement défaillante. Il apparaît
+peu plausible que les habitants du 77 aient une empreinte 500 fois
+supérieure à celle de Paris intra-muros. La raison principale ? 
+On n'est pas sur un concept d'émissions à la consommation mais à la
+production, ce qui pénalise les espaces industriels ou les espaces
+avec des aéroports...
+
+Pour aller plus loin sur la construction de tableaux
+avec `great_tables`, vous pouvez répliquer 
+cet [exercice](https://rgeo.linogaliana.fr/exercises/eval.html)
+de production de tableaux électoraux
+que j'ai proposé pour un cours de `R` avec `gt`, l'équivalent
+de `great_tables` pour `R`.
