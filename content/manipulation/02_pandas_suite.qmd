@@ -1356,3 +1356,103 @@ cet [exercice](https://rgeo.linogaliana.fr/exercises/eval.html)
 de production de tableaux électoraux
 que j'ai proposé pour un cours de `R` avec `gt`, l'équivalent
 de `great_tables` pour `R`.
+
+
+# `Pandas`: vers la pratique et au-delà 
+
+## `Pandas` dans une chaine d'opérations
+
+En général, dans un projet, le nettoyage de données va consister en un ensemble de
+méthodes appliquées à un `DataFrame` ou alors une `Serie` lorsqu'on travaille exclusivement sur une colonne. 
+Autrement dit, ce qui est généralement attendu lorsqu'on fait du `Pandas` c'est d'avoir une chaîne qui prend un `DataFrame` en entrée et ressort ce même `DataFrame` enrichi, ou une version agrégée de celui-ci, en sortie.
+
+Cette manière de procéder est le coeur de la syntaxe `dplyr` en `R` mais n'est pas forcément native en `Pandas` selon les opérations qu'on désire mettre en oeuvre. En effet, la manière naturelle de mettre à jour un _dataframe_ en `Pandas` passe souvent par une syntaxe du type:
+
+```{python}
+#| echo: true
+import numpy as np
+import pandas as pd
+
+data = [[8000, 1000], [9500, np.nan], [5000, 2000]]
+df = pd.DataFrame(data, columns=['salaire', 'autre_info'])
+df['salaire_net'] = df['salaire']*0.8
+```
+
+En `SQL` on pourrait directement mettre à jour notre base de données avec la nouvelle colonne :
+
+```sql
+SELECT *, salaire*0.8 AS salaire_net FROM df
+```
+
+L'écosystème du _tidyverse_ en `R`, l'équivalent de `Pandas`, fonctionne selon la même logique que SQL de mise à jour de table. On ferait en effet la commande suivante avec `dplyr`:
+
+```r
+df %>% mutate(salaire_net = salaire*0.8) 
+```
+
+Techniquement on pourrait faire ceci avec un `assign` en `Pandas`
+
+```{python}
+#| echo: true
+df = df.drop("salaire_net", axis = "columns") #<1>
+df = df.assign(salaire_net = lambda s: s['salaire']*0.8)
+```
+1. Pour effacer la variable afin de repartir de l'exemple initial
+
+Cependant cette syntaxe `assign` n'est pas très naturelle. Il est nécessaire de lui passer une _lambda function_ qui attend comme _input_ un `DataFrame` là où on voudrait une colonne. Il ne s'agit donc pas vraiment d'une syntaxe lisible et pratique. 
+
+Il est néanmoins possible d'enchaîner des opérations sur des jeux de données grâce aux [_pipes_](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.pipe.html). Ceux-ci reprennent la même philosophie que celle de `dplyr`, elle-même inspirée du _pipe_ Linux. 
+Cette approche permettra de rendre plus lisible le code en définissant des fonctions effectuant des opérations sur une ou plusieurs colonnes d'un DataFrame. Le premier argument à indiquer à la fonction est le `DataFrame`, les autres sont ceux permettant de contrôler son comportement
+
+
+```{python}
+#| echo: true
+def calcul_salaire_net(df: pd.DataFrame, col: str, taux: float = 0.8):
+  df["salaire_net"] = df[col]*taux
+  return df
+```
+
+Ce qui transforme notre chaine de production en
+
+```{python}
+#| echo: true
+(
+  df
+  .pipe(calcul_salaire_net, "salaire")
+)
+```
+
+## Quelques limites sur la syntaxe de `Pandas` 
+
+Il y a un avant et un après `Pandas` dans l'analyse de données en `Python`. Sans ce _package_ ô combien pratique `Python`, malgré toutes les forces de ce langage, aurait eu du mal à s'installer dans le paysage de l'analyse de données. Cependant, si `Pandas` propose une syntaxe cohérente sur de nombreux aspects, elle n'est pas parfaite non plus. Les paradigmes plus récents d'analyse de données en `Python` ont d'ailleurs parfois l'ambition de corriger ces imperfections syntaxiques là. 
+
+Parmi les points les plus génants au quoditien il y a le besoin de régulièrement faire des `reset_index` lorsqu'on construit des statistiques descriptives. En effet, il peut être dangereux de garder des indices qu'on ne contrôle pas bien car, sans attention de notre part lors des phases de _merge_, ils peuvent être utilisés à mauvais escient par `Pandas` pour joindre les données ce qui peut provoquer des suprises. 
+
+`Pandas` est extrêmement bien fait pour restructurer des données du format _long_ to _wide_ ou _wide_ to _long_. Cependant, ce n'est pas la seule manière de restructurer un jeu de données qu'on peut vouloir mettre en oeuvre. Il arrive régulièrement qu'on désire comparer la valeur d'une observation à celle d'un groupe à laquelle elle appartient. C'est notamment particulièrement utile dans une phase d'analyse des anomalies, valeurs aberrantes ou lors d'une investigation de détection de fraude. De manière native, en `Pandas`, il faut construire une statistique agrégée par groupe et refaire un _merge_ aux données initiales par le biais de la variable de groupe. C'est un petit peu fastidieux:
+
+```{python}
+#| echo: true
+emissions_moyennes = emissions.groupby("dep").agg({"Agriculture": "mean"}).reset_index()
+emissions_enrichies = (
+  emissions
+  .merge(emissions_moyennes, on = "dep", suffixes = ['', '_moyenne_dep'])
+)
+emissions_enrichies['relatives'] = emissions_enrichies["Agriculture"]/emissions_enrichies["Agriculture_moyenne_dep"]
+emissions_enrichies.head()
+```
+
+Dans le _tidyverse_, cette opération en deux temps pourrait être faite en une seule étape, ce qui est plus pratique
+
+```r
+emissions %>%
+  group_by(dep) %>%
+  mutate(relatives = Agriculture/mean(Agriculture))
+```
+
+Ce n'est pas si grave mais cela alourdit la longueur des chaines de traitement faites en `Pandas` et donc la charge de maintenance pour les faire durer dans le temps.  
+
+
+## Les autres paradigmes
+
+Nous avons 
+
