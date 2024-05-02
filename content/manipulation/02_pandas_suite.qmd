@@ -1451,8 +1451,58 @@ emissions %>%
 
 Ce n'est pas si grave mais cela alourdit la longueur des chaines de traitement faites en `Pandas` et donc la charge de maintenance pour les faire durer dans le temps.  
 
+De manière plus générale, les chaînes de traitement `Pandas` peuvent être assez verbeuses, car il faut régulièrement redéfinir le `DataFrame` qu'on utilise plutôt que simplement les colonnes. Par exemple, pour faire un filtre sur les lignes et les colonnes, il faudra faire:
 
-## Les autres paradigmes
+```{python}
+#| echo: true
+(
+  emissions
+  .loc[
+    (emissions["dep"] == "12") & (emissions["Routier"]>500), ['INSEE commune', 'Commune']
+  ]
+  .head(5)
+)
+```
 
-Nous avons 
+En SQL on pourrait se contenter de faire référence aux colonnes dans le filter
+
+```sql
+SELECT "INSEE commune", 'Commune'
+FROM emissions 
+WHERE dep=="12" AND Routier>500
+```
+
+Dans le _tidyverse_ (`R`) on pourrait aussi faire ceci simplement
+
+```r
+df %>%
+  filter(dep=="12", Routier>500) %>%
+  select(`INSEE commune`, `Commune`)
+```
+
+
+# Les autres paradigmes
+
+Ces deux chapitres ont permis d'explorer en profondeur la richesse de l'écosystème `Pandas` qui est un indispensable dans la boite à outil du _data scientist_.  
+Cependant, il ne s'agit pas de la seule manière de traiter des données en `Python` dans un paradigme de _DataFrame_. 
+
+Les autres solutions techniques peuvent être pertinentes si on désire traiter des volumes de données importants ou si on désire utiliser des syntaxes alternatives. Les principales alternatives à `Pandas` sont [`Polars`](https://pola.rs/), [`DuckDB`](https://duckdb.org/) et [`Spark`](https://spark.apache.org/docs/latest/api/python/index.html). Il existe également [`Dask`](https://www.dask.org/), une librairie pour paralléliser des traitements écris en `Pandas`.
+
+## `Polars`
+
+`Polars` est certainement le paradigme le plus inspiré de `Pandas`, jusqu'au choix du nom. La première différence fondamentale est dans les couches internes utilisées. `Polars` s'appuie sur l'implémentation `Rust` de `Arrow` là où `Pandas` s'appuie sur `Numpy` ce qui est facteur de perte de performance. Cela permet à `Polars` d'être plus efficace sur de gros volumes de données, d'autant que de nombreuses opérations sont parallélisées et reposent sur l'évaluation différées (_lazy evaluation_) un principe de programmation qui permet d'optimiser les requêtes pour ne pas les exécuter dans l'ordre de définition mais dans un ordre logique plus optimal.
+
+Une autre force de `Polars` est la syntaxe plus cohérente, qui bénéficie du recul d'une quinzaine d'années d'existence de `Pandas` et d'une petite dizaine d'années de `dplyr` (le _package_ de manipulation de données au sein du paradigme du _tidyverse_ en `R`). Pour reprendre l'exemple précédent, il n'est plus nécessaire de forcer la référence au _DataFrame_, dans une chaîne d'exécution toutes les références ultérieures seront faites au regard du _DataFrame_ de départ
+
+```{python}
+#| echo: true
+import polars as pl
+emissions_polars = pl.from_pandas(emissions)
+(
+  emissions_polars
+  .filter(pl.col("dep") == "12", pl.col("Routier") > 500)
+  .select('INSEE commune', 'Commune')
+  .head(5)
+)
+```
 
