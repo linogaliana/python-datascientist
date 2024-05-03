@@ -1,0 +1,1392 @@
+---
+title: "Introduction à Pandas"
+draft: false
+weight: 20
+tags:
+  - Pandas
+  - Pollution
+  - Ademe
+  - Tutoriel
+  - Manipulation
+categories:
+  - Tutoriel
+  - Exercices
+  - Manipulation
+description: |
+  `Pandas` est l'élément central de l'écosystème `Python` pour la _data science_. Ce chapitre présente les premières
+  manipulations de données qu'on peut faire grâce à `Pandas` pour explorer
+  la structure de son jeu de données.
+bibliography: ../../reference.bib
+image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/panda_stretching.png
+links:
+- icon: journal-text
+  name: Documentation Pandas
+  url: https://pandas.pydata.org/docs/
+echo: false
+---
+
+Pour essayer les exemples présents dans ce tutoriel : 
+
+::: {.content-visible when-format="html"}
+{{< include "../../build/_printBadges.qmd" >}}
+:::
+
+# Introduction
+
+Le _package_ `Pandas` est l'une des briques centrales de l'écosystème de
+la _data science_ depuis une dizaine d'années. Le _DataFrame_, 
+objet central dans des langages comme `R` 
+ou `Stata`, a longtemps était un grand absent dans l'écosystème `Python`. 
+Pourtant, grâce à `Numpy`, toutes les briques de base étaient présentes
+mais méritaient d'être réagencées pour convenir aux besoins
+des _data scientists_. 
+
+Wes McKinney, lorsqu'il a construit `Pandas`
+pour proposer un _dataframe_ s'appuyant, en arrière-plan, sur la librairie
+de calcul numérique `Numpy`, a permis un grand bond en avant pour `Python`
+dans l'analyse de données qui explique sa popularité dans l'écosystème
+de la _data science_. `Pandas` n'est pas sans limite[^tidyverse], nous aurons l'occasion
+d'en évoquer quelques unes, mais la grande richesse des méthodes d'analyses
+proposées simplifie énormément le travail d'analyse de données.
+Pour en savoir plus sur ce _package_, l'ouvrage
+de référence de @mckinney2012python présente de nombreuses fonctionnalités du _package_.
+
+[^tidyverse]: L'écosystème équivalent en `R`, le [`tidyverse`](), développé
+par _Posit_, est de conception plus récente que `Pandas`. Sa philosophie
+a ainsi pu s'inspirer de celle de `Pandas` tout en pouvant remédier à quelques limites 
+de la syntaxe `Pandas`. Les deux syntaxes étant une mise en oeuvre en `Python` ou `R` 
+de la philosophie `SQL`, il est naturel qu'elles se ressemblent beaucoup et
+qu'il soit pertinent pour les _data scientists_ de connaître les deux langages.
+
+
+Nous nous concentrerons dans ce chapitre sur les éléments les plus pertinents
+dans le cadre d'une introduction à la _data science_ et laisserons
+les utilisateurs intéressés approfondir leurs connaissances
+dans les ressources foisonnantes qu'il existe sur le sujet. 
+
+Comme les jeux de données prennent généralement de la valeur
+en associant plusieurs sources, par exemple pour mettre en relation
+un enregistrement avec une donnée contextuelle ou pour lier deux bases
+clients afin d'avoir une donnée faisant sens, le chapitre suivant présentera
+la manière d'associer des jeux de données
+différents avec `Pandas`. 
+A l'issue du chapitre suivant, grâce à des croisements
+de données, nous diposerons d'une base fine sur les empreintes
+carbone des Français[^empreinte]. 
+
+[^empreinte]: A vrai dire, ce n'est pas l'empreinte carbone
+puisque la base de données correspond à une vision production,
+pas consommation. Les émissions faites dans une commune pour satisfaire
+la consommation d'une autre seront imputées à la première là 
+où le concept d'empreinte carbone voudrait qu'on l'impute
+aux secondes. Il ne s'agit pas, avec cet exercice, de construire une 
+statistique fiable mais plutôt de comprendre la logique de 
+l'association de données pour construire des statistiques descriptives. 
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
+Si vous êtes intéressés par `R` et le _tidyverse_,
+une version très proche de ce TP est
+disponible dans [ce cours](https://rgeo.linogaliana.fr/exercises/r-wrangling.html).
+```{=html}
+</div>
+```
+:::
+
+
+## Données
+
+Dans ce tutoriel `Pandas`, nous allons utiliser :
+
+* Les émissions de gaz à effet de serre estimées au niveau communal par l'ADEME. Le jeu de données est 
+disponible sur [data.gouv](https://www.data.gouv.fr/fr/datasets/inventaire-de-gaz-a-effet-de-serre-territorialise/#_)
+et requêtable directement dans `Python` avec
+[cet url](https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert) ;
+
+Le [chapitre suivant](/content/manipulation/02_pandas_followup.qmd) permettra de mettre en application des éléments présents dans ce chapitre avec
+les données ci-dessus associées à des données de contexte au niveau communal.
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Compétences à l'issue de ce chapitre</h3>
+```
+
+- Importer un jeu de données sous forme de _dataframe_ `Pandas` et explorer sa structure ;
+- Effectuer des manipulations sur les colonnes et les lignes ;
+- Construire des statistiques agrégées et chaîner les opérations ;
+- Utiliser les méthodes graphiques de `Pandas` pour se représenter rapidement la distribution des données.
+```{=html}
+</div>
+```
+:::
+
+
+## Environnement
+
+Nous suivrons les conventions habituelles dans l'import des packages :
+
+```{python}
+#| echo: true
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+```
+
+
+Pour obtenir des résultats reproductibles, on peut fixer la racine du générateur
+pseudo-aléatoire. 
+
+```{python}
+#| echo: true
+np.random.seed(123)
+```
+
+
+Au cours de cette démonstration des principales fonctionalités de `Pandas`, et
+lors du chapitre suivant,
+je recommande de se référer régulièrement aux ressources suivantes : 
+
+* L'[aide officielle de `Pandas`](https://pandas.pydata.org/docs/user_guide/index.html).
+Notamment, la
+[page de comparaison des langages](https://pandas.pydata.org/pandas-docs/stable/getting_started/comparison/index.html)
+qui est très utile ;
+* [Ce tutoriel](https://observablehq.com/@observablehq/data-wrangling-translations),
+pensé certes pour les utilisateurs d'[`Observable Javascript`](https://observablehq.com),
+mais qui offre de nombreux exemples intéressants pour les afficionados de `Pandas` ;
+* La _cheatsheet suivante_, [issue de ce post](https://becominghuman.ai/cheat-sheets-for-ai-neural-networks-machine-learning-deep-learning-big-data-678c51b4b463)
+
+Pour rappel, afin d'exécuter les exemples de code dans un _notebook_ interactif, vous pouvez utiliser les raccourcis en haut de la page pour lancer celui-ci dans votre environnement de prédilection.
+
+
+# Logique de `Pandas`
+
+## Anatomie d'une table `Pandas`
+
+L'objet central dans la logique `Pandas` est le `DataFrame`.
+Il s'agit d'une structure particulière de données
+à deux dimensions, structurées en alignant des lignes et colonnes.
+Contrairement à une matrice, les colonnes
+peuvent être de types différents.
+
+Un `DataFrame` est composé des éléments suivants :
+
+* l'indice de la ligne ;
+* le nom de la colonne ;
+* la valeur de la donnée ;
+
+![Structuration d'un _DataFrame_ `Pandas`,
+empruntée à <https://medium.com/epfl-extension-school/selecting-data-from-a-pandas-dataframe-53917dc39953>](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/pandasDF)
+
+
+## Avant le `DataFrame`, la `Serie`
+
+En fait, un _DataFrame_ est une collection d'objets appelés `pandas.Series`.
+Ces `Series` sont des objets d'une dimension qui sont des extensions des
+array-unidimensionnels `Numpy`[^numpyarrow]. En particulier, pour faciliter le traitement
+de données catégorielles ou temporelles, des types de variables
+supplémentaires sont disponibles dans `Pandas` par rapport à
+`Numpy` (`categorical`, `datetime64` et `timedelta64`). Ces
+types sont associés à des méthodes optimisées pour faciliter le traitement
+de ces données.
+
+[^numpyarrow]: L'objectif originel de `Pandas` est de fournir une librairie haut-niveau vers des couches basses plus abstraites que sont les _array_ `Numpy`. `Pandas` est progressivement en train de changer ces couches basses pour privilégier `Arrow` à `Numpy`
+sans déstabiliser les commandes haut-niveau auxquelles les utilisateurs de `Pandas` sont habitués. Ce changement s'explique par le fait qu'`Arrow`, une librairie bas niveau de calcul, est plus puissante et plus flexible que `Numpy`. Cette dernière, par exemple, propose des types textuels limités là où `Arrow` offre une plus grande liberté.  
+
+Il existe plusieurs types possibles pour un `pandas.Series`, extension des types de données de base en `Python` qui détermineront ensuite le comportement de cette variable. En effet, de nombreuses opérations n'ont pas le même sens selon qu'on a une valeur numérique ou non.
+
+Les types les plus simples (`int` ou `float`) correspondent aux valeurs numériques:
+
+```{python}
+#| echo: true
+poids = pd.Series(
+    [3, 7, 12]
+)
+poids
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-danger" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-triangle-exclamation"></i> Le piège des valeurs manquantes</h3>
+```
+
+De manière générale, si `Pandas` détecte exclusivement des valeurs entières dans une variable, il utilisera le type `int` pour optimiser la mémoire. Ce choix fait sens. Il a néanmoins un inconvénient: `Numpy`, et donc par extension `Pandas`, ne sait se représenter des valeurs manquantes pour le type `int` (plus d'éléments sur les valeurs manquantes ci-dessous). 
+
+En attendant le changement de couche basse en faveur d'`Arrow`, qui lui sait gérer les valeurs manquantes dans les `int`, la méthode à mettre en oeuvre est de convertir au type `float` si la variable sera amenée à avoir des valeurs manquantes, ce qui est assez simple:
+
+```python
+x.astype(double)
+```
+
+```{=html}
+</div>
+```
+:::
+
+Pour des données textuelles, c'est tout aussi simple:
+
+```{python}
+#| echo: true
+animal = pd.Series(
+  ['chat', 'chien', 'koala']
+)
+animal
+```
+
+Le type `object` correspond est une voiture-balais pour les types de données exclusivement textuelles (type `str`) ou mélangeant données textuelles et numériques (type `mixed`). Historiquement, c'était un type intermédiaire entre le `factor` et le `character` de `R`. Cependant, depuis quelques temps, il existe un type équivalent au `factor` de `R` dans `Pandas` pour
+les variables dont le nombre de valeurs
+est une liste finie et relativement courte, le type `category`. Le type `object` pouvant provoquer des erreurs inattendues par sa nature mixte, il est recommandé, lorsqu'on désire se concentrer sur une variable, de faire un choix sur la nature de celle-ci et de la convertir:
+
+```{python}
+animal.astype("category") #<1>
+animal.astype(str) #<2>
+```
+1. Pour convertir en `category` (le choix qui fait sens ici)
+2. Pour convertir en `str` (si on désire faire des opérations textuelles ultérieures)
+
+Il faut bien examiner les types de ses objets `Pandas` et les convertir s'ils ne font pas sens ; `Pandas` fait certes des choix optimisés mais il est parfois nécessaire de les corriger car `Pandas` ne connaît pas vos usages ultérieurs des données. C'est l'une des opérations à faire lors
+du _feature engineering_, ensemble des étapes de préparation des données pour un usage ultérieur.  
+
+# De la `Serie` au `DataFrame`
+
+Nous avons crée deux séries indépendantes, `animal`
+et `poids` qui sont pourtant reliées. Dans le monde matriciel, cela correspondrait à passer du vecteur à la matrice. Dans le monde de `Pandas`, cela veut dire passer de la `Serie` au `DataFrame`.
+
+Cela se fait naturellement avec `Pandas`:
+
+```{python}
+#| echo: true
+animaux = pd.DataFrame(
+  zip(animal, poids), #<1>
+  columns = ['animal','poids']
+)
+animaux
+```
+1. On doit utiliser `zip` ici car `Pandas` attend une structure du type `{"var1": [val1, val2], "var2": [val1, val2]}` qui n'est pas celle que nous avons préparé précédemment. Nous verrons néanmoins que cette approche n'est pas la plus usuelle pour créer un `DataFrame`
+
+
+## L'indexation
+
+La différence essentielle entre une `Series` et un objet `Numpy` est l'indexation.
+Dans `Numpy`,
+l'indexation est implicite ; elle permet d'accéder à une donnée (celle à
+l'index situé à la position *i*).
+Avec une `Series`, on peut bien sûr utiliser un indice de position mais on peut
+surtout faire appel à des indices plus explicites.
+
+Ceci permet d'accéder à la donnée de manière plus naturelle, en utilisant les noms de colonne par exemple:
+
+```{python}
+#| echo: true
+animaux['poids']
+```
+
+L'existence d'indice rend le *subsetting*, c'est-à-dire
+la sélection de lignes ou de colonnes, particulièrement aisé. Les _DataFrames_ pendant présentent deux indices: ceux des lignes et ceux des colonnes. On pourra faire des sélections sur ces deux dimensions. 
+En anticipant sur les exercices
+ultérieurs, on peut voir que cela va nous faciliter la sélection de ligne:
+
+```{python}
+#| echo: true
+animaux.loc[animaux['animal'] == "chat", 'poids']
+```
+
+Cette instruction est équivalente à la commande `SQL`:
+
+```sql
+SELECT poids FROM animaux WHERE animal == "chat"
+```
+
+Si on revient sur notre jeu de données `animaux`,
+on peut voir sur la gauche l'affichage du numéro de la ligne:
+
+```{python}
+#| echo: true
+animaux
+```
+
+Il s'agit de l'indice par défaut pour la dimension ligne car nous n'en n'avons pas configuré un. Ce n'est pas obligatoire, il est tout à fait possible d'avoir un indice correspondant à une variable d'intérêt (nous découvrirons cela lorsque nous explorerons `groupby` dans le prochain chapitre). Cependant, cela peut être piégeux et il est recommandé que cela ne soit que transitoire, d'où l'intérêt de faire régulièrement des `reset_index`. 
+
+
+## Le concept de _tidy data_
+
+Le concept de __*tidy*__ data, popularisé par Hadley Wickham via ses packages `R` (voir @wickham2023r),
+est parfaitement pertinent pour décrire la structure d'un _DataFrame_ `Pandas`.
+Les trois règles des données _tidy_ sont les suivantes :
+
+* Chaque __variable__ possède sa propre colonne ;
+* Chaque __observation__ possède sa propre ligne ;
+* Une __valeur__, matérialisant une observation d'une variable,
+se trouve sur une unique cellule.
+
+
+![Illustration du concept de _tidy data_ (emprunté à H. Wickham)](https://d33wubrfki0l68.cloudfront.net/6f1ddb544fc5c69a2478e444ab8112fb0eea23f8/91adc/images/tidy-1.png)
+
+Ces principes peuvent vous apparaître de bon sens mais vous découvrirez que de nombreux formats de données ne correspondent pas à ce principe. Par exemple, des tableurs Excel proposent régulièrement des valeurs à cheval sur plusieurs colonnes ou plusieurs lignes fusionnées. Restructurer cette donnée selon le principe des _tidy data_ sera un enjeu pour être en mesure d'effectuer des traitements sur celle-ci.  
+
+# Importer des données avec `Pandas`
+
+S'il fallait créer à la main tous ses _DataFrames_
+à partir de vecteurs, `Pandas` ne serait pas pratique. `Pandas` propose de nombreuses fonctions pour lire
+des données stockées dans des formats différents. 
+
+Les données les plus simples à lire sont les données tabulaires stockées dans un format adéquat. Les deux principaux formats à connaître sont le `CSV` et le format `Parquet`. Le premier présente l'avantage de la simplicité - il est universel, connu de tous et est lisible par n'importe quel éditeur de texte. Le second gagne en popularité dans l'écosystème de la donnée, car il règle certaines limites du CSV (stockage optimisé, types des variables prédéfénis...) mais présente l'inconvénient de ne pas être lisible sans un outil adéquat (qui heureusement sont de plus en plus présents dans les éditeurs de code standard comme `VSCode`). Pour en savoir plus sur la différence entre `CSV` et `Parquet`, se reporter aux [chapitre d'approfondissement](/content/modern-ds/s3.qmd) sur le sujet.
+
+Les donées stockées dans les autres formats textes dérivés du `CSV` (`.txt`, `.tsv`...) ou les formats type `JSON` sont lisibles avec `Pandas` mais il faut parfois itérer pour trouver les bons paramètres de lecture. Nous découvrirons dans d'autres chapitres que d'autres formats de données liés à des structures de données différentes sont tout aussi lisibles avec `Python`. 
+
+Les formats plats (`.csv`, `.txt`...) et le format `Parquet` sont simples à utiliser avec `Pandas` parce que d'une part ils ne sont pas propriétaires et d'autre part ils stockent la donnée sous
+une forme _tidy_. Les données issues de tableurs, `Excel` ou `LibreOffice`, sont plus ou moins compliquées
+à importer selon qu'elles suivent ce schéma ou non. 
+Cela vient du fait que ces outils sont utilisés à tord et à travers. Alors que dans le monde de la _data science_ ceux-ci devraient servir principalement à diffuser des tableaux finaux pour du _reporting_, ils servent souvent à diffuser une donnée brute qui pourrait l'être par des canaux plus adaptés. 
+L'une des principales difficultés liées aux tableurs vient du fait que les données sont généralement associées à de la documentation dans le même onglet - par exemple le tableur comporte quelques lignes décrivant les sources avant le tableau - ce qui nécessite de l'intelligence humaine pour assister `Pandas` lors de la phase d'import. Celle-ci sera toujours possible mais lorsqu'il existe une alternative sous forme de fichier plat, il n'y a pas d'hésitation à avoir. 
+
+
+## Lire des données depuis un chemin local
+
+Cet exercice vise à présenter l'intérêt d'utiliser un chemin relatif
+plutôt qu'un chemin absolu pour favoriser la reproductibilité du code. Nous préconiserons néanmoins par la suite de privilégier directement la lecture depuis internet lorsqu'elle est possible et n'implique pas le téléchargement récurrent d'un fichier volumineux.
+
+Pour préparer cet exercice, le code suivant permettra de
+télécharger des données qu'on va écrire en local
+
+```{python}
+#| echo: true
+import requests
+
+url = "https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv"
+response = requests.get(url)
+
+# Assurez-vous que la requête a réussi
+if response.status_code == 200:
+    with open("cog_2023.csv", "wb") as file:
+        file.write(response.content)
+else:
+    print("Échec du téléchargement du fichier. Statut HTTP :", response.status_code)
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice préliminaire: Importer un CSV (optionnel)</h3>
+```
+
+1. Utiliser le code ci-dessus ☝️ pour télécharger les données. Utiliser `Pandas` pour lire le fichier téléchargé.
+2. Chercher où les données ont été écrites. Observer la structure de ce dossier. 
+3. Créer un dossier depuis l'explorateur de fichiers (à gauche dans `Jupyter` ou `VSCode`). Déplacer le CSV et le _notebook_. Redémarrer le kernel et adaptez votre code si besoin. Refaire cette manipulation plusieurs fois avec des dossiers différents. Quel peut être le problème rencontré ?
+
+```{=html}
+</div>
+```
+:::
+
+```{python}
+import pandas as pd
+cog = pd.read_csv("cog_2023.csv")
+cog.head(2)
+```
+
+```{python}
+#| output: false
+import os
+os.getcwd()
+os.listdir()
+```
+
+Le principal problème de la lecture depuis des
+fichiers stockés en local est le risque de 
+se rendre adhérant à un système de fichier
+qui n'est pas forcément partagé. Il vaut mieux,
+lorsque c'est possible, directement lire la donnée
+avec un lien `HTTPS`, ce que `Pandas` sait faire.
+De plus, lorsqu'on travaille sur de l'_open data_ cela assure qu'on utilise la dernière donnée
+disponible et non une duplication en local qui peut ne pas être à jour. 
+
+## Lecture depuis un CSV disponible sur internet
+
+L'URL d'accès aux données peut être conservé dans une variable _ad hoc_ :
+
+```{python}
+#| echo: true
+url = "https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert"
+```
+
+L'objectif du prochain exercice est de se familiariser à l'import et l'affichage de données
+avec `Pandas` et à l'affichage de quelques observations. 
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1: Importer un CSV et explorer la structure de données</h3>
+```
+
+1. Importer les données de l'Ademe à l'aide du package `Pandas` et de la commande consacrée pour l'import de csv. Nommer le `DataFrame` obtenu `emissions`[^nomdf].
+2. Utiliser les méthodes adéquates afin d'afficher pour les 10 premières valeurs, les 15 dernières et un échantillon aléatoire de 10 valeurs grâce aux méthodes adéquates du _package_ `Pandas`. 
+3. Tirer 5 pourcents de l'échantillon sans remise.
+4. Ne conserver que les 10 premières lignes et tirer aléatoirement dans celles-ci pour obtenir un DataFrame de 100 données.
+5. Faire 100 tirages à partir des 6 premières lignes avec une probabilité de 1/2 pour la première observation et une probabilité uniforme pour les autres.
+
+
+<details>
+<summary>
+En cas de blocage à la question 1
+</summary>
+
+Lire la documentation de `read_csv` (très bien faite) ou chercher des exemples
+en ligne pour découvrir cette fonction.
+
+</details>
+
+
+```{=html}
+</div>
+```
+:::
+
+[^nomdf]: Par manque d'imagination, on est souvent tenté d'appeler notre
+_dataframe_ principal `df` ou `data`. C'est souvent une mauvaise idée puisque
+ce nom n'est pas très informatif quand on relit le code quelques semaines
+plus tard. L'autodocumentation, approche qui consiste à avoir un code
+qui se comprend de lui-même, est une bonne pratique et il est donc recommandé
+de donner un nom simple mais efficace pour connaître la nature du _dataset_ en question.
+
+```{python}
+#| label: exo1-q1
+# Question 1
+emissions = pd.read_csv(url, sep=",")
+```
+
+```{python}
+#| output: false
+#| label: exo1-q2
+# Question 2
+emissions.head(2)
+
+emissions.head(10)
+emissions.tail(15)
+emissions.sample(10)
+
+# Question 3
+emissions.sample(frac = 0.05)
+
+# Question 4
+emissions.head(10).sample(n = 100, replace = True)
+
+# Question 5
+emissions.head(6).sample(n = 100, replace = True, weights = [0.5] + [0.1]*5)
+```
+
+Comme l'illustre cet exercice, l'affichage des _DataFrames_ dans les _notebooks_ est assez ergonomique.
+Les premières et dernières lignes s'affichent
+automatiquement. Pour des tables de valorisation présentes dans un
+rapport ou un article de recherche, le chapitre suivant
+présente `great_tables` qui offre de très riches
+fonctionnalités de mise en forme des tableaux. 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-danger" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+```
+
+Il faut faire attention au `display` et aux
+commandes qui révèlent des données (`head`, `tail`, etc.)
+dans un _notebook_ qui exploite
+des données confidentielles lorsqu'on utilise 
+le logiciel de contrôle de version `Git` (cf. chapitres dédiés).
+
+En effet, on peut se
+retrouver à partager des données, involontairement, dans l'historique
+`Git`. Comme cela sera expliqué dans le chapitre dédié à `Git`,
+un fichier, nommé le `.gitignore`, suffit pour créer quelques règles
+évitant le partage involontaire de données avec `Git`. 
+
+```{=html}
+</div>
+```
+:::
+
+
+# Explorer la structure d'un _DataFrame_
+
+`Pandas` propose donc un schéma de données assez familier aux utilisateurs
+de logiciels statistiques comme `R`. A l'instar des
+principaux paradigmes de traitement de la données comme le _tidyverse_ (`R`),
+la grammaire de `Pandas` est héritière de la logique `SQL`.
+La philosophie est très proche : on effectue des opérations
+de sélection de ligne, de colonne, des tris de ligne en fonction
+de valeurs de certaines colonnes, des traitements standardisés sur des
+variables, etc. De manière générale, on privilégie les traitements
+faisant appel à des noms de variables à des numéros de ligne ou de
+colonne. 
+
+Que vous soyez familiers de `SQL` ou de `R`, vous retrouverez une logique
+similaire à celle que vous connaissez quoique les noms puissent diverger:
+`df.loc[df['y']=='b']` s'écrira peut-être `df %>% filter(y=='b')` (`R`)
+ou `SELECT * FROM df WHERE y == 'b'` (`SQL`) mais la logique
+est la même.
+
+`Pandas` propose énormément de fonctionnalités pré-implémentées. 
+Il est vivement recommandé, avant de se lancer dans l'écriture d'une
+fonction, de se poser la question de son implémentation native dans `Numpy`, `Pandas`, etc.
+La plupart du temps, s'il existe une solution implémentée dans une librairie, il convient
+de l'utiliser car elle sera plus efficace que celle que vous mettrez en oeuvre.
+
+Pour présenter les méthodes les plus pratiques pour l'analyse de données,
+on peut partir de l'exemple des consommations de CO2 communales issues
+des données de l'Ademe auquel les exercices précédents
+étaient dédiés. 
+
+```{python}
+#| echo: true
+df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
+df
+```
+
+
+## Dimensions et structure d'un _DataFrame_
+
+
+Les premières méthodes utiles permettent d'afficher quelques
+attributs d'un `DataFrame`.
+
+```{python}
+#| echo: true
+df.axes
+```
+
+```{python}
+#| echo: true
+df.columns
+```
+
+```{python}
+#| echo: true
+df.index
+```
+
+Pour connaître les dimensions d'un DataFrame, on peut utiliser quelques méthodes
+pratiques :
+
+```{python}
+#| echo: true
+df.ndim
+```
+
+```{python}
+#| echo: true
+df.shape
+```
+
+```{python}
+#| echo: true
+df.size
+```
+
+Pour déterminer le nombre de valeurs uniques d'une variable, plutôt que chercher à écrire soi-même une fonction,
+on utilise la
+méthode `nunique`. Par exemple,
+
+```{python}
+#| echo: true
+df['Commune'].nunique()
+```
+
+`Pandas` propose énormément de méthodes utiles. 
+Voici un premier résumé de celles relatives à la structure des données, accompagné d'un comparatif avec `R` :
+
+| Opération                     | pandas       | dplyr (`R`)    | data.table (`R`)           |
+|-------------------------------|--------------|----------------|----------------------------|
+| Récupérer le nom des colonnes | `df.columns` | `colnames(df)` | `colnames(df)`             |
+| Récupérer les dimensions      | `df.shape` | `dim(df)` | `dim(df)` |
+| Récupérer le nombre de valeurs uniques d'une variable | `df['myvar'].nunique()` | `df %>%  summarise(distinct(myvar))` | `df[,uniqueN(myvar)]` |
+
+## Accéder à des éléments d'un DataFrame
+
+En SQL, effectuer des opérations sur les colonnes se fait avec la commande
+`SELECT`. Avec `Pandas`,
+pour accéder à une colonne dans son ensemble on peut
+utiliser plusieurs approches :
+
+* `dataframe.variable`, par exemple `df.Energie`.
+Cette méthode requiert néanmoins d'avoir des
+noms de colonnes sans espace ou caractères spéciaux, ce qui exclut
+souvent des jeux de données réels. Elle n'est pas recommandée. ;
+* `dataframe[['variable']]` pour renvoyer la variable sous
+forme de `DataFrame`. Cette méthode peut être assez piégeuse pour une variable seule, il vaut mieux lui privilégier `dataframe.loc[:,['variable']]` qui est plus explicite sur la nature de l'objet qu'on désire en sortie ;
+* `dataframe['variable']` pour
+renvoyer la variable sous forme de `Series`. Par exemple, `df[['Autres transports']]`
+ou `df['Autres transports']`. C'est une manière préférable de procéder.
+
+Pour récupérer plusieurs colonnes à la fois, il y a deux approches, la seconde étant préférable :
+
+* `dataframe[['variable1', 'variable2']]` ;
+* `dataframe.loc[:, ['variable1', 'variable2']]`
+
+Cela est équivalent à `SELECT variable1, variable2 FROM dataframe` en SQL.  
+
+Le `.loc` peut apparaître excessivement verbeux. Il permet néanmoins de s'assurer qu'on effectue bien un _subset_ sur la dimension des colonnes. Les _DataFrame_ ayant deux indices, ceux des lignes et des colonnes, on peut avoir parfois des surprises avec l'implicite, il est plus fiable d'être explicite.
+
+## Accéder à des lignes
+
+Pour accéder à une ou plusieurs valeurs d'un `DataFrame`,
+il existe deux manières conseillées de procéder, selon la
+forme des indices de lignes ou colonnes utilisées :
+
+* `df.iloc` : utilise les indices. C'est une méthode moyennement fiable car les indices d'un _DataFrame_ peuvent évoluer au cours d'un traitement (notamment lorsqu'on fait des opérations par groupe). 
+* `df.loc` : utilise les labels. Cette méthode est recommandée. 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-danger" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+```
+
+Les bouts de code utilisant la structure `df.ix`
+sont à bannir car la fonction est *deprecated* et peut
+ainsi disparaître à tout moment.
+
+```{=html}
+</div>
+```
+:::
+
+`iloc` va se référer à l'indexation de 0 à *N* où *N* est égal à `df.shape[0]` d'un
+`pandas.DataFrame`. `loc` va se référer aux valeurs de l'index
+de `df`.
+Par exemple, avec le `pandas.DataFrame` `df_example`:
+
+```{python}
+#| echo: true
+df_example = pd.DataFrame(
+    {'month': [1, 4, 7, 10], 'year': [2012, 2014, 2013, 2014], 'sale': [55, 40, 84, 31]})
+df_example = df_example.set_index('month')
+df_example
+```
+
+- `df_example.loc[1, :]` donnera la première ligne de `df` (ligne où l'indice `month` est égal à 1) ;
+- `df_example.iloc[1, :]` donnera la deuxième ligne (puisque l'indexation en `Python` commence à 0) ;
+- `df_example.iloc[:, 1]` donnera la deuxième colonne, suivant le même principe.
+
+Les exercices ultérieurs permettront de pratiquer cette syntaxe sur notre jeu de données des émissions de gaz carbonique.
+
+# Principales manipulations de données
+
+Les opérations les plus fréquentes en `SQL` sont résumées par le tableau suivant.
+Il est utile de les connaître (beaucoup de syntaxes de maniement de données
+reprennent ces termes) car, d'une
+manière ou d'une autre, elles couvrent la plupart
+des usages de manipulation des données. Nous allons en décrire, par le suite, quelques unes:
+
+| Opération | SQL | pandas | dplyr (`R`) | data.table (`R`) |
+|-----|-----------|--------|-------------|------------------|
+| Sélectionner des variables par leur nom | `SELECT` | `df[['Autres transports','Energie']]` | `df %>% select(Autres transports, Energie)` | `df[, c('Autres transports','Energie')]` |
+| Sélectionner des observations selon une ou plusieurs conditions; | `FILTER` | `df[df['Agriculture']>2000]` | `df %>% filter(Agriculture>2000)` | `df[Agriculture>2000]` |
+| Trier la table selon une ou plusieurs variables | `SORT BY` | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
+| Ajouter des variables qui sont fonction d’autres variables; | `SELECT *, LOG(Agriculture) AS x FROM df` | `df['x'] = np.log(df['Agriculture'])`  |  `df %>% mutate(x = log(Agriculture))` | `df[,x := log(Agriculture)]` |
+| Effectuer une opération par groupe | `GROUP BY` | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
+| Joindre deux bases de données (*inner join*) | `SELECT * FROM table1 INNER JOIN table2 ON table1.id = table2.x` | `table1.merge(table2, left_on = 'id', right_on = 'x')` | `table1 %>% inner_join(table2, by = c('id'='x'))` | `merge(table1, table2, by.x = 'id', by.y = 'x')` |
+
+## Opérations sur les colonnes : ajouter ou retirer des variables, les renommer, etc. 
+
+Sur le plan technique, les `DataFrames` `Pandas` sont des objets *mutables* en langage `Python`,
+c'est-à-dire qu'il est possible de faire évoluer le `DataFrame` au grès
+des opérations mises en oeuvre. 
+
+L'opération la plus classique consiste à ajouter ou retirer des variables à la table de données.
+La manière la plus simple d'opérer pour ajouter des colonnes est
+d'utiliser la réassignation. Par exemple, pour créer une variable `dep` qui correspond aux deux premiers numéros du code commune (code Insee), il suffit de prendre la variable et lui appliquer le traitement adapté (en l'occurrence ne garder que ses deux premières caractères):
+
+```{python}
+#| echo: true
+df['dep'] = df['INSEE commune'].str[:2]
+df.head(3)
+```
+
+En SQL, la manière de procéder dépend du moteur d'exécution. En pseudo-code cela donne
+
+```sql
+SELECT everything(), SUBSTR("code_insee", 2) AS dep FROM df
+```
+
+Il est possible d'appliquer cette approche de création de colonnes sur plusieurs colonnes. Un des
+intérêts de cette approche est qu'elle permet de recycler le nom de colonnes.
+
+```{python}
+#| echo: true
+vars = ['Agriculture', 'Déchets', 'Energie']
+
+df[[v + "_log" for v in vars]] = np.log(df.loc[:, vars])
+df.head(3)
+```
+
+La requête équivalente en SQL serait assez fastidieuse à écrire. Sur ce genre d'opérations, on voit bien l'intérêt d'avoir une librairie haut niveau comme `Pandas`. 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-danger" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+```
+
+Cela est possible grâce à la vectorisation native des opérations de `Numpy` et à la magie `Pandas` qui réarrange tout ceci. Ce n'est pas utilisable avec n'importe quelle fonction. Pour d'autres fonctions, il faudra utiliser `assign`, généralement par le biais de _lambda functions_, des fonctions temporaires faisant office de passe plat. Par exemple, pour créer une variable selon cette approche, il faudrait faire:
+
+```{python}
+#| echo: true
+df.assign(
+  Energie_log = lambda x: np.log(x['Energie'])
+)
+```
+
+Avec des méthodes de `Pandas` ou de `Numpy` comme ici, cela n'a pas d'intérêt, c'est même contreproductif car cela ralentit le code.
+
+```{=html}
+</div>
+```
+:::
+
+On peut facilement renommer des variables avec la méthode `rename` qui
+fonctionne bien avec des dictionnaires. Pour renommer des colonnes il faut
+préciser le paramètre `axis = 'columns'` ou `axis=1`. Le paramètre `axis` est souvent nécessaire car par défaut de nombreuses méthodes de `Pandas` supposent que l'indice sur lequel les opérations sont faites est l'indice des lignes :
+
+```{python}
+#| echo: true
+df = df.rename({"Energie": "eneg", "Agriculture": "agr"}, axis=1)
+df.head()
+```
+
+Enfin, pour effacer des colonnes, on utilise la méthode `drop` avec l'argument
+`columns`:
+
+```{python}
+#| echo: true
+df = df.drop(columns = ["eneg", "agr"])
+```
+
+## Réordonner les observations
+
+La méthode `sort_values` permet de réordonner les observations d'un `DataFrame`, en laissant l'ordre des colonnes identiques. 
+
+Par exemple,
+si on désire classer par ordre décroissant de consommation de CO2 du secteur
+résidentiel, on fera
+
+```{python}
+#| echo: true
+df = df.sort_values("Résidentiel", ascending = False)
+df.head(3)
+```
+
+Ainsi, en une ligne de code, on identifie les villes où le secteur
+résidentiel consomme le plus. En SQL on ferait
+
+```sql
+SELECT * FROM df ORDER BY DESC "Résidentiel"
+```
+
+## Filter
+
+L'opération de sélection de lignes s'appelle `FILTER` en SQL. Elle s'utilise
+en fonction d'une condition logique (clause `WHERE`). On sélectionne les
+données sur une condition logique. 
+
+Il existe plusieurs méthodes en `Pandas`. La plus simple est d'utiliser les *boolean mask*, déjà vus dans le chapitre
+[`numpy`](/content/manipulation/01_numpy.qmd).
+
+Par exemple, pour sélectionner les communes dans les Hauts-de-Seine, on
+peut commencer par utiliser le résultat de la méthode `str.startswith` (qui renvoie
+`True` ou `False`) :
+
+```{python}
+#| echo: true
+df['INSEE commune'].str.startswith("92")
+```
+
+`str.` est une méthode particulière en `Pandas` qui permet de traiter chaque valeur d'un vecteur comme un `string` natif en `Python` sur lequel appliquer une méthode ultérieure (en l'occurrence `startswith`). 
+
+L'instruction ci-dessus renvoie un vecteur de booléens. Nous avons vu précédemment que la méthode `loc` servait à faire du _subsetting_ sur l'indice des lignes comme des colonnes. Elle fonctionne avec des vecteurs booléens. Dans ce cas, si on fait un _subsetting_ sur la dimension ligne (resp. colonne), elle va renvoyer toutes les observations (resp. variable) qui 
+satisfont cette condition. 
+
+Ainsi, en mettant bout à bout ces deux élements, on peut filter nos données pour n'avoir que les résultats
+du 92:
+
+```{python}
+#| echo: true
+df.loc[df['INSEE commune'].str.startswith("92")].head(2)
+```
+
+Le code SQL équivalent peu varier selon le moteur d'exécution (`DuckDB`, `PostGre`, `MySQL`) mais prendrait une forme similaire à celle-ci:
+
+```sql
+SELECT * FROM df WHERE STARTSWITH("INSEE commune", "92")
+```
+
+## Résumé des principales opérations
+
+Les principales manipulations sont les suivantes:
+
+::: {layout-ncol=2}
+
+![Sélectionner des colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/select_pandas.png)
+![Renommer des colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/rename_pandas.png)
+
+![Créer de nouvelles colonnes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/mutate_pandas.png)
+![Sélectionner des lignes](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/filter_pandas.png)
+
+![Réordonner le _DataFrame_](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/arrange_pandas.png)
+
+:::
+
+
+
+# Statistiques descriptives
+
+Pour repartir de la source brute, recréeons notre jeu de données pour les exemples:
+
+```{python}
+#| echo: true
+df = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
+df.head(3)
+```
+
+
+`Pandas` embarque plusieurs méthodes pour construire des statistiques agrégées: somme, nombre de valeurs unique, nombre de valeurs non manquantes, moyenne, variance, etc.  
+
+La méthode la plus générique est `describe`
+
+```{python}
+#| echo: true
+df.describe()
+```
+
+qui ressemble à la méthode éponyme en `Stata` ou à la `PROC FREQ` de `SAS`, deux langages propriétaires. 
+Elle nous donne néanmoins beaucoup d'information et on est souvent noyé par celle-ci. Il est donc plus pratique de directement travailler sur quelques colonnes ou de choisir soi-même les statistiques qu'on désire utiliser.
+
+## Comptages
+
+Le premier type de statistiques qu'on peut vouloir mettre en oeuvre relève du comptage ou dénombrement des valeurs. 
+
+Si on désire, par exemple, connaître le nombre de communes dans notre jeu de données, on pourra utiliser la méthode `count` ou alors `nunique` si on s'intéresse aux valeurs non dupliquées.
+
+```{python}
+#| echo: true
+df['Commune'].count()
+```
+
+```{python}
+#| echo: true
+df['Commune'].nunique()
+```
+
+En SQL, la première instruction serait `SELECT COUNT(Commune) FROM df`, la seconde `SELECT COUNT DISTINCT Commune FROM df`.
+Ici, cela ne permet donc de comprendre qu'il peut y avoir des doublons dans la colonne `Commune`, ce dont il faudra tenir compte si on désire identifier nos communes de manière unique (ce sera un sujet lorsque le prochain chapitre abordera la question du croisement des données).
+
+La cohérence de la syntaxe `Pandas` permet de faire cela pour plusieurs colonnes de manière simultanée. En SQL cela serait possible mais le code à mettre en oeuvre commence à devenir assez verbeux:
+
+```{python}
+#| echo: true
+df.loc[:, ['Commune', 'INSEE commune']].count()
+```
+
+```{python}
+#| echo: true
+df.loc[:, ['Commune', 'INSEE commune']].nunique()
+```
+
+Avec ces deux commandes simples, on comprend donc
+que notre variable `INSEE commune` (le code Insee)
+sera plus fiable pour identifier des communes
+que les noms, qui ne sont pas forcément uniques. C'est justement l'objectif du code Insee de proposer 
+un identifiant unique, a contrario du code postal qui peut
+être partagé par plusieurs communes. 
+
+
+## Statistiques agrégées
+
+`Pandas` embarque plusieurs méthodes pour construire des statistiques sur plusieurs colonnes: somme, moyenne, variance, etc. 
+
+Les méthodes sont assez transparentes:
+
+```{python}
+#| echo: true
+df['Agriculture'].sum()
+df['Agriculture'].mean()
+```
+
+Là encore, la cohérence de `Pandas` nous permet de généraliser le calcul de statistiques à plusieurs colonnes
+
+```{python}
+#| echo: true
+df.loc[:, ['Agriculture', 'Résidentiel']].sum()
+df.loc[:, ['Agriculture', 'Résidentiel']].mean()
+```
+
+
+Il est possible de généraliser ceci à toutes les colonnes. 
+Cependant, il est nécessaire d'introduire le paramètre `numeric_only` pour ne faire la tâche d'agrégation que sur les variables pertinentes
+
+```{python}
+#| echo: true
+df.mean(numeric_only = True)
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-danger" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-triangle-exclamation"></i> Warning</h3>
+```
+
+La version 2.0 de `Pandas` a introduit un changement
+de comportement dans les méthodes d'agrégation. 
+
+Il est dorénavant nécessaire de préciser quand on désire
+effectuer des opérations si on désire ou non le faire
+exclusivement sur les colonnes numériques. C'est pour cette 
+raison qu'on explicite ici l'argument `numeric_only = True`. 
+Ce comportement
+était par le passé implicite. 
+
+```{=html}
+</div>
+```
+:::
+
+
+La méthode pratique à connaître est `agg`. Celle-ci permet de définir les statistiques qu'on désire calculer pour chaque variable
+
+```{python}
+#| echo: true
+df.agg(
+  {
+    'Agriculture': ['sum', 'mean'],
+    'Résidentiel': ['mean', 'std'],
+    'Commune': 'nunique'
+  }
+)
+```
+
+
+La sortie des méthodes d'agrégation est une `Serie` indexée (les méthodes du type `df.sum()`) ou directement un `DataFrame` (la méthode `agg`). Il est en général plus pratique d'avoir un `DataFrame` qu'une `Serie` indexée si on désire retravailler le tableau pour en tirer des conclusions. Il est donc utile de transformer les sorties sous forme de `Serie` en `DataFrame` puis appliquer la méthode `reset_index` pour transformer l'indice en colonne. A partir de là, il sera possible de modifier le `DataFrame` pour rendre celui-ci plus lisible.
+
+Par exemple si on s'intéresse à la part de chaque secteur dans les émissions totales, on pourra procéder en deux temps.
+D'abord on va créer une observation par secteur représentant les émissions totales de celui-ci:
+
+```{python}
+#| echo: true
+# Etape 1: création d'un DataFrame propre
+emissions_totales = (
+  pd.DataFrame(
+    df.sum(numeric_only = True),
+    columns = ["emissions"]
+  )
+  .reset_index(names = "secteur")
+)
+emissions_totales
+```
+
+Il ne reste plus qu'à travailler _a minima_ le jeu de données afin d'avoir déjà quelques conclusions intéressantes sur la structure des émissions en France:
+
+```{python}
+#| echo: true
+emissions_totales['emissions (%)'] = (
+  100*emissions_totales['emissions']/emissions_totales['emissions'].sum()
+)
+(emissions_totales
+  .sort_values("emissions", ascending = False).
+  round()
+)
+```
+
+Ce tableau n'est pas vraiment mis en forme donc encore loin d'être communiquable mais il présente déjà un intérêt dans une perspective exploratoire. Il nous permet de comprendre les secteurs les plus émetteurs, à savoir le transport, l'agriculture et l'industrie, hors énergie. Le fait que l'énergie soit relativement peu émettrice s'explique bien du fait du _mix énergétique_ français où le nucléaire représente une majorité de la production électrique. 
+
+Pour aller plus loin dans la mise en forme de ce tableau afin d'avoir des statistiques communiquables en dehors de `Python`, nous découvrirons au prochain chapitre `great_tables`. 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
+La structure de données issue de `df.sum` est assez pratique (elle est _tidy_). On pourrait faire exactement la même opération que `df.sum(numeric_only = True)` avec le code suivant:
+
+```{python}
+#| echo: true
+df.select_dtypes(include='number').agg(func = sum)
+```
+
+```{=html}
+</div>
+```
+:::
+
+## Valeurs manquantes
+
+Jusqu'à présent nous n'avons pas évoqué ce qui pourrait être un caillou dans la chaussure du _data scientist_, les valeurs manquantes. 
+
+Les jeux de données réels sont rarement complets et les valeurs manquantes peuvent refléter de nombreuses réalités: problème de remontée d'information, variable non pertinente pour cette observation... 
+
+Sur le plan technique, `Pandas` ne rencontre pas de problème à gérer les valeurs manquantes (sauf pour les variables `int` mais c'est une exception). 
+Par défaut, les valeurs manquantes sont affichées `NaN` et sont de type `np.nan` (pour
+les valeurs temporelles, i.e. de type `datatime64`, les valeurs manquantes sont
+`NaT`).
+On a un comportement cohérent d'agrégation lorsqu'on combine deux colonnes dont l'une comporte des valeurs manquantes.
+
+```{python}
+#| echo: true
+ventes = pd.DataFrame(
+    {'prix': np.random.uniform(size = 5),
+     'client1': [i+1 for i in range(5)],
+     'client2': [i+1 for i in range(4)] + [np.nan],
+     'produit': [np.nan] + ['yaourt','pates','riz','tomates']
+    }
+)
+ventes
+```
+
+`Pandas` va bien refuser de faire l'agrégation car pour lui une valeur manquante n'est pas un zéro:
+
+```{python}
+#| echo: true
+ventes["client1"] + ventes["client2"]
+```
+
+Il est possible de supprimer les valeurs manquantes grâce à `dropna()`.
+Cette méthode va supprimer toutes les lignes où il y a au moins une valeur manquante.
+
+```{python}
+#| echo: true
+ventes.dropna()
+```
+
+En l'occurrence, on perd deux lignes. Il est aussi possible de supprimer seulement les colonnes où il y a des valeurs manquantes
+dans un DataFrame avec `dropna()` en utilisant le paramètre `subset`.
+
+```{python}
+#| echo: true
+ventes.dropna(subset=["produit"])
+```
+
+Cette fois on ne perd plus qu'une ligne, celle où `produit` est manquant.
+
+`Pandas` donne la possibilité d'imputer les valeurs manquantes grâce à la méthode `fillna()`. Par exemple, si on pense que les valeurs manquantes dans `produit` sont des valeurs nulles, on pourra faire
+
+```{python}
+#| echo: true
+ventes.dropna(subset=["produit"]).fillna(0)
+```
+
+Si on désire faire une imputation à la médiane pour la variable `client2`, on changera marginalement ce code
+en encapsulant à l'intérieur le calcul de la médiane
+
+```{python}
+#| echo: true
+(ventes["client2"]
+  .fillna(
+    ventes["client2"].median()
+  )
+)
+```
+
+Sur des jeux de données du monde réel, il est utile d'utiliser la méthode `isna` (ou `isnull`) combinées avec `sum` ou `mean` pour connaître l'ampleur des valeurs manquantes dans un jeu de données. 
+
+```{python}
+#| echo: true
+df.isnull().mean().sort_values(ascending = False)
+```
+
+Cette étape préparatoire est utile pour anticiper la question de l'imputation ou du filtre sur les valeurs manquantes: sont-elles _missing at random_ ou reflètent-elles un sujet sur la remontée des données ? Les choix relatifs au traitement des valeurs manquantes ne sont pas des choix méthodologiques neutres. `Pandas` donne les outils techniques
+pour faire ceci mais la question de la légitimité de ces choix et de la pertinence est propre à chaque donnée. Les explorations sur les données visent à détecter des indices pour faire un choix éclairé. 
+
+# Représentations graphiques rapides
+
+Les tableaux de nombre sont certes une informations utile
+pour comprendre la structure d'un jeu de données mais dont
+l'aspect dense rend l'appropriation difficile. Avoir un graphique simplement peut être utile pour se représenter, en un coup d'oeil, la distribution des données et ainsi connaître le caractère plus ou moins normal d'une observation. 
+
+`Pandas` embarque des méthodes graphiques rudimentaires pour répondre à ce besoin. Elles sont pratiques pour
+produire rapidement un graphique, notamment après des opérations
+complexes de maniement de données.
+Nous approfondirons cette problématique des visualisations de données dans la partie [Communiquer](/content/visualisation.qmd). 
+
+On peut appliquer la méthode `plot()` directement à une `Serie` :
+
+```{python}
+#| echo: true
+df['Déchets'].plot()
+```
+
+Le code équivalent avec `matplotlib` serait:
+
+```{python}
+#| echo: true
+import matplotlib.pyplot as plt
+plt.plot(df.index, df['Déchets'])
+```
+
+Par défaut, la visualisation obtenue est une série. Ce n'est
+pas forcément celle attendue puisqu'elle n'a de sens que pour des séries temporelles. En tant que _data scientist_ sur microdonnés, on s'intéresse plus fréquemment à un histogramme pour avoir une idée de la distribution des données. 
+Pour cela, il suffit d'ajouter l'argument `kind = 'hist'`:
+
+```{python}
+#| echo: true
+df['Déchets'].hist()
+```
+
+Avec des données dont la distribution est non normalisée,
+ce qui représente de nombreuses variables du monde réel,
+les histogrammes sont généralement peu instructifs. Le _log_ peut être une solution
+pour remettre à une échelle comparable certaines valeurs extrêmes:
+
+```{python}
+#| echo: true
+df['Déchets'].plot(kind = 'hist', logy = True)
+```
+
+La sortie est un objet `matplotlib`. La *customisation* de ces
+figures est ainsi
+possible (et même désirable car les graphiques `matplotlib`
+sont, par défaut, assez rudimentaires).
+Cependant, il s'agit d'une méthode rapide pour la construction
+de figures qui nécessite du travail pour une visualisation
+finalisée. Cela passe par un travail approfondi sur l'objet
+`matplotlib` ou l'utilisation d'une librairie plus haut
+niveau pour la représentation graphique (`seaborn`, `plotnine`, `plotly`, etc.).
+
+La partie de ce cours consacrée à la visualisation de données présentera succinctement ces différents
+paradigmes de visualisation. Ceux-ci ne dispensent pas de faire
+preuve de bon sens dans le choix du graphique utilisé
+pour représenter une statistique descriptive (cf. [cette conférence d'Eric Mauvière](https://ssphub.netlify.app/talk/2024-02-29-mauviere/) ).
+
+
+# Exercice de synthèse
+
+Cette exercice synthétise plusieurs étapes de préparation et d'exploration de données pour mieux comprendre la structure
+du phénomène qu'on désire étudier à savoir les émissions de gaz carbonique en France. 
+
+Il est recommandé de repartir d'une session vierge (dans un _notebook_ il faut faire `Restart Kernel`) pour ne pas avoir un environnement pollué par d'autres objets. Vous pouvez ensuite exécuter le code suivant pour avoir la base nécessaire:
+
+```{python}
+#| echo: true
+import pandas as pd
+
+emissions = pd.read_csv("https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert")
+emissions.head(2)
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2: Découverte des verbes de <code>Pandas</code> pour manipuler des données</h3>
+```
+
+En premier lieu, on propose de se familiariser avec les opérations sur
+les colonnes.
+
+1. Créer un _dataframe_ `emissions_copy` ne conservant que les colonnes
+`INSEE commune`, `Commune`, `Autres transports` et `Autres transports international`
+
+<details>
+<summary>
+Indice pour cette question
+</summary>
+
+![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/select_pandas.png){fig-width=50%}
+
+</details>
+
+2. Comme les noms de variables sont peu pratiques, les renommer de la
+manière suivante :
+    + `INSEE commune` $\to$ `code_insee`
+    + `Autres transports` $\to$ `transports`
+    + `Autres transports international` $\to$ `transports_international`
+
+<details>
+<summary>
+Indice pour cette question
+</summary>
+
+![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/rename_pandas.png){fig-width=50%}
+
+</details>
+
+3. On propose, pour simplifier, de remplacer les valeurs manquantes (`NA`)
+par la valeur 0. Utiliser la
+méthode [`fillna`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.fillna.html)
+pour transformer les valeurs manquantes en 0.
+
+4. Créer les variables suivantes :
+    - `dep`: le département. Celui-ci peut être créé grâce aux deux premiers caractères de `code_insee` en appliquant la méthode `str` ;
+    - `transports_total`: les émissions du secteur transports (somme des deux variables)
+
+<details>
+<summary>
+Indice pour cette question
+</summary>
+
+![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/mutate_pandas.png){fig-width=50%}
+
+</details>
+
+
+5. Ordonner les données du plus gros pollueur au plus petit 
+puis ordonner les données 
+du plus gros pollueur au plus petit par département (du 01 au 95). 
+
+<details>
+<summary>
+Indice pour cette question
+</summary>
+
+![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/arrange_pandas.png){fig-width=50%}
+
+</details>
+
+6. Ne conserver que les communes appartenant aux départements 13 ou 31. 
+Ordonner ces communes du plus gros pollueur au plus petit.
+
+<details>
+<summary>
+Indice pour cette question
+</summary>
+
+![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/filter_pandas.png){fig-width=50%}
+
+</details>
+
+Revenir au jeu `emission` initial
+
+7. Calculer les émissions totales par secteur. Calculer la part de chaque secteur dans les émissions totales. Transformer en tonnes les volumes avant d'afficher les résultats
+
+8. Calculer pour chaque commune les émissions totales après avoir imputé les valeurs manquantes à 0. Garder les 100 communes les plus émettrices. Calculer la part de chaque secteur dans cette émission. Comprendre les facteurs pouvant expliquer ce classement. 
+
+<details>
+<summary>
+Aide si vous êtes en difficulté sur la question 8
+</summary>
+
+Jouer avec le paramètre `axis` lors de la construction d'une statistique agrégée.
+
+</details>
+
+
+
+```{=html}
+</div>
+```
+:::
+
+```{python}
+#| output: false
+# Question 1
+emissions_copy = emissions.loc[
+  :,
+  ["INSEE commune", "Commune", "Autres transports", "Autres transports international"]
+]
+
+# Question 2
+emissions_copy = emissions_copy.rename({
+  "INSEE commune": "code_insee",
+  "Autres transports": "transports",
+  "Autres transports international": "transports_international"
+}, axis = 1)
+
+# Question 3
+emissions_copy = emissions_copy.fillna(0)
+
+# Question 4
+emissions_copy['dep'] = emissions_copy['code_insee'].str[:2]
+emissions_copy['transports_total'] = emissions_copy['transports'] + emissions_copy['transports_international']
+
+# Question 5
+data_sorted = emissions_copy.sort_values("transports_total", ascending = False)
+data_sorted
+emissions_copy.sort_values(by = ["dep","transports_total"], ascending = [True, False])
+
+# Question 6
+emissions_hg_bdr = (emissions_copy
+    .loc[emissions_copy['dep'].isin(["13","31"])]
+    .sort_values("transports", ascending = False)
+)
+
+# Question 7
+emissions_copy.groupby("dep").agg({"transports_total": "sum"})
+```
+
+A la question 5, quand on ordonne les communes exclusivement à partir de la variable
+`transports_total`, on obtient ainsi:
+
+```{python}
+#| output: true
+data_sorted.head(3)
+```
+
+A la question 6, on obtient ce classement :
+
+```{python}
+#| output: true
+emissions_hg_bdr.head(3)
+```
+
+A la question 7, le tableau obtenu ressemble à
+```{python}
+#| output: true
+# Question 7
+emissions_totales = (
+  pd.DataFrame(
+    df.sum(numeric_only = True),
+    columns = ["emissions"]
+  )
+  .reset_index(names = "secteur")
+)
+emissions_totales
+emissions_totales['emissions (%)'] = (
+  100*emissions_totales['emissions']/emissions_totales['emissions'].sum()
+)
+emissions_totales["emissions"] = emissions_totales["emissions"].div(1000)
+(emissions_totales
+  .sort_values("emissions", ascending = False)
+  .round()
+  .head(5)
+)
+```
+
+```{python}
+#| output: true
+# Question 8
+emissions_totales = emissions.fillna(0).sum(numeric_only=True, axis = 1).sort_values(ascending = False).head(100)
+emissions_top = emissions.iloc[emissions_totales.index].fillna(0)
+# Ce serait plus simple en faisant un _merge_ mais on n'a pas encore vu cela.
+
+emissions_top
+```
+
+```{python}
+#| output: true
+emissions_top['total'] = emissions_top.sum(numeric_only=True, axis = 1)
+secteurs = emissions_top.select_dtypes(include='number').columns
+emissions_top["Part " + secteurs] = emissions_top.loc[:, secteurs].div(emissions_top['total'], axis = 0).mul(100)
+```
+
+A l'issue de la question 8, on comprend un peu mieux les facteurs qui peuvent expliquer une forte émission au niveau communal. Si on regarde les trois principales communes émettrices, on peut remarquer qu'il s'agit de villes avec des raffineries:
+
+```{python}
+#| output: true
+emissions_top.head(3)
+```
+
+Grâce à nos explorations minimales avec `Pandas`, on voit que ce jeu de données nous donne donc une information sur la nature du tissu productif français et des conséquences environnementales de certaines activités. 
+
+# Références {.unnumbered}
+
+* Le site
+[pandas.pydata](https://pandas.pydata.org/pandas-docs/stable/user_guide/basics.html)
+fait office de référence
+
+* Le livre `Modern Pandas` de Tom Augspurger : https://tomaugspurger.github.io/modern-1-intro.html
+
+::: {#refs}
+:::
