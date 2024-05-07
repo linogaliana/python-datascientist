@@ -850,6 +850,61 @@ Cette fois, on a une combinaison de nos trois jeux de données initiaux:
 
 ## Exemples d'identifiants dans les données françaises
 
+### Le Code officiel géographique (COG): l'identifiant des données géographiques
+
+Pour les données géographiques, il existe de nombreux identifiants selon la problématique d'étude.
+Parmi les besoins principaux, on retrouve le fait d'apparier des données géographiques à partir d'un identifiant administratif commun. Par exemple, associer deux jeux de données au niveau communal. 
+
+Pour cela, l'identifiant de référence est le code Insee, issu du [Code officiel géographique (COG)](https://www.insee.fr/fr/information/2560452) que nous utilisons depuis le dernier chapitre et que nous aurons amplement l'occasion d'exploiter au cours des différents chapitres de ce cours. 
+La géographie administrative étant en évolution perpétuelle, la base des code Insee est une base vivante. Le site et les API de l'Insee permettent de récupérer l'historique d'après-guerre afin de pouvoir faire de l'analyse géographique sur longue période. 
+
+Les codes postaux ne peuvent être considérés comme un identifiant : ils peuvent regrouper plusieurs communes ou, au contraire, une même commune peut avoir plusieurs codes postaux. Il s'agit d'un système de gestion de la Poste qui n'a pas été construit pour l'analyse statistique.
+
+Pour se convaincre du problème, à partir des données mises à disposition par La Poste, on peut voir que le code postal 11420 correspond à 11 communes:
+
+```{python}
+#| echo: true
+codes_postaux = pd.read_csv(
+  "https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-hexasmal/raw",
+  sep = ";", encoding = "latin1",
+  dtype = {"Code_postal": "str", "#Code_commune_INSEE": "str"}
+)
+codes_postaux.loc[codes_postaux['Code_postal'] == "11420"]
+```
+
+En anticipant sur les compétences développées lors des prochains chapitres, nous pouvons représenter le problème sous forme cartographique en prenant l'exemple de l'Aude. Le code pour produire la carte des codes communes est donné tel quel, il n'est pas développé car il fait appel à des concepts et librairies qui seront présentés lors du prochain chapitre:
+
+```{python}
+#| echo: true
+#| fig-cap: Géographie des codes postaux et des communes dans l'Aude (11)
+from cartiflette import carti_download
+shp_communes = carti_download(
+  values = ["11"],
+  crs = 4326,
+  borders = "COMMUNE",
+  simplification=50,
+  filter_by="DEPARTEMENT",
+  source="EXPRESS-COG-CARTO-TERRITOIRE",
+  year=2022) #<1>
+
+codes_postaux11 = shp_communes.merge(
+  codes_postaux,
+  left_on = "INSEE_COM",
+  right_on = "#Code_commune_INSEE"
+) #<2>
+codes_postaux11 = codes_postaux11.dissolve(by = "Code_postal") #<3>
+
+# Carte #<4>
+ax = shp_communes.plot(color='white', edgecolor='blue', linewidth = 0.5)
+ax = codes_postaux11.plot(ax = ax, color='none', edgecolor='black')
+ax.set_axis_off()
+```
+1. Récupération des contours officiels de l'Aude produits par l'IGN par le biais de la librairie [`cartiflette`](https://github.com/InseeFrLab/cartiflette)
+2. Jointure par le biais du code commune entre les deux sources de données
+3. On agrège la géométrie au niveau des codes postaux
+4. On crée une carte à partir de nos deux couches
+
+
 ### Sirene: l'identifiant dans les données d'entreprises
 
 Pour relier les microdonnées d'entreprises françaises, il existe un numéro unique d'identification : le [numéro `Siren`](https://entreprendre.service-public.fr/vosdroits/F32135). Il s'agit d'un numéro d'identification dans un répertoire légal d'entreprise indispensable pour toutes démarches juridiques, fiscales... Pour les entreprises qui possèdent plusieurs établissements - par exemple dans plusieurs villes - il existe un identifiant dérivé qui s'appelle le [`Siret`](https://www.economie.gouv.fr/cedef/numero-siret): aux 9 chiffres du numéro Sirene s'ajoutent 5 chiffres d'identifications de l'établissement. D'ailleurs, les administrations publiques sont également concernées par le numéro Siren: étant amenées à effectuer des opérations de marchés (achat de matériel, locations de biens, etc.) elles disposent également d'un identifiant Siren. Etant inscrits dans des répertoires légaux pour lesquels les citoyens sont publics, les numéros Siren et les noms des entreprises associées sont disponibles en _open data_, par exemple sur [annuaire-entreprises.data.gouv.fr/](https://annuaire-entreprises.data.gouv.fr/) pour une recherche ponctuelle, sur [data.gouv.fr](https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/).
@@ -868,7 +923,7 @@ coiffeurs = duckdb.sql("""
   SELECT
     siren, siret, dateDebut, enseigne1Etablissement, activitePrincipaleEtablissement, denominationUsuelleEtablissement
   FROM
-    read_parquet('https://www.data.gouv.fr/fr/datasets/r/c67d4fb4-dc56-491f-83e4-cde858f6cdf5')
+    read_parquet('https://minio.lab.sspcloud.fr/lgaliana/data/sirene2024.parquet')
   WHERE
     activitePrincipaleEtablissement == '96.02A'
     AND
