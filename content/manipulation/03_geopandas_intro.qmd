@@ -16,6 +16,7 @@ description: |
   étend les fonctionalités de l'écosystème `Pandas` afin de permettre
   de manipuler des données géographiques complexes de manière simple.
 image: featured_geopandas_tutorial.png
+echo: false
 ---
 
 ::: {.content-visible when-format="html"}
@@ -96,3 +97,313 @@ L'acteur central de l'écosystème public de la donnée géographique est l'[IGN
 
 La puissance publique n'est plus l'unique acteur qui produit et diffuse de la donnée spatiale. La collecte de coordonnées GPS étant devenue presque automatique, de nombreux acteurs collectent, exploitent et même revendent de la donnée spatiale sur leurs utilisateurs. Ces données peuvent être très précises et très riches sur certaines problématiques, par exemple sur les déplacements. Il est néanmoins nécessaire d'avoir à l'esprit lorsqu'on désire
 extrapoler des statistiques construites sur ces données que celles-ci concernent les utilisateurs du service en question, qui ne sont pas nécessairement représentatifs des comportements de la population dans son ensemble.
+
+## Données utilisées dans ce chapitre
+
+Dans ce tutoriel, nous allons utiliser les données suivantes :
+
+* [Localisations des stations velib](https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr) ;
+* [fonds de carte `AdminExpress`](https://geoservices.ign.fr/adminexpress) à
+travers un package `Python` nommé [`cartiflette`](https://github.com/InseeFrLab/cartiflette)
+facilitant la récupération de cette source. 
+
+## Installations préalables
+
+```{python}
+#| output : false 
+#| echo: true
+# à faire obligatoirement en premier pour utiliser rtree ou pygeos pour les jointures spatiales
+!pip install pandas fiona shapely pyproj rtree 
+!pip install contextily
+!pip install geopandas
+!pip install topojson
+```
+
+Pour être en mesure d'exécuter ce tutoriel, les imports suivants
+seront utiles.
+
+```{python}
+#| output: false
+import geopandas as gpd
+import contextily as ctx
+import matplotlib.pyplot as plt
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
+
+Le package `cartiflette` est expérimental 
+et n'est disponible que sur
+[`Github`](https://github.com/InseeFrLab/cartogether), pas sur `PyPi`.
+Il est amené à évoluer rapidement et cette page sera mise à jour
+quand de nouvelles fonctionalités (notamment l'utilisation d'`API`)
+seront disponibles pour encore simplifier la récupération de
+contours géographiques.
+
+Pour installer `cartiflette`, il est nécessaire d'utiliser les commandes suivantes
+depuis un `Jupyter Notebook` (si vous utilisez la ligne de commande directement,
+vous pouvez retirer les `!` en début de ligne):
+
+```{python}
+#| eval: false
+!pip install py7zr geopandas openpyxl tqdm s3fs
+!pip install PyYAML xlrd
+!pip install git+https://github.com/inseefrlab/cartiflette
+```
+
+
+
+# De `Pandas` à `Geopandas`
+
+Le *package* `Geopandas` est une boîte à outils conçue pour faciliter la manipulation de données spatiales. **La grande force de `Geopandas` est qu'il permet de manipuler des données spatiales comme s'il s'agissait de données traditionnelles**, car il repose sur le standard ISO 19125 [*simple feature access*](https://en.wikipedia.org/wiki/Simple_Features) défini conjointement par l'*Open Geospatial Consortium (OGC)* et l'*International Organization for Standardization (ISO)*. 
+
+Par rapport à un DataFrame standard, un objet `Geopandas` comporte
+une colonne supplémentaire: `geometry`. Elle stocke les coordonnées des
+objets géographiques (ou ensemble de coordonnées s'agissant de contours). Un objet `Geopandas` hérite des propriétés d'un 
+DataFrame `Pandas` mais propose des méthodes adaptées au traitement des données spatiales. 
+
+Ainsi, grâce à  `Geopandas`, on pourra effectuer des manipulations sur les attributs des données comme avec `pandas` mais on pourra également faire des manipulations sur la dimension spatiale des données. En particulier,
+
+* Calculer des distances et des surfaces ;
+* Agréger rapidement des zonages (regrouper les communes en département par exemple) ;
+* Trouver dans quelle commune se trouve un bâtiment à partir de ses coordonnées géographiques ;
+* Recalculer des coordonnées dans un autre système de projection ;
+* Faire une carte, rapidement et simplement.
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint</h3>
+```
+
+Les manipulations de données sur un objet `Geopandas` sont nettement plus lentes que sur
+un `DataFrame` traditionnel (car `Python` doit gérer les informations géographiques pendant la manipulation des données).
+Lorsque vous manipulez des données de grandes dimensions,
+il peut être préférable d’effectuer les opérations sur les données avant de joindre une géométrie à celles-ci.
+
+```{=html}
+</div>
+```
+:::
+
+Par rapport à un logiciel spécialisé comme `QGIS`, `Python` permettra 
+d'automatiser le traitement et la représentation des données. D'ailleurs,
+`QGIS` utilise lui-même `Python`...
+
+## Anatomie d'un objet `GeoPandas`
+
+En résumé, un objet `GeoPandas` comporte les éléments suivantes :
+
+![](https://rgeo.linogaliana.fr/slides/img/sf.png)
+
+1. Les __attributs__. Ce sont les valeurs associées à chaque niveau géographique. 
+Il s'agit de la dimension tabulaire usuelle, dont le traitement est similaire
+à celui d'un objet `Pandas` classique. 
+2. Les __géométries__. Ce sont les valeurs numériques interprétées pour représenter la dimension géographique. Elles permettent de représenter dans un certain
+référentiel (le système de référence) la dimension géographique. 
+3. Le __système de référence__. Il s'agit du système permettant de transformer les positions sur
+le globe (3 dimensions avec une boule asymétrique) en un plan en deux dimensions. 
+Il en existe une multitude, identifiables à partir d'un code EPSG (4326, 2154...). 
+Leur manipulation est facilitée par `Geopandas` qui s'appuie sur `Shapely`, de la même
+manière que `Pandas` s'appuie sur `Numpy` ou `Arrow`. 
+
+## Objectifs de ce chapitre
+
+Ce chapitre illustre à partir d’exemples pratiques certains principes centraux de l’analyse de données :
+
+- Manipulations sur les attributs des jeux de données ;
+- Manipulations géométriques ;
+- Gestion des projections cartographiques ;
+- Création rapide de cartes (ce sera approfondi dans un prochain chapitre).
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
+Si vous êtes intéressés par `R` et le package `sf`,
+une version très proche de ce TP est
+disponible dans [ce cours](https://rgeo.linogaliana.fr/exercises/geospatial-wrangling.html).
+```{=html}
+</div>
+```
+:::
+
+# Lire et enrichir des données spatiales
+
+Dans le chapitre précédent, nous avons évoqué les formats de données
+plats comme le `CSV` ou les nouveaux formats comme `Parquet`. Ceux-ci
+sont adaptés à des données tabulaires. 
+Pour des données géographiques,
+qui stockent de l'information selon plusieurs dimensions (les attributs
+et la géométrie), il existe des formats spécialisés. 
+
+## Le _shapefile_
+
+Le format historique est le _[shapefile](https://fr.wikipedia.org/wiki/Shapefile)_. Dans ce format, la donnée est stockée dans plusieurs fichiers: 
+
+- `data.shp` : contient les géométries des entités spatiales (points, lignes, polygones...).
+- `data.shx` : un index pour accéder rapidement aux géométries stockées dans le fichier `.shp`.
+- `data.dbf` : une table attributaire au format dBase qui contient les informations descriptives des entités spatiales.
+- `data.prj` : contient les informations de projection et de système de coordonnées (nous reviendrons sur ce concept ultérieurement).
+
+Ce format présente plusieurs inconvénients. Tout d'abord il est assez lourd et certains formats modernes seront plus optimisés pour réduire la volumétrie et le temps de chargement des données. Surtout, son problème principal est que pour lire les données de manière intègre, il est nécessaire de partager de manière systématique ces quatre fichiers, sous peine d'introduire un risque de corruption ou d'incomplétude de la donnée.
+
+Le format `GeoPackage` est un héritier spirituel du _shapefile_ visant à résoudre ces deux limites du format précédent. Les géomaticiens apprécient ce format mais il est moins connu par les _data scientists_ que le _shapefile_ ou que le `geojson` que nous allons décrire. 
+
+
+## Le GeoJSON et le TopoJSON
+
+Le développement d'un format concurrent l'hégémonie du _shapefile_ est intrinsèquement lié à l'émergence des technologies _web_ dans le secteur de la cartographie. Ces technologies web s'appuient sur Javascript et reposent sur les standards du format JSON. 
+
+Le format GeoJSON stocke dans un seul fichier à la fois les attributs et les géométries. Il est donc assez pratique à l'usage et s'est imposé comme le format préféré des développeurs web. Le fait de stocker l'ensemble de l'information dans un seul fichier peut cependant le rendre assez volumineux si les géométries sont très précises. `GeoPandas` est très bien fait pour lire des fichiers au format GeoJSON et les plateformes de partage de données, comme `data.gouv` privilégient ce format à celui du _shapefile_. 
+
+Pour alléger le fichier, le format `TopoJSON` a récémment émergé. Celui-ci est construit selon les mêmes principes que le `GeoJSON` mais réduit le volume de données géométriques stockées en ne conservant pas tous les points mais en appliquant une simplification pour ne conserver que les arcs et les directions entre ceux-ci. Ce format étant récent, il n'est pas encore bien intégré à l'écosystème `Python`.
+
+## Les autres formats de données
+
+L'écosystème des formats de données géographiques est bien plus éclaté que celui des données structurées. Chaque format présente des avantages qui le rendent intéressant pour un type de données mais des limites qui l'empêchent de devenir un standard pour d'autres types de données. 
+
+Par exemple, les données GPS extraites de diverses applications (par exemple `Strava`) sont stockées au format GPX. Ce dernier est particulièrement adapté pour des traces géolocalisées avec une altitude. Mais ce n'est pas le format le plus approprié pour stocker des lignes directionnelles, un prérequis indispensable pour les applications d'itinéraires. 
+
+Les formats _shapefile_ et _geojson_ sont suffisamment malléables pour s'adapter aux différents types de données géographiques même s'il ne s'agit
+pas du format optimal pour tel ou tel type de données. Dans cette classe généraliste de formats, le `Geoparquet` pourrait être le prochain format à la mode. Comme son nom l'indique, il s'agit d'une extension du format `Parquet` à des données géographiques. Ce format n'est pas encore mûr mais reste à suivre, la masse d'utilisateurs de l'écosystème `Parquet` pouvant amener à un changement rapide si une implémentation stable de `Geoparquet`  émerge. 
+
+## Exercice de découverte
+
+L'objectif de cet exercice est d'illustrer la similarité des objets
+`GeoPandas` avec les objets `Pandas` que nous avons découverts précédemment. 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1: découverte des objets géographiques</h3>
+```
+
+En premier lieu, on récupère des données géographiques grâce
+au _package_ `cartiflette` et à sa fonction `carti_download`.
+
+1. Utiliser
+le code ci-dessous pour
+télécharger les données communales (produit `Admin Express` de l'IGN)
+des départements de la petite couronne (75, 92, 93 et 94)
+de manière simplifiée grâce au _package_
+`cartiflette`:
+
+```{python}
+#| echo: true
+#| output: false
+communes_borders = carti_download(
+    crs = 4326,
+    values = ["75", "92", "93", "94"],
+    borders="COMMUNE",
+    vectorfile_format="geojson",
+    filter_by="DEPARTEMENT",
+    source="EXPRESS-COG-CARTO-TERRITOIRE",
+    year=2022)
+```
+
+2. Regarder les premières lignes des données. Identifier la différence avec
+un _dataframe_ standard. 
+
+```{python}
+# 2) Regarder les premières lignes
+communes_borders.head()
+```
+
+3. Afficher le `crs` de `communes_borders`. Ce dernier contrôle la
+transformation de l'espace tridimensionnel terrestre en une surface plane.
+Utiliser `to_crs` pour transformer les données en Lambert 93, le 
+système officiel (code EPSG 2154). 
+
+4. Afficher les communes des Hauts de Seine (département 92) et utiliser la méthode
+`plot`
+
+5. Ne conserver que Paris et réprésenter les frontières sur une carte : quel est le problème pour
+une analyse de Paris intramuros?
+
+On remarque rapidement le problème. 
+On ne dispose ainsi pas des limites des arrondissements parisiens, ce
+qui appauvrit grandement la carte de Paris. 
+
+6. Cette fois, utiliser l'argument `borders="COMMUNE_ARRONDISSEMENT"` pour obtenir
+un fonds de carte consolidé des communes avec les arrondissements dans les grandes villes. 
+Convertir en Lambert 93. 
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+#| output: false
+
+# 1. Chargement des données de Cartiflette
+communes_borders = carti_download(
+    crs = 4326,
+    values = ["75", "92", "93", "94"],
+    borders="COMMUNE",
+    vectorfile_format="geojson",
+    filter_by="DEPARTEMENT",
+    source="EXPRESS-COG-CARTO-TERRITOIRE",
+    year=2022)
+```
+
+
+```{python}
+#| output: false
+# 2. Regarder les premières lignes
+communes_borders.head()
+# Il y a une colonne geometry qui contient les informations nécessaires pour connaître les contours communaux
+```
+
+```{python}
+#| output: false
+
+# 3) Afficher le crs
+communes_borders.crs
+# Les données sont en WGS84, on les reprojette en lambert 93
+```
+
+```{python}
+#| echo: false
+
+# 4) afficher les communes du département 92
+ax = communes_borders[communes_borders['INSEE_DEP'] == "92"].boundary.plot()
+ax.set_axis_off()
+```
+
+```{python}
+#| echo: false
+
+# 5) Représenter la carte de Paris. Quel est le problème ?
+ax = communes_borders[communes_borders['INSEE_DEP'] == "75"].boundary.plot()
+ax.set_axis_off()
+#On remarque ainsi facilement le problème pour Paris
+#intra-muros: il manque les limites des arrondissements. 
+#Cela appauvrit grandement la carte de Paris. 
+```
+
+
+```{python}
+#| output: false
+
+# 6. Chargement des données de Cartiflette
+petite_couronne = carti_download(
+    crs = 4326,
+    values = ["75", "92", "93", "94"],
+    borders="COMMUNE_ARRONDISSEMENT",
+    vectorfile_format="geojson",
+    filter_by="DEPARTEMENT",
+    source="EXPRESS-COG-CARTO-TERRITOIRE",
+    year=2022)
+    
+petite_couronne.crs
+petite_couronne = petite_couronne.to_crs(2154)
+petite_couronne.crs
+```
