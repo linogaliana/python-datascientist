@@ -112,6 +112,7 @@ facilitant la récupération de cette source.
 ```{python}
 #| output : false 
 #| echo: true
+#| label: install-dependencies
 # à faire obligatoirement en premier pour utiliser rtree ou pygeos pour les jointures spatiales
 !pip install pandas fiona shapely pyproj rtree 
 !pip install contextily
@@ -125,6 +126,7 @@ seront utiles.
 ```{python}
 #| output: false
 #| echo: true
+#| label: load-dependencies
 import geopandas as gpd
 import contextily as ctx
 import matplotlib.pyplot as plt
@@ -157,6 +159,7 @@ vous pouvez retirer les `!` en début de ligne):
 ```{python}
 #| eval: false
 #| echo: true
+#| label: install-cartiflette
 !pip install py7zr geopandas openpyxl tqdm s3fs
 !pip install PyYAML xlrd
 !pip install git+https://github.com/inseefrlab/cartiflette
@@ -245,6 +248,7 @@ disponible dans [ce cours](https://rgeo.linogaliana.fr/exercises/geospatial-wran
 
 :::
 
+
 # Lire et enrichir des données spatiales
 
 Dans le chapitre précédent, nous avons évoqué les formats de données
@@ -299,6 +303,7 @@ Nous allons importer directement les données `AdminExpress` (limites officielle
 
 ```{python}
 #| echo: true
+#| label: load-carti_download
 from cartiflette import carti_download
 ```
 
@@ -647,6 +652,29 @@ Dans le système Lambert 93 (2154) :
 ```
 :::
 
+## Gestion avec `GeoPandas`
+
+Concernant la gestion des projections avec `GeoPandas`,
+la [documentation officielle](https://geopandas.org/projections.html) est très bien
+faite. Elle fournit notamment l'avertissement suivant qu'il est
+bon d'avoir en tête :
+
+> Be aware that most of the time you don’t have to set a projection. Data loaded from a reputable source (using the geopandas.read_file() command) should always include projection information. You can see an objects current CRS through the GeoSeries.crs attribute.
+> 
+> From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so geopandas knows how to interpret the coordinates.
+
+![*Image empruntée à XKCD <https://xkcd.com/2256/> qu'on peut également trouver sur <https://blog.chrislansdown.com/2020/01/17/a-great-map-projection-joke/>*](https://imgs.xkcd.com/comics/bad_map_projection_south_america.png)
+
+Les deux principales méthodes pour définir le système de projection utilisé sont :
+
+* **`df.set_crs`** : cette commande sert à préciser quel est le système de projection utilisé, c'est-à-dire comment les coordonnées *(x,y)* sont reliées à la surface terrestre. **Cette commande ne doit pas être utilisée pour transformer le système de coordonnées, seulement pour le définir**. 
+* **`df.to_crs`** : **cette commande sert à projeter les points d'une géométrie dans une autre, c'est-à-dire à recalculer les coordonnées selon un autre système de projection.** 
+
+Dans le cas particulier de production de carte avec un fond `OpenStreetMaps` ou une carte dynamique `leaflet`, il est nécessaire de dé-projeter les données (par exemple à partir du Lambert-93) pour atterrir dans le système non-projeté WGS 84 (code EPSG 4326). Ce site [dédié aux projections géographiques](https://epsg.io/) peut être utile pour retrouver le système de projection d'un fichier où il n'est pas indiqué. 
+
+Le prochain exercice permettra, avec quelques cas pathologiques, de se convaincre de l'importance de déléguer le plus possible la gestion du système de projection à `GeoPandas`. La question n'est pas que sur la pertinence de la représentation des objets géographiques sur la carte. En effet, l'ensemble des opérations géométriques (calculs d'aires, de distance, etc.) peut être affecté par les choix faits sur le système de projection. 
+
+
 ## Exercice pour comprendre l'importance du système de projection
 
 Voici un code utilisant encore
@@ -656,6 +684,7 @@ pour récupérer les frontières françaises (découpées par région):
 ```{python}
 #| output: false
 #| echo: true
+#| label: load-france-data
 france = carti_download(
       values = ["France"],
       crs = 4326,
@@ -696,6 +725,7 @@ pour chaque région.
 
 ```{python}
 #| output: false
+#| label: exo2-q1
 # Question 1 : Tester différentes projections
 france_2154 = france.to_crs(2154)
 france_healpix = france.to_crs("+proj=healpix +lon_0=0 +a=1")
@@ -730,6 +760,7 @@ ax4.set_axis_off()
 ```
 
 ```{python}
+#| label: exo2-q2
 # Question 2
 france = france.to_crs(3395)
 france["superficie_4326"] = france.area
@@ -774,11 +805,12 @@ requêtables directement par l'url
 
 ```{python}
 #| echo: true
-
+#| label: load-velib
 velib_data = 'https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr'
 stations = gpd.read_file(velib_data)
 stations.head(2)
 ```
+
 
 ## Localiser les données sur une carte
 
@@ -786,7 +818,7 @@ La première étape, avant l'exploration approfondie des données, consiste à a
 Dans notre cas, cela nous donnera une intuition sur la localisation des stations et notamment la densité hétérogène de celles-ci dans l'espace urbain parisien. 
 
 
-### Exercice d'application
+## Exercice d'application
 
 Dans le prochain exercice, nous proposons de créer rapidement une 
 carte comprenant trois couches :
@@ -807,6 +839,7 @@ le fonds de carte des départements de la petite couronne:
 ```{python}
 #| echo: true
 #| output: false
+#| label: load-idf
 idf = carti_download(
       values = ["11"],
       crs = 4326,
@@ -833,30 +866,30 @@ petite_couronne_departements = (
 On commence par récupérer les données nécessaires à la production
 de cette carte.
 
-2. Vérifier la projection géographique de `station` (attribut `crs`). Si celle-ci est différente des données communales, reprojeter ces
+1. Vérifier la projection géographique de `station` (attribut `crs`). Si celle-ci est différente des données communales, reprojeter ces
 dernières dans le même système de projection que les stations de vélib
-3. Ne conserver que les 50 principales stations (variable `capacity`)
+2. Ne conserver que les 50 principales stations (variable `capacity`)
 
 On peut maintenant construire la carte de manière séquentielle avec la méthode `plot` en s'aidant de [cette documentation](https://geopandas.org/en/stable/docs/user_guide/mapping.html#maps-with-layers)
 
-4. En premier lieu, grâce à `boundary.plot`, 
+3. En premier lieu, grâce à `boundary.plot`, 
 représenter la couche de base des limites des communes et arrondissements:
     + Utiliser les options `edgecolor = "black"` et `linewidth = 0.5`
     + Nommer cet objet `base`
 
-5. Ajouter la couche des départements avec les options `edgecolor = "blue"` et `linewidth = 0.7`
+4. Ajouter la couche des départements avec les options `edgecolor = "blue"` et `linewidth = 0.7`
 
-6. Ajouter les positions des stations
+5. Ajouter les positions des stations
 et ajuster la taille en fonction de la variable `capacity`. L'esthétique des points obtenus peut être contrôlé grâce aux options `color = "red"` et `alpha = 0.4`.
 
-7. Retirer les axes et ajouter un titre avec les options ci-dessous:
+6. Retirer les axes et ajouter un titre avec les options ci-dessous:
 
 ```python
 base.set_axis_off()
 base.set_title("Les 50 principales stations de Vélib")
 ```
 
-8. En suivant le modèle suivant, grâce au _package_ `contextily`, ajouter un fond de carte contextuel _openstreetmap_
+7. En suivant le modèle suivant, grâce au _package_ `contextily`, ajouter un fond de carte contextuel _openstreetmap_
 
 ```python
 import contextily as ctx
@@ -874,7 +907,8 @@ ctx.add_basemap(ax, source = ctx.providers.OpenStreetMap.Mapnik)
 
 ```{python}
 #| output: false
-# 2. Reprojection
+#| label: exo3-q1
+# 1. Reprojection
 stations.crs
 stations = stations.to_crs(petite_couronne.crs) 
 ```
@@ -882,42 +916,46 @@ stations = stations.to_crs(petite_couronne.crs)
 
 ```{python}
 #| output: false
-# 3. Principales stations
+#| label: exo3-q2
+# 2. Principales stations
 principales_stations = stations.sort_values("capacity", ascending = False).head(50)
 ```
 
-La couche de base obtenue à l'issue de la question 4.
+La couche de base obtenue à l'issue de la question 3.
 
 ```{python}
-# 4. petite couronne
+#| label: exo2-q3
+# 3. petite couronne
 base = petite_couronne.boundary.plot(edgecolor = "black", linewidth = 0.5)
 base
 ```
 
 
-Puis en y ajoutant les limites départementales (question 5).
+Puis en y ajoutant les limites départementales (question 4).
 
 ```{python}
-# 5. Ajout de la couche des départements
+#| label: exo2-q4
+# 4. Ajout de la couche des départements
 base = petite_couronne.boundary.plot(edgecolor = "black", linewidth = 0.5)
 petite_couronne_departements.boundary.plot(ax = base, edgecolor = "blue", linewidth = 0.7)
 base
 ```
 
-Puis les stations (question 6).
+Puis les stations (question 5).
 
 ```{python}
-# 6. Ajout des stations
+#| label: exo2-q5
+# 5. Ajout des stations
 base = petite_couronne.boundary.plot(edgecolor = "black", linewidth = 0.5)
 petite_couronne_departements.boundary.plot(ax = base, edgecolor = "blue", linewidth = 0.7)
 principales_stations.plot(ax= base, markersize = "capacity", color = "red", alpha = 0.4)
 base
 ```
 
-Ensuite, si on retire les axes (question 7), on obtient:
+Ensuite, si on retire les axes (question 6), on obtient:
 
 ```{python}
-#7. sans axe et avec titre
+# 6. sans axe et avec titre
 base = petite_couronne.boundary.plot(edgecolor = "black", linewidth = 0.5)
 petite_couronne_departements.boundary.plot(ax = base, edgecolor = "blue", linewidth = 0.7)
 principales_stations.plot(ax= base, markersize = "capacity", color = "red", alpha = 0.4)
@@ -929,7 +967,7 @@ base
 La carte est déjà parlante en soi. Néanmoins, pour des personnes moins familières de la géographie parisienne, elle pourrait être encore plus limpide avec l'ajout d'un fond de carte contextuel _openstreetmap_. _In fine_, cela donne la carte suivante:
 
 ```{python}
-#7. sans axe et avec titre
+#7 . sans axe et avec titre
 import contextily as ctx
 base = (
   petite_couronne.
@@ -952,7 +990,54 @@ ctx.add_basemap(base, source = ctx.providers.OpenStreetMap.Mapnik)
 base
 ```
 
-## Enrichissements grâce à la dimension spatiale: les jointures spatiales 
+## Opérations sur les géométries
+
+Outre la représentation graphique simplifiée,
+l'intérêt principal d'utiliser
+`GeoPandas` est l'existence de méthodes efficaces pour
+manipuler la dimension spatiale. Un certain nombre proviennent du 
+package
+[`Shapely`](https://shapely.readthedocs.io/en/latest/manual.html#general-attributes-and-methods). 
+
+Nous avons déjà vu la méthode `to_crs` pour reprojeter les données de manière vectorisée sans avoir à s'inquiéter. 
+Nous avons également évoqué la méthode `area`
+pour calculer des surfaces. Il en existe de nombreuses et l'objectif de ce chapitre n'est pas d'être exhaustif sur le sujet mais plutôt de servir d'introduction générale pour amener à approfondir ultérieurement. 
+Parmi les méthodes les plus utiles, on peut citer `centroid` qui, comme son nom l'indique,
+recherche le centroïde de chaque polygone et transforme ainsi des données
+surfaciques en données ponctuelles. Par exemple, pour
+représenter approximativement les centres des villages de la
+Haute-Garonne (31), après avoir téléchargé le fonds de carte adapté, on
+fera
+
+```{python}
+communes_31 = carti_download(
+      values = ["31"],
+      crs = 4326,
+      borders="COMMUNE",
+      vectorfile_format="geojson",
+      filter_by="DEPARTEMENT",
+      source="EXPRESS-COG-CARTO-TERRITOIRE",
+      year=2022)
+
+# on reprojete en 3857 pour le fond de carte
+communes_31 = communes_31.to_crs(3857)
+
+# on calcule le centroide
+dep_31 = communes_31.copy()
+communes_31['geometry'] = communes_31['geometry'].centroid
+
+ax = communes_31.plot(figsize = (10,10), color = 'red', alpha = 0.4, zorder=2)
+dep_31.to_crs(3857).plot(ax = ax, zorder=1, edgecolor = "black", facecolor="none",
+                                                           color = None)
+#ctx.add_basemap(ax, source = ctx.providers.Stamen.Toner)
+ax.set_axis_off()
+ax
+```
+
+Par conséquent, avec `Geopandas`, l'ensemble de la grammaire `Pandas` peut être mobilisée pour traiter la dimension attributaire des données alors que la dimension géographique pourra être manipulée avec des méthodes adaptées.
+
+
+# Enrichissements grâce à la dimension spatiale: les jointures spatiales 
 
 ## Principe
 
@@ -964,6 +1049,7 @@ On peut maintenant explorer de manière plus approfondie la structure de notre j
 
 ```{python}
 #| echo: true
+#| label: visualise-before-spatial-joins
 stations.head(2)
 ```
 
@@ -1017,7 +1103,8 @@ En reprenant les exemples précédents, ne représenter que le 19e et ajouter un
 
 
 ```{python}
-#1.  Jointure spatiale entre stations et data_paris
+#| label: exo4-q1
+# 1. Jointure spatiale entre stations et data_paris
 stations_info = gpd.sjoin(stations, petite_couronne, predicate = 'within')
 ```
 
@@ -1031,11 +1118,13 @@ stations_info.head(2)
 On peut donc calculer des statistiques par arrondissement, comme on le ferait avec un `DataFrame Pandas` (question 2):
 
 ```{python}
+#| label: exo4-q2
 stations_info.groupby("NOM").agg({"capacity": ['count', 'median']}).reset_index().sort_values(('capacity', 'count'), ascending = True)
 ```
 
 ```{python}
-#3. 19e arrondissement
+#| label: exo4-q3
+# 3. 19e arrondissement
 stations_19 = stations_info.loc[stations_info['NOM'].str.contains("19e")]
 arrondissement_19e = petite_couronne.loc[petite_couronne['NOM'].str.contains("19e")]
 ```
@@ -1043,6 +1132,7 @@ arrondissement_19e = petite_couronne.loc[petite_couronne['NOM'].str.contains("19
 Néanmoins des cartes seront sans doute plus parlante. Pour commencer, avec la question 3, on peut représenter les stations du 19e arrondissement, d'abord dans l'ensemble de Paris. 
 
 ```{python}
+#| label: exo4-q4
 # 4. Carto du 19e 
 base = petite_couronne.loc[petite_couronne['INSEE_DEP']=="75"].boundary.plot(edgecolor = "k", linewidth=0.5)
 arrondissement_19e.boundary.plot(ax = base, edgecolor = "red", linewidth=0.9)
@@ -1055,6 +1145,7 @@ base
 On peut ensuite zoomer sur cet arrondissement et faire une carte avec un fond plus travaillé:
 
 ```{python}
+#| label: exo4-q4b
 # 4b. Carto du 19e 
 base = (
   arrondissement_19e
@@ -1076,7 +1167,8 @@ base
 Carte obtenue à la question 5 :
 
 ```{python}
-#4. Calcul et carte des capacity
+#| label: exo4-q5
+# 5. Calcul et carte des capacity
 stations_agg = (
   stations_info
   .groupby("INSEE_COG")
