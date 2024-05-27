@@ -993,6 +993,7 @@ sont dans un _dataframe_ nommé `petite_couronne`.
 2. Compter le nombre de stations et la taille médiane des stations par arrondissements
 2. Créer les objets `stations_19e` et `arrondissement_19e` pour stocker, respectivement, 
 les stations appartenant au 19e et les limites de l'arrondissement.
+2. Compter le nombre de stations velib et le nombre de places velib par arrondissement ou commune. Représenter sur une carte chacune des informations
 2. Représenter la carte des stations du 19e arrondissement avec le code suivant :
 
 ```python
@@ -1004,7 +1005,8 @@ base.set_title("Les stations Vélib du 19e arrondissement")
 base
 ```
 
-3. Compter le nombre de stations velib et le nombre de places velib par arrondissement ou commune. Représenter sur une carte chacune des informations
+En reprenant les exemples précédents, ne représenter que le 19e et ajouter un fond de carte _openstreetmap_ pour mieux localiser les stations. 
+
 4. Représenter les mêmes informations mais en densité (diviser par la surface de l'arrondissement ou commune en km2)
 
 
@@ -1026,7 +1028,7 @@ présente la structure suivante
 stations_info.head(2)
 ```
 
-Les statistiques qu'on peut calculer par arrondissement sont par exemple celles-ci (question 2)
+On peut donc calculer des statistiques par arrondissement, comme on le ferait avec un `DataFrame Pandas` (question 2):
 
 ```{python}
 stations_info.groupby("NOM").agg({"capacity": ['count', 'median']}).reset_index().sort_values(('capacity', 'count'), ascending = True)
@@ -1038,6 +1040,8 @@ stations_19 = stations_info.loc[stations_info['NOM'].str.contains("19e")]
 arrondissement_19e = petite_couronne.loc[petite_couronne['NOM'].str.contains("19e")]
 ```
 
+Néanmoins des cartes seront sans doute plus parlante. Pour commencer, avec la question 3, on peut représenter les stations du 19e arrondissement, d'abord dans l'ensemble de Paris. 
+
 ```{python}
 # 4. Carto du 19e 
 base = petite_couronne.loc[petite_couronne['INSEE_DEP']=="75"].boundary.plot(edgecolor = "k", linewidth=0.5)
@@ -1045,6 +1049,27 @@ arrondissement_19e.boundary.plot(ax = base, edgecolor = "red", linewidth=0.9)
 stations_19.plot(ax = base, color = "red", alpha = 0.4)
 base.set_axis_off()
 base.set_title("Les stations Vélib du 19e arrondissement")
+base
+```
+
+On peut ensuite zoomer sur cet arrondissement et faire une carte avec un fond plus travaillé:
+
+```{python}
+# 4b. Carto du 19e 
+base = (
+  arrondissement_19e
+  .loc[petite_couronne['INSEE_DEP']=="75"]
+  .to_crs(3857)
+  .boundary.plot(edgecolor = "red", linewidth=0.5)
+)
+(
+  stations_19
+  .to_crs(3857)
+  .plot(ax = base, color = "red", alpha = 0.4)
+)
+base.set_axis_off()
+base.set_title("Les stations Vélib du 19e arrondissement")
+ctx.add_basemap(base, source = ctx.providers.OpenStreetMap.Mapnik)
 base
 ```
 
@@ -1070,10 +1095,10 @@ aplat.set_axis_off()
 aplat
 ```
 
-Avec la carte de la question 4, basée sur des aplats de couleurs (choropleth map), le lecteur est victime d’une illusion classique. Les arrondissements les plus visibles sur la carte sont les plus grands. D’ailleurs c’est assez logique qu’ils soient également mieux pourvus en velib. Même si l’offre de velib est probablement plus reliée à la densité de population et d’équipements, on peut penser que l’effet taille joue et qu’ainsi on est victime d’une illusion avec la carte précédente.
+Avec cette carte, basée sur des aplats de couleurs (_choropleth map_), le lecteur est victime d’une illusion classique. Les arrondissements les plus visibles sur la carte sont les plus grands. D’ailleurs c’est assez logique qu’ils soient également mieux pourvus en velib. Même si l’offre de velib est probablement plus reliée à la densité de population et d’équipements, on peut penser que l’effet taille joue et que celui-ci est certainement le phénomène le plus visible sur notre carte alors qu'il ne s'agit peut-être pas du facteur de premier ordre en réalité.
 
 
-Si on représente plutôt la capacité sous forme de densité, pour tenir compte de la taille différente des arrondissements, les conclusions sont inversées et correspondent mieux aux attentes d’un modèle centre-périphérie. Les arrondissements centraux sont mieux pourvus, cela se voit encore mieux avec des ronds proportionnels plutôt qu’une carte chorolèpthe.
+Si on représente plutôt la capacité sous forme de densité, pour tenir compte de la taille différente des arrondissements, les conclusions sont inversées et correspondent mieux aux attentes d’un modèle centre-périphérie. Les arrondissements centraux sont mieux pourvus. Si nous faisions une carte avec des ronds proportionnels plutôt qu’une carte chorolèpthe, cela serait encore plus visible ; néanmoins la cartographie n'est pas l'objet de ce chapitre. 
 
 ```{python}
 #6. Calcul et carte des area et density
@@ -1085,4 +1110,106 @@ aplat = petite_couronne_count.plot(
     column = "density", cmap="coolwarm", legend=True)
 aplat.set_axis_off()
 aplat
+```
+
+## Exercice supplémentaire
+
+Les exercices précédents ont permis de se familiariser au traitement de données
+spatiales. Néanmoins il arrive fréquemment de devoir jongler de manière plus ardue avec la
+dimension géométrique. Il peut s'agir, par exemple, de changer d'échelle territoriale dans les données ou d'introduire
+des fusions/dissolutions de géométries.
+
+Nous allons illustrer cela avec un exercice supplémentaire illustrant, en pratique, comment travailler des données dans les modèles d'économie urbaine où on fait l'hypothèse de déplacements au plus proche point ([modèle d'Hotelling](https://fr.wikipedia.org/wiki/Loi_de_Hotelling)). 
+
+Imaginons que chaque utilisateur de velib se déplace exclusivement
+vers la station la plus proche (à supposer qu'il n'y a jamais pénurie
+ou surcapacité). Quelle est la carte de la couverture des vélibs ? 
+Pour répondre à ce type de question, on utilise fréquemment la
+la [tesselation de Voronoï](https://fr.wikipedia.org/wiki/Diagramme_de_Vorono%C3%AF),
+une opération classique pour transformer des points en polygones. 
+
+L'exercice suivant
+permet de se familiariser avec la construction de _voronoi_ [^notevoronoi].
+
+
+[^notevoronoi]: Dans [ce document de travail](https://www.insee.fr/en/statistiques/4925202) sur données de téléphonie mobile, on montre néanmoins que cette approche n'est pas sans biais
+sur des phénomènes où l'hypothèse de proximité spatiale est
+trop simplificatrice.
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice optionnel: La carte de couverture des stations</h3>
+```
+
+Cet exercice est plus complexe parce qu'il implique de revenir à `Shapely`, une librairie plus bas niveau que `GeoPandas`. 
+
+Cet exercice est laissé libre. Une source d'inspiration possible est cette discussion sur [StackExchange](https://gis.stackexchange.com/questions/337561/making-polygon-for-every-point-in-set-using-voronoi-diagram). 
+
+L'objectif est de faire deux cartes de couverture: une au niveau de la petite couronne et l'autre seulement au sein de Paris intramuros. 
+
+
+```{=html}
+</div>
+```
+:::
+
+```{python}
+import matplotlib.pyplot as plt
+from scipy.spatial import Voronoi
+import numpy as np
+import shapely
+from shapely.geometry import Polygon, MultiPolygon, Point
+from shapely.ops import cascaded_union, unary_union
+import geopandas as gpd
+
+# Step 2: Extract the coordinates for Voronoi tessellation
+points = np.array([[geom.x, geom.y] for geom in stations_info.geometry])
+
+# Step 3: Create the Voronoi tessellation
+vor = Voronoi(points)
+
+lines = [shapely.geometry.LineString(vor.vertices[line]) for line in 
+    vor.ridge_vertices if -1 not in line]
+polys = shapely.ops.polygonize(lines)
+voronoi_gdf = gpd.GeoDataFrame(geometry=gpd.GeoSeries(polys), crs=stations_info.crs)
+masked_voronoi = gpd.overlay(voronoi_gdf, petite_couronne, how='intersection')
+```
+
+La première carte de couverture, au niveau de l'agglomération dans son ensemble,
+permet de voir la densité plus importante des
+stations velib dans le centre parisien:
+
+```{python}
+base = petite_couronne.boundary.plot(figsize = (10,10), color='black')
+stations_info.plot(ax=base, color='red', markersize=5)
+masked_voronoi.boundary.plot(ax=base, color='blue')
+base.set_axis_off()
+```
+
+Si on zoome sur Paris intramuros, on a également une hétérogénéité dans la couverture.
+On a moins d'hétérogénéité dans les surfaces de couverture puisque la densité est importante mais on remarque néanmoins des divergences entre certains espaces.
+
+```{python}
+base = (
+  petite_couronne
+  .loc[petite_couronne["INSEE_DEP"] == "75"]
+  .to_crs(3857)
+  .boundary.plot(figsize = (10,10), color='black')
+)
+(
+  stations_info
+  .loc[stations_info["INSEE_DEP"] == "75"]
+  .to_crs(3857)
+  .plot(ax=base, color='red', markersize=5)
+)
+(
+  masked_voronoi
+    .loc[masked_voronoi["INSEE_DEP"] == "75"]
+    .to_crs(3857)
+    .boundary.plot(ax=base, color='blue')
+)
+ctx.add_basemap(base, source = ctx.providers.OpenStreetMap.Mapnik)
+base.set_axis_off()
 ```
