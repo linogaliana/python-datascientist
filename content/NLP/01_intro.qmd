@@ -20,6 +20,14 @@ description: |
 bibliography: ../../reference.bib
 image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/python-reading.jfif
 echo: false
+include-in-header:
+  - text: |
+      <style>
+      .cell-output-stdout code {
+        word-break: break-wor !important;
+        white-space: pre-wrap !important;
+      }
+      </style>
 ---
 
 ::: {.content-visible when-format="html"}
@@ -358,14 +366,20 @@ Celui-ci peut être appliqué de cette manière:
 
 ```{python}
 #| echo: true
-#| output: false
+#| label: tokenizer-french-space
 import spacy
 from spacy.tokenizer import Tokenizer
 nlp = spacy.load("fr_core_news_sm")
 doc = nlp(dumas[10000:10500])
+
+text_tokenized = []
 for token in doc:
-    print(token.text)
+    text_tokenized += [token.text]
+
+", ".join(text_tokenized)
 ```
+
+
 
 Comme on peut le voir, il reste encore beaucoup d'éléments polluants notre structuration de corpus, à commencer par la ponctuation. Nous allons néanmoins pouvoir facilement retirer ceux-ci ultérieurement, comme nous le verrons.
 
@@ -393,6 +407,7 @@ token_counts = Counter(tokens)
 Nous avons déjà de nombreux mots différents dans le début de l'oeuvre. 
 
 ```{python}
+#| echo: true
 len(token_counts)
 ``` 
 
@@ -425,14 +440,52 @@ Maintenant, si on regarde les 25 mots les plus fréquents, on peut voir que ceux
 #| echo: true
 # Sort the tokens by frequency in descending order
 sorted_token_counts = token_counts.most_common(25)
-sorted_token_counts
-```
-
-```{python}
 sorted_token_counts = pd.DataFrame(sorted_token_counts, columns=['word', 'count'])
 ```
 
 ```{python}
+from great_tables import GT, md
+import polars as pl
+
+def create_bar(prop_fill: float, max_width: int, height: int) -> str:
+    """Create divs to represent prop_fill as a bar."""
+    width = round(max_width * prop_fill, 2)
+    px_width = f"{width}px"
+    return f"""\
+    <div style="width: {max_width}px; background-color: lightgrey;">\
+        <div style="height:{height}px;width:{px_width};background-color:green;"></div>\
+    </div>\
+    """
+
+sorted_token_counts['count_pct'] = sorted_token_counts['count']/sorted_token_counts['count'].max()
+
+df = (
+  pl.from_pandas(sorted_token_counts)
+  .with_columns(
+      pl.col("count_pct")
+        .map_elements(lambda x: create_bar(x, max_width=75, height=20))
+        .alias("count_pct_bar")
+    )
+  .with_columns(
+      pl.col("count_pct")
+        .map_elements(lambda x: f"__{x}__")
+        .alias("count_pct")
+  )
+)
+
+(
+  GT(df)
+  .cols_hide("count_pct")
+  .cols_label(**{"count_pct_bar": "", "word": "Mot", "count": "Nombre d'occurrences"})
+  .tab_source_note(md("_Nombre d'apparitions sur les 30 000 premiers caractères du Comte de Monte Cristo_"))
+  .fmt_markdown("word")
+)
+```
+
+Si on représente graphiquement ce classement
+
+```{python}
+#| echo: true
 (
     ggplot(sorted_token_counts, aes(x='word', y='count')) +
     geom_point(stat='identity', size = 3, color = "red") +
@@ -445,7 +498,7 @@ sorted_token_counts = pd.DataFrame(sorted_token_counts, columns=['word', 'count'
 )
 ```
 
-Nous nous concentrerons ultérieurement sur ces mots valise car il sera important d'en tenir compte pour les analyses approfondies de nos documents. 
+Nous nous concentrerons ultérieurement sur ces mots-valises car il sera important d'en tenir compte pour les analyses approfondies de nos documents. 
 
 Nous avons pu, par ces décomptes de mots, avoir une première intutition de la nature de notre corpus. Néanmoins, une approche un peu plus visuelle serait pertinente pour avoir un peu plus d'intuitions. 
 Les nuages de mots (*wordclouds*) sont des représentations graphiques assez pratiques pour visualiser
@@ -500,16 +553,20 @@ def graph_wordcloud(author, train_data, varname = "Text"):
 n_topics = ["HPL","EAP","MWS"]
 ```
 
-```{python}
-#| fig-cap: Nuage de mot produit à partir du corpus anglo-saxon
-#| label: fig-wordcloud-spooky
-fig = plt.figure(figsize=(15, 12))
-for i in range(len(n_topics)):
-    ax = fig.add_subplot(2,2,i+1)
-    wordcloud = graph_wordcloud(n_topics[i], horror)
+Les nuages de points obtenus à la question 1 sont les suivants:
 
-    ax.imshow(wordcloud)
-    ax.axis('off')
+```{python}
+#| label: fig-wordcloud-spooky
+#| layout-ncol: 2
+#| fig-cap: 
+#|   - "Lovercraft"
+#|   - "Poe"
+#|   - "Shelley"
+for i in range(len(n_topics)):
+    wordcloud = graph_wordcloud(n_topics[i], horror)
+    plt.imshow(wordcloud)
+    plt.axis('off')
+    plt.show()
 ```
 
 ```{python}
@@ -532,6 +589,9 @@ def make_wordcloud(corpus):
 
 wordcloud_dumas = make_wordcloud(dumas)
 ```
+
+Alors que celui obtenu à partir de l'oeuvre de Dumas prend
+la forme
 
 ```{python}
 #| fig-cap: Nuage de mot produit à partir du Comte de Monte Cristo
@@ -926,4 +986,150 @@ print(horror.iloc[list_fear[:9]]['Text'].values)
 ```
 
 On remarque que les scores les plus élevés sont soient des extraits courts où le mot apparait une seule fois, soit des extraits plus longs où le mot fear apparaît plusieurs fois.
+
+
+# Un premier enrichissement de l'approche sac de mots: les *n-grams*
+
+Nous avons évoqué deux principales limites à l'approche sac de mot: l'absence de prise en compte du contexte et la représentation _sparse_ du langage qui rend les rapprochements entre texte parfois moyennement pertinents. Dans le paradigme du sac de mots, il est néanmoins possible de prendre en compte la séquence d'enchainement de sèmes (_tokens_) par le biais des _ngrams_.
+
+Pour rappel, jusqu'à présent, dans l'approche _bag of words_, l'ordre des mots n'avait pas d'importance.
+On considère qu'un texte est une collection de
+mots tirés indépendamment, de manière plus ou moins fréquente en fonction de leur probabilité
+d'occurrence. Cependant, tirer un mot particulier n'affecte pas les chances de tirer certains mots
+ensuite, de manière conditionnelle. 
+
+Une manière d'introduire des liens entre les séries de _tokens_ sont les _n-grams_. 
+On s'intéresse non seulement aux mots et à leur fréquence, mais aussi aux mots qui suivent. Cette approche est essentielle pour désambiguiser les homonymes. Le calcul de _n-grams_ [^ngrams] constitue la méthode la plus simple pour tenir compte du contexte.
+
+[^ngrams]: On parle de _bigrams_ pour les co-occurences de mots deux-à-deux, _trigrams_ pour les co-occurences trois-à-trois, etc.
+
+
+Pour être en mesure de mener cette analyse, il est nécessaire de télécharger un corpus supplémentaire :
+
+```{python}
+#| echo: true
+import nltk
+nltk.download('genesis')
+nltk.corpus.genesis.words('english-web.txt')
+```
+
+
+`NLTK` offre des methodes pour tenir compte du contexte. Pour ce faire, nous calculons les n-grams, c'est-à-dire l'ensemble des co-occurrences successives de mots n-à-n.  En général, on se contente de bi-grams, au mieux de tri-grams: 
+
+* les modèles de classification, analyse du sentiment, comparaison de documents, etc. qui comparent des n-grams avec n trop grands sont rapidement confrontés au problème de données sparse, cela réduit la capacité prédictive des modèles ;
+* les performances décroissent très rapidement en fonction de n, et les coûts de stockage des données augmentent rapidement (environ n fois plus élevé que la base de données initiale).
+
+
+On va, rapidement, regarder dans quel contexte apparaît le mot `fear` dans
+l'oeuvre d'Edgar Allan Poe (EAP). Pour cela, on transforme d'abord
+le corpus EAP en tokens `NLTK` : 
+
+```{python}
+#| echo: true
+eap_clean = horror.loc[horror["Author"] == "EAP"]
+eap_clean = ' '.join(eap_clean['Text'])
+tokens = eap_clean.split()
+print(tokens[:10])
+text = nltk.Text(tokens)
+print(text)
+```
+
+Vous aurez besoin des fonctions ` BigramCollocationFinder.from_words` et `BigramAssocMeasures.likelihood_ratio` : 
+
+```{python}
+from nltk.collocations import BigramCollocationFinder
+from nltk.metrics import BigramAssocMeasures
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 7  : n-grams et contexte du mot fear</h3>
+```
+1. Utiliser la méthode `concordance` pour afficher le contexte dans lequel apparaît le terme `fear`. 
+2. Sélectionner et afficher les meilleures collocations, par exemple selon le critère du ratio de vraisemblance. 
+
+Lorsque deux mots sont fortement associés, cela est parfois dû au fait qu'ils apparaissent rarement. Il est donc parfois nécessaire d'appliquer des filtres, par exemple ignorer les bigrammes qui apparaissent moins de 5 fois dans le corpus.
+
+3. Refaire la question précédente en utilisant toujours un modèle `BigramCollocationFinder` suivi de la méthode `apply_freq_filter` pour ne conserver que les bigrammes présents au moins 5 fois. Puis, au lieu d'utiliser la méthode de maximum de vraisemblance, testez la méthode `nltk.collocations.BigramAssocMeasures().jaccard`.
+
+4. Ne s'intéresser qu'aux *collocations* qui concernent le mot *fear*
+
+
+```{=html}
+</div>
+```
+:::
+
+
+Avec la méthode `concordance` (question 1), 
+la liste devrait ressembler à celle-ci :
+
+```{python}
+#| include: true
+#| echo: false
+
+# 1. Methode concordance
+print("Exemples d'occurences du terme 'fear' :")
+text.concordance("fear")
+print('\n')
+```
+
+Même si on peut facilement voir le mot avant et après, cette liste est assez difficile à interpréter car elle recoupe beaucoup d'informations. 
+
+La `collocation` consiste à trouver les bi-grammes qui
+apparaissent le plus fréquemment ensemble. Parmi toutes les paires de deux mots observées,
+il s'agit de sélectionner, à partir d'un modèle statistique, les "meilleures". 
+On obtient donc avec cette méthode (question 2):
+
+```{python}
+# 2. Modélisation des meilleures collocations
+bcf = BigramCollocationFinder.from_words(text)
+bcf.nbest(BigramAssocMeasures.likelihood_ratio, 20)
+```
+
+Si on modélise les meilleures collocations:
+
+```{python}
+# 3. Modélisation des meilleures collocations (qui apparaissent 5+)
+finder = nltk.BigramCollocationFinder.from_words(text)
+finder.apply_freq_filter(5)
+bigram_measures = nltk.collocations.BigramAssocMeasures()
+collocations = finder.nbest(bigram_measures.jaccard, 15) 
+
+for collocation in collocations:
+    c = ' '.join(collocation)
+    print(c)
+```
+
+Cette liste a un peu plus de sens,
+on a des noms de personnages, de lieux mais aussi des termes fréquemment employés ensemble
+(*Chess Player* par exemple).
+
+En ce qui concerne les _collocations_ du mot fear :
+
+```{python}
+# 4. collocations du mot fear
+bigram_measures = nltk.collocations.BigramAssocMeasures()
+
+def collocations_word(word = "fear"):
+    # Ngrams with a specific name 
+    name_filter = lambda *w: word not in w
+    # Bigrams
+    finder = BigramCollocationFinder.from_words(
+                nltk.corpus.genesis.words('english-web.txt'))
+    # only bigrams that contain 'fear'
+    finder.apply_ngram_filter(name_filter)
+    # return the 100 n-grams with the highest PMI
+    print(finder.nbest(bigram_measures.likelihood_ratio,100))
+    
+collocations_word("fear")
+```
+
+Si on mène la même analyse pour le terme *love*, on remarque que de manière logique, on retrouve bien des sujets généralement accolés au verbe :
+
+```{python}
+collocations_word("love")
+```
+
 
