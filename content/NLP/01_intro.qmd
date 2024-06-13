@@ -315,6 +315,8 @@ Pour la seconde,
 
 ```{.python}
 !python -m spacy download fr_core_news_sm
+!python -m spacy download en_core_web_sm
+
 ```
 
 ```{=html}
@@ -627,4 +629,301 @@ Dit autrement, le mot le plus utilisé l'est deux fois plus que le deuxième mot
 
 
 # Nettoyage de textes
+
+## Retirer les _stop words_
+
+Nous l'avons vu, que ce soit en Français ou Anglais, 
+un certain nombre de mots de liaisons, nécessaires sur le plan grammatical mais peu porteur d'information, nous empêchent de saisir les principaux mots vecteurs d'information dans notre corpus.
+
+Il est donc nécessaire de nettoyer notre corpus en retirant ces termes. Ce travail de nettoyage va d'ailleurs au-delà d'un simple retrait de mots. C'est également l'occasion de retirer d'autres sèmes gênants, par exemple la ponctuation. 
+
+
+```{python}
+#| echo: true
+import nltk
+nltk.download('stopwords')
+```
+
+
+```{python}
+from nltk.corpus import stopwords
+stopwords.words("english")
+```
+
+```{python}
+stopwords.words("french")
+```
+
+```{python}
+nlp_english = spacy.load('en_core_web_sm')
+stop_words_english = nlp_english.Defaults.stop_words
+stop_words_english
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4 : Nettoyage du texte</h3>
+```
+
+1. Reprendre l'ouvrage de Dumas et nettoyer celui-ci avec `Spacy`. Refaire le nuage de mots et conclure.
+2. Faire ce même exercice sur le jeu de données anglo-saxon. 
+
+```{=html}
+</div>
+```
+:::
+
+```{python}
+# Process the text with spaCy
+doc = nlp(
+  dumas[:30000],
+  disable=['ner', 'textcat']
+)
+
+# Function to clean the text
+def clean_text(doc):
+    # Tokenize, remove stop words and punctuation, and lemmatize
+    cleaned_tokens = [token.lemma_ for token in doc if not token.is_stop and not token.is_punct]
+    # Join tokens back into a single string
+    cleaned_text = ' '.join(cleaned_tokens)
+    return cleaned_text
+
+# Clean the text
+cleaned_dumas = clean_text(doc)
+```
+
+```{python}
+wordcloud_dumas_nostop = make_wordcloud(cleaned_dumas)
+```
+
+Ces retraitements commencent à porter leurs fruits puisque des mots ayant plus
+de sens commencent à se dégager, notamment les noms des personnages
+(Dantès, Danglart, etc.):
+
+
+```{python}
+#| fig-cap: Nuage de mot produit à partir du Comte de Monte Cristo après nettoyage
+#| label: fig-wordcloud-dumas-nostop
+plt.imshow(wordcloud_dumas_nostop, interpolation='bilinear')
+plt.axis("off")
+```
+
+
+
+
+```{python}
+docs = nlp_english.pipe(horror["Text"])
+cleaned_texts = [clean_text(doc) for doc in docs]
+horror['preprocessed_text'] = cleaned_texts
+```
+
+```{python}
+#| fig-cap: Nuage de mot produit à partir du corpus anglo-saxon après nettoyage
+#| label: fig-wordcloud-spooky-nostop
+fig = plt.figure(figsize=(15, 12))
+for i in range(len(n_topics)):
+    ax = fig.add_subplot(2,2,i+1)
+    wordcloud = graph_wordcloud(n_topics[i], horror, varname = "preprocessed_text")
+
+    ax.imshow(wordcloud)
+    ax.axis('off')
+```
+
+
+## Racinisation et lemmatisation
+
+Pour aller plus loin dans l'harmonisation d'un texte, il est possible de
+mettre en place des classes d'équivalence entre des mots. Par exemple, quand on désire faire une analyse fréquentiste, on peut être intéressé par considérer que _"cheval"_ et _"chevaux"_ sont équivalents. Selon les cas, différentes formes d’un même mot (pluriel,
+singulier, conjugaison) pourront être considérées comme équivalentes et seront remplacées par une
+même forme dite canonique.
+
+Il existe deux approches dans le domaine :
+
+* la **lemmatisation** qui requiert la connaissance des statuts
+grammaticaux (exemple : _"chevaux"_ devient _"cheval"_) ;
+* la **racinisation** (*stemming*) plus fruste mais plus rapide, notamment
+en présence de fautes d’orthographes. Dans ce cas, _"chevaux"_ peut devenir _"chev"_
+mais être ainsi confondu avec _"chevet"_ ou _"cheveux"_.
+
+Cette approche a l'avantage de réduire la taille du vocabulaire à maîtriser
+pour l'ordinateur et le modélisateur. Il existe plusieurs algorithmes de 
+*stemming*, notamment le *Porter Stemming Algorithm* ou le
+*Snowball Stemming Algorithm*. 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
+Pour disposer du corpus nécessaire à la lemmatisation, il faut, la première fois,
+télécharger celui-ci grâce aux commandes suivantes :
+
+~~~python
+import nltk
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+~~~
+
+```{=html}
+</div>
+```
+:::
+
+Prenons cette chaine de caractère, 
+
+```{python}
+dumas[1030:1200]
+```
+
+La version racinisée est la suivante:
+
+```{python}
+from nltk.stem.snowball import SnowballStemmer
+stemmer = SnowballStemmer(language='french')
+
+stemmed = [stemmer.stem(word) for word in word_tokenize(dumas[1030:1200])]
+stemmed
+```
+
+A ce niveau, les mots commencent à être moins intelligibles par un humain
+mais peuvent rester intelligible pour la machine. Ce choix n'est néanmoins pas neutre et sa pertinence dépend du cas d'usage. 
+
+Les lemmatiseurs permettront des harmonisations plus subtiles. Ils s'appuient sur des bases de connaissance, par exemple _WordNet_, une base
+lexicographique ouverte. Par exemple, les mots *"women"*, *"daughters"*
+et *"leaves"* seront ainsi lemmatisés de la manière suivante :
+
+```{python}
+#| echo: true
+from nltk.stem import WordNetLemmatizer
+lemm = WordNetLemmatizer()
+
+for word in ["women","daughters", "leaves"]:
+    print(f"The lemmatized form of {word} is: {lemm.lemmatize(word)}")
+```
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 5 : Lemmatisation avec nltk</h3>
+```
+
+Sur le modèle précédent, utiliser un `WordNetLemmatizer` sur le corpus `dumas[1030:1200]` et observer le résultat.
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+from nltk.stem import WordNetLemmatizer
+lemmatizer = WordNetLemmatizer()
+
+lemmatized = [lemmatizer.lemmatize(word) for word in word_tokenize(dumas[1030:1200])]
+lemmatized
+```
+
+
+# La représentation synthétique des fréquences dans le cadre _bag of words_: la mesure TF-IDF
+
+Comme nous l'avons évoqué précédemment, nous construisons une représentation synthétique de notre corpus comme un sac de mots dans lesquels on pioche plus ou moins fréquemment des mots selon leur fréquence d'apparition. C'est bien sûr une représentation simpliste de la réalité: les séquences de mots ne sont pas une suite aléatoire indépendante de mots. 
+
+Cependant, avant d'évoquer ces enjeux, il nous reste à aller au bout de l'approche sac de mots. La représentation la plus caractéristique de ce paradigme est la matrice document-terme, principalement utilisée pour comparer des corpus. Celle-ci consiste à créer une matrice où chaque document est représenté par la présence ou l'absence des termes de notre corpus.  L’idée est de compter le nombre de fois où les mots (les termes, en colonne) sont présents dans chaque phrase ou libellé (le document, en ligne). Cette matrice fournit alors une représentation numérique des données textuelles.
+
+Considérons un corpus constitué des trois phrases suivantes :
+
+* _“La pratique du tricot et du crochet_”
+* _“Transmettre la passion du timbre”_
+* _“Vivre de sa passion”_
+
+La matrice document-terme associée à ce corpus est la suivante :
+
+
+|                                     | crochet | de | du | et | la | passion | pratique | sa | timbre | transmettre | tricot | vivre |
+| ----------------------------------- | :-------: | :--: | :--: | :--: | :--: | :-------: | :--------: | :--: | :------: | :-----------: | :------: | :-----: |
+| La pratique du tricot et du crochet | 1       | 0  | 2  | 1  | 1  | 0       | 1        | 0  | 0      | 0           | 1      | 0     |
+| Transmettre sa passion du timbre    | 0       | 0  | 1  | 0  | 0  | 1       | 0        | 1  | 1      | 1           | 0      | 0     |
+| Vivre de sa passion                 | 0       | 1  | 0  | 0  | 0  | 1       | 0        | 1  | 0      | 0           | 0      | 1     |
+
+Chaque phrase du corpus est associée à un vecteur numérique. Par exemple,
+la phrase _"La pratique du tricot et du crochet"_, qui n'a pas de sens en soi pour une machine, devient un vecteur numérique intelligible pour elle égal à `[1, 0, 2, 1, 1, 0, 1, 0, 0, 0, 1, 0]`. Ce vecteur numérique est une représentation creuse (_sparse_) du langage puisque chaque document (ligne) ne comportera qu'une petite partie du vocabulaire total (l'ensemble des colonnes). Pour tous les mots qui n'apparaîtront pas dans le document, on aura des 0, d'où un vecteur _sparse_. Comme nous le verrons par la suite, cette représentation numérique diffère grandement des approches modernes d'_embeddings_, basées sur l'idée de représentation denses. 
+
+Différents documents peuvent alors être rapprochés sur la base de ces mesures. C'est l'une des manières de procéder des moteurs de recherche même si les meilleurs utilisent des approches bien plus sophistiquées. La métrique [tf-idf](https://fr.wikipedia.org/wiki/TF-IDF) (term _frequency–inverse document frequency_)
+permet de calculer un score de proximité entre un terme de recherche et un
+document à partir de deux composantes:
+
+* La partie `tf` calcule une fonction croissante de la fréquence du terme de recherche dans le document à l'étude ;
+* La partie `idf` calcule une fonction inversement proportionnelle à la fréquence du terme dans l'ensemble des documents (ou corpus).
+
+Le score total, obtenu en multipliant les deux composantes,
+permet ainsi de donner un score d'autant plus élevé que le terme est surréprésenté dans un document
+(par rapport à l'ensemble des documents).
+Il existe plusieurs fonctions, qui pénalisent plus ou moins les documents longs (ces derniers ayant plus de chances d'avoir un vocabulaire riche et donc des valeurs différentes de 0).
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 6 : TF-IDF: calcul de fréquence</h3>
+```
+
+1. Utiliser le vectoriseur TF-IdF de `scikit-learn` pour transformer notre corpus en une matrice `document x terms`. Au passage, utiliser l'option `stop_words` pour ne pas provoquer une inflation de la taille de la matrice. Nommer le modèle `tfidf` et le jeu entraîné `tfs`.
+2. Après avoir construit la matrice de documents x terms avec le code suivant, rechercher les lignes où les termes ayant la structure `abandon` sont non-nuls. 
+3. Trouver les 50 extraits où le score TF-IDF est le plus élevé et l'auteur associé. Vous devriez obtenir le classement suivant :
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+#| output: false
+
+#1. TfIdf de scikit
+from sklearn.feature_extraction.text import TfidfVectorizer
+tfidf = TfidfVectorizer(stop_words=stopwords.words("english"))
+tfs = tfidf.fit_transform(horror['Text'])
+```
+
+```{python}
+feature_names = tfidf.get_feature_names_out()
+corpus_index = [n for n in list(tfidf.vocabulary_.keys())]
+import pandas as pd
+horror_dense = pd.DataFrame(tfs.todense(), columns=feature_names)
+
+horror_dense.head()
+```
+
+Les lignes où les termes de abandon sont non nuls
+sont les suivantes :
+
+```{python}
+#| include: true
+#| echo: false
+
+#2. Lignes où les termes de abandon sont non nuls.
+tempdf = horror_dense.loc[(horror_dense.filter(regex = "abandon")!=0).any(axis=1)]
+print(tempdf.index)
+tempdf.head(5)
+```
+
+
+```{python}
+#| include: true
+#| echo: false
+
+#3. 50 extraits avec le TF-IDF le plus élevé.
+list_fear = horror_dense["fear"].sort_values(ascending =False).head(n=50).index.tolist()
+horror.iloc[list_fear].groupby('Author').count()['Text'].sort_values(ascending = False)
+```
+
+Les 10 scores les plus élevés sont les suivants :
+
+```{python}
+print(horror.iloc[list_fear[:9]]['Text'].values)
+```
+
+On remarque que les scores les plus élevés sont soient des extraits courts où le mot apparait une seule fois, soit des extraits plus longs où le mot fear apparaît plusieurs fois.
 
