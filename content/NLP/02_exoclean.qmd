@@ -1,8 +1,5 @@
 ---
-title: "Nettoyer un texte : des exercices pour découvrir l'approche bag-of-words"
-draft: false
-weight: 20
-slug: nlpexo
+title: "L'analyse fréquentiste par l'approche bag-of-words : intérêt et limites"
 tags:
   - NLP
   - nltk
@@ -12,51 +9,268 @@ tags:
 categories:
   - NLP
   - Exercice
-type: book
 description: |
-  Ce chapitre continue de présenter l'approche de __nettoyage de données__ 
-  du `NLP` en s'appuyant sur le corpus de trois auteurs
-  anglo-saxons : Mary Shelley, Edgar Allan Poe, H.P. Lovecraft.
-  Dans cette série d'exercice nous mettons en oeuvre de manière
-  plus approfondie les différentes méthodes présentées
-  précédemment.
+  Ce chapitre présente l'approche bag of words
+  pour synthétiser l'information présente dans
+  des corpus non structurés. 
 bibliography: ../../reference.bib
-image: featured_nlp_exo.png
+image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/bag_of_words.jfif
 echo: false
 ---
 
+# Introduction
 
-La liste des modules à importer est assez longue, la voici :
+transition
 
-```{python}
-#| output: hide
-#| echo: true
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-from wordcloud import WordCloud
-import base64
-import string
-import re
-import nltk
+# La représentation synthétique des fréquences dans le cadre _bag of words_: la mesure TF-IDF
 
-from collections import Counter
-from time import time
-# from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS as stopwords
-from sklearn.metrics import log_loss
-import matplotlib.pyplot as plt
-#!pip install pywaffle
-from pywaffle import Waffle
+Comme nous l'avons évoqué précédemment, nous construisons une représentation synthétique de notre corpus comme un sac de mots dans lesquels on pioche plus ou moins fréquemment des mots selon leur fréquence d'apparition. C'est bien sûr une représentation simpliste de la réalité: les séquences de mots ne sont pas une suite aléatoire indépendante de mots. 
 
-from nltk.stem import WordNetLemmatizer
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from sklearn.decomposition import NMF, LatentDirichletAllocation
+Cependant, avant d'évoquer ces enjeux, il nous reste à aller au bout de l'approche sac de mots. La représentation la plus caractéristique de ce paradigme est la matrice document-terme, principalement utilisée pour comparer des corpus. Celle-ci consiste à créer une matrice où chaque document est représenté par la présence ou l'absence des termes de notre corpus.  L’idée est de compter le nombre de fois où les mots (les termes, en colonne) sont présents dans chaque phrase ou libellé (le document, en ligne). Cette matrice fournit alors une représentation numérique des données textuelles.
 
-nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('genesis')
-nltk.download('wordnet')
-nltk.download('omw-1.4')
+Considérons un corpus constitué des trois phrases suivantes :
+
+* _“La pratique du tricot et du crochet_”
+* _“Transmettre la passion du timbre”_
+* _“Vivre de sa passion”_
+
+La matrice document-terme associée à ce corpus est la suivante :
+
+
+|                                     | crochet | de | du | et | la | passion | pratique | sa | timbre | transmettre | tricot | vivre |
+| ----------------------------------- | :-------: | :--: | :--: | :--: | :--: | :-------: | :--------: | :--: | :------: | :-----------: | :------: | :-----: |
+| La pratique du tricot et du crochet | 1       | 0  | 2  | 1  | 1  | 0       | 1        | 0  | 0      | 0           | 1      | 0     |
+| Transmettre sa passion du timbre    | 0       | 0  | 1  | 0  | 0  | 1       | 0        | 1  | 1      | 1           | 0      | 0     |
+| Vivre de sa passion                 | 0       | 1  | 0  | 0  | 0  | 1       | 0        | 1  | 0      | 0           | 0      | 1     |
+
+Chaque phrase du corpus est associée à un vecteur numérique. Par exemple,
+la phrase _"La pratique du tricot et du crochet"_, qui n'a pas de sens en soi pour une machine, devient un vecteur numérique intelligible pour elle égal à `[1, 0, 2, 1, 1, 0, 1, 0, 0, 0, 1, 0]`. Ce vecteur numérique est une représentation creuse (_sparse_) du langage puisque chaque document (ligne) ne comportera qu'une petite partie du vocabulaire total (l'ensemble des colonnes). Pour tous les mots qui n'apparaîtront pas dans le document, on aura des 0, d'où un vecteur _sparse_. Comme nous le verrons par la suite, cette représentation numérique diffère grandement des approches modernes d'_embeddings_, basées sur l'idée de représentation denses. 
+
+Différents documents peuvent alors être rapprochés sur la base de ces mesures. C'est l'une des manières de procéder des moteurs de recherche même si les meilleurs utilisent des approches bien plus sophistiquées. La métrique [tf-idf](https://fr.wikipedia.org/wiki/TF-IDF) (term _frequency–inverse document frequency_)
+permet de calculer un score de proximité entre un terme de recherche et un
+document à partir de deux composantes:
+
+* La partie `tf` calcule une fonction croissante de la fréquence du terme de recherche dans le document à l'étude ;
+* La partie `idf` calcule une fonction inversement proportionnelle à la fréquence du terme dans l'ensemble des documents (ou corpus).
+
+Le score total, obtenu en multipliant les deux composantes,
+permet ainsi de donner un score d'autant plus élevé que le terme est surréprésenté dans un document
+(par rapport à l'ensemble des documents).
+Il existe plusieurs fonctions, qui pénalisent plus ou moins les documents longs (ces derniers ayant plus de chances d'avoir un vocabulaire riche et donc des valeurs différentes de 0).
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 6 : TF-IDF: calcul de fréquence</h3>
 ```
 
+1. Utiliser le vectoriseur TF-IdF de `scikit-learn` pour transformer notre corpus en une matrice `document x terms`. Au passage, utiliser l'option `stop_words` pour ne pas provoquer une inflation de la taille de la matrice. Nommer le modèle `tfidf` et le jeu entraîné `tfs`.
+2. Après avoir construit la matrice de documents x terms avec le code suivant, rechercher les lignes où les termes ayant la structure `abandon` sont non-nuls. 
+3. Trouver les 50 extraits où le score TF-IDF est le plus élevé et l'auteur associé. Vous devriez obtenir le classement suivant :
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+#| output: false
+
+#1. TfIdf de scikit
+from sklearn.feature_extraction.text import TfidfVectorizer
+tfidf = TfidfVectorizer(stop_words=stopwords.words("english"))
+tfs = tfidf.fit_transform(horror['Text'])
+```
+
+```{python}
+feature_names = tfidf.get_feature_names_out()
+corpus_index = [n for n in list(tfidf.vocabulary_.keys())]
+import pandas as pd
+horror_dense = pd.DataFrame(tfs.todense(), columns=feature_names)
+
+horror_dense.head()
+```
+
+Les lignes où les termes de abandon sont non nuls
+sont les suivantes :
+
+```{python}
+#| include: true
+#| echo: false
+
+#2. Lignes où les termes de abandon sont non nuls.
+tempdf = horror_dense.loc[(horror_dense.filter(regex = "abandon")!=0).any(axis=1)]
+print(tempdf.index)
+tempdf.head(5)
+```
+
+
+```{python}
+#| include: true
+#| echo: false
+
+#3. 50 extraits avec le TF-IDF le plus élevé.
+list_fear = horror_dense["fear"].sort_values(ascending =False).head(n=50).index.tolist()
+horror.iloc[list_fear].groupby('Author').count()['Text'].sort_values(ascending = False)
+```
+
+Les 10 scores les plus élevés sont les suivants :
+
+```{python}
+print(horror.iloc[list_fear[:9]]['Text'].values)
+```
+
+On remarque que les scores les plus élevés sont soient des extraits courts où le mot apparait une seule fois, soit des extraits plus longs où le mot fear apparaît plusieurs fois.
+
+
+# Un premier enrichissement de l'approche sac de mots: les *n-grams*
+
+Nous avons évoqué deux principales limites à l'approche sac de mot: l'absence de prise en compte du contexte et la représentation _sparse_ du langage qui rend les rapprochements entre texte parfois moyennement pertinents. Dans le paradigme du sac de mots, il est néanmoins possible de prendre en compte la séquence d'enchainement de sèmes (_tokens_) par le biais des _ngrams_.
+
+Pour rappel, jusqu'à présent, dans l'approche _bag of words_, l'ordre des mots n'avait pas d'importance.
+On considère qu'un texte est une collection de
+mots tirés indépendamment, de manière plus ou moins fréquente en fonction de leur probabilité
+d'occurrence. Cependant, tirer un mot particulier n'affecte pas les chances de tirer certains mots
+ensuite, de manière conditionnelle. 
+
+Une manière d'introduire des liens entre les séries de _tokens_ sont les _n-grams_. 
+On s'intéresse non seulement aux mots et à leur fréquence, mais aussi aux mots qui suivent. Cette approche est essentielle pour désambiguiser les homonymes. Le calcul de _n-grams_ [^ngrams] constitue la méthode la plus simple pour tenir compte du contexte.
+
+[^ngrams]: On parle de _bigrams_ pour les co-occurences de mots deux-à-deux, _trigrams_ pour les co-occurences trois-à-trois, etc.
+
+
+Pour être en mesure de mener cette analyse, il est nécessaire de télécharger un corpus supplémentaire :
+
+```{python}
+#| echo: true
+import nltk
+nltk.download('genesis')
+nltk.corpus.genesis.words('english-web.txt')
+```
+
+
+`NLTK` offre des methodes pour tenir compte du contexte. Pour ce faire, nous calculons les n-grams, c'est-à-dire l'ensemble des co-occurrences successives de mots n-à-n.  En général, on se contente de bi-grams, au mieux de tri-grams: 
+
+* les modèles de classification, analyse du sentiment, comparaison de documents, etc. qui comparent des n-grams avec n trop grands sont rapidement confrontés au problème de données sparse, cela réduit la capacité prédictive des modèles ;
+* les performances décroissent très rapidement en fonction de n, et les coûts de stockage des données augmentent rapidement (environ n fois plus élevé que la base de données initiale).
+
+
+On va, rapidement, regarder dans quel contexte apparaît le mot `fear` dans
+l'oeuvre d'Edgar Allan Poe (EAP). Pour cela, on transforme d'abord
+le corpus EAP en tokens `NLTK` : 
+
+```{python}
+#| echo: true
+eap_clean = horror.loc[horror["Author"] == "EAP"]
+eap_clean = ' '.join(eap_clean['Text'])
+tokens = eap_clean.split()
+print(tokens[:10])
+text = nltk.Text(tokens)
+print(text)
+```
+
+Vous aurez besoin des fonctions ` BigramCollocationFinder.from_words` et `BigramAssocMeasures.likelihood_ratio` : 
+
+```{python}
+from nltk.collocations import BigramCollocationFinder
+from nltk.metrics import BigramAssocMeasures
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 7  : n-grams et contexte du mot fear</h3>
+```
+1. Utiliser la méthode `concordance` pour afficher le contexte dans lequel apparaît le terme `fear`. 
+2. Sélectionner et afficher les meilleures collocations, par exemple selon le critère du ratio de vraisemblance. 
+
+Lorsque deux mots sont fortement associés, cela est parfois dû au fait qu'ils apparaissent rarement. Il est donc parfois nécessaire d'appliquer des filtres, par exemple ignorer les bigrammes qui apparaissent moins de 5 fois dans le corpus.
+
+3. Refaire la question précédente en utilisant toujours un modèle `BigramCollocationFinder` suivi de la méthode `apply_freq_filter` pour ne conserver que les bigrammes présents au moins 5 fois. Puis, au lieu d'utiliser la méthode de maximum de vraisemblance, testez la méthode `nltk.collocations.BigramAssocMeasures().jaccard`.
+
+4. Ne s'intéresser qu'aux *collocations* qui concernent le mot *fear*
+
+
+```{=html}
+</div>
+```
+:::
+
+
+Avec la méthode `concordance` (question 1), 
+la liste devrait ressembler à celle-ci :
+
+```{python}
+#| include: true
+#| echo: false
+
+# 1. Methode concordance
+print("Exemples d'occurences du terme 'fear' :")
+text.concordance("fear")
+print('\n')
+```
+
+Même si on peut facilement voir le mot avant et après, cette liste est assez difficile à interpréter car elle recoupe beaucoup d'informations. 
+
+La `collocation` consiste à trouver les bi-grammes qui
+apparaissent le plus fréquemment ensemble. Parmi toutes les paires de deux mots observées,
+il s'agit de sélectionner, à partir d'un modèle statistique, les "meilleures". 
+On obtient donc avec cette méthode (question 2):
+
+```{python}
+# 2. Modélisation des meilleures collocations
+bcf = BigramCollocationFinder.from_words(text)
+bcf.nbest(BigramAssocMeasures.likelihood_ratio, 20)
+```
+
+Si on modélise les meilleures collocations:
+
+```{python}
+# 3. Modélisation des meilleures collocations (qui apparaissent 5+)
+finder = nltk.BigramCollocationFinder.from_words(text)
+finder.apply_freq_filter(5)
+bigram_measures = nltk.collocations.BigramAssocMeasures()
+collocations = finder.nbest(bigram_measures.jaccard, 15) 
+
+for collocation in collocations:
+    c = ' '.join(collocation)
+    print(c)
+```
+
+Cette liste a un peu plus de sens,
+on a des noms de personnages, de lieux mais aussi des termes fréquemment employés ensemble
+(*Chess Player* par exemple).
+
+En ce qui concerne les _collocations_ du mot fear :
+
+```{python}
+# 4. collocations du mot fear
+bigram_measures = nltk.collocations.BigramAssocMeasures()
+
+def collocations_word(word = "fear"):
+    # Ngrams with a specific name 
+    name_filter = lambda *w: word not in w
+    # Bigrams
+    finder = BigramCollocationFinder.from_words(
+                nltk.corpus.genesis.words('english-web.txt'))
+    # only bigrams that contain 'fear'
+    finder.apply_ngram_filter(name_filter)
+    # return the 100 n-grams with the highest PMI
+    print(finder.nbest(bigram_measures.likelihood_ratio,100))
+    
+collocations_word("fear")
+```
+
+Si on mène la même analyse pour le terme *love*, on remarque que de manière logique, on retrouve bien des sujets généralement accolés au verbe :
+
+```{python}
+collocations_word("love")
+```
+
+
+# Quelques applications
+
+## Reconnaissance des entités nommées
+
+## Classification de données textuelles: l'algorithme `Fasttext`
