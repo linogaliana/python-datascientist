@@ -24,10 +24,33 @@ Nous avons vu, précédemment, l'intérêt de nettoyer les données pour dégros
 
 ## Données
 
+Nous allons reprendre le jeu de données anglo-saxon du chapitre précédent, à savoir
+des textes des auteurs fantastiques [Edgar Allan Poe](https://fr.wikipedia.org/wiki/Edgar_Allan_Poe) (_EAP_), [HP Lovecraft](https://fr.wikipedia.org/wiki/H._P._Lovecraft) (_HPL_) et [Mary Wollstonecraft Shelley](https://fr.wikipedia.org/wiki/Mary_Shelley) (_MWS_).
+
+
 {{< include "_import_horror.qmd" >}}
 
+```{python}
+import spacy
+nlp_english = spacy.load('en_core_web_sm')
+stopwords = nlp_english.Defaults.stop_words
+```
+
+```{python}
+#| echo: false
+from cleantext import clean_text
+```
+
+```{python}
+#| label: clean-stopwords-horror
+docs = nlp_english.pipe(horror["Text"])
+cleaned_texts = [clean_text(doc) for doc in docs]
+horror['preprocessed_text'] = cleaned_texts
+```
 
 # La représentation synthétique des fréquences dans le cadre _bag of words_: la mesure TF-IDF
+
+## Principe
 
 Comme nous l'avons évoqué précédemment, nous construisons une représentation synthétique de notre corpus comme un sac de mots dans lesquels on pioche plus ou moins fréquemment des mots selon leur fréquence d'apparition. C'est bien sûr une représentation simpliste de la réalité: les séquences de mots ne sont pas une suite aléatoire indépendante de mots. 
 
@@ -63,6 +86,9 @@ permet ainsi de donner un score d'autant plus élevé que le terme est surrépr�
 (par rapport à l'ensemble des documents).
 Il existe plusieurs fonctions, qui pénalisent plus ou moins les documents longs (ces derniers ayant plus de chances d'avoir un vocabulaire riche et donc des valeurs différentes de 0).
 
+
+## Application
+
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
@@ -84,7 +110,7 @@ Il existe plusieurs fonctions, qui pénalisent plus ou moins les documents longs
 
 #1. TfIdf de scikit
 from sklearn.feature_extraction.text import TfidfVectorizer
-tfidf = TfidfVectorizer(stop_words=stopwords.words("english"))
+tfidf = TfidfVectorizer(stop_words=list(stopwords))
 tfs = tfidf.fit_transform(horror['Text'])
 ```
 
@@ -97,7 +123,7 @@ horror_dense = pd.DataFrame(tfs.todense(), columns=feature_names)
 horror_dense.head()
 ```
 
-Les lignes où les termes de abandon sont non nuls
+Les lignes où le terme  _"abandon"_ apparait 
 sont les suivantes :
 
 ```{python}
@@ -276,6 +302,38 @@ collocations_word("love")
 
 # Quelques applications
 
+Nous venons d'évoquer un premier cas d'application de l'approche _bag of words_ qui est le rapprochement de textes par leurs termes communs. Ce n'est pas le seul cas d'application de l'approche précédente. Nous allons en évoquer deux qui nous amènent vers la modélisation du langage: la reconnaissance d'entités nommées et la classification.
+
+
 ## Reconnaissance des entités nommées
 
+La [reconnaissance d'entités nommées](https://fr.wikipedia.org/wiki/Reconnaissance_d%27entit%C3%A9s_nomm%C3%A9es), également connue sous l'acronyme NER pour _named entity recognition_, est une méthode d'extraction d'information permettant d'identifier, dans un texte, la nature de certains termes dans une certain classification: lieu, personne, quantité, etc. 
+
+Pour illustrer cela, 
+reprenons le _Comte de Monte Cristo_ et regardons sur un petit morceau de cette oeuvre ce qu'implique la reconnaissance d'entités nommées:
+
+```{python}
+import spacy
+import spacy
+from spacy import displacy
+
+nlp = spacy.load("fr_core_news_sm")
+doc = nlp(dumas[15000:17000])
+displacy.render(doc, style="ent", jupyter=True)
+```
+
+La reconnaissance d'entités nommées disponible
+par défaut dans les librairies généralistes est souvent décevante ; il est
+souvent nécessaire d'enrichir les règles par défaut
+par des règles _ad hoc_, propres à chaque corpus.
+
+En pratique, récemment,
+l'approche de reconnaissance d'entités nommées a été utilisée 
+par Etalab pour [pseudonymiser des documents administratifs](https://guides.etalab.gouv.fr/pseudonymisation/#sommaire). Il s'agit d'identifier certaines informations sensibles (état civil, adresse...) par reconnaissance d'entités pour les remplacer par des pseudonymes. 
+
+
+
+
 ## Classification de données textuelles: l'algorithme `Fasttext`
+
+Partie à venir
