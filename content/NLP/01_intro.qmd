@@ -1,7 +1,5 @@
 ---
-title: "Quelques éléments pour comprendre les enjeux du NLP"
-slug: nlpintro
-type: book
+title: "Nettoyer et structurer l'information dans les données textuelles"
 tags:
   - NLP
   - nltk
@@ -16,64 +14,29 @@ description: |
   où le ratio signal/bruit est faible, il est nécessaire de mettre
   en oeuvre une série d'étapes de nettoyage de texte. Ce chapitre va
   explorer quelques méthodes classiques de nettoyage en s'appuyant
-  sur le _Comte de Monte Cristo_ d'Alexandre Dumas. 
+  sur des corpus littéraires: le _Comte de Monte Cristo_ d'Alexandre Dumas et des auteurs fantastiques anglo-saxons (Lovecraft, Poe, Shelley).  
 bibliography: ../../reference.bib
-image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/wordcloud_openfood_clean.png
+image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/python-reading.jfif
+echo: false
+include-in-header:
+  - text: |
+      <style>
+      .cell-output-stdout code {
+        word-break: break-wor !important;
+        white-space: pre-wrap !important;
+      }
+      </style>
 ---
 
 ::: {.content-visible when-format="html"}
 {{< include "../../build/_printBadges.qmd" >}}
 :::
 
+# Introduction
 
-Cette partie est une introduction
-à la question du nettoyage de données textuelles.
-Il s'agit de montrer la logique, quelques exemples
-avec `Python` <i class="fab fa-python"></i>
-et s'amuser avec comme base d'exemple un livre formidable 📖 :
-[*Le Comte de Monte Cristo*](https://fr.wikipedia.org/wiki/Le_Comte_de_Monte-Cristo).
+## Rappel
 
-L'objectif est de découvrir les principaux enjeux du nettoyage de données en NLP
-et les enjeux de l'analyse de fréquence. 
-
-
-# Base d'exemple
-
-La base d'exemple est le *Comte de Monte Cristo* d'Alexandre Dumas.
-Il est disponible
-gratuitement sur le site
-[Project Gutemberg](http://www.gutenberg.org/ebooks/author/492) comme des milliers
-d'autres livres du domaine public. 
-
-La manière la plus simple de le récupérer
-est de télécharger avec le _package_ `Request` le fichier texte et le retravailler
-légèrement pour ne conserver que le corpus du livre : 
-
-```{python}
-from urllib import request
-
-url = "https://www.gutenberg.org/files/17989/17989-0.txt"
-response = request.urlopen(url)
-raw = response.read().decode('utf8')
-
-dumas = raw.split("*** START OF THE PROJECT GUTENBERG EBOOK LE COMTE DE MONTE-CRISTO, TOME I ***")[1].split("*** END OF THE PROJECT GUTENBERG EBOOK LE COMTE DE MONTE-CRISTO, TOME I ***")[0]
-
-import re
-
-def clean_text(text):
-    text = text.lower() # mettre les mots en minuscule
-    text = " ".join(text.split())
-    return text
-
-dumas = clean_text(dumas)
-
-dumas[10000:10500]
-```
-
-
-# La particularité des données textuelles
-
-## Objectif
+Comme évoqué dans l'[introduction de cette partie](/content/nlp/index.qmd) sur le traitement automatique du langage, l'objectif principal des techniques que nous allons explorer est la représentation synthétique du langage. 
 
 Le *natural language processing* (NLP) ou
 *traitement automatisé du langage* (TAL) en Français,
@@ -94,283 +57,15 @@ Si cette tâche n'était pas assez difficile comme ça, on peut ajouter d'autres
 * **propres à chaque langue** : il n'existe pas de règle de passage unique entre deux langues
 * de **grande dimension** : des combinaisons infinies de séquences de mots
 
-## Méthode
 
-L’analyse textuelle vise à transformer le texte en données
-numériques manipulables. Pour cela il est nécessaire de se fixer
-une unité sémantique minimale. 
-Cette unité textuelle peut être le mot ou encore une séquence de *n*
-mots (un *n-gramme*) ou encore une chaîne de caractères (e.g. la
-ponctuation peut être signifiante). On parle de **token**. 
+## Objectif du chapitre
 
-On peut ensuite utiliser diverses techniques (_clustering_,
-classification supervisée) suivant l’objectif poursuivi pour exploiter
-l’information transformée. Mais les étapes de nettoyage de texte sont indispensables.
-Sinon un algorithme sera incapable de détecter une information pertinente dans l'infini des possibles. 
+Dans ce chapitre, nous allons nous restreindre aux 
+méthodes fréquentistes dans le paradigme _bag of words_. Celles-ci sont un peu _old school_ par rapport aux approches plus raffinées que nous évoquerons ultérieurement. Néanmoins, les présenter nous permettra d'évoquer un certain nombre d'enjeux typiques des données textuelles qui restent centraux dans le NLP moderne.
 
+Le principal enseignement à retenir de cette partie est que les données textuelles étant à très haute dimension - le langage étant un objet riche - nous avons besoin de méthodes pour réduire le bruit de nos corpus textuels afin de mieux prendre en compte le signal en leur sein.  
 
-
-# Nettoyer un texte
-
-Les *wordclouds* sont des représentations graphiques assez pratiques pour visualiser
-les mots les plus fréquents, lorsqu'elles ne sont pas utilisées à tort et à travers. 
-Les _wordclouds_ sont très simples à implémenter en `Python`
-avec le module `Wordcloud`. Quelques paramètres de mise en forme
-permettent même d'ajuster la forme du nuage à
-une image :
-
-
-```{python}
-#| echo: true
-
-import wordcloud
-import numpy as np
-import io
-import requests
-import PIL
-import matplotlib.pyplot as plt
-
-img = "https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/book.png"
-book_mask = np.array(PIL.Image.open(io.BytesIO(requests.get(img).content)))
-
-def make_wordcloud(corpus):
-    wc = wordcloud.WordCloud(background_color="white", max_words=2000, mask=book_mask, contour_width=3, contour_color='steelblue')
-    wc.generate(corpus)
-    return wc
-
-wordcloud_dumas = make_wordcloud(dumas)
-```
-
-```{python}
-#| echo: true
-#| fig-cap: Nuage de mot produit à partir du Comte de Monte Cristo
-#| label: fig-wordcloud-dumas
-plt.imshow(wordcloud_dumas, interpolation='bilinear')
-plt.axis("off")
-```
-
-
-Cela montre clairement qu'il est nécessaire de nettoyer notre texte. Le nom
-du personnage principal, Dantès, est ainsi masqué par un certain nombre
-d'articles ou mots de liaison qui perturbent l'analyse. Ces mots sont des 
-*stop words*. 
-
-La librairie `NLTK` (*Natural Language ToolKit*), librairie
-de référence dans le domaine du NLP, permet de facilement retirer ces
-*stop words* (cela pourrait également être fait avec 
-la librairie plus récente, `spaCy`). Avant cela, il est nécessaire
-de transformer notre texte en le découpant par unités fondamentales (les _tokens_).
-
-Les exemples suivants, extraits de @galianafuzzy, montrent l'intérêt du
-nettoyage de textes lorsqu'on désire comparer des corpus
-entre eux. En l'occurrence, il s'agit de comparer un corpus de
-noms de produits dans des collectes automatisées de produits 
-de supermarché (_scanner-data_) avec des noms de produits
-dans les données de l'`OpenFoodFacts`, une base de données
-contributive. Sans nettoyage, le bruit l'emporte sur le signal
-et il est impossible de déceler des similarités entre les jeux
-de données. Le nettoyage permet d'harmoniser
-un peu ces jeux de données pour avoir une chance d'être en 
-mesure de les comparer. 
-
-::: {layout-ncol=2}
-![`OpenFoodFacts` avant nettoyage](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/wordcloud_openfood_start.png)
-
-![_Scanner-data_ avant nettoyage](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/wordcloud_relevanc_start.png)
-:::
-
-::: {layout-ncol=2}
-![`OpenFoodFacts` après nettoyage](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/wordcloud_openfood_clean.png)
-
-![_Scanner-data_ après nettoyage](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/wordcloud_relevanc_clean.png)
-:::
-
-
-## Tokenisation
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-warning" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint</h3>
-```
-
-Lors de la première utilisation de `NLTK`, il est nécessaire de télécharger
-quelques éléments nécessaires à la tokenisation, notamment la ponctuation.
-Pour cela, il est recommandé d'utiliser la commande suivante :
-
-~~~python
-import nltk
-nltk.download('punkt')
-~~~
-
-```{=html}
-</div>
-```
-:::
-
-```{python}
-import nltk
-nltk.download('punkt')
-```
-
-La tokenisation consiste à découper un texte en morceaux. Ces morceaux
-pourraient être des phrases, des chapitres, des n-grammes ou des mots. C'est
-cette dernière option que l'on va choisir, plus simple pour retirer les 
-*stop words* :
-
-```{python}
-import nltk
-
-words = nltk.word_tokenize(dumas, language='french')
-words[1030:1050]
-```
-
-On remarque que les mots avec apostrophes sont liés en un seul, ce qui est
-peut-être faux sur le plan de la grammaire mais peu avoir un sens pour une 
-analyse statistique. Il reste des signes de ponctuation qu'on peut éliminer
-avec la méthode `isalpha`: 
-
-```{python}
-words = [word for word in words if word.isalpha()]
-words[1030:1050]
-```
-
-
-
-
-## Retirer les stop words
-
-Le jeu de données est maintenant propre. On peut désormais retirer les 
-mots qui n'apportent pas de sens et servent seulement à faire le 
-lien entre deux prépositions. On appelle ces mots des
-*stop words* dans le domaine du NLP. 
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-warning" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint</h3>
-```
-Lors de la première utilisation de `NLTK`, il est nécessaire de télécharger
-les *stop words*. 
-
-~~~python
-import nltk
-nltk.download('stopwords')
-~~~
-
-```{=html}
-</div>
-```
-:::
-
-Comme indiqué ci-dessus, pour télécharger
-le corpus de *stop words*[^2], il est
-nécessaire d'exécuter la ligne de
-commande suivante :
-
-```{python}
-import nltk
-nltk.download('stopwords')
-```
-
-[^2]: Le corpus de _stop words_ de `NLTK`
-est relativement limité. Il est recommandé
-de privilégier celui de `SpaCy`, plus
-complet, pour éliminer plus de mots
-valises. 
-
-```{python}
-from nltk.corpus import stopwords
-print(stopwords.words("french"))
-
-stop_words = set(stopwords.words('french'))
-
-
-words = [w for w in words if not w in stop_words]
-print(words[1030:1050])
-```
-
-Ces retraitements commencent à porter leurs fruits puisque des mots ayant plus
-de sens commencent à se dégager, notamment les noms des personnages
-(Fernand, Mercédès, Villefort, etc.)
-
-
-```{python}
-#| echo: true
-wc = make_wordcloud(' '.join(words))
-
-fig = plt.figure()
-
-plt.imshow(wc, interpolation='bilinear')
-plt.axis("off")
-```
-
-
-## *Stemming*
-
-Pour réduire la complexité d'un texte, on peut tirer partie de
-_"classes d'équivalence"_ : on peut
-considérer que différentes formes d’un même mot (pluriel,
-singulier, conjugaison) sont équivalentes et les remplacer par une
-même forme dite canonique. Il existe deux approches dans le domaine :
-
-* la **lemmatisation** qui requiert la connaissance des statuts
-grammaticaux (exemple : chevaux devient cheval)
-* la **racinisation** (*stemming*) plus fruste mais plus rapide, notamment
-en présence de fautes d’orthographes. Dans ce cas, chevaux peut devenir chev
-mais être ainsi confondu avec chevet ou cheveux
-
-La racinisation est plus simple à mettre en oeuvre car elle peut s'appuyer sur
-des règles simples pour extraire la racine d'un mot. 
-
-
-Pour réduire un mot dans sa forme "racine", c'est-à-dire en s'abstrayant des
-conjugaisons ou variations comme les pluriels, on applique une méthode de
-*stemming*. Le but du *stemming* est de regrouper de
-nombreuses variantes d’un mot comme un seul et même mot.
-Par exemple, une fois que l’on applique un stemming, "chats" et "chat" 
-deviennent un même mot. 
-
-Cette approche a l'avantage de réduire la taille du vocabulaire à maîtriser
-pour l'ordinateur et le modélisateur. Il existe plusieurs algorithmes de 
-*stemming*, notamment le *Porter Stemming Algorithm* ou le
-*Snowball Stemming Algorithm*. Nous pouvons utiliser ce dernier en Français :
-
-```{python}
-from nltk.stem.snowball import SnowballStemmer
-stemmer = SnowballStemmer(language='french')
-
-stemmed = [stemmer.stem(word) for word in words]
-print(stemmed[1030:1050])
-```
-
-A ce niveau, les mots commencent à être moins intelligibles par un humain. 
-La machine prendra le relais, on lui a préparé le travail.
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-info" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
-```
-Il existe aussi le _stemmer_ suivant : 
-
-~~~python
-from nltk.stem.snowball import FrenchStemmer
-stemmer = FrenchStemmer()
-~~~
-```{=html}
-</div>
-```
-:::
-
-
-# Reconnaissance des entités nommées
-
-Cette étape n'est pas une étape de préparation mais illustre la capacité 
-des librairies `Python` a extraire du sens d'un texte. La librairie 
-`spaCy` permet de faire de la reconnaissance d'entités nommées
-(_named entity recognition_, NER), ce qui peut
-être pratique pour extraire rapidement certains personnages de notre oeuvre.
+Cette partie est une introduction s'appuyant sur quelques ouvrages classiques de la littérature française ou anglo-saxonne. Seront notamment présentées quelques librairies faisant parti de la boite à outil minimale des _data scientists_: `NLTK` et `SpaCy`. Les chapitres suivants permettront de se focaliser sur la modélisation du langage. 
 
 ::: {.cell .markdown}
 ```{=html}
@@ -396,43 +91,789 @@ plusieurs étapes de transformation des données.
 ```
 :::
 
-Voici un exemple de reconnaissance d'entités nommées
-sur les premières phrases de l'ouvrage :
+
+## Méthode
+
+L’analyse textuelle vise à transformer le texte en données
+numériques manipulables. Pour cela il est nécessaire de se fixer
+une unité sémantique minimale. 
+Cette unité textuelle peut être le mot ou encore une séquence de *n*
+mots (un *ngram*) ou encore une chaîne de caractères (e.g. la
+ponctuation peut être signifiante). On parle de **token**. 
+
+On peut ensuite utiliser diverses techniques (_clustering_,
+classification supervisée) suivant l’objectif poursuivi pour exploiter
+l’information transformée. Mais les étapes de nettoyage de texte sont indispensables.
+Sinon un algorithme sera incapable de détecter une information pertinente dans l'infini des possibles. 
+
+
+# Bases d'exemple
+
+## Le [*Comte de Monte Cristo*](https://fr.wikipedia.org/wiki/Le_Comte_de_Monte-Cristo)
+
+La base d'exemple est le [*Comte de Monte Cristo*](https://fr.wikipedia.org/wiki/Le_Comte_de_Monte-Cristo) d'Alexandre Dumas.
+Il est disponible
+gratuitement sur le site
+[http://www.gutenberg.org _(Project Gutemberg)_](http://www.gutenberg.org/ebooks/author/492) comme des milliers
+d'autres livres du domaine public. 
+
+La manière la plus simple de le récupérer
+est de télécharger avec le _package_ `request` le fichier texte et le retravailler
+légèrement pour ne conserver que le corpus du livre : 
+
+{{< include "_import_dumas.qmd" >}}
+
+## Le corpus anglo-saxon
+
+Nous allons utiliser une base anglo-saxonne présentant trois auteurs de la littérature fantastique:
+
+* [Edgar Allan Poe](https://fr.wikipedia.org/wiki/Edgar_Allan_Poe), (_EAP_) ;
+* [HP Lovecraft](https://fr.wikipedia.org/wiki/H._P._Lovecraft) (_HPL_) ;
+* [Mary Wollstonecraft Shelley](https://fr.wikipedia.org/wiki/Mary_Shelley) (_MWS_).
+
+Les données sont disponibles sur un CSV mis à disposition sur [`Github`](https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/blob/master/data/spooky.csv). L'URL pour les récupérer directement est 
+<https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv>.
+
+
+Le fait d'avoir un corpus confrontant plusieurs auteurs nous permettra de comprendre la manière dont les nettoyages de données textuelles favorisent les analyses comparatives. 
+
+Nous pouvons utiliser le code suivant pour lire et préparer ces données:
+
+{{< include "_import_horror.qmd" >}}
+
+Le jeu de données met ainsi en regard un auteur avec une phrase qu'il a écrite : 
 
 ```{python}
-#!pip install deplacy
-!python -m spacy download fr_core_news_sm
-import spacy
-import spacy
-from spacy import displacy
-
-nlp=spacy.load("fr_core_news_sm")
-doc = nlp(dumas[15000:17000])
-displacy.render(doc, style="ent", jupyter=True)
+#| echo: true
+horror.head()
 ```
 
-La reconnaissance d'entités nommées disponible
-par défaut est souvent décevante ; il est
-souvent nécessaire d'enrichir les règles par défaut
-par des règles _ad hoc_, propres à chaque corpus.
+On peut se rendre compte que les extraits des 3 auteurs ne sont
+pas forcément équilibrés dans le jeu de données.
+Si on utilise ultérieurement ce corpus pour de la modélisation, il sera nécessaire de tenir compte de ce déséquilibre. 
+
+```{python}
+#| echo: true
+(
+  horror
+  .value_counts('Author')
+  .plot(kind = "barh")
+)
+```
 
 
-# Représentation d'un texte sous forme vectorielle
+# Premières analyses de fréquence
 
-Une fois nettoyé, le texte est plus propice à une représentation vectorielle.
-En fait, implicitement, on a depuis le début adopté une démarche *bag of words*.
-Il s'agit d'une représentation, sans souci de contexte (ordre des mots, contexte d'utilisation),
-où chaque *token* représente un élément dans un vocabulaire de taille $|V|$.
-On peut ainsi avoir une représentation matricielle des occurrences de
-chaque *token* dans plusieurs documents (par exemple plusieurs livres,
-chapitres, etc.) pour par exemple en déduire une forme de similarité. 
+L'approche usuelle en statistique, qui consiste à faire une analyse descriptive avant de mettre en oeuvre une modélisation, s'applique également à l'analyse de données textuelles. La fouille de documents textuels implique ainsi, en premier lieu, une analyse statistique afin de déterminer la structure du corpus. 
+
+Avant de s'adonner à une analyse systématique du champ lexical de chaque
+auteur, on va se focaliser dans un premier temps sur un unique mot, le mot *fear*.
+
+## Exploration ponctuelle
 
 
-Afin de réduire la dimension de la matrice *bag of words*,
-on peut s'appuyer sur des pondérations.
-On élimine ainsi certains mots très fréquents ou au contraire très rares.
-La pondération la plus simple est basée sur la fréquence des mots dans le document.
-C'est l'objet de la métrique **tf-idf** (term frequency - inverse document frequency)
-abordée dans un prochain chapitre.
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
 
-# Références
+L'exercice ci-dessous présente une représentation graphique nommée 
+*waffle chart*. Il s'agit d'une approche préférable aux
+camemberts (_pie chart_) qui sont des graphiques manipulables car l'oeil humain se laisse
+facilement berner par cette représentation graphique qui ne respecte pas
+les proportions. 
+
+```{=html}
+</div>
+```
+:::
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1 : Fréquence d'un mot</h3>
+```
+
+Dans un premier temps, nous allons nous concentrer sur notre corpus anglo-saxon (`horror`)
+
+1. Compter le nombre de phrases, pour chaque auteur, où apparaît le mot `fear`.
+2. Utiliser `pywaffle` pour obtenir les graphiques ci-dessous qui résument
+de manière synthétique le nombre d'occurrences du mot *"fear"* par auteur.
+3. Refaire l'analyse avec le mot *"horror"*. 
+
+
+```{=html}
+</div>
+```
+:::
+
+```{python}
+#| output: false
+
+#1. Compter le nombre de phrase pour chaque auteur avec fear
+def nb_occurrences(word, train_data):
+    train_data['wordtoplot'] = train_data['Text'].str.contains(word).astype(int)
+    table = train_data.groupby('Author').sum(numeric_only = True)
+    data = table.to_dict()['wordtoplot']
+    return table
+  
+table = nb_occurrences("fear", horror)
+```
+
+Le comptage obtenu devrait être le suivant
+
+```{python}
+table.head()
+```
+
+```{python}
+#| output: false
+import matplotlib.pyplot as plt
+from pywaffle import Waffle
+
+#2. Faire un graphique d'occurences avc pywaffle
+def graph_occurrence(word, train_data):
+    table = nb_occurrences(word, train_data)
+    data = table.to_dict()['wordtoplot']
+    fig = plt.figure(
+        FigureClass=Waffle, 
+        rows=15, 
+        values=data, 
+        title={'label': 'Utilisation du mot "%s" par les auteurs' %word, 'loc': 'left'},
+        labels=[f"{k} ({v})" for k, v in data.items()]
+    )
+    return fig
+
+fig = graph_occurrence("fear", horror)
+```
+
+Ceci permet d'obtenir le _waffle chart_ suivant :
+
+```{python}
+#| echo: false
+#| label: fig-waffle-fear
+#| fig-cap: "Répartition du terme fear dans le corpus de nos trois auteurs"
+
+fig.get_figure()
+```
+
+On remarque ainsi de manière très intuitive
+le déséquilibre de notre jeu de données
+lorsqu'on se focalise sur le terme _"peur"_
+où Mary Shelley représente près de 50%
+des observations.
+
+Si on reproduit cette analyse avec le terme _"horror"_, on retrouve la figure suivante:
+
+```{python}
+#| output: false
+
+#3. Graphe d'occurences avec le mot horror
+fig = graph_occurrence("horror", horror)
+```
+
+```{python}
+#| label: fig-waffle-horror
+#| fig-cap: "Répartition du terme horror dans le corpus de nos trois auteurs"
+fig.get_figure()
+```
+
+
+## Transformation d'un texte en _tokens_
+
+Dans l'exercice précédent, nous faisions une recherche ponctuelle, qui ne passe pas vraiment à l'échelle. Pour généraliser cette approche, on découpe généralement un corpus en unités sémantiques indépendantes: les _tokens_. 
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-warning" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint</h3>
+```
+
+Nous allons avoir besoin d'importer un certain nombre de corpus prêts à l'emploi pour utiliser les librairies `NTLK` ou `SpaCy`.
+
+Pour la première, nous allons avoir besoin de faire tourner ce code
+
+```{.python}
+import nltk
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('genesis')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+```
+
+Pour la seconde, 
+
+```{.python}
+!python -m spacy download fr_core_news_sm
+!python -m spacy download en_core_web_sm
+
+```
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+#| output: false
+import nltk
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('genesis')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+```
+
+```{python}
+#| output: false
+!python -m spacy download fr_core_news_sm
+```
+
+
+Plutôt que d'implémenter soi-même un _tokenizer_ inefficace, il est plus approprié d'en appliquer un issu d'une librairie spécialisée. Historiquement, le plus simple était de prendre le _tokenizer_ de `NLTK`, la librairie historique de _text mining_ en `Python`:
+
+```{python}
+#| echo: true
+#| output: false
+from nltk.tokenize import word_tokenize
+word_tokenize(dumas[10000:10500])
+```
+
+Comme on le voit, cette librairie ne fait pas les choses dans le détail et a quelques incohérences: `j'y étais` est séparé en 4 sèmes (`['j', "'", 'y', 'étais']`) là où `l'acheter` reste un unique sème. `NLTK` est en effet une librairie anglo-saxonne et l'algorithme de séparation n'est pas toujours adapté aux règles grammaticales françaises. Il vaut mieux dans ce cas privilégier `SpaCy`, la librairie plus récente pour faire ce type de tâche. En plus d'être très bien documentée, elle est mieux adaptée pour les langues non anglo-saxonnes. En l'occurrence, comme le montre l'[exemple de la documentation](https://spacy.io/usage/linguistic-features#tokenization) sur les _tokenizers_, l'algorithme de séparation présente un certain raffinement
+
+![Exemple d'algorithme de tokenisation](https://spacy.io/images/tokenization.svg)
+
+Celui-ci peut être appliqué de cette manière:
+
+```{python}
+#| echo: true
+#| label: tokenizer-french-space
+import spacy
+from spacy.tokenizer import Tokenizer
+nlp = spacy.load("fr_core_news_sm")
+doc = nlp(dumas[10000:10500])
+
+text_tokenized = []
+for token in doc:
+    text_tokenized += [token.text]
+
+", ".join(text_tokenized)
+```
+
+
+
+Comme on peut le voir, il reste encore beaucoup d'éléments polluants notre structuration de corpus, à commencer par la ponctuation. Nous allons néanmoins pouvoir facilement retirer ceux-ci ultérieurement, comme nous le verrons.
+
+
+## Le nuage de mot: une première analyse généralisée
+
+A ce stade, nous n'avons encore aucune appréhension de la structure de notre corpus: nombre de mots, mots les plus représentés, etc. 
+
+Pour se faire une idée de la structure de notre corpus,
+on peut commencer par compter la distribution des mots dans l'oeuvre de Dumas. Commençons par le début de l'oeuvre, à savoir les 30 000 premiers mots et comptons les mots uniques:
+
+```{python}
+#| echo: true
+from collections import Counter
+
+doc = nlp(dumas[:30000])
+
+# Extract tokens, convert to lowercase and filter out punctuation and spaces
+tokens = [token.text.lower() for token in doc if not token.is_punct and not token.is_space]
+
+# Count the frequency of each token
+token_counts = Counter(tokens)
+```
+
+Nous avons déjà de nombreux mots différents dans le début de l'oeuvre. 
+
+```{python}
+#| echo: true
+len(token_counts)
+``` 
+
+Nous voyons la haute dimensionnalité du corpus puisque nous avons près de 1500 mots différents sur les 30 000 premiers mots de l'oeuvre de Dumas. 
+
+```{python}
+#| echo: true
+token_count_all = list(token_counts.items())
+
+# Create a DataFrame from the list of tuples
+token_count_all = pd.DataFrame(token_count_all, columns=['word', 'count'])
+```
+
+Si on regarde la distribution de la fréquence des mots, exercice que nous prolongerons ultérieurement en évoquant la [loi de Zipf](https://fr.wikipedia.org/wiki/Loi_de_Zipf), nous pouvons voir que de nombreux mots sont unique (près de la moitié des mots), que la densité de fréquence descend vite et qu'il faudrait se concentrer un peu plus sur la queue de distribution que ne le permet la figure suivante:
+
+
+```{python}
+#| echo: true
+from plotnine import *
+(
+  ggplot(token_count_all) +
+  geom_histogram(aes(x = "count")) +
+  scale_x_log10()
+)
+```
+
+Maintenant, si on regarde les 25 mots les plus fréquents, on peut voir que ceux-ci ne sont pas très intéressants pour analyser le sens de notre document:
+
+```{python}
+#| echo: true
+# Sort the tokens by frequency in descending order
+sorted_token_counts = token_counts.most_common(25)
+sorted_token_counts = pd.DataFrame(sorted_token_counts, columns=['word', 'count'])
+```
+
+```{python}
+from great_tables import GT, md
+import polars as pl
+
+def create_bar(prop_fill: float, max_width: int, height: int) -> str:
+    """Create divs to represent prop_fill as a bar."""
+    width = round(max_width * prop_fill, 2)
+    px_width = f"{width}px"
+    return f"""\
+    <div style="width: {max_width}px; background-color: lightgrey;">\
+        <div style="height:{height}px;width:{px_width};background-color:green;"></div>\
+    </div>\
+    """
+
+sorted_token_counts['count_pct'] = sorted_token_counts['count']/sorted_token_counts['count'].max()
+
+df = (
+  pl.from_pandas(sorted_token_counts)
+  .with_columns(
+      pl.col("count_pct")
+        .map_elements(lambda x: create_bar(x, max_width=75, height=20))
+        .alias("count_pct_bar")
+    )
+  .with_columns(
+      pl.col("count_pct")
+        .map_elements(lambda x: f"__{x}__")
+        .alias("count_pct")
+  )
+)
+
+(
+  GT(df)
+  .cols_hide("count_pct")
+  .cols_label(**{"count_pct_bar": "", "word": "Mot", "count": "Nombre d'occurrences"})
+  .tab_source_note(md("_Nombre d'apparitions sur les 30 000 premiers caractères du Comte de Monte Cristo_"))
+  .fmt_markdown("word")
+)
+```
+
+Si on représente graphiquement ce classement
+
+```{python}
+#| echo: true
+(
+    ggplot(sorted_token_counts, aes(x='word', y='count')) +
+    geom_point(stat='identity', size = 3, color = "red") +
+    scale_x_discrete(
+      limits=sorted_token_counts.sort_values("count")["word"].tolist()
+    ) +
+    coord_flip() +
+    theme_minimal() +
+    labs(title='Word Frequency', x='Word', y='Count')
+)
+```
+
+Nous nous concentrerons ultérieurement sur ces mots-valises car il sera important d'en tenir compte pour les analyses approfondies de nos documents. 
+
+Nous avons pu, par ces décomptes de mots, avoir une première intutition de la nature de notre corpus. Néanmoins, une approche un peu plus visuelle serait pertinente pour avoir un peu plus d'intuitions. 
+Les nuages de mots (*wordclouds*) sont des représentations graphiques assez pratiques pour visualiser
+les mots les plus fréquents, lorsqu'elles ne sont pas utilisées à tort et à travers. 
+Les _wordclouds_ sont très simples à implémenter en `Python`
+avec le module `Wordcloud`. Quelques paramètres de mise en forme
+permettent même d'ajuster la forme du nuage à
+une image.
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 3 : Wordcloud</h3>
+```
+
+1. En utilisant la fonction `wordCloud`, faire trois nuages de mot pour représenter les mots les plus utilisés par chaque auteur du corpus `horror`[^random_state].
+2. Faire un nuage de mot du corpus `dumas` en utilisant un masque
+comme celui-ci
+
+<details>
+<summary>
+Exemple de masque pour la question 2
+</summary>
+
+![URL de l'image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/book.png
+](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/book.png)
+
+
+</details>
+
+[^random_state]: Pour avoir les mêmes résultats que ci-dessous, vous pouvez fixer l'argument `random_state=21`. 
+
+```{=html}
+</div>
+```
+:::
+
+```{python}
+from wordcloud import WordCloud
+
+#1. Wordclouds trois auteurs
+def graph_wordcloud(author, train_data, varname = "Text"):
+  txt = train_data.loc[train_data['Author']==author, varname]
+  all_text = ' '.join([text for text in txt])
+  wordcloud = WordCloud(width=800, height=500,
+                      random_state=21,
+                      max_words=2000,
+                      background_color = "white",
+                      colormap='Set2').generate(all_text)
+  return wordcloud
+
+n_topics = ["HPL","EAP","MWS"]
+```
+
+Les nuages de points obtenus à la question 1 sont les suivants:
+
+```{python}
+#| label: fig-wordcloud-spooky
+#| layout-ncol: 2
+#| fig-cap: 
+#|   - "Lovercraft"
+#|   - "Poe"
+#|   - "Shelley"
+for i in range(len(n_topics)):
+    wordcloud = graph_wordcloud(n_topics[i], horror)
+    plt.imshow(wordcloud)
+    plt.axis('off')
+    plt.show()
+```
+
+```{python}
+import wordcloud
+import numpy as np
+import io
+import requests
+import PIL
+import matplotlib.pyplot as plt
+
+img = "https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/book.png"
+book_mask = np.array(
+  PIL.Image.open(io.BytesIO(requests.get(img).content))
+)
+
+def make_wordcloud(corpus):
+    wc = wordcloud.WordCloud(background_color="white", max_words=2000, mask=book_mask, contour_width=3, contour_color='steelblue')
+    wc.generate(corpus)
+    return wc
+
+wordcloud_dumas = make_wordcloud(dumas)
+```
+
+Alors que celui obtenu à partir de l'oeuvre de Dumas prend
+la forme
+
+```{python}
+#| fig-cap: Nuage de mot produit à partir du Comte de Monte Cristo
+#| label: fig-wordcloud-dumas
+plt.imshow(wordcloud_dumas, interpolation='bilinear')
+plt.axis("off")
+```
+
+
+Si nous n'en étions pas convaincus, ces visualisations montrent clairement qu'il est nécessaire de nettoyer notre texte. Par exemple, en ce qui concerne l'oeuvre du Dumas, le nom
+du personnage principal, Dantès, est ainsi masqué par un certain nombre d'articles ou mots de liaison qui perturbent l'analyse. 
+En ce qui concerne le corpus anglo-saxon, ce sont des termes similaires, comme *"the"*, *"of"*, etc. 
+
+Ces mots sont des 
+*stop words*. 
+Ceci est une démonstration par l'exemple qu'il vaut mieux nettoyer le texte avant de 
+l'analyser (sauf si on est intéressé
+par la loi de Zipf, cf. exercice suivant).
+
+## Aparté: la loi de Zipf
+
+Zipf, dans les années 1930, a remarqué une régularité statistique dans *Ulysse*, l'oeuvre de Joyce. Le mot le plus fréquent apparaissait $x$ fois, le deuxième mot le plus fréquent 2 fois moins, le suivant 3 fois moins que le premier, etc. D'un point de vue statistique, cela signifie que la fréquence d'occurrence $f(n_i)$ d'un mot est
+liée à son rang $n_i$ dans l'ordre des fréquences par une loi de la forme
+
+$$f(n_i) = c/n_i$$
+
+où $c$ est une constante. 
+
+Plus généralement, on peut dériver la loi de Zipf d'une distribution exponentiellement décroissante des fréquences : $f(n_i) = cn_{i}^{-k}$. Sur le plan empirique, cela signifie qu'on peut utiliser les régressions poissonniennes pour estimer les paramètres de la loi, ce qui prend la spécification suivante
+
+$$
+\mathbb{E}\bigg( f(n_i)|n_i \bigg) = \exp(\beta_0 + \beta_1 \log(n_i))
+$$
+
+Les modèles linéaires généralisés (GLM) permettent de faire ce type de régression. En `Python`, ils sont disponibles par le biais du _package_ `statsmodels`, dont les sorties sont très inspirées des logiciels payants spécialisés dans l'économétrie comme `Stata`. 
+
+```{python}
+#| echo: true
+count_words = pd.DataFrame({'counter' : horror
+    .groupby('Author')
+    .apply(lambda s: ' '.join(s['Text']).split())
+    .apply(lambda s: Counter(s))
+    .apply(lambda s: s.most_common())
+    .explode()}
+)
+count_words[['word','count']] = pd.DataFrame(count_words['counter'].tolist(), index=count_words.index)
+count_words = count_words.reset_index()
+
+count_words = count_words.assign(
+    tot_mots_auteur = lambda x: (x.groupby("Author")['count'].transform('sum')),
+    freq = lambda x: x['count'] /  x['tot_mots_auteur'],
+    rank = lambda x: x.groupby("Author")['count'].transform('rank', ascending = False)
+)
+```
+
+Commençons par représenter la relation entre la fréquence et le rang:
+
+```{python}
+#| output: false
+#| echo: true
+from plotnine import *
+
+g = (
+    ggplot(count_words) +
+    geom_point(aes(y = "freq", x = "rank", color = 'Author'), alpha = 0.4) +
+    scale_x_log10() + scale_y_log10() +
+    theme_minimal()
+)
+```
+
+Nous avons bien, graphiquement, une relation log-linéaire entre les deux :
+
+```{python}
+g
+```
+
+Avec `statsmodels`, vérifions plus formellement cette relation:
+
+```{python}
+#| echo: true
+import statsmodels.api as sm
+import numpy as np
+
+exog = sm.add_constant(np.log(count_words['rank'].astype(float)))
+
+model = sm.GLM(count_words['freq'].astype(float), exog, family = sm.families.Poisson()).fit()
+
+# Afficher les résultats du modèle
+print(model.summary())
+```
+
+Le coefficient de la régression est presque 1 ce qui suggère bien une relation
+quasiment log-linéaire entre le rang et la fréquence d'occurrence d'un mot. 
+Dit autrement, le mot le plus utilisé l'est deux fois plus que le deuxième mot le plus fréquent qui l'est trois plus que le troisième, etc. On retrouve bien empiriquement cette loi sur ce corpus de trois auteurs. 
+
+
+# Nettoyage de textes
+
+## Retirer les _stop words_
+
+Nous l'avons vu, que ce soit en Français ou Anglais, 
+un certain nombre de mots de liaisons, nécessaires sur le plan grammatical mais peu porteur d'information, nous empêchent de saisir les principaux mots vecteurs d'information dans notre corpus.
+
+Il est donc nécessaire de nettoyer notre corpus en retirant ces termes. Ce travail de nettoyage va d'ailleurs au-delà d'un simple retrait de mots. C'est également l'occasion de retirer d'autres sèmes gênants, par exemple la ponctuation. 
+
+
+```{python}
+#| echo: true
+import nltk
+nltk.download('stopwords')
+```
+
+
+```{python}
+from nltk.corpus import stopwords
+stopwords.words("english")
+```
+
+```{python}
+stopwords.words("french")
+```
+
+```{python}
+nlp_english = spacy.load('en_core_web_sm')
+stop_words_english = nlp_english.Defaults.stop_words
+stop_words_english
+```
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4 : Nettoyage du texte</h3>
+```
+
+1. Reprendre l'ouvrage de Dumas et nettoyer celui-ci avec `Spacy`. Refaire le nuage de mots et conclure.
+2. Faire ce même exercice sur le jeu de données anglo-saxon. Idéalement, vous devriez être en mesure d'utiliser la fonctionnalité de _pipeline_ de `SpaCy`.
+
+```{=html}
+</div>
+```
+:::
+
+```{.python include="clean_text.py"}
+```
+
+```{python}
+#| echo: false
+from cleantext import clean_text
+```
+
+
+```{python}
+#| label: clean-stopwords-dumas
+# Process the text with spaCy
+doc = nlp(
+  dumas[:30000],
+  disable=['ner', 'textcat']
+)
+
+# Clean the text
+cleaned_dumas = clean_text(doc)
+```
+
+```{python}
+wordcloud_dumas_nostop = make_wordcloud(cleaned_dumas)
+```
+
+Ces retraitements commencent à porter leurs fruits puisque des mots ayant plus
+de sens commencent à se dégager, notamment les noms des personnages
+(Dantès, Danglart, etc.):
+
+
+```{python}
+#| fig-cap: Nuage de mot produit à partir du Comte de Monte Cristo après nettoyage
+#| label: fig-wordcloud-dumas-nostop
+plt.imshow(wordcloud_dumas_nostop, interpolation='bilinear')
+plt.axis("off")
+```
+
+
+
+
+```{python}
+#| label: clean-stopwords-horror
+# Question 2
+docs = nlp_english.pipe(horror["Text"])
+cleaned_texts = [clean_text(doc) for doc in docs]
+horror['preprocessed_text'] = cleaned_texts
+```
+
+```{python}
+#| fig-cap: Nuage de mot produit à partir du corpus anglo-saxon après nettoyage
+#| label: fig-wordcloud-spooky-nostop
+fig = plt.figure(figsize=(15, 12))
+for i in range(len(n_topics)):
+    ax = fig.add_subplot(2,2,i+1)
+    wordcloud = graph_wordcloud(n_topics[i], horror, varname = "preprocessed_text")
+
+    ax.imshow(wordcloud)
+    ax.axis('off')
+```
+
+
+## Racinisation et lemmatisation
+
+Pour aller plus loin dans l'harmonisation d'un texte, il est possible de
+mettre en place des classes d'équivalence entre des mots. Par exemple, quand on désire faire une analyse fréquentiste, on peut être intéressé par considérer que _"cheval"_ et _"chevaux"_ sont équivalents. Selon les cas, différentes formes d’un même mot (pluriel,
+singulier, conjugaison) pourront être considérées comme équivalentes et seront remplacées par une
+même forme dite canonique.
+
+Il existe deux approches dans le domaine :
+
+* la **lemmatisation** qui requiert la connaissance des statuts
+grammaticaux (exemple : _"chevaux"_ devient _"cheval"_) ;
+* la **racinisation** (*stemming*) plus fruste mais plus rapide, notamment
+en présence de fautes d’orthographes. Dans ce cas, _"chevaux"_ peut devenir _"chev"_
+mais être ainsi confondu avec _"chevet"_ ou _"cheveux"_.
+
+Cette approche a l'avantage de réduire la taille du vocabulaire à maîtriser
+pour l'ordinateur et le modélisateur. Il existe plusieurs algorithmes de 
+*stemming*, notamment le *Porter Stemming Algorithm* ou le
+*Snowball Stemming Algorithm*. 
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-info" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
+```
+Pour disposer du corpus nécessaire à la lemmatisation, il faut, la première fois,
+télécharger celui-ci grâce aux commandes suivantes :
+
+~~~python
+import nltk
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+~~~
+
+```{=html}
+</div>
+```
+:::
+
+Prenons cette chaine de caractère, 
+
+```{python}
+dumas[1030:1200]
+```
+
+La version racinisée est la suivante:
+
+```{python}
+from nltk.stem.snowball import SnowballStemmer
+stemmer = SnowballStemmer(language='french')
+
+stemmed = [stemmer.stem(word) for word in word_tokenize(dumas[1030:1200])]
+stemmed
+```
+
+A ce niveau, les mots commencent à être moins intelligibles par un humain
+mais peuvent rester intelligible pour la machine. Ce choix n'est néanmoins pas neutre et sa pertinence dépend du cas d'usage. 
+
+Les lemmatiseurs permettront des harmonisations plus subtiles. Ils s'appuient sur des bases de connaissance, par exemple _WordNet_, une base
+lexicographique ouverte. Par exemple, les mots *"women"*, *"daughters"*
+et *"leaves"* seront ainsi lemmatisés de la manière suivante :
+
+```{python}
+#| echo: true
+from nltk.stem import WordNetLemmatizer
+lemm = WordNetLemmatizer()
+
+for word in ["women","daughters", "leaves"]:
+    print(f"The lemmatized form of {word} is: {lemm.lemmatize(word)}")
+```
+
+
+::: {.cell .markdown}
+```{=html}
+<div class="alert alert-success" role="alert">
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 5 : Lemmatisation avec nltk</h3>
+```
+
+Sur le modèle précédent, utiliser un `WordNetLemmatizer` sur le corpus `dumas[1030:1200]` et observer le résultat.
+
+```{=html}
+</div>
+```
+:::
+
+
+```{python}
+from nltk.stem import WordNetLemmatizer
+lemmatizer = WordNetLemmatizer()
+
+lemmatized = [lemmatizer.lemmatize(word) for word in word_tokenize(dumas[1030:1200])]
+lemmatized
+```
+
+## Limite
+
+Dans les approches fréquentistes, où on recherche la proximité entre des textes par la co-occurrence de termes, cette question de la création de classes d'équivalence est fondamentale. Les mots sont identiques ou différents, il n'y a pas de différence subtile entre eux. Par exemple, on devra soit déclarer que _"python"_ et _"pythons"_ sont équivalents, soient qu'ils sont différents, sans différence de degré entre _"pythons"_, _"anaconda"_ ou _"table"_ par rapport à _"python"_. Les approches modernes, non plus exclusivement basées sur des fréquences d'apparition, permettront d'introduire de la subtilité dans la synthétisation de l'information présente dans les données textuelles. 
