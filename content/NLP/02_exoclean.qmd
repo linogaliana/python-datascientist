@@ -316,7 +316,7 @@ reprenons le _Comte de Monte Cristo_ et regardons sur un petit morceau de cette 
 
 
 ```{python}
-import spacy
+#| echo: true
 import spacy
 from spacy import displacy
 
@@ -335,8 +335,113 @@ l'approche de reconnaissance d'entités nommées a été utilisée
 par Etalab pour [pseudonymiser des documents administratifs](https://guides.etalab.gouv.fr/pseudonymisation/#sommaire). Il s'agit d'identifier certaines informations sensibles (état civil, adresse...) par reconnaissance d'entités pour les remplacer par des pseudonymes. 
 
 
-
-
 ## Classification de données textuelles: l'algorithme `Fasttext`
 
-Partie à venir
+`Fasttext` est un réseau de neurone à une couche développé par Meta en 2016 pour faire de la classification de texte ou de la modélisation de langage. Comme nous allons pouvoir le voir, ce modèle va nous amener à faire la transition avec une modélisation plus raffinée du langage, bien que celle de `Fasttext` soit beaucoup plus frustre que celle des grands modèles de langage (LLM). L'un des principaux cas d'utilisation de `Fasttext` est la classification supervisée de données textuelles. Il s'agit, à partir d'un texte, de déterminer sa catégorie d'appartenance. Par exemple, à partir d'un texte de chanson, s'il s'agit de rap ou de rock. Ce modèle est supervisé puisqu'il apprend à reconnnaître les _features_, en l'occurrence des morceaux de texte, qui permettent d'avoir une bonne performance de prédiction sur le jeu d'entraînement puis de test. 
+
+Le concept de _feature_ peut sembler étonnant pour des données textuelles, qui sont, par essence, non structurées. Pour des données structurées, la démarche évoquée dans la partie [modélisation](/content/course/modelisation/index.qmd) apparaîssait naturelle: nous avions des variables observées dans nos données pour les _features_ et l'algorithme de classification consistait à trouver la combinaison entre elles permettant de prédire, au mieux, le _label_. Avec des données textuelles, ce concept de _feature_ observé n'est plus naturel. Il est nécessaire de le construire à partir d'un texte. L'information destructurée devient de l'information structurée. C'est là qu'interviennent les concepts que nous avons vu jusqu'à présent. 
+
+`FastText` est un _"sac de n-gram"_. Il considère donc que les _features_ sont à construire à partir des mots de notre corpus mais aussi des _ngrams_ à plusieurs niveaux. L'architecture générale de `FastText` ressemble à celle-ci:
+
+![Illustration de l'architecture de `FastText`](https://raw.githubusercontent.com/InseeFrLab/formation-mlops/main/slides/img/diag-fasttext.png)
+
+Ce qui nous intéresse ici est la partie gauche de ce diagramme, la _"feature extraction"_ car la partie _embedding_ correspond à des concepts que nous verrons lors des prochains chapitres. Avec l'exemple de cette figure, on voit que le texte _"Business engineering and services"_ est tokenisé comme nous avons pu le voir plus tôt en mots. Mais `Fasttext` créé également des ngrams à plusieurs niveaux. Par exemple, il va créer des bigrams de mots: _"Business engineering"_, _"engineering and"_, _"and services"_. mais aussi des quadrigrammes de caractères _"busi"_, _"usin"_ et _"sine"_. Ensuite, `Fasttext` transformera tous ces termes en vecteurs numériques. Contrairement à ce que nous avons vu jusqu'à présent, ces vecteurs ne sont pas des fréquences d'apparition dans le corpus (principe de la matrice origine-document), ce sont des plongements de mots (_word embedding_). Nous découvrirons leurs principes dans les prochains chapitres. 
+
+Ce modèle `Fasttext` est très utilisé dans la statistique publique car de nombreuses sources de données textuelles sont à hiérarchiser dans des nomenclatures agrégées. 
+
+__TO DO__: plus d'éléments
+
+::: {.content-visible when-format="html"}
+
+Voici un exemple d'utilisation d'un tel modèle pour la classification d'activités
+
+```{ojs}
+//| echo: false
+viewof activite = Inputs.text( 
+  {label: '', value: 'data scientist', width: 800}
+)
+```
+
+
+```{ojs}
+//| echo: false
+d3.json(urlApe).then(res => {
+  var IC, results;
+
+  ({ IC, ...results } = res);
+
+  IC = parseFloat(IC);
+
+  const rows = Object.values(results).map(obj => {
+    return `
+    <tr>
+      <td>${obj.code} | ${obj.libelle}</td>
+      <td>${obj.probabilite.toFixed(3)}</td>
+    </tr>
+  `;
+  }).join('');
+
+  const confidenceRow = `<tr>
+    <td colspan="2" style="text-align:left; "><em>Indice de confiance : ${IC.toFixed(3)}</em></td>
+  </tr>`;
+
+  const tableHTML = html`
+  <table>
+    <caption>
+      Prédiction de l'activité
+    </caption>
+    <tr>
+      <th style="text-align:center;">Libellé (NA2008)</th>
+      <th>Probabilité</th>
+    </tr>
+      ${rows}
+      ${confidenceRow}
+  </table>`;
+
+  // Now you can use the tableHTML as needed, for example, inserting it into the DOM.
+  // For example, assuming you have a container with the id "tableContainer":
+  return tableHTML;
+});
+```
+
+```{ojs}
+//| echo: false
+activite_debounce = debounce(viewof activite, 2000)
+urlApe = `https://codification-ape-test.lab.sspcloud.fr/predict?nb_echos_max=3&prob_min=0&text_feature=${activite_debounce}`
+```
+
+```{ojs}
+//| echo: false
+import {debounce} from "@mbostock/debouncing-input"
+```
+
+:::
+
+::: {.content-hidden when-format="html"}
+
+```{python}
+import requests
+import pandas as pd
+
+activite = "data scientist"
+urlApe = f"https://codification-ape-test.lab.sspcloud.fr/predict?nb_echos_max=3&prob_min=0&text_feature=${activite}"
+import requests
+data = requests.get(urlApe).json()
+
+# Extract 'IC' value
+IC = data['IC']
+data.pop('IC', None)
+
+df = pd.DataFrame(data.values())
+df['indice_confiance'] = IC
+df
+```
+
+:::
+
+
+::: {.content-visible when-format="ipynb"}
+
+Pour voir une démonstration interactive d'un tel modèle, se rendre sur la [page du site](/content/NLP/02_exoclean.qmd) associée à ce notebook.
+
+:::
