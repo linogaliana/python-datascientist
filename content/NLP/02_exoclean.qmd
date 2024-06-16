@@ -20,7 +20,8 @@ echo: false
 
 # Introduction
 
-Nous avons vu, précédemment, l'intérêt de nettoyer les données pour dégrossir le volume d'information présent dans nos données non structurées. L'objectif de ce chapitre est d'approfondir notre compréhension de l'approche fréquentiste appliquée aux données textuelles. 
+Nous avons vu, précédemment, l'intérêt de nettoyer les données pour dégrossir le volume d'information présent dans nos données non structurées. L'objectif de ce chapitre est d'approfondir notre compréhension de l'approche fréquentiste appliquée aux données textuelles. Nous allons évoquer la manière dont cette analyse fréquentiste permet de synthétiser l'information présente dans un corpus textuel. Nous allons également voir la manière dont on peut raffiner l'approche _bag of words_ en tenant compte de l'ordre de la proximité des termes dans une phrase. 
+
 
 ## Données
 
@@ -48,9 +49,9 @@ cleaned_texts = [clean_text(doc) for doc in docs]
 horror['preprocessed_text'] = cleaned_texts
 ```
 
-# La représentation synthétique des fréquences dans le cadre _bag of words_: la mesure TF-IDF
+# La mesure TF-IDF (_term frequency - inverse document frequency_)
 
-## Principe
+## La matrice documents - termes
 
 Comme nous l'avons évoqué précédemment, nous construisons une représentation synthétique de notre corpus comme un sac de mots dans lesquels on pioche plus ou moins fréquemment des mots selon leur fréquence d'apparition. C'est bien sûr une représentation simpliste de la réalité: les séquences de mots ne sont pas une suite aléatoire indépendante de mots. 
 
@@ -74,20 +75,112 @@ La matrice document-terme associée à ce corpus est la suivante :
 Chaque phrase du corpus est associée à un vecteur numérique. Par exemple,
 la phrase _"La pratique du tricot et du crochet"_, qui n'a pas de sens en soi pour une machine, devient un vecteur numérique intelligible pour elle égal à `[1, 0, 2, 1, 1, 0, 1, 0, 0, 0, 1, 0]`. Ce vecteur numérique est une représentation creuse (_sparse_) du langage puisque chaque document (ligne) ne comportera qu'une petite partie du vocabulaire total (l'ensemble des colonnes). Pour tous les mots qui n'apparaîtront pas dans le document, on aura des 0, d'où un vecteur _sparse_. Comme nous le verrons par la suite, cette représentation numérique diffère grandement des approches modernes d'_embeddings_, basées sur l'idée de représentation denses. 
 
-Différents documents peuvent alors être rapprochés sur la base de ces mesures. C'est l'une des manières de procéder des moteurs de recherche même si les meilleurs utilisent des approches bien plus sophistiquées. La métrique [tf-idf](https://fr.wikipedia.org/wiki/TF-IDF) (term _frequency–inverse document frequency_)
+## Utilisation pour l'extraction d'informations
+
+Différents documents peuvent alors être rapprochés sur la base de ces mesures. C'est l'une des manières de procéder des moteurs de recherche même si les meilleurs utilisent des approches bien plus sophistiquées. La métrique [tf-idf](https://fr.wikipedia.org/wiki/TF-IDF) (_term frequency–inverse document frequency_)
 permet de calculer un score de proximité entre un terme de recherche et un
 document à partir de deux composantes:
+
+$$
+\text{tf-idf}(t, d, D) = \text{tf}(t, d) \times \text{idf}(t, D)
+$$
+
+avec $t$ un terme particulier (par exemple un mot), $d$ un document particulier et $D$ l'ensemble de documents dans le corpus. 
 
 * La partie `tf` calcule une fonction croissante de la fréquence du terme de recherche dans le document à l'étude ;
 * La partie `idf` calcule une fonction inversement proportionnelle à la fréquence du terme dans l'ensemble des documents (ou corpus).
 
-Le score total, obtenu en multipliant les deux composantes,
-permet ainsi de donner un score d'autant plus élevé que le terme est surréprésenté dans un document
-(par rapport à l'ensemble des documents).
-Il existe plusieurs fonctions, qui pénalisent plus ou moins les documents longs (ces derniers ayant plus de chances d'avoir un vocabulaire riche et donc des valeurs différentes de 0).
+* La première partie (_term-frequency_, TF) est la fréquence d'apparition du terme terme $t$ dans le document $d$. Il existe des mesures de normalisation pour éviter de biaiser la mesure en cas de documents longs.
+
+$$
+\text{tf}(t, d) = \frac{f_{t,d}}{\sum_{t' \in d} f_{t',d}}
+$$
+
+où $f_{t,d}$ est le nombre brut de fois que le terme $t$ apparaît dans le document $d$  et le dénominateur est le nombre de termes dans le document $d$.
+
+* La seconde partie (_inverse document frequency_, IDF) mesure la rareté, ou au contraire l'aspect commun, d'un terme dans l'ensemble du corpus. Si $N$ est le nombre total de documents dans le corpus $D$, cette partie de la mesure sera 
+
+$$
+\text{idf}(t, D) = \log \left( \frac{N}{|\{d \in D : t \in d\}|} \right)
+$$
+
+Le dénominateur $( |\{d \in D : t \in d\}| )$ correspond au nombre de documents contenant le terme $t$, s'il apparaît. Plus le mot est rare, plus sa présence dans un document sera surpondérée.
+
+De nombreux moteurs de recherche utilisent cette logique pour rechercher les documents les plus pertinents pour répondre à des termes de recherche. C'est notamment le cas d' [`ElasticSearch`](https://www.elastic.co/fr/elasticsearch), le logiciel qui permet d'implémenter des moteurs de recherche efficaces. Pour classer les documents les plus pertinents par rapport à des termes de recherche, ce logiciel utilise notamment la mesure de distance [BM25](https://en.wikipedia.org/wiki/Okapi_BM25) qui est une version sophistiquée de la mesure TF-IDF.   
+
+
+## Exemple
+
+Prenons une illustration à partir d'un petit corpus. Le code suivant implémente une mesure TF-IDF. Celle-ci est légèrement différente de celle définie ci-dessus pour s'assurer de ne pas effectuer de division par zéro. 
+
+```{python}
+#| echo: true
+import numpy as np
+
+# Documents d'exemple
+documents = [
+    "Le corbeau et le renard",
+    "Rusé comme un renard",
+    "Le chat est orange comme un renard"
+]
+
+# Tokenisation
+def preprocess(doc):
+    return doc.lower().split()
+
+tokenized_docs = [preprocess(doc) for doc in documents]
+
+# Term frequency (TF)
+def term_frequency(term, tokenized_doc):
+    term_count = tokenized_doc.count(term)
+    return term_count / len(tokenized_doc)
+
+# Inverse document frequency (DF)
+def document_frequency(term, tokenized_docs):
+    return sum(1 for doc in tokenized_docs if term in doc)
+
+# Calculate inverse document frequency (IDF)
+def inverse_document_frequency(word, corpus):
+    # Normalisation avec + 1 pour éviter la division par zéro
+    count_of_documents = len(corpus) + 1
+    count_of_documents_with_word = sum([1 for doc in corpus if word in doc]) + 1
+    idf = np.log10(count_of_documents/count_of_documents_with_word) + 1
+    return idf
+
+# Calculate TF-IDF scores for the term "chat" in each document
+def tf_idf_term(term):
+  tf_idf_scores = pd.DataFrame(
+    [
+      [
+      term_frequency(term, doc),
+      inverse_document_frequency(term, tokenized_docs)
+      ] for doc in tokenized_docs
+    ],
+    columns = ["TF", "IDF"]
+  )
+  tf_idf_scores["TF-IDF"] = tf_idf_scores["TF"] * tf_idf_scores["IDF"]
+  return tf_idf_scores
+```
+
+Commençons par calculer TF-IDF du mot "chat" pour chaque document. De manière
+naturelle, c'est le troisième document, le seul où apparaît le mot qui a la valeur maximale:
+
+```{python}
+#| echo: true
+tf_idf_term("chat")
+``` 
+
+Qu'en est-il du terme renard qui apparaît dans tous les documents (dont la partie $\text{idf}$ est donc égale à 1) ? Dans ce cas, c'est le document où le mot est le plus fréquent, en l'occurrence le 2e, qui a la mesure maximale. 
+
+```{python}
+#| echo: true
+tf_idf_term("renard")
+``` 
 
 
 ## Application
+
+L'exemple précédent ne passait pas très bien à l'échelle. Heureusement, `Scikit` propose une implémentation de la recherche par vecteur TF-IDF que nous pouvons explorer avec un nouvel exercice. 
 
 ::: {.cell .markdown}
 ```{=html}
@@ -97,7 +190,13 @@ Il existe plusieurs fonctions, qui pénalisent plus ou moins les documents longs
 
 1. Utiliser le vectoriseur TF-IdF de `scikit-learn` pour transformer notre corpus en une matrice `document x terms`. Au passage, utiliser l'option `stop_words` pour ne pas provoquer une inflation de la taille de la matrice. Nommer le modèle `tfidf` et le jeu entraîné `tfs`.
 2. Après avoir construit la matrice de documents x terms avec le code suivant, rechercher les lignes où les termes ayant la structure `abandon` sont non-nuls. 
-3. Trouver les 50 extraits où le score TF-IDF est le plus élevé et l'auteur associé. Vous devriez obtenir le classement suivant :
+3. Trouver les 50 extraits où le score TF-IDF du mot _"fear"_ est le plus élevé et l'auteur associé. Vous devriez obtenir le classement suivant :
+
+```{.python}
+feature_names = tfidf.get_feature_names_out()
+corpus_index = [n for n in list(tfidf.vocabulary_.keys())]
+horror_dense = pd.DataFrame(tfs.todense(), columns=feature_names)
+```
 
 ```{=html}
 </div>
@@ -105,19 +204,27 @@ Il existe plusieurs fonctions, qui pénalisent plus ou moins les documents longs
 :::
 
 
-```{python}
-#| output: false
+Le vectoriseur obtenu à l'issue de la question 1 est
+le suivant:
 
+
+```{python}
 #1. TfIdf de scikit
 from sklearn.feature_extraction.text import TfidfVectorizer
 tfidf = TfidfVectorizer(stop_words=list(stopwords))
+tfidf
+```
+
+
+```{python}
 tfs = tfidf.fit_transform(horror['Text'])
 ```
 
 ```{python}
+import pandas as pd
+
 feature_names = tfidf.get_feature_names_out()
 corpus_index = [n for n in list(tfidf.vocabulary_.keys())]
-import pandas as pd
 horror_dense = pd.DataFrame(tfs.todense(), columns=feature_names)
 
 horror_dense.head()
@@ -142,7 +249,12 @@ tempdf.head(5)
 #| echo: false
 
 #3. 50 extraits avec le TF-IDF le plus élevé.
-list_fear = horror_dense["fear"].sort_values(ascending =False).head(n=50).index.tolist()
+list_fear = (
+  horror_dense["fear"]
+  .sort_values(ascending =False)
+  .head(n=50)
+  .index.tolist()
+)
 horror.iloc[list_fear].groupby('Author').count()['Text'].sort_values(ascending = False)
 ```
 
