@@ -42,7 +42,7 @@ end
 
 function Div(div)
   -- List of supported callout types
-  local callout_types = {"note", "caution"}
+  local callout_types = {"note", "caution",  "warning", "important", "tip"}
 
   for _, type in ipairs(callout_types) do
     if div.classes:includes(type) then
