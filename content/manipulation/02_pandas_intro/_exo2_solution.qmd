@@ -1,0 +1,112 @@
+```{python}
+#| output: false
+# Question 1
+emissions_copy = emissions.loc[
+  :,
+  ["INSEE commune", "Commune", "Autres transports", "Autres transports international"]
+]
+
+# Question 2
+emissions_copy = emissions_copy.rename({
+  "INSEE commune": "code_insee",
+  "Autres transports": "transports",
+  "Autres transports international": "transports_international"
+}, axis = 1)
+
+# Question 3
+emissions_copy = emissions_copy.fillna(0)
+
+# Question 4
+emissions_copy['dep'] = emissions_copy['code_insee'].str[:2]
+emissions_copy['transports_total'] = emissions_copy['transports'] + emissions_copy['transports_international']
+
+# Question 5
+data_sorted = emissions_copy.sort_values("transports_total", ascending = False)
+data_sorted
+emissions_copy.sort_values(by = ["dep","transports_total"], ascending = [True, False])
+
+# Question 6
+emissions_hg_bdr = (emissions_copy
+    .loc[emissions_copy['dep'].isin(["13","31"])]
+    .sort_values("transports", ascending = False)
+)
+
+# Question 7
+emissions_copy.groupby("dep").agg({"transports_total": "sum"})
+```
+
+```{python}
+#| output: asis
+#| echo: false
+if lang == "fr":
+    print("A la question 5, quand on ordonne les communes exclusivement à partir de la variable `transports_total`, on obtient ainsi:")
+else:
+    print("In question 5, when the communes are ordered exclusively on the basis of the variable `transport_total`, the result is as follows:")
+```
+
+```{python}
+#| output: true
+data_sorted.head(3)
+```
+
+```{python}
+#| output: asis
+#| echo: false
+if lang == "fr":
+    print("A la question 6, on obtient ce classement :")
+else:
+    print("Question 6 gives us this classification:")
+```
+
+```{python}
+#| output: true
+emissions_hg_bdr.head(3)
+```
+
+```{python}
+#| output: asis
+#| echo: false
+if lang == "fr":
+    print("A la question 7, le tableau obtenu ressemble à")
+else:
+    print("In question 7, the resulting table looks like this")
+```
+
+
+```{python}
+#| output: true
+# Question 7
+emissions_totales = (
+  pd.DataFrame(
+    df.sum(numeric_only = True),
+    columns = ["emissions"]
+  )
+  .reset_index(names = "secteur")
+)
+emissions_totales
+emissions_totales['emissions (%)'] = (
+  100*emissions_totales['emissions']/emissions_totales['emissions'].sum()
+)
+emissions_totales["emissions"] = emissions_totales["emissions"].div(1000)
+(emissions_totales
+  .sort_values("emissions", ascending = False)
+  .round()
+  .head(5)
+)
+```
+
+```{python}
+#| output: true
+# Question 8
+emissions_totales = emissions.fillna(0).sum(numeric_only=True, axis = 1).sort_values(ascending = False).head(100)
+emissions_top = emissions.iloc[emissions_totales.index].fillna(0)
+
+emissions_top
+```
+
+```{python}
+#| output: true
+emissions_top['total'] = emissions_top.sum(numeric_only=True, axis = 1)
+secteurs = emissions_top.select_dtypes(include='number').columns
+emissions_top["Part " + secteurs] = emissions_top.loc[:, secteurs].div(emissions_top['total'], axis = 0).mul(100)
+```
