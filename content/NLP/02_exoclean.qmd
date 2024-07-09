@@ -18,6 +18,12 @@ image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/bag_of_wor
 echo: false
 ---
 
+
+::: {.content-visible when-format="html"}
+{{< include "../../build/_printBadges.qmd" >}}
+:::
+
+
 # Introduction
 
 Nous avons vu, précédemment, l'intérêt de nettoyer les données pour dégrossir le volume d'information présent dans nos données non structurées. L'objectif de ce chapitre est d'approfondir notre compréhension de l'approche fréquentiste appliquée aux données textuelles. Nous allons évoquer la manière dont cette analyse fréquentiste permet de synthétiser l'information présente dans un corpus textuel. Nous allons également voir la manière dont on peut raffiner l'approche _bag of words_ en tenant compte de l'ordre de la proximité des termes dans une phrase. 
@@ -32,15 +38,23 @@ des textes des auteurs fantastiques [Edgar Allan Poe](https://fr.wikipedia.org/w
 {{< include "_import_horror.qmd" >}}
 
 ```{python}
+# Function to clean the text
+def clean_text(doc):
+    # Tokenize, remove stop words and punctuation, and lemmatize
+    cleaned_tokens = [token.lemma_ for token in doc if not token.is_stop and not token.is_punct]
+    # Join tokens back into a single string
+    cleaned_text = ' '.join(cleaned_tokens)
+    return cleaned_text
+
+```
+
+```{python}
 import spacy
 nlp_english = spacy.load('en_core_web_sm')
 stopwords = nlp_english.Defaults.stop_words
 ```
 
-```{python}
-#| echo: false
-from cleantext import clean_text
-```
+
 
 ```{python}
 #| label: clean-stopwords-horror
@@ -53,7 +67,7 @@ horror['preprocessed_text'] = cleaned_texts
 
 ## La matrice documents - termes
 
-Comme nous l'avons évoqué précédemment, nous construisons une représentation synthétique de notre corpus comme un sac de mots dans lesquels on pioche plus ou moins fréquemment des mots selon leur fréquence d'apparition. C'est bien sûr une représentation simpliste de la réalité: les séquences de mots ne sont pas une suite aléatoire indépendante de mots. 
+Comme nous l'avons évoqué précédemment, nous construisons une représentation synthétique de notre corpus comme un sac de mots dans lesquels on pioche plus ou moins fréquemment des mots selon leur fréquence d'apparition. C'est bien sûr une représentation simpliste de la réalité : les séquences de mots ne sont pas une suite aléatoire indépendante de mots. 
 
 Cependant, avant d'évoquer ces enjeux, il nous reste à aller au bout de l'approche sac de mots. La représentation la plus caractéristique de ce paradigme est la matrice document-terme, principalement utilisée pour comparer des corpus. Celle-ci consiste à créer une matrice où chaque document est représenté par la présence ou l'absence des termes de notre corpus.  L’idée est de compter le nombre de fois où les mots (les termes, en colonne) sont présents dans chaque phrase ou libellé (le document, en ligne). Cette matrice fournit alors une représentation numérique des données textuelles.
 
@@ -147,7 +161,7 @@ def inverse_document_frequency(word, corpus):
     idf = np.log10(count_of_documents/count_of_documents_with_word) + 1
     return idf
 
-# Calculate TF-IDF scores for the term "chat" in each document
+# Calculate TF-IDF scores in each document
 def tf_idf_term(term):
   tf_idf_scores = pd.DataFrame(
     [
