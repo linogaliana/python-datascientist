@@ -1,0 +1,76 @@
+```{python}
+#| echo: true
+emissions_table = (
+    emissions_merged
+    .rename(columns={"dep_y": "dep", "NBPERSMENFISC16": "population", "MED16": "revenu"})
+    .groupby("dep")
+    .agg({"empreinte": "sum", "revenu": "median", "population": "sum"}) #pas vraiment le revenu médian
+    .reset_index()
+    .sort_values(by = "empreinte")
+)
+```
+
+```{python}
+#| echo: false
+#| output: asis
+if lang == "en":
+    print("In this table, we will include horizontal bars, similar to the examples shown [here](https://posit-dev.github.io/great-tables/examples/). This is done by directly including the _HTML_ code in the DataFrame column.")
+else:
+    print("Dans ce tableau nous allons intégrer des barres horizontales, à la manière des exemples présentés [ici](https://posit-dev.github.io/great-tables/examples/). Cela se fait en incluant directement le code _html_ dans la colonne du _DataFrame_")
+```
+
+```{python}
+#| echo: true
+def create_bar(prop_fill: float, max_width: int, height: int, color: str = "green") -> str:
+    """Create divs to represent prop_fill as a bar."""
+    width = round(max_width * prop_fill, 2)
+    px_width = f"{width}px"
+    return f"""\
+    <div style="width: {max_width}px; background-color: lightgrey;">\
+        <div style="height:{height}px;width:{px_width};background-color:{color};"></div>\
+    </div>\
+    """
+
+colors = {'empreinte': "green", 'revenu': "red", 'population': "blue"}
+
+for variable in ['empreinte', 'revenu', 'population']:
+    emissions_table[f'raw_perc_{variable}'] = emissions_table[variable]/emissions_table[variable].max()
+    emissions_table[f'bar_{variable}'] = emissions_table[f'raw_perc_{variable}'].map(
+        lambda x: create_bar(x, max_width=75, height=20, color = colors[variable])
+    )
+```
+
+```{python}
+#| output: asis
+#| echo: false
+if lang == "en":
+    print("We keep only the 5 smallest carbon footprints and the five largest.")
+else:
+    print("Nous ne gardons que les 5 plus petites empreintes carbone, et les cinq plus importantes.")
+```
+
+```{python}
+#| echo: true
+emissions_min = emissions_table.head(5).assign(grp = "5 départements les moins pollueurs").reset_index(drop=True)
+emissions_max = emissions_table.tail(5).assign(grp = "5 départements les plus pollueurs").reset_index(drop=True)
+
+emissions_table = pd.concat([
+    emissions_min,
+    emissions_max
+])
+```
+
+```{python}
+#| output: asis
+#| echo: false
+if lang == "en":
+    print("Finally, to use some practical functions for selecting columns based on patterns, we will convert the data to the [`Polars`](https://pola.rs/) format.")
+else:
+    print("Enfin, pour pouvoir utiliser quelques fonctions pratiques pour sélectionner des colonnes à partir de motifs, nous allons convertir les données au format [`Polars`](https://pola.rs/)")
+```
+
+```{python}
+#| echo: true
+import polars as pl
+emissions_table = pl.from_pandas(emissions_table)
+```
