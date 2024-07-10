@@ -23,6 +23,18 @@ echo: false
 {{< include "../../build/_printBadges.qmd" >}}
 :::
 
+Installation préalables : 
+
+```{python}
+!pip install spacy
+!python -m spacy download en_core_web_sm
+def clean_text(doc):
+    # Tokenize, remove stop words and punctuation, and lemmatize
+    cleaned_tokens = [token.lemma_ for token in doc if not token.is_stop and not token.is_punct]
+    # Join tokens back into a single string
+    cleaned_text = ' '.join(cleaned_tokens)
+    return cleaned_text
+```
 
 # Introduction
 
@@ -73,7 +85,7 @@ Cependant, avant d'évoquer ces enjeux, il nous reste à aller au bout de l'appr
 
 Considérons un corpus constitué des trois phrases suivantes :
 
-* _“La pratique du tricot et du crochet_”
+* _“La pratique du tricot et du crochet”_
 * _“Transmettre la passion du timbre”_
 * _“Vivre de sa passion”_
 
@@ -93,7 +105,7 @@ la phrase _"La pratique du tricot et du crochet"_, qui n'a pas de sens en soi po
 
 Différents documents peuvent alors être rapprochés sur la base de ces mesures. C'est l'une des manières de procéder des moteurs de recherche même si les meilleurs utilisent des approches bien plus sophistiquées. La métrique [tf-idf](https://fr.wikipedia.org/wiki/TF-IDF) (_term frequency–inverse document frequency_)
 permet de calculer un score de proximité entre un terme de recherche et un
-document à partir de deux composantes:
+document à partir de deux composantes :
 
 $$
 \text{tf-idf}(t, d, D) = \text{tf}(t, d) \times \text{idf}(t, D)
@@ -177,7 +189,7 @@ def tf_idf_term(term):
 ```
 
 Commençons par calculer TF-IDF du mot "chat" pour chaque document. De manière
-naturelle, c'est le troisième document, le seul où apparaît le mot qui a la valeur maximale:
+naturelle, c'est le troisième document, le seul où apparaît le mot qui a la valeur maximale :
 
 ```{python}
 #| echo: true
@@ -199,7 +211,7 @@ L'exemple précédent ne passait pas très bien à l'échelle. Heureusement, `Sc
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 6 : TF-IDF: calcul de fréquence</h3>
+<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 6 : TF-IDF : calcul de fréquence</h3>
 ```
 
 1. Utiliser le vectoriseur TF-IdF de `scikit-learn` pour transformer notre corpus en une matrice `document x terms`. Au passage, utiliser l'option `stop_words` pour ne pas provoquer une inflation de la taille de la matrice. Nommer le modèle `tfidf` et le jeu entraîné `tfs`.
@@ -227,7 +239,7 @@ horror_dense = pd.DataFrame(tfs.todense(), columns=feature_names)
 
 
 Le vectoriseur obtenu à l'issue de la question 1 est
-le suivant:
+le suivant :
 
 
 ```{python}
@@ -255,14 +267,12 @@ Les lignes où le terme  _"abandon"_ apparait
 sont les suivantes (question 2) :
 
 ```{python}
-#| echo: false
-
 #2. Lignes où les termes de abandon sont non nuls.
 tempdf = horror_dense.loc[(horror_dense.filter(regex = "abandon")!=0).any(axis=1)]
 print(tempdf.index)
 ```
 
-La matrice document-terme associée à celles-ci est la suivante:
+La matrice document-terme associée à celles-ci est la suivante :
 
 ```{python}
 tempdf.head(5)
@@ -274,7 +284,6 @@ de _"abandon"_ sont éclatées sur de nombreuses colonnes. _"abandoned"_ est aus
 
 ```{python}
 #| include: true
-#| echo: false
 
 # 3. 50 extraits avec le TF-IDF le plus élevé.
 list_fear = (
@@ -300,9 +309,9 @@ horror.iloc[list_fear[:9]]['Text'].tolist()
 On remarque que les scores les plus élevés sont soient des extraits courts où le mot apparait une seule fois, soit des extraits plus longs où le mot _"fear"_ apparaît plusieurs fois.
 
 
-# Un premier enrichissement de l'approche sac de mots: les *n-grams*
+# Un premier enrichissement de l'approche sac de mots : les *n-grams*
 
-Nous avons évoqué deux principales limites à l'approche sac de mot: l'absence de prise en compte du contexte et la représentation _sparse_ du langage qui rend les rapprochements entre texte parfois moyennement pertinents. Dans le paradigme du sac de mots, il est néanmoins possible de prendre en compte la séquence d'enchainement de sèmes (_tokens_) par le biais des _ngrams_.
+Nous avons évoqué deux principales limites à l'approche sac de mot : l'absence de prise en compte du contexte et la représentation _sparse_ du langage qui rend les rapprochements entre texte parfois moyennement pertinents. Dans le paradigme du sac de mots, il est néanmoins possible de prendre en compte la séquence d'enchainement de sèmes (_tokens_) par le biais des _ngrams_.
 
 Pour rappel, jusqu'à présent, dans l'approche _bag of words_, l'ordre des mots n'avait pas d'importance.
 On considère qu'un texte est une collection de
@@ -326,7 +335,7 @@ nltk.corpus.genesis.words('english-web.txt')
 ```
 
 
-`NLTK` offre des methodes pour tenir compte du contexte. Pour ce faire, nous calculons les n-grams, c'est-à-dire l'ensemble des co-occurrences successives de mots n-à-n.  En général, on se contente de bi-grams, au mieux de tri-grams: 
+`NLTK` offre des methodes pour tenir compte du contexte. Pour ce faire, nous calculons les n-grams, c'est-à-dire l'ensemble des co-occurrences successives de mots n-à-n.  En général, on se contente de bi-grams, au mieux de tri-grams : 
 
 * les modèles de classification, analyse du sentiment, comparaison de documents, etc. qui comparent des n-grams avec n trop grands sont rapidement confrontés au problème de données sparse, cela réduit la capacité prédictive des modèles ;
 * les performances décroissent très rapidement en fonction de n, et les coûts de stockage des données augmentent rapidement (environ n fois plus élevé que la base de données initiale).
@@ -379,7 +388,7 @@ la liste devrait ressembler à celle-ci :
 
 ```{python}
 #| include: true
-#| echo: false
+
 
 # 1. Methode concordance
 print("Exemples d'occurences du terme 'fear' :")
@@ -400,7 +409,7 @@ bcf = BigramCollocationFinder.from_words(text)
 bcf.nbest(BigramAssocMeasures.likelihood_ratio, 20)
 ```
 
-Si on modélise les meilleures collocations:
+Si on modélise les meilleures collocations :
 
 ```{python}
 # 3. Modélisation des meilleures collocations (qui apparaissent 5+)
@@ -409,7 +418,7 @@ finder.apply_freq_filter(5)
 bigram_measures = nltk.collocations.BigramAssocMeasures()
 collocations = finder.nbest(bigram_measures.jaccard, 15) 
 
-for collocation in collocations:
+for collocation in collocations :
     c = ' '.join(collocation)
     print(c)
 ```
@@ -447,15 +456,15 @@ collocations_word("love")
 
 # Quelques applications
 
-Nous venons d'évoquer un premier cas d'application de l'approche _bag of words_ qui est le rapprochement de textes par leurs termes communs. Ce n'est pas le seul cas d'application de l'approche précédente. Nous allons en évoquer deux qui nous amènent vers la modélisation du langage: la reconnaissance d'entités nommées et la classification.
+Nous venons d'évoquer un premier cas d'application de l'approche _bag of words_ qui est le rapprochement de textes par leurs termes communs. Ce n'est pas le seul cas d'application de l'approche précédente. Nous allons en évoquer deux qui nous amènent vers la modélisation du langage : la reconnaissance d'entités nommées et la classification.
 
 
 ## Reconnaissance des entités nommées
 
-La [reconnaissance d'entités nommées](https://fr.wikipedia.org/wiki/Reconnaissance_d%27entit%C3%A9s_nomm%C3%A9es), également connue sous l'acronyme NER pour _named entity recognition_, est une méthode d'extraction d'information permettant d'identifier, dans un texte, la nature de certains termes dans une certain classification: lieu, personne, quantité, etc. 
+La [reconnaissance d'entités nommées](https://fr.wikipedia.org/wiki/Reconnaissance_d%27entit%C3%A9s_nomm%C3%A9es), également connue sous l'acronyme NER pour _named entity recognition_, est une méthode d'extraction d'information permettant d'identifier, dans un texte, la nature de certains termes dans une certain classification : lieu, personne, quantité, etc. 
 
 Pour illustrer cela, 
-reprenons le _Comte de Monte Cristo_ et regardons sur un petit morceau de cette oeuvre ce qu'implique la reconnaissance d'entités nommées:
+reprenons le _Comte de Monte Cristo_ et regardons sur un petit morceau de cette oeuvre ce qu'implique la reconnaissance d'entités nommées :
 
 {{< include "_import_dumas.qmd" >}}
 
@@ -484,17 +493,17 @@ l'approche de reconnaissance d'entités nommées a été utilisée
 par Etalab pour [pseudonymiser des documents administratifs](https://guides.etalab.gouv.fr/pseudonymisation/#sommaire). Il s'agit d'identifier certaines informations sensibles (état civil, adresse...) par reconnaissance d'entités pour les remplacer par des pseudonymes. 
 
 
-## Classification de données textuelles: l'algorithme `Fasttext`
+## Classification de données textuelles : l'algorithme `Fasttext`
 
 `Fasttext` est un réseau de neurone à une couche développé par Meta en 2016 pour faire de la classification de texte ou de la modélisation de langage. Comme nous allons pouvoir le voir, ce modèle va nous amener à faire la transition avec une modélisation plus raffinée du langage, bien que celle de `Fasttext` soit beaucoup plus frustre que celle des grands modèles de langage (LLM). L'un des principaux cas d'utilisation de `Fasttext` est la classification supervisée de données textuelles. Il s'agit, à partir d'un texte, de déterminer sa catégorie d'appartenance. Par exemple, à partir d'un texte de chanson, s'il s'agit de rap ou de rock. Ce modèle est supervisé puisqu'il apprend à reconnnaître les _features_, en l'occurrence des morceaux de texte, qui permettent d'avoir une bonne performance de prédiction sur le jeu d'entraînement puis de test. 
 
-Le concept de _feature_ peut sembler étonnant pour des données textuelles, qui sont, par essence, non structurées. Pour des données structurées, la démarche évoquée dans la partie [modélisation](/content/course/modelisation/index.qmd) apparaîssait naturelle: nous avions des variables observées dans nos données pour les _features_ et l'algorithme de classification consistait à trouver la combinaison entre elles permettant de prédire, au mieux, le _label_. Avec des données textuelles, ce concept de _feature_ observé n'est plus naturel. Il est nécessaire de le construire à partir d'un texte. L'information destructurée devient de l'information structurée. C'est là qu'interviennent les concepts que nous avons vu jusqu'à présent. 
+Le concept de _feature_ peut sembler étonnant pour des données textuelles, qui sont, par essence, non structurées. Pour des données structurées, la démarche évoquée dans la partie [modélisation](/content/course/modelisation/index.qmd) apparaîssait naturelle : nous avions des variables observées dans nos données pour les _features_ et l'algorithme de classification consistait à trouver la combinaison entre elles permettant de prédire, au mieux, le _label_. Avec des données textuelles, ce concept de _feature_ observé n'est plus naturel. Il est nécessaire de le construire à partir d'un texte. L'information destructurée devient de l'information structurée. C'est là qu'interviennent les concepts que nous avons vu jusqu'à présent. 
 
-`FastText` est un _"sac de n-gram"_. Il considère donc que les _features_ sont à construire à partir des mots de notre corpus mais aussi des _ngrams_ à plusieurs niveaux. L'architecture générale de `FastText` ressemble à celle-ci:
+`FastText` est un _"sac de n-gram"_. Il considère donc que les _features_ sont à construire à partir des mots de notre corpus mais aussi des _ngrams_ à plusieurs niveaux. L'architecture générale de `FastText` ressemble à celle-ci :
 
 ![Illustration de l'architecture de `FastText`](https://raw.githubusercontent.com/InseeFrLab/formation-mlops/main/slides/img/diag-fasttext.png)
 
-Ce qui nous intéresse ici est la partie gauche de ce diagramme, la _"feature extraction"_ car la partie _embedding_ correspond à des concepts que nous verrons lors des prochains chapitres. Avec l'exemple de cette figure, on voit que le texte _"Business engineering and services"_ est tokenisé comme nous avons pu le voir plus tôt en mots. Mais `Fasttext` créé également des ngrams à plusieurs niveaux. Par exemple, il va créer des bigrams de mots: _"Business engineering"_, _"engineering and"_, _"and services"_. mais aussi des quadrigrammes de caractères _"busi"_, _"usin"_ et _"sine"_. Ensuite, `Fasttext` transformera tous ces termes en vecteurs numériques. Contrairement à ce que nous avons vu jusqu'à présent, ces vecteurs ne sont pas des fréquences d'apparition dans le corpus (principe de la matrice origine-document), ce sont des plongements de mots (_word embedding_). Nous découvrirons leurs principes dans les prochains chapitres. 
+Ce qui nous intéresse ici est la partie gauche de ce diagramme, la _"feature extraction"_ car la partie _embedding_ correspond à des concepts que nous verrons lors des prochains chapitres. Avec l'exemple de cette figure, on voit que le texte _"Business engineering and services"_ est tokenisé comme nous avons pu le voir plus tôt en mots. Mais `Fasttext` créé également des ngrams à plusieurs niveaux. Par exemple, il va créer des bigrams de mots : _"Business engineering"_, _"engineering and"_, _"and services"_. mais aussi des quadrigrammes de caractères _"busi"_, _"usin"_ et _"sine"_. Ensuite, `Fasttext` transformera tous ces termes en vecteurs numériques. Contrairement à ce que nous avons vu jusqu'à présent, ces vecteurs ne sont pas des fréquences d'apparition dans le corpus (principe de la matrice origine-document), ce sont des plongements de mots (_word embedding_). Nous découvrirons leurs principes dans les prochains chapitres. 
 
 Ce modèle `Fasttext` est très utilisé dans la statistique publique car de nombreuses sources de données textuelles sont à hiérarchiser dans des nomenclatures agrégées. 
 
