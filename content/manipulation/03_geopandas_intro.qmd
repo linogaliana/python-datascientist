@@ -24,6 +24,13 @@ bibliography: ../../reference.bib
 {{< include "../../build/_printBadges.qmd" >}}
 :::
 
+```{python}
+#| output: false
+#| echo: false
+lang = "fr"
+```
+
+
 # Introduction
 
 ## Quelle différence avec des données traditionnelles ?
@@ -110,11 +117,13 @@ facilitant la récupération de cette source.
 
 ## Installations préalables
 
+Ce tutoriel nécessite quelques installations de packages
+pour pouvoir être reproduit
+
 ```{python}
 #| output : false 
 #| echo: true
 #| label: install-dependencies
-# à faire obligatoirement en premier pour utiliser rtree ou pygeos pour les jointures spatiales
 !pip install pandas fiona shapely pyproj rtree 
 !pip install contextily
 !pip install geopandas
@@ -277,139 +286,10 @@ L'objectif de cet exercice est d'illustrer la similarité des objets
 
 Nous allons importer directement les données `AdminExpress` (limites officielles des communes produites par l'IGN) avec `cartiflette`:
 
-```{python}
-#| echo: true
-#| label: load-carti_download
-from cartiflette import carti_download
-```
 
-::: {.exercise}
-## Exercice 1: découverte des objets géographiques
+{{< include "03_pandas_intro/_exo1_fr.qmd" >}}
+{{< include "03_pandas_intro/_exo1_solution.qmd" >}}
 
-En premier lieu, on récupère des données géographiques grâce
-au _package_ `cartiflette` et à sa fonction `carti_download`.
-
-1. Utiliser
-le code ci-dessous pour
-télécharger les données communales (produit `Admin Express` de l'IGN)
-des départements de la petite couronne (75, 92, 93 et 94)
-de manière simplifiée grâce au _package_
-`cartiflette`:
-
-```{python}
-#| echo: true
-#| output: false
-communes_borders = carti_download(
-    crs = 4326,
-    values = ["75", "92", "93", "94"],
-    borders="COMMUNE",
-    vectorfile_format="geojson",
-    filter_by="DEPARTEMENT",
-    source="EXPRESS-COG-CARTO-TERRITOIRE",
-    year=2022)
-```
-
-2. Regarder les premières lignes des données. Identifier la différence avec
-un _dataframe_ standard. 
-
-3. Afficher le système de projection (attribut `crs`) de `communes_borders`. Ce dernier contrôle la
-transformation de l'espace tridimensionnel terrestre en une surface plane.
-Utiliser `to_crs` pour transformer les données en Lambert 93, le 
-système officiel (code EPSG 2154). 
-
-4. Afficher les communes des Hauts de Seine (département 92) et utiliser la méthode
-`plot`
-
-5. Ne conserver que Paris et réprésenter les frontières sur une carte : quel est le problème pour
-une analyse de Paris intramuros?
-
-On remarque rapidement le problème. 
-On ne dispose ainsi pas des limites des arrondissements parisiens, ce
-qui appauvrit grandement la carte de Paris. 
-
-6. Cette fois, utiliser l'argument `borders="COMMUNE_ARRONDISSEMENT"` pour obtenir
-un fonds de carte consolidé des communes avec les arrondissements dans les grandes villes. 
-Convertir en Lambert 93. 
-
-:::
-
-
-```{python}
-#| output: false
-
-# 1. Chargement des données de Cartiflette
-communes_borders = carti_download(
-    crs = 4326,
-    values = ["75", "92", "93", "94"],
-    borders="COMMUNE",
-    vectorfile_format="geojson",
-    filter_by="DEPARTEMENT",
-    source="EXPRESS-COG-CARTO-TERRITOIRE",
-    year=2022)
-```
-
-La visualisation proposée à la question permet de voir que notre _DataFrame_ 
-comporte la colonne _geometry_ qui contient les informations nécessaires pour connaître les contours communaux
-
-```{python}
-#| output: false
-# 2. Regarder les premières lignes
-communes_borders.head()
-```
-
-```{python}
-#| output: false
-
-# 3) Afficher le crs
-communes_borders.crs
-# Les données sont en WGS84, on les reprojette en Lambert 93
-```
-
-```{python}
-#| echo: false
-
-# 4) afficher les communes du département 92
-ax = communes_borders[communes_borders['INSEE_DEP'] == "92"].boundary.plot()
-ax.set_axis_off()
-```
-
-A la question 5, on remarque facilement le problème pour Paris:
-il manque les limites des arrondissements. 
-Cela appauvrit grandement la carte de Paris. 
-
-```{python}
-#| echo: false
-
-# 5) Représenter la carte de Paris. Quel est le problème ?
-ax = communes_borders[communes_borders['INSEE_DEP'] == "75"].boundary.plot()
-ax.set_axis_off()
-```
-
-A l'issue de la question 6, on obtient la carte attendue pour
-Paris intramuros:
-
-```{python}
-#| output: false
-
-# 6. Chargement des données de Cartiflette
-petite_couronne = carti_download(
-    crs = 4326,
-    values = ["75", "92", "93", "94"],
-    borders="COMMUNE_ARRONDISSEMENT",
-    vectorfile_format="geojson",
-    filter_by="DEPARTEMENT",
-    source="EXPRESS-COG-CARTO-TERRITOIRE",
-    year=2022)
-    
-petite_couronne.crs
-petite_couronne = petite_couronne.to_crs(2154)
-petite_couronne.crs
-```
-
-```{python}
-ax = petite_couronne[petite_couronne['INSEE_DEP'] == "75"].boundary.plot()
-ax.set_axis_off()
-```
 
 # Le système de projection cartographique
 
@@ -662,34 +542,9 @@ france = france.loc[france['INSEE_REG']>10]
 ```
 
 
-::: {.exercise}
-## Exercice 2 : Les projections, représentations et approximations
+{{< include "03_pandas_intro/_exo2_fr.qmd" >}}
+{{< include "03_pandas_intro/_exo2_solution.qmd" >}}
 
-
-1. S'amuser à représenter les limites de la France avec plusieurs projections:
-
-- Mercator WGS84 (EPSG: 4326)
-- Projection healpix (`+proj=healpix +lon_0=0 +a=1`)
-- Projection prévue pour Tahiti (EPSG: 3304)
-- Projection Albers prévue pour Etats-Unis (EPSG: 5070)
-
-2. Calculer la superficie en $km^2$
-des régions françaises dans les deux systèmes de projection suivants : 
-World Mercator WGS84 (EPSG: 3395) et Lambert 93 (EPSG: 2154). Calculer la différence en $km^2$
-pour chaque région.
-
-
-:::
-
-```{python}
-#| output: false
-#| label: exo2-q1
-# Question 1 : Tester différentes projections
-france_2154 = france.to_crs(2154)
-france_healpix = france.to_crs("+proj=healpix +lon_0=0 +a=1")
-france_5070 = france.to_crs(5070)
-france_3304 = france.to_crs(3304)
-```
 
 Avec la question 1 illustrant quelques cas pathologiques,
 on comprend que les projections ont un effet déformant
@@ -706,26 +561,13 @@ forme de cartes :
 #|   - "Projection Albers prévue pour Etats-Unis (EPSG: 5070)"
 #| layout-ncol: 2
 
-ax1 = france_2154.boundary.plot(edgecolor = "k", linewidth=0.5)
-ax2 = france_healpix.boundary.plot(edgecolor = "k", linewidth=0.5)
-ax3 = france_5070.boundary.plot(edgecolor = "k", linewidth=0.5)
-ax4 = france_3304.boundary.plot(edgecolor = "k", linewidth=0.5)
-
 ax1.set_axis_off()
 ax2.set_axis_off()
 ax3.set_axis_off()
 ax4.set_axis_off()
 ```
 
-```{python}
-#| label: exo2-q2
-# Question 2
-france = france.to_crs(3395)
-france["superficie_4326"] = france.area
-france = france.to_crs(2154)
-france["superficie_2154"] = france.area
-france["mismatch"] = france['superficie_2154']-france['superficie_4326']
-```
+
 
 
 Cependant le problème n'est pas que visuel, il est également
