@@ -55,7 +55,7 @@ if quarto.doc.is_format("ipynb") then
         {
           Para = function (elem)
             for i, v in ipairs(elem.content) do
-                if v.text == "{{helloworld}}" then
+                if v.text == "{{warninglang}}" then
                     return pandoc.Div(
                         pandoc.RawBlock("html", text_language),
                         {class = "markdown"}
