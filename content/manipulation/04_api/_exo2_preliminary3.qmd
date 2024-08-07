@@ -1,0 +1,121 @@
+```{python}
+#| echo: true
+#| output: false
+import requests
+import io   
+import numpy as np
+import time
+
+params = {
+    'columns': ['Adresse', 'Ville'],
+    'postcode': 'CP',
+    'result_columns': ['result_score', 'latitude', 'longitude'],
+}
+
+df[['Adresse','CP','Ville']] = df.loc[:, ['Adresse','CP','Ville']].apply(lambda s: s.str.lower().str.replace(","," "))
+
+def geoloc_chunk(x):
+    dfgeoloc = x.loc[:, ['Adresse','CP','Ville']]
+    dfgeoloc.to_csv("datageocodage.csv", index=False)
+    response = requests.post('https://api-adresse.data.gouv.fr/search/csv/', data=params, files={'data': ('datageocodage.csv', open('datageocodage.csv', 'rb'))})
+    geoloc = pd.read_csv(io.StringIO(response.text), dtype = {'CP': 'str'})
+    return geoloc
+    
+start_time = time.time()
+geodata = [geoloc_chunk(dd) for dd in np.array_split(df, 10)]
+print("--- %s seconds ---" % (time.time() - start_time))
+```
+
+```{python}
+#| output: asis
+#| echo: false
+if lang == "fr":
+    print("Cette méthode est beaucoup plus rapide et permet ainsi, une fois retourné à nos données initiales, d'avoir un jeu de données géolocalisé.")
+else:
+    print("This method is much faster and thus allows us, once returned to our initial data, to have a geolocated dataset.")
+```
+
+
+```{python}
+#| echo: true
+
+# Retour aux données initiales
+geodata = pd.concat(geodata, ignore_index = True)
+df_xy = df.merge(geodata, on = ['Adresse','CP','Ville'])
+df_xy = df_xy.dropna(subset = ['latitude','longitude'])
+
+# Mise en forme pour le tooltip
+df_xy['text'] = (
+    df_xy['Raison_Sociale'] + '<br>' +
+    df_xy['Adresse'] + '<br>' +
+    df_xy['Ville'] + '<br>Nombre de candidats:' + df_xy['B_NB'].astype(str)
+)
+df_xy.filter(
+    ['Raison_Sociale','Adresse','CP','Ville','latitude','longitude'],
+    axis = "columns"
+).sample(10)
+```
+
+```{python}
+#| output: asis
+#| echo: false
+if lang == "fr":
+    print("Il ne reste plus qu'à utiliser `Geopandas` et nous serons en mesure de faire une carte des localisations des auto-écoles :")
+else:
+    print("All that remains is to use `Geopandas` and we will be able to make a map of the locations of the driving schools:")
+```
+
+
+```{python}
+#| echo: true
+
+# Transforme en geopandas pour les cartes
+import geopandas as gpd
+dfgeo = gpd.GeoDataFrame(
+    df_xy,
+    geometry = gpd.points_from_xy(df_xy.longitude, df_xy.latitude)
+)
+```
+
+```{python}
+#| output: asis
+#| echo: false
+if lang == "fr":
+    print("Nous allons représenter les stations dans l'Essonne avec un zoom initialement sur les villes de Massy et Palaiseau. Le code est le suivant :")
+else:
+    print("We will represent the stations in the Essonne with an initial zoom on the cities of Massy and Palaiseau. The code is as follows:")
+```
+
+
+
+```{python}
+#| echo: true
+#| output: false
+
+import folium
+
+# Représenter toutes les autoécoles de l'Essonne
+df_91 = df_xy.loc[df_xy["Dept"] == "091"]
+
+# Centrer la vue initiale sur Massy-Palaiseau
+df_pal = df_xy.loc[df_xy['Ville'].isin(["massy", "palaiseau"])]
+center = df_pal[['latitude', 'longitude']].mean().values.tolist()
+sw = df_pal[['latitude', 'longitude']].min().values.tolist()
+ne = df_pal[['latitude', 'longitude']].max().values.tolist()
+
+m = folium.Map(location = center, tiles='OpenStreetMap')
+
+# I can add marker one by one on the map
+for i in range(0,len(df_91)):
+    folium.Marker([df_91.iloc[i]['latitude'], df_91.iloc[i]['longitude']],
+                  popup=df_91.iloc[i]['text'],
+                  icon=folium.Icon(icon='car', prefix='fa')).add_to(m)
+
+m.fit_bounds([sw, ne])
+```
+
+```{python}
+#| echo : true
+# Afficher la carte
+m
+```

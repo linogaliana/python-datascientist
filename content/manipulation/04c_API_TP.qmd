@@ -25,18 +25,33 @@ echo: false
 ---
 
 ::: {.content-visible when-format="html"}
+{{< include "../../build/_switch_lang.qmd" >}}
+
+Pour essayer les exemples présents dans ce tutoriel : 
+
 {{< include "../../build/_printBadges.qmd" >}}
 :::
 
+::: {.content-visible when-format="ipynb"}
+{{warninglang}}
+:::
 
-__La partie utilisant l'API DVF n'est plus à jour, elle sera mise à jour prochainement.__
+:::{.important}
+La partie utilisant l'API DVF n'est plus à jour, elle sera actualisée prochainement 
+:::
+
+```{python}
+#| output: false
+#| echo: false
+lang = "fr"
+```
 
 # Introduction : Qu'est-ce qu'une API ?  
 
 ## Définition
 
-Pour expliquer le principe d'une API, je vais reprendre le début de 
-la fiche dédiée dans la documentation collaborative
+Pour expliquer le principe d'une API, nous allons reprendre le début de 
+la fiche dédiée aux API dans la documentation collaborative sur le logiciel `R` (un logiciel de traitement statistique proche de `Python`)
 [utilitR](https://www.book.utilitr.org/api.html) que je recommande de lire :
 
 > Une *Application Programming Interface* (ou API) est une interface de programmation qui permet d’utiliser une application existante pour restituer des données. Le terme d’API peut être paraître intimidant, mais il s’agit simplement d’une façon de mettre à disposition des données : plutôt que de laisser l’utilisateur consulter directement des bases de données (souvent volumineuses et complexes), l’API lui propose de formuler une requête qui est traitée par le serveur hébergeant la base de données, puis de recevoir des données en réponse à sa requête.
@@ -173,13 +188,8 @@ mauvais formatage, on va utiliser `%3A` pour signifier `:`,  `%2A` pour signifie
 
 Cela nous donne ainsi un URL dont la structure est la suivante :
 
-```{python}
-#| echo: true
-code_commune = "01450"
-size = 100
-api_root = "https://koumoul.com/data-fair/api/v1/datasets/dpe-france/lines"
-url_api = f"{api_root}?format=json&q_mode=simple&qs=code_insee_commune_actualise" + "%3A%22" + f"{code_commune}" + "%22" + f"&size={size}&select=" + "%2A&sampling=neighbors"
-```
+{{< include "04_api/_example_dpe_root.qmd" >}}
+
 
 Si vous introduisez cet URL dans votre navigateur, vous devriez aboutir
 sur un `JSON` non formaté[^1]. En `Python`,
@@ -221,69 +231,8 @@ On peut donc se contenter de `Pandas` pour transformer nos données en
 `DataFrame` et `Geopandas` pour convertir en données
 géographiques :
 
-```{python}
-#| echo: true
-import pandas as pandas
-import geopandas as gpd
+{{< include "04_api/_example_dpe.qmd" >}}
 
-def get_dpe_from_url(url):
-
-    req = requests.get(url)
-    wb = req.json()
-    df = pd.json_normalize(wb["results"])
-
-    dpe = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs = 4326)
-    dpe = dpe.dropna(subset = ['longitude', 'latitude'])
-
-    return dpe
-
-dpe = get_dpe_from_url(url_api)
-dpe.head(2)
-```
-
-Essayons de représenter sur une carte ces DPE avec les
-années de construction des logements.
-Avec `Folium`, on obtient la carte interactive suivante :
-
-```{python}
-#| echo: true
-import seaborn as sns
-import folium
-
-palette = sns.color_palette("coolwarm", 8)
-
-def interactive_map_dpe(dpe):
-
-    # convert in number
-    dpe['color'] = [ord(dpe.iloc[i]['classe_consommation_energie'].lower()) - 96 for i in range(len(dpe))]
-    dpe = dpe.loc[dpe['color']<=7]
-    dpe['color'] = [palette.as_hex()[x] for x in dpe['color']]
-
-
-    center = dpe[['latitude', 'longitude']].mean().values.tolist()
-    sw = dpe[['latitude', 'longitude']].min().values.tolist()
-    ne = dpe[['latitude', 'longitude']].max().values.tolist()
-
-    m = folium.Map(location = center, tiles='OpenStreetMap')
-
-    # I can add marker one by one on the map
-    for i in range(0,len(dpe)):
-        folium.Marker([dpe.iloc[i]['latitude'], dpe.iloc[i]['longitude']],
-                    popup=f"Année de construction : {dpe.iloc[i]['annee_construction']}, <br>DPE : {dpe.iloc[i]['classe_consommation_energie']}",
-                    icon=folium.Icon(color="black", icon="home", icon_color = dpe.iloc[i]['color'])).add_to(m)
-
-    m.fit_bounds([sw, ne])
-
-    return m
-
-m = interactive_map_dpe(dpe)
-```
-
-```{python}
-#| echo : true
-# Afficher la carte
-m
-```
 
 ## Un catalogue incomplet d'API existantes
 
@@ -307,6 +256,7 @@ et accès à de la documentation
 - Pôle Emploi : https://www.emploi-store-dev.fr/portail-developpeur-cms/home.html
 - SNCF : https://data.sncf.com/api
 - Banque Mondiale : https://datahelpdesk.worldbank.org/knowledgebase/topics/125589
+
 
 # L'API DVF : accéder à des données de transactions immobilières simplement
 
@@ -336,73 +286,10 @@ Les filtres de sélection complémentaires :
 
 Les requêtes sont de la forme : `http://api.cquest.org/dvf?code_commune=29168`. 
 
-::: {.exercise}
-## Exercice 1 : Exploiter l'API DVF
 
-1. Rechercher toutes les transactions existantes dans DVF à Plogoff (code commune `29168`, en Bretagne).
-Afficher les clés du JSON et en déduire le nombre de transactions répertoriées. 
-2. N'afficher que les transactions portant sur des maisons. 
-3. Utiliser l'[API geo](https://api.gouv.fr/documentation/api-geo) pour
-récupérer le découpage communal de la ville de Plogoff.
-4. Représenter l'histogramme des prix de vente.
+{{< include "04_api/_exo1_fr.qmd" >}}
+{{< include "04_api/_exo1_solution.qmd" >}}
 
-N'hésitez pas à aller plus loin en jouant sur des variables de
-groupes par exemple.
-
-:::
-
-
-```{python}
-#| echo: false
-#| include: false
-#| eval: false
-
-# Question 1
-import json
-import requests
-import pandas as pd
-data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168").json()
-print(data_immo.keys())
-print(data_immo["nb_resultats"])
-ventes = pd.json_normalize(data_immo["resultats"])
-ventes.head()
-```
-
-Le résultat de la question 2 devrait
-ressembler au `DataFrame` suivant :
-
-```{python}
-#| echo: false
-#| eval: false
-
-# Question 2
-maisons = requests.get("http://api.cquest.org/dvf?code_commune=29168&type_local=Maison").json()
-pd.json_normalize(maisons["resultats"])
-```
-
-
-```{python}
-#| echo: false
-#| eval: false
-
-# Question 3
-#!pip install geopandas
-import geopandas as gpd
-plgf = gpd.read_file("https://geo.api.gouv.fr/communes/29168?fields=nom,code,codesPostaux,codeDepartement,codeRegion,population&format=geojson&geometry=contour")
-plgf.head()
-```
-
-L'histogramme des prix de vente (question 4) aura l'aspect suivant :
-
-```{python}
-#| echo: false
-#| include: false
-#| eval: false
-
-# Question 4
-p = ventes["valeur_fonciere"].plot(kind = "hist")
-p
-```
 
 
 On va faire une carte des ventes en affichant le prix de l'achat.
@@ -513,39 +400,8 @@ Après avoir renommé les colonnes, nous n'allons conserver que
 les informations relatives au permis B (permis voiture classique) et
 les auto-écoles ayant présenté au moins 20 personnes à l'examen. 
 
+{{< include "04_api/_exo2_preliminary1.qmd" >}}
 
-```{python}
-#| echo: true
-import pandas as pd
-import xlrd
-import geopandas as gpd
-
-df = pd.read_excel("https://www.data.gouv.fr/fr/datasets/r/d4b6b072-8a7d-4e04-a029-8cdbdbaf36a5", header = [0,1])
-
-# Le Excel a des noms de colonne emboitées, 
-# on nettoie
-index_0 = ["" if df.columns[i][0].startswith("Unnamed") else df.columns[i][0] for i in range(len(df.columns))]
-index_1 = [df.columns[i][1] for i in range(len(df.columns))]
-keep_index = [True if el in ('', "B") else False for el in index_0] 
-cols = [index_0[i] + " " + index_1[i].replace("+", "_") for i in range(len(df.columns))]
-df.columns = cols
-df = df.loc[:, keep_index]
-df.columns = df.columns.str.replace("(^ |°)", "", regex = True).str.replace(" ", "_")
-
-# On garde le sous-échantillon d'intérêt
-df = df.dropna(subset = ['B_NB'])
-df = df.loc[~df["B_NB"].astype(str).str.contains("(\%|\.)"),:]
-df['B_NB'] = df['B_NB'].astype(int)
-df['B_TR'] = df['B_TR'].str.replace(",", ".").str.replace("%","").astype(float)
-df = df.loc[df["B_NB"]>20]
-```
-
-```{python}
-#| echo: false
-#| output: asis
-moyenne_nationale = (df['B_NB']*df['B_TR']).sum()/df['B_NB'].sum()
-print("Sur cet échantillon, le taux de réussite moyen était, en 2018, de {:.2%}".format(moyenne_nationale/100))
-```
 
 Nos informations géographiques prennent la forme suivante : 
 
@@ -582,25 +438,8 @@ Pour vous en convaincre, vous pouvez exécuter le code suivant sur un petit
 échantillon de données (par exemple 100 comme ici) et remarquer que le temps
 d'exécution est assez important
 
-```{python}
-#| echo: true
-#| eval: false
-import time
+{{< include "04_api/_exo2_preliminary2.qmd" >}}
 
-dfgeoloc = df.loc[:, ['Adresse','CP','Ville']].apply(lambda s: s.str.lower().str.replace(","," "))
-dfgeoloc['url'] = (dfgeoloc['Adresse'] + "+" + dfgeoloc['Ville'].str.replace("-",'+')).str.replace(" ","+")
-dfgeoloc['url'] = 'https://api-adresse.data.gouv.fr/search/?q=' + dfgeoloc['url'] + "&postcode=" + df['CP'] + "&limit=1"
-dfgeoloc = dfgeoloc.dropna()
-
-start_time = time.time()
-
-def get_geoloc(i):
-    print(i)
-    return gpd.GeoDataFrame.from_features(requests.get(dfgeoloc['url'].iloc[i]).json()['features'])
-
-local = [get_geoloc(i) for i in range(len(dfgeoloc.head(10)))]
-print("--- %s seconds ---" % (time.time() - start_time))
-```
 
 Comme l'indique la documentation, si on désire industrialiser notre processus
 de géocodage, on va privilégier l'API CSV.
@@ -632,222 +471,14 @@ Le nombre d'échos semblant être limité, il
 est proposé de procéder par morceaux
 (ici, le jeu de données est découpé en 5 morceaux).
 
+{{< include "04_api/_exo2_preliminary3.qmd" >}}
 
-```{python}
-#| echo: true
-#| output: false
-import requests
-import io   
-import numpy as np
-import time
-
-params = {
-    'columns': ['Adresse', 'Ville'],
-    'postcode': 'CP',
-    'result_columns': ['result_score', 'latitude', 'longitude'],
-}
-
-df[['Adresse','CP','Ville']] = df.loc[:, ['Adresse','CP','Ville']].apply(lambda s: s.str.lower().str.replace(","," "))
-
-def geoloc_chunk(x):
-    dfgeoloc = x.loc[:, ['Adresse','CP','Ville']]
-    dfgeoloc.to_csv("datageocodage.csv", index=False)
-    response = requests.post('https://api-adresse.data.gouv.fr/search/csv/', data=params, files={'data': ('datageocodage.csv', open('datageocodage.csv', 'rb'))})
-    geoloc = pd.read_csv(io.StringIO(response.text), dtype = {'CP': 'str'})
-    return geoloc
-    
-start_time = time.time()
-geodata = [geoloc_chunk(dd) for dd in np.array_split(df, 10)]
-print("--- %s seconds ---" % (time.time() - start_time))
-```
-
-Cette méthode est beaucoup plus rapide et permet ainsi, une fois retourné à nos
-données initiales, d'avoir un jeu de données géolocalisé.
-
-```{python}
-#| echo: true
-
-# Retour aux données initiales
-geodata = pd.concat(geodata, ignore_index = True)
-df_xy = df.merge(geodata, on = ['Adresse','CP','Ville'])
-df_xy = df_xy.dropna(subset = ['latitude','longitude'])
-
-# Mise en forme pour le tooltip
-df_xy['text'] = (
-    df_xy['Raison_Sociale'] + '<br>' +
-    df_xy['Adresse'] + '<br>' +
-    df_xy['Ville'] + '<br>Nombre de candidats:' + df_xy['B_NB'].astype(str)
-)
-df_xy.filter(
-    ['Raison_Sociale','Adresse','CP','Ville','latitude','longitude'],
-    axis = "columns"
-).sample(10)
-```
-
-Il ne reste plus qu'à utiliser `Geopandas`
-et nous serons en mesure de faire une carte des localisations des auto-écoles :
-
-```{python}
-#| echo: true
-
-# Transforme en geopandas pour les cartes
-import geopandas as gpd
-dfgeo = gpd.GeoDataFrame(
-    df_xy,
-    geometry = gpd.points_from_xy(df_xy.longitude, df_xy.latitude)
-)
-```
-
-Nous allons représenter les stations dans l'Essonne avec un zoom initialement
-sur les villes de Massy et Palaiseau. Le code est le suivant :
-
-```{python}
-#| echo: true
-#| output: false
-
-import folium
-
-# Représenter toutes les autoécoles de l'Essonne
-df_91 = df_xy.loc[df_xy["Dept"] == "091"]
-
-# Centrer la vue initiale sur Massy-Palaiseau
-df_pal = df_xy.loc[df_xy['Ville'].isin(["massy", "palaiseau"])]
-center = df_pal[['latitude', 'longitude']].mean().values.tolist()
-sw = df_pal[['latitude', 'longitude']].min().values.tolist()
-ne = df_pal[['latitude', 'longitude']].max().values.tolist()
-
-m = folium.Map(location = center, tiles='OpenStreetMap')
-
-# I can add marker one by one on the map
-for i in range(0,len(df_91)):
-    folium.Marker([df_91.iloc[i]['latitude'], df_91.iloc[i]['longitude']],
-                  popup=df_91.iloc[i]['text'],
-                  icon=folium.Icon(icon='car', prefix='fa')).add_to(m)
-
-m.fit_bounds([sw, ne])
-```
-
-Ce qui permet d'obtenir la carte:
-
-```{python}
-#| echo : true
-# Afficher la carte
-m
-```
 
 Vous pouvez aller plus loin avec l'exercice suivant.
 
-::: {.exercise}
-## Exercice 2 : Quelles sont les auto-écoles les plus proches de chez moi ?
+{{< include "04_api/_exo2_fr.qmd" >}}
+{{< include "04_api/_exo2_solution.qmd" >}}
 
-On va supposer que vous cherchez, dans un rayon donné autour d'un centre ville,
-les auto-écoles disponibles.
-
-<details>
-<summary>
-Fonction nécessaire pour cet exercice
-</summary>
-Cet exercice nécessite une fonction pour créer un cercle
-autour d'un point
-(source [ici](https://gis.stackexchange.com/questions/289044/creating-buffer-circle-x-kilometers-from-point-using-python/289923)).
-La voici :
-
-```python
-from functools import partial
-import pyproj
-from shapely.ops import transform
-from shapely.geometry import Point
-
-proj_wgs84 = pyproj.Proj('+proj=longlat +datum=WGS84')
-
-
-def geodesic_point_buffer(lat, lon, km):
-    # Azimuthal equidistant projection
-    aeqd_proj = '+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0'
-    project = partial(
-        pyproj.transform,
-        pyproj.Proj(aeqd_proj.format(lat=lat, lon=lon)),
-        proj_wgs84)
-    buf = Point(0, 0).buffer(km * 1000)  # distance in metres
-    return transform(project, buf).exterior.coords[:]
-```
-</details>
-
-
-1. Pour commencer, utiliser l'[API Geo](https://geo.api.gouv.fr/decoupage-administratif)
-pour la ville de Palaiseau.
-2. Appliquer la fonction `geodesic_point_buffer` au centre ville de Palaiseau
-3. Ne conserver que les auto-écoles dans ce cercle et les ordonner 
-
-__Si vous avez la réponse à la question 3, n'hésitez pas à la soumettre sur `Github` afin que je complète la correction__ 😉 !
-
-:::
-
-
-```{python}
-from functools import partial
-import pyproj
-from shapely.ops import transform
-from shapely.geometry import Point
-
-proj_wgs84 = pyproj.Proj('+proj=longlat +datum=WGS84')
-
-
-def geodesic_point_buffer(lat, lon, km):
-    # Azimuthal equidistant projection
-    aeqd_proj = '+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0'
-    project = partial(
-        pyproj.transform,
-        pyproj.Proj(aeqd_proj.format(lat=lat, lon=lon)),
-        proj_wgs84)
-    buf = Point(0, 0).buffer(km * 1000)  # distance in metres
-    return transform(project, buf).exterior.coords[:]
-```
-
-
-```{python}
-#| echo: false
-
-# Cette fois on veut bien le centre, pas le contour
-pal = gpd.read_file("https://geo.api.gouv.fr/communes?nom=Palaiseau&format=geojson")
-```
-
-
-```{python}
-#| echo: false
-b = geodesic_point_buffer(pal.loc[0].geometry.y, pal.loc[0].geometry.x, 10.0)
-circle = pd.DataFrame(b, columns = ['y','x'])
-circle = gpd.GeoDataFrame(circle, geometry=gpd.points_from_xy(circle.y, circle.x), crs = pal.crs)
-```
-
-Pour se convaincre, de notre cercle constitué lors de
-la question 2, on peut représenter une carte.
-On a bien un cercle centré autour de Palaiseau :
-
-```{python}
-import matplotlib.pyplot as plt
-import contextily as ctx
-
-fig,ax = plt.subplots(figsize=(10, 10))
-circle.to_crs("EPSG:3857").plot(ax = ax, color = 'red')
-pal.to_crs("EPSG:3857").plot(ax = ax, color = 'green')
-#ctx.add_basemap(ax, source = ctx.providers.Stamen.Toner)
-ax
-```
-
-```{python}
-#| output: false
-import matplotlib.pyplot as plt
-import contextily as ctx
-
-fig,ax = plt.subplots(figsize=(10, 10))
-circle.to_crs("EPSG:3857").plot(ax = ax, color = 'red')
-pal.to_crs("EPSG:3857").plot(ax = ax, color = 'green')
-#ctx.add_basemap(ax, source = ctx.providers.Stamen.Toner)
-ax
-
-plt.savefig('map_buffer.png', bbox_inches='tight')
-```
 
 
 # Exercices supplémentaires
@@ -858,82 +489,7 @@ Pour vous aidez, vous pouvez regarder une exemple de structure du JSON ici :
 <https://world.openfoodfacts.org/api/v0/product/3274080005003.json> en particulier la catégorie `nutriments`.
 
 
-::: {.exercise}
-## Exercice 3 : Retrouver des produits dans l'openfood facts 🍕
+{{< include "04_api/_exo3_fr.qmd" >}}
+{{< include "04_api/_exo3_solution.qmd" >}}
 
-Voici une liste de code-barres:
-`3274080005003,  5449000000996, 8002270014901,
-3228857000906, 3017620421006, 8712100325953`
-
-Utiliser l'[API d'openfoodfacts](https://world.openfoodfacts.org/data)
-(l'API, pas depuis le CSV !)
-pour retrouver les produits correspondants
-et leurs caractéristiques nutritionnelles.
-
-Le panier paraît-il équilibré ? 🍫
-
-Récupérer l'URL d'une des images et l'afficher dans votre navigateur.
-
-:::
-
-
-```{python}
-#| output: false
-
-import json
-import requests
-import pandas as pd
-```
-
-
-```{python}
-#| output: false
-
-# Paramètres nécessaires
-df = pd.DataFrame([3274080005003,  5449000000996, 8002270014901,
-3228857000906, 3017620421006, 8712100325953], columns = ['code_ean'])
-nutri = ['energy_100g', 'nutriscore_grade', 'nova_group', 'fat_100g', 'saturated-fat_100g', 'carbohydrates_100g', 'sugars_100g', 'salt_100g', 'fiber_100g', 'proteins_100g', 'calcium_100g', 'iron_100g', 'sodium_100g', 'cholesterol_100g']
-cols_api = ['code', 'product_name', 'categories', 'categories_tags'] + ["nutriments.{}".format(i) for i in nutri]
-```
-
-```{python}
-#| output: false
-
-def get_products_api(barcode, col = cols_api):
-    url = "https://world.openfoodfacts.org/api/v0/product/{}.json".format(str(barcode))
-    #print(url)
-    res = requests.get(url)
-    results = res.json()
-    product = results["product"]
-    openfood = pd.json_normalize(product)
-    openfood = openfood[list(set(col) & set(openfood.columns))]
-    return openfood
-  
-# Exemple
-get_products_api(3274080005003, col=["code","nutriments.fat_100g"])
-```
-
-
-```{python}
-#| output: false
-
-openfood = [get_products_api(barcode) for barcode in df['code_ean'].dropna().astype(str).unique()]
-openfood = pd.concat(openfood)
-openfood.head(10)
-```
-
-Voici par exemple la photo du produit ayant le code-barre `5449000000996`. Vous le reconnaissez ?
-
-
-```{python}
-#| echo: false
-
-url_image = get_products_api(5449000000996, col = ["image_front_small_url"])["image_front_small_url"].iloc[0]
-```
-
-```{python}
-#| echo: false
-#| output: asis
-print("![]({url})".format(url = url_image))
-```
 

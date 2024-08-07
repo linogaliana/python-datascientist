@@ -24,7 +24,7 @@ jobs:
           rm -f _quarto.yml
           cp _quarto-prod.yml _quarto.yml
           quarto --version
-          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff
+          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} | grep -v '/_' >> diff
           python build/append_environment.py
           python build/tweak_render.py
           cat _quarto.yml
@@ -55,6 +55,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
       - name: Configure safe.directory  # Workaround for actions/checkout#760
         run: |
           git config --global --add safe.directory /__w/python-datascientist/python-datascientist
@@ -66,19 +67,19 @@ jobs:
           conda list
       - name: Convert in ipynb with Quarto
         run: |
-         rm -f _quarto.yml
-         cp _quarto-prod.yml _quarto.yml
-         quarto --version
-         git diff --name-only origin/master origin/${GITHUB_HEAD_REF} >> diff
-         python build/tweak_render.py
-         python build/pimp_notebook.py
-         quarto render content --to ipynb
-         mkdir -p temp_notebooks
-         mkdir -p temp_notebooks/notebooks
-         python build/move_files.py temp_notebooks/notebooks
-         quarto render content --to ipynb --execute -M echo:true
-         mkdir -p temp_notebooks/corrections
-         python build/move_files.py temp_notebooks/corrections
+          rm -f _quarto.yml
+          cp _quarto-prod.yml _quarto.yml
+          quarto --version
+          git diff --name-only origin/master origin/${GITHUB_HEAD_REF} | grep -v '/_' >> diff
+          python build/tweak_render.py
+          python build/pimp_notebook.py
+          quarto render content --to ipynb
+          mkdir -p temp_notebooks
+          mkdir -p temp_notebooks/notebooks
+          python build/move_files.py temp_notebooks/notebooks
+          quarto render content --to ipynb --execute -M echo:true
+          mkdir -p temp_notebooks/corrections
+          python build/move_files.py temp_notebooks/corrections
       - name: Pushes to another repository
         if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: linogaliana/github-action-push-to-another-repository@main
