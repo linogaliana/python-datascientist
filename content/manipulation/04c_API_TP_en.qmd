@@ -1,0 +1,785 @@
+---
+title: "Retrieve data with APIs from Python"
+draft: false
+weight: 80
+slug: api
+type: book
+tags:
+  - API
+  - JSON
+  - openfood
+  - Exercise
+  - Manipulation
+categories:
+  - Exercise
+  - Manipulation
+description: |
+  __APIs__ (_Application Programming Interface_) are an expanding mode of access to
+  data. Thanks to APIs, script automation is facilitated since it is no longer necessary
+  to store a file and manage its different versions, but only to query a database
+  and let the data producer handle the updates.
+image: map_buffer.png
+echo: false
+---
+
+
+::: {.content-visible when-format="html"}
+{{< include "../../build/_switch_lang.qmd" >}}
+
+If you want to try the examples in this tutorial:
+
+{{< include "../../build/_printBadges.qmd" >}}
+:::
+
+::: {.content-visible when-format="ipynb"}
+{{warninglang}}
+:::
+
+
+**The part using the DVF API is no longer up to date and will be updated soon.**
+
+# Introduction: What is an API?
+
+## Definition
+
+To explain the principle of an API, I will use the beginning of the dedicated section in the collaborative documentation [utilitR](https://www.book.utilitr.org/api.html) that I recommend reading:
+
+> An *Application Programming Interface* (or API) is a programming interface that allows the use of an existing application to retrieve data. The term API might seem intimidating, but it is simply a way of making data available: instead of letting the user directly access databases (often large and complex), the API allows them to submit a request that is processed by the server hosting the database, and then receive data in response to their request.
+> 
+> From a computing perspective, an API is a clearly identified entry point through which software offers services to other software (or users). The goal of an API is to provide an access point to a functionality that is easy to use and hides the implementation details. For example, the Sirene API allows retrieving the legal name of a company from its Siren identifier by querying the available reference on the Internet directly from an R script, without needing to know all the details of the Sirene directory.
+>
+> At Insee and elsewhere, the connection between databases for new projects tends to be done via APIs. Access to data through APIs is becoming increasingly common and is expected to become a basic skill for any data user.
+>
+> [`utilitR`](https://www.book.utilitr.org/api.html)
+
+## Benefits of APIs
+
+Again, quoting the [utilitR](https://www.book.utilitr.org/api.html) documentation:
+
+APIs offer multiple advantages:
+
+> * APIs make programs more reproducible. Indeed, with APIs, it is possible to easily update the data used by a program if it changes. This increased flexibility for the user saves the data producer from having to perform multiple extractions and reduces the issue of coexisting different versions of the data.
+> * With APIs, the user can easily extract a small part of a larger database.
+> * APIs allow data to be made available while limiting the number of people who have access to the databases themselves.
+> * APIs can provide customized services for users (e.g., specific access for heavy users).
+>
+> [`utilitR`](https://www.book.utilitr.org/api.html)
+
+The increased use of APIs as part of open-data strategies is one of the pillars of the 15 ministerial roadmaps on the openness, circulation, and valorization of public data.
+
+## Using APIs
+
+Once again, quoting the [`utilitR`](https://www.book.utilitr.org/api.html) documentation:
+
+> An API can often be used in two ways: through a web interface or through software (R, Python, etc.). Moreover, APIs can be offered with varying degrees of freedom for the user:
+> 
+> * either with free access (use is not controlled, and the user can use the service as they see fit);
+> * or by generating an account and an access token that secure the use of the API and limit the number of requests.
+>
+> [`utilitR`](https://www.book.utilitr.org/api.html)
+
+Many APIs require authentication, meaning a user account to access the data. Initially, we will focus exclusively on open APIs without access restrictions. However, some exercises and examples will allow you to try out APIs with access restrictions.
+
+# Querying an API
+
+## General principle
+
+> Using the web interface is useful in an exploratory approach but quickly reaches its limits, especially when regularly consulting the API. The user will quickly realize that it is much more convenient to use an API through processing software to automate queries or perform bulk downloads. Moreover, a web interface does not always exist for all APIs.
+> 
+> The primary way to access an API is by sending a request to it through appropriate software (R, Python, Java, etc.). As with using a function, calling an API involves parameters that are detailed in the API documentation.
+>
+> [`utilitR`](https://www.book.utilitr.org/api.html)
+
+Here are the important elements to keep in mind about requests (again borrowing from [`utilitR`](https://www.book.utilitr.org/api.html)):
+
+* The __entry point__ of a service offered by an API is presented as a URL (web address). Each service provided by an API has its own URL. For example, in the case of OpenFood Facts, the URL to use to get information on a specific product (identifier `737628064502`) is <https://world.openfoodfacts.org/api/v0/product/737628064502.json>
+* This URL must be supplemented with different parameters that specify the request (e.g., the Siren identifier). These parameters are added to the URL, often following a `?`. Each service provided by an API has its own parameters, detailed in the documentation.
+* When the user submits their request, the API sends back a structured response containing all the requested information. The result returned by an API is mainly in `JSON` or `XML` formats (two formats where information is nested hierarchically). More rarely, some services provide information in a flat format (like csv).
+
+Due to the hierarchical nature of the `JSON` or `XML` formats, the result is not always easy to retrieve, but `Python` offers excellent tools for this (better than those in `R`). Some packages, particularly `json`, facilitate the extraction of fields from an API output. In some cases, specific packages for an API have been created to simplify writing a request or retrieving the result. For example, the [`pynsee`](https://github.com/InseeFrLab/Py-Insee-Data/tree/master/pynsee) package offers options that are automatically translated into the request URL to facilitate working with Insee data.
+
+## Example using an Ademe API to get energy diagnostics
+
+The energy performance diagnostic (DPE) provides information on the energy performance of a home or building by assessing its energy consumption and its impact in terms of greenhouse gas emissions in France.
+
+The energy performance data of buildings is made available by [Ademe](https://data.ademe.fr/datasets/dpe-france). Since this data is relatively large, an API can be useful when only interested in a subset of the data. Documentation and a testing area for the API are available on the [API GOUV](https://api.gouv.fr/documentation/api_dpe_logements) site^[Documentation is also available [here](https://koumoul.com/openapi-viewer/?proxy=false&hide-toolbar=true&url=https://koumoul.com/s/data-fair/api/v1/datasets/dpe-france/api-docs.json)].
+
+Suppose we want to retrieve about a hundred values for the commune of Villieu-Loyes-Mollon in Ain (Insee code 01450).
+
+The API has several entry points. Generally, the common root is:
+
+> https://koumoul.com/data-fair/api/v1/datasets/dpe-france
+
+Then, depending on the desired API, we will add elements to this root. In this case, we will use the `field` API, which allows us to retrieve rows based on one or more criteria (for us, the geographic location):
+
+The example given in the technical documentation is
+
+> GET https://koumoul.com/data-fair/api/v1/datasets/dpe-france/values/{field}
+
+which in `Python` will translate to using the `get` method from the `Request` package on a URL structured as follows:
+
+- it will start with `https://koumoul.com/data-fair/api/v1/datasets/dpe-france/values/`;
+- it will then be followed by search parameters. The `{field}` field typically starts with a `?`, allowing us to specify parameters in the format `parameter_name=value`.
+
+Based on the documentation, the first parameters we want are:
+
+- The number of pages, allowing us to get a certain number of results. We will only retrieve 10 pages, which corresponds to about 100 results. However, we will specify that we want 100 results.
+- The output format. We will prefer `JSON`, which is a standard format in the API world. `Python` offers great flexibility with one of its basic objects, the dictionary (type `dict`), for handling such files.
+- The commune code of the data we want to retrieve. As mentioned earlier, we will retrieve data where the commune code is `01450`. According to the documentation, the commune code should be passed in the format: `code_insee_commune_actualise:{commune_code}`. To avoid any risk of misformatting, we will use `%3A` to denote `:`, `%2A` to denote `*`, and `%22` to denote `"`.
+- Other ancillary parameters suggested by the documentation.
+
+This gives us a URL with the following structure:
+
+```{python}
+#| echo: true
+code_commune = "01450"
+size = 100
+api_root = "https://koumoul.com/data-fair/api/v1/datasets/dpe-france/lines"
+url_api = f"{api_root}?format=json&q_mode=simple&qs=code_insee_commune_actualise" + "%3A%22" + f"{code_commune}" + "%22" + f"&size={size}&select=" + "%2A&sampling=neighbors"
+```
+
+
+If you enter this URL into your browser, you should land on an unformatted `JSON`[^1]. In `Python`, you can use `requests` to retrieve the data[^2]:
+
+[^1]: JSON is a highly appreciated format in the field of *big data* because it allows stacking incomplete data. It is one of the preferred formats of the No-SQL paradigm, for which this [excellent course](http://b3d.bdpedia.fr/) offers a gentle introduction.
+
+[^2]: Depending on the API, we either need nothing more if we directly obtain a JSON, or we may need to use a parser like `BeautifulSoup` otherwise. Here, the JSON can be formatted relatively easily.
+
+```{python}
+#| echo: true
+import requests
+import pandas as pd
+
+req = requests.get(url_api)
+wb = req.json()
+```
+
+Let's take, for example, the first 1000 characters of the result to get an idea of the output and confirm that our filter at the communal level has been correctly applied:
+
+```{python}
+#| echo: true
+#| output: asis
+print(req.content[:1000])
+```
+
+Here, it is not even necessary at first to use the `json` package since the information is already tabulated in the echoed output (we have the same information for all countries):
+So we can simply use `Pandas` to transform our data into a `DataFrame` and `Geopandas` to convert it into geographical data:
+
+```{python}
+#| echo: true
+import pandas as pd
+import geopandas as gpd
+
+def get_dpe_from_url(url):
+
+    req = requests.get(url)
+    wb = req.json()
+    df = pd.json_normalize(wb["results"])
+
+    dpe = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs = 4326)
+    dpe = dpe.dropna(subset = ['longitude', 'latitude'])
+
+    return dpe
+
+dpe = get_dpe_from_url(url_api)
+dpe.head(2)
+```
+
+Let's try to map these DPEs (energy performance certificates) with the construction years of the buildings.
+With `Folium`, we get the following interactive map:
+
+```{python}
+#| echo: true
+import seaborn as sns
+import folium
+
+palette = sns.color_palette("coolwarm", 8)
+
+def interactive_map_dpe(dpe):
+
+    # convert to number
+    dpe['color'] = [ord(dpe.iloc[i]['classe_consommation_energie'].lower()) - 96 for i in range(len(dpe))]
+    dpe = dpe.loc[dpe['color']<=7]
+    dpe['color'] = [palette.as_hex()[x] for x in dpe['color']]
+
+
+    center = dpe[['latitude', 'longitude']].mean().values.tolist()
+    sw = dpe[['latitude', 'longitude']].min().values.tolist()
+    ne = dpe[['latitude', 'longitude']].max().values.tolist()
+
+    m = folium.Map(location = center, tiles='OpenStreetMap')
+
+    # I can add markers one by one on the map
+    for i in range(0,len(dpe)):
+        folium.Marker([dpe.iloc[i]['latitude'], dpe.iloc[i]['longitude']],
+                    popup=f"Year of construction: {dpe.iloc[i]['annee_construction']}, <br>DPE: {dpe.iloc[i]['classe_consommation_energie']}",
+                    icon=folium.Icon(color="black", icon="home", icon_color = dpe.iloc[i]['color'])).add_to(m)
+
+    m.fit_bounds([sw, ne])
+
+    return m
+
+m = interactive_map_dpe(dpe)
+```
+
+```{python}
+#| echo : true
+# Display the map
+m
+```
+
+## An incomplete catalog of existing APIs
+
+More and more websites are providing APIs for developers and curious individuals alike.
+
+To name a few well-known ones:
+
+- `Twitter` <i class="fab fa-twitter"></i>: <https://dev.twitter.com/rest/public>
+- `Facebook` <i class="fab fa-facebook"></i>: <https://developers.facebook.com/>
+- `Instagram` <i class="fab fa-instagram"></i>: <https://www.instagram.com/developer/>
+- `Spotify` <i class="fab fa-spotify"></i>: <https://developer.spotify.com/web-api/>
+
+However, it is worth not limiting ourselves to these, whose data is not always the most interesting. Many data producers, both private and public, make their data available through APIs.
+
+- [API gouv](https://api.gouv.fr/): many official APIs from the French government and access to documentation
+- Insee: https://api.insee.fr/catalogue/ and [`pynsee`](https://github.com/InseeFrLab/Py-Insee-Data/tree/master/pynsee)
+- Pôle Emploi: https://www.emploi-store-dev.fr/portail-developpeur-cms/home.html
+- SNCF: https://data.sncf.com/api
+- World Bank: https://datahelpdesk.worldbank.org/knowledgebase/topics/125589
+
+# The DVF API: accessing real estate transaction data easily
+
+⚠️ __This section needs updating to prioritize the Cerema DVF API__.
+
+The `DVF` (demand for property values) website allows users to view all data related to transactions (sales of houses, apartments, garages, etc.) conducted over the past five years.
+
+A visualization site is available at <https://app.dvf.etalab.gouv.fr/>.
+
+This site is very comprehensive when it comes to knowing the average price per square meter of a neighborhood or comparing regions. The DVF API allows you to go further by retrieving results in a data processing software. It was created by [Christian Quest](https://github.com/cquest) and the source code is available on Github <a href="https://github.com/cquest/dvf_as_api" class="github"><i class="fab fa-github"></i></a>.
+
+The search criteria are as follows:
+
+- `code_commune` = INSEE code of the municipality (e.g., 94068)
+- `section` = cadastral section (e.g., 94068000CQ)
+- `numero_plan` = plot identifier (e.g., 94068000CQ0110)
+- `lat` + `lon` + `dist` (optional): for a geographical search, `dist` is by default a 500m radius
+- `code_postal`
+
+Additional selection filters:
+- `nature_mutation` (Sale, etc.)
+- `type_local` (House, Apartment, Local, Dependency)
+
+Requests are of the form: `http://api.cquest.org/dvf?code_commune=29168`.
+
+::: {.exercise}
+## Exercise 1: Using the DVF API
+
+1. Search for all existing transactions in DVF at Plogoff (municipality code `29168`, in Brittany).
+Display the keys of the JSON and deduce the number of recorded transactions.
+2. Display only the transactions concerning houses.
+3. Use the [API geo](https://api.gouv.fr/documentation/api-geo) to retrieve the municipal boundaries of the city of Plogoff.
+4. Plot the histogram of sales prices.
+
+Feel free to go further by playing with group variables, for example.
+
+:::
+
+```{python}
+#| echo: false
+#| include: false
+#| eval: false
+
+# Question 1
+import json
+import requests
+import pandas as pd
+data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168").json()
+print(data_immo.keys())
+print(data_immo["nb_resultats"])
+ventes = pd.json_normalize(data_immo["resultats"])
+ventes.head()
+```
+
+The result for question 2 should look like the following `DataFrame`:
+
+```{python}
+#| echo: false
+#| eval: false
+
+# Question 2
+maisons = requests.get("http://api.cquest.org/dvf?code_commune=29168&type_local=Maison").json()
+pd.json_normalize(maisons["resultats"])
+```
+
+```{python}
+#| echo: false
+#| eval: false
+
+# Question 3
+#!pip install geopandas
+import geopandas as gpd
+plgf = gpd.read_file("https://geo.api.gouv.fr/communes/29168?fields=nom,code,codesPostaux,codeDepartement,codeRegion,population&format=geojson&geometry=contour")
+plgf.head()
+```
+
+The sales price histogram (question 4) will look like this:
+
+```{python}
+#| echo: false
+#| include: false
+#| eval: false
+
+# Question 4
+p = ventes["valeur_fonciere"].plot(kind = "hist")
+p
+```
+
+Let's create a map of the sales, displaying the purchase price.
+The interactive map will be presented in the chapters on data visualization.
+
+Assuming the sales DataFrame is called `ventes`, we first need to convert it into a `geopandas` object.
+
+```{python}
+#| eval: false
+
+ventes = ventes.dropna(subset = ['lat','lon'])
+ventes = gpd.GeoDataFrame(ventes, geometry=gpd.points_from_xy(ventes.lon, ventes.lat))
+ventes
+```
+
+Before making a map, we will convert the boundaries of the Plogoff municipality to GeoJSON for easier representation with `folium` ([see the `geopandas` documentation](https://geopandas.readthedocs.io/en/latest/gallery/polygon_plotting_with_folium.html#Add-polygons-to-map)):
+
+```{python}
+#| eval: false
+geo_j = plgf.to_json()
+```
+
+To graphically represent this, you can use the following code (try to understand it, not just execute it).
+
+```{python}
+#| output: hide
+#| eval: false
+import folium
+import numpy as np
+
+ventes['map_color'] = pd.qcut(ventes['valeur_fonciere'], [0,0.8,1], labels = ['lightblue','red'])
+ventes['icon'] = np.where(ventes['type_local']== 'Maison', "home", "")
+ventes['num_voie_clean'] = np.where(ventes['numero_voie'].isnull(), "", ventes['numero_voie'])
+ventes['text'] = ventes.apply(lambda s: "Adresse: {num} {voie} <br>Vente en {annee} <br>Prix {prix:.0f} €".format(
+                        num = s['num_voie_clean'],
+                        voie = s["voie"],
+                        annee = s['date_mutation'].split("-")[0],
+                        prix = s["valeur_fonciere"]),
+             axis=1)
+             
+center = ventes[['lat', 'lon']].mean().values.tolist()
+sw = ventes[['lat', 'lon']].min().values.tolist()
+ne = ventes[['lat', 'lon']].max().values.tolist()
+
+m = folium.Map(location = center, tiles='OpenStreetMap')
+
+# I can add marker one by one on the map
+for i in range(0,len(ventes)):
+    folium.Marker([ventes.iloc[i]['lat'], ventes.iloc[i]['lon']],
+                  popup=ventes.iloc[i]['text'],
+                  icon=folium.Icon(color=ventes.iloc[i]['map_color'], icon=ventes.iloc[i]['icon'])).add_to(m)
+
+m.fit_bounds([sw, ne])
+```
+
+
+```{python}
+#| echo : true
+#| eval: false
+# Afficher la carte
+m
+```
+
+
+# Geocode data using official APIs
+
+To be able to do this exercise
+
+```{python}
+#| output: false
+#| echo: true
+!pip install xlrd
+```
+
+Up until now, we have worked on data where the geographical dimension was already present or relatively easy to integrate.
+
+This ideal case is not necessarily encountered in practice. Sometimes we have more or less precise and more or less well-formatted locations to determine the location of certain places.
+
+For a few years now, an official geocoding service has been set up. This service is free and allows us to efficiently code addresses using an API. This API, known as the __Base d'Adresses Nationale (BAN)__, has benefited from the pooling of data from several actors (local authorities, Post Office) and the skills of actors such as Etalab. The documentation for this API is available at the address <https://api.gouv.fr/les-api/base-adresse-nationale>.
+
+To illustrate how to geocode data with `Python`, we will start with the database of [driving school results for the driving test in 2018](https://www.data.gouv.fr/fr/datasets/taux-de-reussite-auto-ecole-par-auto-ecole-en-2018/).
+
+This data requires a bit of work to be suitable for statistical analysis. After renaming the columns, we will only keep the information related to the B license (standard car license) and driving schools that have presented at least 20 people to the exam.
+
+```{python}
+#| echo: true
+import pandas as pd
+import xlrd
+import geopandas as gpd
+
+df = pd.read_excel("https://www.data.gouv.fr/fr/datasets/r/d4b6b072-8a7d-4e04-a029-8cdbdbaf36a5", header = [0,1])
+
+# The Excel file has nested column names,
+# we clean it
+index_0 = ["" if df.columns[i][0].startswith("Unnamed") else df.columns[i][0] for i in range(len(df.columns))]
+index_1 = [df.columns[i][1] for i in range(len(df.columns))]
+keep_index = [True if el in ('', "B") else False for el in index_0]
+cols = [index_0[i] + " " + index_1[i].replace("+", "_") for i in range(len(df.columns))]
+df.columns = cols
+df = df.loc[:, keep_index]
+df.columns = df.columns.str.replace("(^ |°)", "", regex = True).str.replace(" ", "_")
+
+# We keep the subsample of interest
+df = df.dropna(subset = ['B_NB'])
+df = df.loc[~df["B_NB"].astype(str).str.contains("(\%|\.)"),:]
+df['B_NB'] = df['B_NB'].astype(int)
+df['B_TR'] = df['B_TR'].str.replace(",", ".").str.replace("%","").astype(float)
+df = df.loc[df["B_NB"]>20]
+```
+
+```{python}
+#| echo: false
+#| output: asis
+moyenne_nationale = (df['B_NB']*df['B_TR']).sum()/df['B_NB'].sum()
+print("In this sample, the average success rate in 2018 was {:.2%}".format(moyenne_nationale/100))
+```
+
+Our geographical information takes the following form:
+
+```{python}
+#| echo: true
+df.loc[:,['Adresse','CP','Ville']].head(5)
+```
+
+In other words, we have an address, a zip code, and a city name. This information can be used to search for the location of a driving school and possibly restrict it to a subsample.
+
+## Using the BAN API
+
+The [official API documentation](https://adresse.data.gouv.fr/api-doc/adresse) provides several examples of how to geolocate data. In our situation, two entry points seem interesting:
+
+* __The `/search/` API__ which represents an entry point with URLs of the form `https://api-adresse.data.gouv.fr/search/?q=\<address\>&postcode=\<zipcode\>&limit=1`
+* __The `/search/csv` API__ which takes a CSV as input and returns the same CSV with the geocoded observations. The request takes the following form, which seems less simple to implement: `curl -X POST -F data=@search.csv -F columns=address -F columns=zipcode https://api-adresse.data.gouv.fr/search/csv/`
+
+The temptation would be strong to use the first method with a loop over the rows of our `DataFrame` to geocode our entire dataset. However, this would be a bad idea because the communications between our `Python` session and the API servers would be too numerous to offer satisfactory performance.
+
+To convince yourself, you can run the following code on a small sample of data (for example, 100 as here) and notice that the execution time is quite significant.
+
+```{python}
+#| echo: true
+#| eval: false
+import time
+
+dfgeoloc = df.loc[:, ['Adresse','CP','Ville']].apply(lambda s: s.str.lower().str.replace(","," "))
+dfgeoloc['url'] = (dfgeoloc['Adresse'] + "+" + dfgeoloc['Ville'].str.replace("-",'+')).str.replace(" ","+")
+dfgeoloc['url'] = 'https://api-adresse.data.gouv.fr/search/?q=' + dfgeoloc['url'] + "&postcode=" + df['CP'] + "&limit=1"
+dfgeoloc = dfgeoloc.dropna()
+
+start_time = time.time()
+
+def get_geoloc(i):
+    print(i)
+    return gpd.GeoDataFrame.from_features(requests.get(dfgeoloc['url'].iloc[i]).json()['features'])
+
+local = [get_geoloc(i) for i in range(len(dfgeoloc.head(10)))]
+print("--- %s seconds ---" % (time.time() - start_time))
+```
+
+As indicated in the documentation, if we want to industrialize our geocoding process, we will prefer the CSV API.
+
+To obtain a `CURL` request consistent with the format desired by the API, we will again use `Requests` but this time with additional parameters:
+
+* `data` will allow us to pass parameters to `CURL` (equivalent to the `-F` of the `CURL` request):
+    + `columns`: The columns used to locate data. In this case, we use the address and the city (since zip codes are not unique, the same street name can be found in several cities sharing the same zip code);
+    + `postcode`: The zip code of the city. Ideally, we would have used the INSEE code, but we do not have it in our data;
+    + `result_columns`: we restrict the data exchanged with the API to the columns that interest us. This allows us to speed up the processes (we exchange less data) and reduce the carbon footprint of our activity (less data transfer = less energy spent). In this case, we only return the geolocated data and a confidence score for the geolocation;
+* `files`: allows sending a file via `CURL`.
+
+The data is retrieved with `request.post`. Since it is a string, we can directly read it with `Pandas` using `io.StringIO` to avoid writing intermediate data.
+
+The number of echoes seeming to be limited, it is proposed to proceed in chunks (here, the dataset is divided into 5 chunks).
+
+```{python}
+#| echo: true
+#| output: false
+import requests
+import io
+import numpy as np
+import time
+
+params = {
+    'columns': ['Adresse', 'Ville'],
+    'postcode': 'CP',
+    'result_columns': ['result_score', 'latitude', 'longitude'],
+}
+
+df[['Adresse','CP','Ville']] = df.loc[:, ['Adresse','CP','Ville']].apply(lambda s: s.str.lower().str.replace(","," "))
+
+def geoloc_chunk(x):
+    dfgeoloc = x.loc[:, ['Adresse','CP','Ville']]
+    dfgeoloc.to_csv("datageocodage.csv", index=False)
+    response = requests.post('https://api-adresse.data.gouv.fr/search/csv/', data=params, files={'data': ('datageocodage.csv', open('datageocodage.csv', 'rb'))})
+    geoloc = pd.read_csv(io.StringIO(response.text), dtype = {'CP': 'str'})
+    return geoloc
+    
+start_time = time.time()
+geodata = [geoloc_chunk(dd) for dd in np.array_split(df, 10)]
+print("--- %s seconds ---" % (time.time() - start_time))
+```
+
+This method is much faster and thus allows us, once returned to our initial data, to have a geolocated dataset.
+
+```{python}
+#| echo: true
+
+# Return to initial data
+geodata = pd.concat(geodata, ignore_index = True)
+df_xy = df.merge(geodata, on = ['Adresse','CP','Ville'])
+df_xy = df_xy.dropna(subset = ['latitude','longitude'])
+
+# Formatting for the tooltip
+df_xy['text'] = (
+    df_xy['Raison_Sociale'] + '<br>' +
+    df_xy['Adresse'] + '<br>' +
+    df_xy['Ville'] + '<br>Number of candidates:' + df_xy['B_NB'].astype(str)
+)
+df_xy.filter(
+    ['Raison_Sociale','Adresse','CP','Ville','latitude','longitude'],
+    axis = "columns"
+).sample(10)
+```
+
+All that remains is to use `Geopandas` and we will be able to make a map of the locations of the driving schools:
+
+```{python}
+#| echo: true
+
+# Transform into geopandas for maps
+import geopandas as gpd
+dfgeo = gpd.GeoDataFrame(
+    df_xy,
+    geometry = gpd.points_from_xy(df_xy.longitude, df_xy.latitude)
+)
+```
+
+We will represent the stations in the Essonne with an initial zoom on the cities of Massy and Palaiseau. The code is as follows:
+
+```{python}
+#| echo: true
+#| output: false
+
+import folium
+
+# Represent all driving schools in the Essonne
+df_91 = df_xy.loc[df_xy["Dept"] == "091"]
+
+# Center the initial view on Massy-Palaiseau
+df_pal = df_xy.loc[df_xy['Ville'].isin(["massy", "palaiseau"])]
+center = df_pal[['latitude', 'longitude']].mean().values.tolist()
+sw = df_pal[['latitude', 'longitude']].min().values.tolist()
+ne = df_pal[['latitude', 'longitude']].max().values.tolist()
+
+m = folium.Map(location = center, tiles='OpenStreetMap')
+
+# I can add marker one by one on the map
+for i in range(0,len(df_91)):
+    folium.Marker([df_91.iloc[i]['latitude'], df_91.iloc[i]['longitude']],
+                  popup=df_91.iloc[i]['text'],
+                  icon=folium.Icon(icon='car', prefix='fa')).add_to(m)
+
+m.fit_bounds([sw, ne])
+```
+
+This allows us to obtain the map:
+
+```{python}
+#| echo : true
+# Display the map
+m
+```
+
+You can go further with the following exercise.
+
+::: {.exercise}
+## Exercise 2: Which driving schools are closest to my home?
+
+Let's assume you are looking, within a given radius around a city center, for available driving schools.
+
+<details>
+<summary>
+Function needed for this exercise
+</summary>
+This exercise requires a function to create a circle around a point (source [here](https://gis.stackexchange.com/questions/289044/creating-buffer-circle-x-kilometers-from-point-using-python/289923)). Here it is:
+
+```python
+from functools import partial
+import pyproj
+from shapely.ops import transform
+from shapely.geometry import Point
+
+proj_wgs84 = pyproj.Proj('+proj=longlat +datum=WGS84')
+
+def geodesic_point_buffer(lat, lon, km):
+    # Azimuthal equidistant projection
+    aeqd_proj = '+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0'
+    project = partial(
+        pyproj.transform,
+        pyproj.Proj(aeqd_proj.format(lat=lat, lon=lon)),
+        proj_wgs84)
+    buf = Point(0, 0).buffer(km * 1000)  # distance in metres
+    return transform(project, buf).exterior.coords[:]
+```
+</details>
+
+1. To begin, use the [Geo API](https://geo.api.gouv.fr/decoupage-administratif) for the city of Palaiseau.
+2. Apply the `geodesic_point_buffer` function to the center of Palaiseau.
+3. Keep only the driving schools within this circle and order them.
+
+__If you have the answer to question 3, feel free to submit it on `GitHub` so I can complete the correction__ 😉 !
+
+:::
+
+```{python}
+from functools import partial
+import pyproj
+from shapely.ops import transform
+from shapely.geometry import Point
+
+proj_wgs84 = pyproj.Proj('+proj=longlat +datum=WGS84')
+
+def geodesic_point_buffer(lat, lon, km):
+    # Azimuthal equidistant projection
+    aeqd_proj = '+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0'
+    project = partial(
+        pyproj.transform,
+        pyproj.Proj(aeqd_proj.format(lat=lat, lon=lon)),
+        proj_wgs84)
+    buf = Point(0, 0).buffer(km * 1000)  # distance in metres
+    return transform(project, buf).exterior.coords[:]
+```
+
+```{python}
+#| echo: false
+
+# This time we want the center, not the outline
+pal = gpd.read_file("https://geo.api.gouv.fr/communes?nom=Palaiseau&format=geojson")
+```
+
+```{python}
+#| echo: false
+b = geodesic_point_buffer(pal.loc[0].geometry.y, pal.loc[0].geometry.x, 10.0)
+circle = pd.DataFrame(b, columns = ['y','x'])
+circle = gpd.GeoDataFrame(circle, geometry=gpd.points_from_xy(circle.y, circle.x), crs = pal.crs)
+```
+
+To convince ourselves of our circle created during question 2, we can represent a map. We indeed have a circle centered around Palaiseau:
+
+```{python}
+import matplotlib.pyplot as plt
+import contextily as ctx
+
+fig,ax = plt.subplots(figsize=(10, 10))
+circle.to_crs("EPSG:3857").plot(ax = ax, color = 'red')
+pal.to_crs("EPSG:3857").plot(ax = ax, color = 'green')
+#ctx.add_basemap(ax, source = ctx.providers.Stamen.Toner)
+ax
+```
+
+```{python}
+#| output: false
+import matplotlib.pyplot as plt
+import contextily as ctx
+
+fig,ax = plt.subplots(figsize=(10, 10))
+circle.to_crs("EPSG:3857").plot(ax = ax, color = 'red')
+pal.to_crs("EPSG:3857").plot(ax = ax, color = 'green')
+#ctx.add_basemap(ax, source = ctx.providers.Stamen.Toner)
+ax
+
+plt.savefig('map_buffer.png', bbox_inches='tight')
+```
+
+# Additional exercises
+
+## Discover the `OpenFoodFacts` API
+
+To help you, you can look at an example of the JSON structure here: <https://world.openfoodfacts.org/api/v0/product/3274080005003.json>, particularly the `nutriments` category.
+
+::: {.exercise}
+## Exercise 3: Find products in OpenFoodFacts 🍕
+
+Here is a list of barcodes: `3274080005003, 5449000000996, 8002270014901, 3228857000906, 3017620421006, 8712100325953`
+
+Use the [OpenFoodFacts API](https://world.openfoodfacts.org/data) (the API, not from the CSV!) to find the corresponding products and their nutritional characteristics.
+
+Does the basket seem balanced? 🍫
+
+Retrieve the URL of one of the images and display it in your browser.
+
+:::
+
+
+```{python}
+#| output: false
+
+import json
+import requests
+import pandas as pd
+```
+
+
+```{python}
+#| output: false
+
+# Necessary parameters
+df = pd.DataFrame([3274080005003,  5449000000996, 8002270014901,
+3228857000906, 3017620421006, 8712100325953], columns = ['code_ean'])
+nutri = ['energy_100g', 'nutriscore_grade', 'nova_group', 'fat_100g', 'saturated-fat_100g', 'carbohydrates_100g', 'sugars_100g', 'salt_100g', 'fiber_100g', 'proteins_100g', 'calcium_100g', 'iron_100g', 'sodium_100g', 'cholesterol_100g']
+cols_api = ['code', 'product_name', 'categories', 'categories_tags'] + ["nutriments.{}".format(i) for i in nutri]
+```
+
+```{python}
+#| output: false
+
+def get_products_api(barcode, col = cols_api):
+    url = "https://world.openfoodfacts.org/api/v0/product/{}.json".format(str(barcode))
+    #print(url)
+    res = requests.get(url)
+    results = res.json()
+    product = results["product"]
+    openfood = pd.json_normalize(product)
+    openfood = openfood[list(set(col) & set(openfood.columns))]
+    return openfood
+  
+# Example
+get_products_api(3274080005003, col=["code","nutriments.fat_100g"])
+```
+
+
+```{python}
+#| output: false
+
+openfood = [get_products_api(barcode) for barcode in df['code_ean'].dropna().astype(str).unique()]
+openfood = pd.concat(openfood)
+openfood.head(10)
+```
+
+For example, here is the photo of the product with the barcode `5449000000996`. Do you recognize it?
+
+
+```{python}
+#| echo: false
+
+url_image = get_products_api(5449000000996, col = ["image_front_small_url"])["image_front_small_url"].iloc[0]
+```
+
+```{python}
+#| echo: false
+#| output: asis
+print("![]({url})".format(url = url_image))
+```
+
