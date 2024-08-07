@@ -1,0 +1,71 @@
+```{python}
+#| echo: true
+import pandas as pd
+import geopandas as gpd
+
+def get_dpe_from_url(url):
+
+    req = requests.get(url)
+    wb = req.json()
+    df = pd.json_normalize(wb["results"])
+
+    dpe = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs = 4326)
+    dpe = dpe.dropna(subset = ['longitude', 'latitude'])
+
+    return dpe
+
+dpe = get_dpe_from_url(url_api)
+dpe.head(2)
+```
+
+
+```{python}
+#| echo: false
+#| output: asis
+if lang == "en":
+    print("Let's try to map these DPEs (energy performance certificates) with the construction years of the buildings. With `Folium`, we get the following interactive map:")
+else:
+    print("Essayons de représenter sur une carte ces DPE avec les années de construction des logements. Avec `Folium`, on obtient la carte interactive suivante :")
+```
+
+
+```{python}
+#| echo: true
+import seaborn as sns
+import folium
+
+palette = sns.color_palette("coolwarm", 8)
+
+def interactive_map_dpe(dpe):
+
+    # convert to number
+    dpe['color'] = [ord(dpe.iloc[i]['classe_consommation_energie'].lower()) - 96 for i in range(len(dpe))]
+    dpe = dpe.loc[dpe['color']<=7]
+    dpe['color'] = [palette.as_hex()[x] for x in dpe['color']]
+
+
+    center = dpe[['latitude', 'longitude']].mean().values.tolist()
+    sw = dpe[['latitude', 'longitude']].min().values.tolist()
+    ne = dpe[['latitude', 'longitude']].max().values.tolist()
+
+    m = folium.Map(location = center, tiles='OpenStreetMap')
+
+    # I can add markers one by one on the map
+    for i in range(0,len(dpe)):
+        folium.Marker([dpe.iloc[i]['latitude'], dpe.iloc[i]['longitude']],
+                    popup=f"Year of construction: {dpe.iloc[i]['annee_construction']}, <br>DPE: {dpe.iloc[i]['classe_consommation_energie']}",
+                    icon=folium.Icon(color="black", icon="home", icon_color = dpe.iloc[i]['color'])).add_to(m)
+
+    m.fit_bounds([sw, ne])
+
+    return m
+
+m = interactive_map_dpe(dpe)
+```
+
+
+```{python}
+#| echo : true
+# Display the map
+m
+```
