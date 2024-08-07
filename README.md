@@ -2,11 +2,11 @@
 
 [![build-doc Actions Status](https://github.com/linogaliana/python-datascientist/actions/workflows/prod.yml/badge.svg)](https://github.com/linogaliana/python-datascientist/actions)
 
-<a href="https://github.com/linogaliana/python-datascientist/blob/master/notebooks/course/manipulation/01_numpy.ipynb" class="github"><i class="fab fa-github"></i></a>
-<a href="https://downgit.github.io/#/home?url=https://github.com/linogaliana/python-datascientist/blob/master/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/Download-Notebook-important?logo=Jupyter" alt="Download"></a>
-<a href="https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/master/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/Visualize-nbviewer-blue?logo=Jupyter" alt="nbviewer"></a>
+<a href="https://github.com/linogaliana/python-datascientist/blob/main/notebooks/course/manipulation/01_numpy.ipynb" class="github"><i class="fab fa-github"></i></a>
+<a href="https://downgit.github.io/#/home?url=https://github.com/linogaliana/python-datascientist/blob/main/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/Download-Notebook-important?logo=Jupyter" alt="Download"></a>
+<a href="https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/main/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/Visualize-nbviewer-blue?logo=Jupyter" alt="nbviewer"></a>
 <a href="https://datalab.sspcloud.fr/launcher/ide/jupyter-python?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB&init.personalInitArgs=%C2%ABmanipulation%2001_numpy%C2%BB&security.allowlist.enabled=false" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&amp;color=yellow?logo=Python" alt="Onyxia"></a><br>
-<a href="http://colab.research.google.com/github/linogaliana/python-datascientist/blob/master/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
+<a href="http://colab.research.google.com/github/linogaliana/python-datascientist/blob/main/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
 
 
 [![DOI](https://zenodo.org/badge/280161677.svg)](https://zenodo.org/badge/latestdoi/280161677)
@@ -97,7 +97,7 @@ Les _notebooks_ sont générés de manière à être cohérente avec le site web
 et sont maintenant stockés sur un [dépôt à part](https://github.com/linogaliana/python-datascientist-notebooks).
 
 L'environnement `Conda` nécessaire pour faire tourner l'ensemble du
-cours est disponible dans un fichier [`environment.yml`](https://github.com/linogaliana/python-datascientist-docker/blob/master/environment.yml). 
+cours est disponible dans un fichier [`environment.yml`](https://github.com/linogaliana/python-datascientist-docker/blob/main/environment.yml). 
 Il est recommandé d'utiliser la `conda-forge` afin de bénéficier de versions
 récentes des packages. 
 </details>
