@@ -1,6 +1,8 @@
 #!/bin/bash
 
 git diff --name-only >> diff
+git diff --name-only | grep -v '/_' >> diff
+
 python build/tweak_render.py
 python build/pimp_notebook.py
 
