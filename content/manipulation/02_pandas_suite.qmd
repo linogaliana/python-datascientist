@@ -660,65 +660,16 @@ The second approach is more practical because it directly gives a `Pandas` `Data
 
 ::: {.content-visible when-profile="fr"}
 Cet exercice d'application s'appuie sur le jeu de données de l'Ademe nommé `emissions` précédemment.
-
-```{python}
-lang = "fr"
-```
 :::
 
 ::: {.content-visible when-profile="en"}
 This application exercise uses the `Ademe` dataset named `emissions` previously discussed.
-
-```{python}
-lang = "en"
-```
 :::
 
 {{< include "02_pandas_suite/_exo1.qmd" >}}
 {{< include "02_pandas_suite/_exo1_solution.qmd" >}}
 
-
-A la question 1, le résultat obtenu devrait être le suivant:
-
-```{python}
-# Question 1
-emissions_residentielles = (
-    emissions
-    .groupby("dep")
-    .agg({"Résidentiel" : "sum"})
-    .reset_index()
-    .sort_values("Résidentiel", ascending = False)
-)
-emissions_residentielles["Résidentiel (% valeur max)"] = emissions_residentielles["Résidentiel"]/emissions_residentielles["Résidentiel"].max()
-emissions_residentielles.head(5)
-```
-
-Ce classement reflète peut-être plus la démographie que le processus qu'on désire mesurer. Sans l'ajout d'une information annexe sur la population de chaque département pour contrôler ce facteur, on peut difficilement savoir s'il y a une différence structurelle de comportement entre les habitants du Nord (département 59) et ceux de la Moselle (département 57). 
-
-```{python}
-# Question 2
-emissions_par_departement = (
-  emissions.groupby('dep').sum(numeric_only=True)
-)
-emissions_par_departement['total'] = emissions_par_departement.sum(axis = 1)
-emissions_par_departement["Part " + secteurs] = (
-  emissions_par_departement
-  .loc[:, secteurs]
-  .div(emissions_par_departement['total'], axis = 0)
-  .mul(100)
-)
-```
-
-A l'issue de la question 2, prenons la part des émissions de l'agriculture et du secteur tertiaire dans les émissions départementales:
-
-```{python}
-emissions_par_departement.sort_values("Part Agriculture", ascending = False).head(5)
-```
-
-```{python}
-emissions_par_departement.sort_values("Part Tertiaire", ascending = False).head(5)
-```
-
+::: {.content-visible when-profile="fr"}
 Ces résultats sont assez logiques ; les départements ruraux ont une part plus importante de leur émission issue de l'agriculture, les départements urbains ont plus d'émissions issues du secteur tertiaire, ce qui est lié à la densité plus importante de ces espaces. 
 
 Grâce à ces statistiques on progresse dans la connaissance de notre jeu de données et donc de la nature des émissions de C02 en France.
@@ -727,14 +678,26 @@ Les statistiques descriptives par groupe nous permettent de mieux saisir l'hét�
 Cependant, on reste limité dans notre capacité à interpréter les statistiques obtenues sans recourir à l'utilisation d'information annexe. Pour donner du sens et de la valeur à une statistique, il faut généralement associer celle-ci à de la connaissance annexe sous peine qu'elle soit désincarnée.
 
 Dans la suite de ce chapitre, nous envisagerons une première voie qui est le croisement avec des données complémentaires. On appelle ceci un enrichissement de données. Ces données peuvent être des observations à un niveau identique à celui de la source d'origine. Par exemple, l'un des croisements les plus communs est d'associer une base client à une base d'achats afin de mettre en regard un comportement d'achat avec des caractéristiques pouvant expliquer celui-ci. Les associations de données peuvent aussi se faire à des niveaux conceptuels différents, en général à un niveau plus agrégé pour contextualiser la donnée plus fine et comparer une observation à des mesures dans un groupe similaire. Par exemple, on peut associer des temps et des modes de transports individuels à ceux d'une même classe d'âge ou de personnes résidant dans la même commune pour pouvoir comparer la différence entre certains individus et un groupe sociodémographique similaire. 
+:::
 
+::: {.content-visible when-profile="en"}
+These results are quite logical; rural departments have a larger share of their emissions from agriculture, while urban departments have higher emissions from the tertiary sector, which is related to the higher density of these areas.
+
+With these statistics, we progress in understanding our dataset and, consequently, the nature of CO2 emissions in France. Descriptive statistics by group help us better grasp the spatial heterogeneity of our phenomenon.
+
+However, we remain limited in our ability to interpret the obtained statistics without using additional information. To give meaning and value to a statistic, it is generally necessary to associate it with additional knowledge; otherwise, it remains detached.
+
+In the rest of this chapter, we will consider a primary approach which is the merging of complementary data. This process is called data enrichment. These data can be observations at the same level as the original source. For example, one of the most common merges is associating a customer database with a purchase database to relate purchasing behavior to characteristics that may explain it. Data merges can also occur at different conceptual levels, generally at a more aggregated level to contextualize finer data and compare an observation to measures within a similar group. For instance, we can associate individual travel times and modes with those of the same age group or people living in the same municipality to compare the differences between certain individuals and a similar sociodemographic group.
+:::
+
+::: {.content-visible when-profile="fr"}
 # Restructurer les données
 
 ## Principe
 
 Quand on a plusieurs informations pour un même individu ou groupe, on
 retrouve généralement deux types de structure de données : 
-    
+
 * format __wide__ : les données comportent des observations répétées, pour un même individu (ou groupe), dans des colonnes différentes 
 * format __long__ : les données comportent des observations répétées, pour un même individu, dans des lignes différentes avec une colonne permettant de distinguer les niveaux d'observations
 
@@ -752,17 +715,50 @@ peut être extrêmement pratique car certaines fonctions sont plus adéquates su
 En règle générale, avec `Python` comme avec `R`, les __formats *long* sont souvent préférables__.
 Les formats _wide_ sont plutôt pensés pour des tableurs comme `Excel` ou on dispose d'un nombre réduit
 de lignes à partir duquel faire des tableaux croisés dynamiques. 
+:::
 
+::: {.content-visible when-profile="en"}
+# Restructuring datasets
+
+## Principle
+
+When we have multiple pieces of information for the same individual or group, we generally find two types of data structures:
+
+* __Wide__ format: the data contains repeated observations for the same individual (or group) in different columns.
+* __Long__ format: the data contains repeated observations for the same individual in different rows, with a column distinguishing the observation levels.
+
+An example of the distinction between the two can be taken from Hadley Wickham's reference book, [*R for Data Science*](https://r4ds.hadley.nz/):
+
+![Wide and Long Data Formats (Source: [*R for Data Science*](https://r4ds.hadley.nz/))](https://d33wubrfki0l68.cloudfront.net/3aea19108d39606bbe49981acda07696c0c7fcd8/2de65/images/tidy-9.png)
+
+The following cheat sheet will help remember the functions to apply if needed:
+
+![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/reshape.png){fig-width=60%}
+
+Switching from a *wide* format to a *long* format (or vice versa) can be extremely practical because certain functions are more suitable for one form of data than the other.
+
+Generally, with `Python` as with `R`, __long formats are often preferable__. Wide formats are rather designed for spreadsheets like `Excel`, where we have a limited number of rows to create pivot tables from.
+:::
+
+::: {.content-visible when-profile="fr"}
 ## Exercice d'application
 
 Les données de l'ADEME, et celles de l'Insee également, sont au format
 _wide_. 
 Le prochain exercice illustre l'intérêt de faire la conversion _long_ $\to$ _wide_
 avant de faire un graphique avec la méthode `plot` vue au chapitre précédent
+:::
 
-{{< include "02_pandas_suite/_exo2_fr.qmd" >}}
+::: {.content-visible when-profile="en"}
+## Application
+
+The ADEME data, and the Insee data as well, are in the _wide_ format. The next exercise illustrates the benefit of converting from _long_ to _wide_ before creating a plot with the `plot` method seen in the previous chapter.
+:::
+
+{{< include "02_pandas_suite/_exo2.qmd" >}}
 {{< include "02_pandas_suite/_exo2_solution.qmd" >}}
 
+::: {.content-visible when-profile="fr"}
 
 # Joindre des données
 
@@ -784,7 +780,29 @@ On parle généralement de base de gauche et de droite pour illustrer les jointu
 
 ![](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/join_initial.png){fig-width="50%"}
 
+:::
 
+::: {.content-visible when-profile="en"}
+# Joining data
+
+## Principle
+
+Here we will focus on the most favorable case, which is the situation where information allows for an exact match between two databases[^fuzzy]. It is a daily necessity for data scientists to merge information present in multiple files. For example, in business databases, customer information (address, age, etc.) will be in one file, sales in another, and product characteristics in a third file. To have a complete base that compares all this information, it will be necessary to join these three files based on common information.
+
+This practice stems from the fact that many information systems take the form of a star schema:
+
+![Illustration of the star schema (Source: [Databricks](https://www.databricks.com/wp-content/uploads/2022/04/star-schema-erd.png))](https://www.databricks.com/wp-content/uploads/2022/04/star-schema-erd.png){fig-width="80%"}
+
+This structuring of information is closely related to the model of relational tables from the 1980s. Today, there are more flexible data models where information is stacked in a data lake without an a priori structure. Nevertheless, this star schema model retains relevance because it allows sharing information only with those who need it, leaving it to those who need to link data to do so.
+
+Since the logic of the star schema historically comes from relational databases, it is natural that it is an approach intrinsically linked to the philosophy of SQL, even in the vocabulary. The term "data join" is often used, inherited from the SQL `JOIN` term, and the way to describe joins (left join, right join...) comes directly from the associated SQL instructions.
+
+We generally speak of left and right bases to illustrate the joins:
+
+![Joins](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/join_initial.png){fig-width="50%"}
+:::
+
+::: {.content-visible when-profile="fr"}
 
 ## Mise en oeuvre avec `Pandas`
 
@@ -792,6 +810,17 @@ En `Pandas`, la méthode la plus pratique pour associer des jeux de données à 
 
 En l'occurrence, pour notre problématique de construction de statistiques
 sur les émissions de gaz carbonique, la base de gauche sera le _DataFrame_ `emission` et la base de droite le _DataFrame_ `filosofi`:
+
+:::
+
+::: {.content-visible when-profile="en"}
+## Implementation with `Pandas`
+
+In `Pandas`, the most practical method to join datasets based on common characteristics is `merge`. Its main arguments allow for controlling the join behavior. We will explore them visually.
+
+In our case, for constructing statistics on carbon emissions, the left base will be the `emissions` DataFrame, and the right base will be the `filosofi` DataFrame:
+:::
+
 
 ```{python}
 #| echo: true
@@ -803,6 +832,8 @@ emissions.head(2)
 filosofi.head(2)
 ```
 
+::: {.content-visible when-profile="fr"}
+
 On parle de clé(s) de jointure pour nommer la ou les variable(s) nécessaire(s) à la fusion de données. Ce sont les variables communes aux deux jeux de données. Il n'est pas nécessaire qu'elles aient le même nom en revanche elles doivent partager des valeurs communes autrement l'intersection entre ces deux bases est l'ensemble vide. 
 
 On peut jouer sur deux dimensions dans la jointure (ceci sera plus clair ensuite avec les exemples graphiques). 
@@ -812,7 +843,22 @@ On peut jouer sur deux dimensions dans la jointure (ceci sera plus clair ensuite
 
 Dans les exemples ci-dessous, nous allons utiliser les codes communes et les départements comme variables de jointure. En soi, l'usage du département n'est pas nécessaire puisqu'il se déduit directement du code commune mais cela permet d'illustrer le principe des jointures sur plusieurs variables. A noter que le nom de la commune est volontairement mis de côté pour effectuer des jointures alors que c'est une information commune aux deux bases. Cependant, comme il s'agit d'un champ textuel, dont le formattage peut suivre une norme différente dans les deux bases, ce n'est pas une information fiable pour faire une jointure exacte. 
 
-Pour illustrer le principe du pivot à gauche ou à droite, on va créer deux variables identificatrices de la ligne de nos jeux de données de gauche et de droite. Cela nous permettra de trouver facilement les lignes présentes dans un jeu de données mais pas dans l'autre. 
+Pour illustrer le principe du pivot à gauche ou à droite, on va créer deux variables identificatrices de la ligne de nos jeux de données de gauche et de droite. Cela nous permettra de trouver facilement les lignes présentes dans un jeu de données mais pas dans l'autre.
+
+:::
+
+::: {.content-visible when-profile="en"}
+We refer to join keys as the variable(s) necessary for merging data. These are the variables common to both datasets. They do not need to have the same name, but they must share common values; otherwise, the intersection between these two datasets is the empty set.
+
+We can manipulate two dimensions in the join (this will be clearer later with graphical examples):
+
+* There are mainly three types of merges: left join, right join, or a combination of the two, depending on the type of pivot we want to implement.
+* Then, there are two ways to merge the values once we have chosen a pivot: inner or outer join. In the first case, we only keep the observations where the join keys are present in both datasets; in the second, we keep all observations of the pivot key variables, even if the second dataset does not have such observations, resulting in missing values.
+
+In the examples below, we will use the commune codes and departments as join keys. Using the department is not necessary since it is directly deduced from the commune code, but it helps illustrate the principle of joins on multiple variables. Note that the name of the commune is intentionally set aside for joins, even though it is common information to both datasets. However, as it is a textual field, which may follow different formatting norms in the two datasets, it is not reliable for an exact join.
+
+To illustrate the principle of the left or right pivot, we will create two identifier variables for the row in our left and right datasets. This will allow us to easily find rows present in one dataset but not in the other.
+:::
 
 ```{python}
 #| echo: true
@@ -822,9 +868,15 @@ filosofi = filosofi.reset_index(names = ['id_right'])
 
 ### _Left join_
 
+::: {.content-visible when-profile="fr"}
 Commençons avec la jointure à gauche. Comme son nom l'indique, on va prendre la variable de gauche en pivot:
+:::
+::: {.content-visible when-profile="en"}
+Let's start with the left join. As its name indicates, we will take the left variable as the pivot:
+:::
 
 ![](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/left_join.png)
+
 
 ```{python}
 #| echo: true
@@ -837,10 +889,19 @@ left_merged = emissions.merge(
 left_merged.head(3)
 ```
 
+::: {.content-visible when-profile="fr"}
 Il est recommandé de toujours expliciter les clés de jointures par le biais des arguments `left_on`, `right_on` ou `on` si les noms de variables sont communs dans les deux bases.
 Si on a des noms de variables communes entre les bases mais qu'elles ne sont pas définies comme clés de jointures, celles-ci ne seront pas utilisées pour joindre mais seront conservées avec un suffixe qui par défaut est `_x` et `_y` (paramétrable par le biais de l'argument `suffixes`). 
 
 La syntaxe `Pandas` étant directement inspirée de SQL, on a une traduction assez transparente de l'instruction ci-dessus en SQL:
+:::
+
+::: {.content-visible when-profile="en"}
+It is recommended to always explicitly specify the join keys using the `left_on`, `right_on`, or `on` arguments if the variable names are common between the two datasets.
+If there are common variable names between the datasets that are not defined as join keys, they will not be used for the join but will be retained with a suffix that defaults to `_x` and `_y` (configurable using the `suffixes` argument).
+
+The `Pandas` syntax is directly inspired by SQL, so we have a fairly transparent translation of the above instruction into SQL:
+:::
 
 ```sql
 SELECT *
@@ -850,21 +911,38 @@ LEFT JOIN filosofi
   AND emissions.dep = filosofi.dep;
 ```
 
+::: {.content-visible when-profile="fr"}
 En faisant une jointure à gauche, on doit en principe avoir autant de lignes que la base de données à gauche:
+:::
+
+::: {.content-visible when-profile="en"}
+By performing a left join, we should, in principle, have as many rows as in the left dataset:
+:::
 
 ```{python}
 #| echo: true
 left_merged.shape[0] == emissions.shape[0]
 ```
 
+::: {.content-visible when-profile="fr"}
 Autrement, cela est signe qu'il y a une clé dupliquée à droite. Grâce à notre variable `id_right`, on peut savoir les codes communes à droite qui n'existent pas à gauche:
+:::
+::: {.content-visible when-profile="en"}
+Otherwise, it indicates that there is a duplicate key on the right. Thanks to our `id_right` variable, we can identify the commune codes on the right that do not exist on the left:
+:::
+
 
 ```{python}
 #| echo: true
 left_merged.loc[left_merged['id_right'].isna()].tail(3)
 ```
 
+::: {.content-visible when-profile="fr"}
 Cela vient du fait que nous utilisons des données qui ne sont pas de la même année de référence du code officiel géographique (2016 vs 2018). Pendant cet intervalle, il y a eu des changements de géographie, notamment des fusions de communes. Par exemple, la commune de Courcouronnes qu'on a vu ci-dessus peut être retrouvée regroupée avec Evry dans le jeu de données filosofi (base de droite):
+:::
+::: {.content-visible when-profile="en"}
+This is because we are using data that are not from the same reference year of the official geographical code (2016 vs 2018). During this interval, there were geographical changes, notably commune mergers. For example, the commune of Courcouronnes seen above can be found merged with Evry in the filosofi dataset (right base):
+:::
 
 ```{python}
 #| echo: true
@@ -875,13 +953,24 @@ filosofi.loc[
 ]
 ```
 
+::: {.content-visible when-profile="fr"}
 Dans un exercice de construction de statistiques publiques, on ne pourrait donc se permettre cette disjonction des années. 
+:::
+::: {.content-visible when-profile="en"}
+In a public statistics construction exercise, we could not afford this discrepancy in years.
+:::
+
 
 ### _Right join__
 
 ![](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/right_join.png)
 
+::: {.content-visible when-profile="fr"}
 Le principe est le même mais cette fois c'est la base de droite qui est prise sous forme de pivot:
+:::
+::: {.content-visible when-profile="en"}
+The principle is the same, but this time it is the right base that is taken as the pivot:
+:::
 
 
 ```{python}
@@ -895,7 +984,13 @@ right_merged = emissions.merge(
 right_merged.head(3)
 ```
 
+::: {.content-visible when-profile="fr"}
 L'instruction équivalente en SQL serait
+:::
+::: {.content-visible when-profile="en"}
+The equivalent instruction in SQL would be:
+:::
+
 
 ```sql
 SELECT *
@@ -905,21 +1000,36 @@ RIGHT JOIN emissions
   AND filosofi.dep = emissions.dep;
 ```
 
+::: {.content-visible when-profile="fr"}
 On peut, comme précédemment, vérifier la cohérence des dimensions:
+:::
+::: {.content-visible when-profile="en"}
+We can, as before, check the consistency of the dimensions:
+:::
 
 ```{python}
 #| echo: true
 right_merged.shape[0] == filosofi.shape[0]
 ```
 
+::: {.content-visible when-profile="fr"}
 Pour vérifier le nombre de lignes des données Filosofi que nous n'avons pas dans notre jeu d'émissions de gaz carbonique, on peut faire
+:::
+::: {.content-visible when-profile="en"}
+To check the number of rows in the Filosofi data that we do not have in our greenhouse gas emissions dataset, we can do:
+:::
 
 ```{python}
 #| echo: true
 right_merged['id_left'].isna().sum()
 ```
 
+::: {.content-visible when-profile="fr"}
 C'est un nombre faible. Quelles sont ces observations ?
+:::
+::: {.content-visible when-profile="en"}
+It's a small number. What are these observations?
+:::
 
 ```{python}
 #| echo: true
@@ -929,9 +1039,14 @@ right_merged.loc[
 ]
 ```
 
+::: {.content-visible when-profile="fr"}
 Il est suprenant de voir que Paris, Lyon et Marseille sont présents
 dans la base des statistiques communales mais pas dans celles des émissions. 
 Pour comprendre pourquoi, recherchons dans nos données d'émissions les observations liées à Marseille: 
+:::
+::: {.content-visible when-profile="en"}
+It is surprising to see that Paris, Lyon, and Marseille are present in the communal statistics dataset but not in the emissions dataset. To understand why, let's search in our emissions data for observations related to Marseille:
+:::
 
 ```{python}
 #| echo: true
@@ -942,14 +1057,27 @@ emissions.loc[
 ]
 ```
 
+::: {.content-visible when-profile="fr"}
 Cela vient du fait que le jeu de données des émissions de l'Ademe propose de l'information sur les arrondissements dans les trois plus grandes villes
 là où le jeu de données de l'Insee ne fait pas cette décomposition.
+:::
+::: {.content-visible when-profile="en"}
+This is because the Ademe emissions dataset provides information on districts in the three largest cities, whereas the Insee dataset does not have this breakdown.
+:::
+
+
 
 ### _Inner join_
 
 ![](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/inner.png)
 
+::: {.content-visible when-profile="fr"}
 Il s'agit du jeu de données où les clés sont retrouvées à l'intersection des deux tables. 
+:::
+::: {.content-visible when-profile="en"}
+This is the dataset where the keys are found at the intersection of the two tables.
+:::
+
 
 ```{python}
 #| echo: true
@@ -962,7 +1090,12 @@ inner_merged = emissions.merge(
 inner_merged.head(3)
 ```
 
+::: {.content-visible when-profile="fr"}
 En SQL, cela donne
+:::
+::: {.content-visible when-profile="en"}
+In SQL, this would be:
+:::
 
 ```sql
 SELECT *
@@ -972,7 +1105,12 @@ INNER JOIN filosofi
   AND emissions.dep = filosofi.dep;
 ```
 
+::: {.content-visible when-profile="fr"}
 Le nombre de lignes dans notre jeu de données peut être comparé au jeu de droite et de gauche:
+:::
+::: {.content-visible when-profile="en"}
+The number of rows in our dataset can be compared to the left and right datasets:
+:::
 
 ```{python}
 #| echo: true
@@ -991,7 +1129,13 @@ inner_merged.shape[0] == (
 
 ### _Full join_
 
+::: {.content-visible when-profile="fr"}
 Le _full join_ est un pivot à gauche puis à droite pour les informations qui n'ont pas été trouvées
+:::
+::: {.content-visible when-profile="en"}
+The full join is a pivot to the left and then to the right for the information that was not found.
+:::
+
 
 ![](https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/merge_pandas/full_join.png)
 
@@ -1006,7 +1150,12 @@ full_merged = emissions.merge(
 full_merged.head(3)
 ```
 
+::: {.content-visible when-profile="fr"}
 Comme d'habitude, la traduction en SQL est presque immédiate:
+:::
+::: {.content-visible when-profile="en"}
+As usual, the translation to SQL is almost immediate:
+:::
 
 ```sql
 SELECT *
@@ -1016,11 +1165,21 @@ FULL OUTER JOIN filosofi
   AND emissions.dep = filosofi.dep;
 ```
 
+::: {.content-visible when-profile="fr"}
 Cette fois, on a une combinaison de nos trois jeux de données initiaux:
 
 * Le _inner join_ ;
 * Le _left join_ sur les observations sans clé de droite ;
 * Le _right join_ sur les observations sans clé de gauche ;
+:::
+
+::: {.content-visible when-profile="en"}
+This time, we have a combination of our three initial datasets:
+
+* The inner join;
+* The left join on observations without the right key;
+* The right join on observations without the left key;
+:::
 
 ```{python}
 #| echo: true
@@ -1031,10 +1190,17 @@ Cette fois, on a une combinaison de nos trois jeux de données initiaux:
 )
 ```
 
+::: {.content-visible when-profile="fr"}
 ### En résumé
+:::
+
+::: {.content-visible when-profile="en"}
+### In summary
+:::
 
 ![](https://external-preview.redd.it/yOLzCR0qSzul2WpjQorxINB0xpU3_N9twmFVsgbGJwQ.jpg?auto=webp&s=4feedc91302ba635b3028a21b98d047def5cdc2b){fig-align="center"}
 
+::: {.content-visible when-profile="fr"}
 ## Exemples d'identifiants dans les données françaises
 
 ### Le Code officiel géographique (COG): l'identifiant des données géographiques
@@ -1048,6 +1214,24 @@ La géographie administrative étant en évolution perpétuelle, la base des cod
 Les codes postaux ne peuvent être considérés comme un identifiant : ils peuvent regrouper plusieurs communes ou, au contraire, une même commune peut avoir plusieurs codes postaux. Il s'agit d'un système de gestion de la Poste qui n'a pas été construit pour l'analyse statistique.
 
 Pour se convaincre du problème, à partir des données mises à disposition par La Poste, on peut voir que le code postal 11420 correspond à 11 communes:
+:::
+
+::: {.content-visible when-profile="en"}
+## Examples of identifiers in French data
+
+### The Official Geographic Code (COG): The identifier for geographic data
+
+For geographic data, there are many identifiers depending on the study problem.
+Among the main needs is the ability to match geographic data using a common administrative identifier. For example, associating two datasets at the municipal level.
+
+For this, the reference identifier is the Insee code, derived from the [Official Geographic Code (COG)](https://www.insee.fr/fr/information/2560452), which we have been using since the last chapter and will extensively use throughout the different chapters of this course.
+Given that the administrative geography is constantly evolving, the Insee code database is a living base. The Insee website and APIs provide access to the post-war historical data for long-term geographic analysis.
+
+Postal codes cannot be considered as an identifier: they can group several municipalities or, conversely, one municipality can have several postal codes. It is a system managed by La Poste that was not designed for statistical analysis.
+
+To illustrate the problem, from the data provided by La Poste, we can see that postal code 11420 corresponds to 11 municipalities:
+:::
+
 
 ```{python}
 #| echo: true
@@ -1059,6 +1243,7 @@ codes_postaux = pd.read_csv(
 codes_postaux.loc[codes_postaux['Code_postal'] == "11420"]
 ```
 
+::: {.content-visible when-profile="fr"}
 En anticipant sur les compétences développées lors des prochains chapitres, nous pouvons représenter le problème sous forme cartographique en prenant l'exemple de l'Aude. Le code pour produire la carte des codes communes est donné tel quel, il n'est pas développé car il fait appel à des concepts et librairies qui seront présentés lors du prochain chapitre:
 
 ```{python}
@@ -1091,6 +1276,43 @@ ax.set_axis_off()
 3. On agrège la géométrie au niveau des codes postaux
 4. On crée une carte à partir de nos deux couches
 
+:::
+
+::: {.content-visible when-profile="en"}
+Anticipating on the skills developed in the upcoming chapters, we can represent the problem cartographically by taking the example of the Aude department. The code to produce the map of commune codes is given as is, not developed, as it uses concepts and libraries that will be presented in the next chapter:
+
+```{python}
+#| echo: true
+#| fig-cap: Geography of postal codes and municipalities in Aude (11)
+from cartiflette import carti_download
+shp_communes = carti_download(
+  values = ["11"],
+  crs = 4326,
+  borders = "COMMUNE",
+  simplification=50,
+  filter_by="DEPARTEMENT",
+  source="EXPRESS-COG-CARTO-TERRITOIRE",
+  year=2022) #<1>
+
+codes_postaux11 = shp_communes.merge(
+  codes_postaux,
+  left_on = "INSEE_COM",
+  right_on = "#Code_commune_INSEE"
+) #<2>
+codes_postaux11 = codes_postaux11.dissolve(by = "Code_postal") #<3>
+
+# Map #<4>
+ax = shp_communes.plot(color='white', edgecolor='blue', linewidth = 0.5)
+ax = codes_postaux11.plot(ax = ax, color='none', edgecolor='black')
+ax.set_axis_off()
+```
+1. Downloading the official contours of Aude produced by IGN using the [`cartiflette`](https://github.com/InseeFrLab/cartiflette) library
+2. Joining using the commune code between the two data sources
+3. Aggregating the geometry at the postal code level
+4. Creating a map from our two layers
+:::
+
+::: {.content-visible when-profile="fr"}
 
 ### Sirene: l'identifiant dans les données d'entreprises
 
@@ -1105,13 +1327,38 @@ Le jeu de données de l'ensemble des entreprises étant assez volumineux (autour
 
 Pour lire ce type de fichiers de manière optimale, il est conseillé d'utiliser la librairie `DuckDB` qui permet de ne consommer que les données nécessaires et non de télécharger l'ensemble du fichier pour n'en lire qu'une partie comme ce serait le cas avec `Pandas` (voir la fin de ce chapitre, section "Aller au-delà de `Pandas`"). La requête SQL suivante se traduit en langage naturel par l'instruction suivante: _"A partir du fichier `Parquet`, je ne veux que quelques colonnes du fichier pour les coiffeurs (APE: 96.02A) dont le nom de l'entreprise (`denominationUsuelleEtablissement`) est renseigné"_:
 
+:::
 
-{{< include "02_pandas_suite/_exo_optionnel_fr.qmd" >}}
+::: {.content-visible when-profile="en"}
+
+### Sirene: the identifier in business data
+
+To connect French business microdata, there is a unique identification number: the [Siren number](https://entreprendre.service-public.fr/vosdroits/F32135). It is an identification number in a legal business directory essential for all legal, fiscal, and other procedures. For companies that have multiple establishments—for example, in several cities—there is a derived identifier called the [Siret](https://www.economie.gouv.fr/cedef/numero-siret): the 9 digits of the Siren number are followed by 5 establishment identification digits. Moreover, public administrations are also concerned with the Siren number: being involved in market operations (purchasing equipment, renting goods, etc.), they also have a Siren identifier. As they are registered in legal directories whose information is public, the Siren numbers and the associated company names are available in open data, for example, on [annuaire-entreprises.data.gouv.fr/](https://annuaire-entreprises.data.gouv.fr/) for occasional searches, or on [data.gouv.fr](https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/).
+
+This Sirene database is a treasure trove of information, sometimes amusing, about French companies. For example, the site [tif.hair/](https://tif.hair/) cataloged the proportion of hair salons with puns in their names. When an entrepreneur declares the creation of a business, they receive a Siren number and an activity code (the [APE code](https://entreprendre.service-public.fr/vosdroits/F33050)) related to the description of their business activity. This code allows the classification of a business activity in the [French Classification of Activities (NAF)](https://www.insee.fr/fr/information/2406147), which will be used by Insee for the publication of sectoral statistics. In the case of hairdressers, the code in the NAF is [96.02A](https://www.insee.fr/fr/metadonnees/nafr2/sousClasse/96.02A?champRecherche=false). From the open data available, it is possible, in a few lines of `Python`, to get the list of all hairdressers and then explore this data (the subject of the next optional exercise).
+
+The following optional exercise suggests replicating, in a simplified manner, the survey done by [tif.hair/](https://tif.hair/) on puns in hair salon names. It allows practicing some text manipulation methods, ahead of the chapter dedicated to [regular expressions](/content/manipulation/04b_regex_TP.qmd).
+
+Since the dataset of all companies is quite large (around 4GB in CSV after decompression), it is more practical to use a dataset in `Parquet` format, which is more optimized (more details on this format in the [advanced chapter](/content/modern-ds/s3.qmd) dedicated to it).
+
+To read this type of file optimally, it is recommended to use the `DuckDB` library, which allows consuming only the necessary data instead of downloading the entire file to read only a part of it as would be the case with `Pandas` (see the end of this chapter, section "Beyond `Pandas`"). The following SQL query translates into natural language as: _"From the `Parquet` file, I only want a few columns of the file for hairdressers (APE: 96.02A) whose business name (`denominationUsuelleEtablissement`) is provided"_:
+
+:::
+
+
+{{< include "02_pandas_suite/_exo_optionnel.qmd" >}}
 {{< include "02_pandas_suite/_exo_optionnel_solution.qmd" >}}
 
 
+::: {.content-visible when-profile="fr"}
 Bien sûr, pour aller plus loin, il faudrait mieux normaliser les données, vérifier que l'information recherchée n'est pas à cheval sur plusieurs colonnes et bien sûr faire de l'inspection visuelle pour détecter les jeux de mots cachés. Mais déjà, en quelques minutes, on a des statistiques partielles sur le phénomène des coiffeurs blagueurs.
+:::
 
+::: {.content-visible when-profile="en"}
+Of course, to go further, it would be better to normalize the data more thoroughly, check that the information sought is not spread across multiple columns, and conduct visual inspections to detect hidden puns. But already, in just a few minutes, we have partial statistics on the phenomenon of punny hairdressers.
+:::
+
+::: {.content-visible when-profile="fr"}
 
 ### Le NIR et la question de la confidentialité des identifiants individuels
 
@@ -1121,31 +1368,68 @@ Ce numéro est nécessaire à l'administration pour la gestion des droits à pre
 Cet identifiant est principalement présent dans des bases de gestion, liées aux fiches de paie, aux prestations sociales, etc. Cependant, _a contrario_ du numéro Sirene, celui-ci contient en lui-même plusieurs informations sensibles - en plus d'être intrinsèquement relié à la problématique sensible des droits à la sécurité sociale.
 
 ![Le numéro de sécurité sociale (Source: [Améli](https://www.ameli.fr/assure/droits-demarches/principes/numero-securite-sociale))](https://www.ameli.fr/sites/default/files/styles/webp_ckeditor/public/thumbnails/image/infographie_assures-regle-identification-assures.gif.webp?itok=j2owVDrB){fig-width="80%"}
- 
+
 Pour pallier ce problème, a récémment été mis en oeuvre le [code statistique non signifiant (CSNS)](https://www.insee.fr/fr/information/7635825?sommaire=7635842) ou NIR haché, un identifiant individuel anonyme non identifiant. L'objectif de cet identifiant anonymisé est de réduire la dissémination d'une information personnelle qui permettait certes aux fonctionnaires et chercheurs de relier de manière déterministe de nombreuses bases de données mais donnait une information non indispensable aux analystes sur les personnes en question. 
 
 
 [^flou]: Autrement, on rentre dans le monde des appariements flous ou des appariements probabilistes. Les appariements flous sont des situations où on ne dispose plus d'un identifiant exact pour associer deux bases mais d'une information partiellement bruitée entre deux sources pour faire cette mise en relation. Par exemple, dans une base de données produit on aura `Coca Cola 33CL` et dans une autre `Coca Cola canette` mais sous ces deux noms sont cachés le même produit. Le chapitre d'[ouverture aux enjeux de recherche textuelle avec `ElasticSearch`](/content/modern-ds/elastic.qmd) est consacré à cette problématique. Les appariements probabilistes sont un autre type d'approche. Dans ceux-ci, on associe des observations dans deux bases non pas sur la base d'un identifiant mais sur la distance entre un ensemble de caractéristiques dans les deux bases. Cette technique est très utilisée dans les statistiques médicales ou dans l'évaluation de politiques publiques sur la base du [_propensity score matching_](https://en.wikipedia.org/wiki/Propensity_score_matching).
+:::
 
+::: {.content-visible when-profile="en"}
+### The social security number and the issue of individual identifiers' confidentiality
+
+For individuals, there exists a unique identifier that allows linking them across different data sources: the [NIR](https://www.cnil.fr/fr/definition/nir-numero-dinscription-au-repertoire), also known as the INSEE number or social security number.
+This number is necessary for the administration to manage social benefits (health, retirement, family...). Beyond this function, which can be useful daily, this number is a unique individual identifier in the [National Register of Physical Persons (RNIPP)](https://www.insee.fr/fr/metadonnees/definition/c1602).
+
+This identifier is mainly present in management databases related to payroll, social benefits, etc. However, unlike the Sirene number, it contains several sensitive pieces of information and is inherently linked to the sensitive issue of social security rights.
+
+![Social security number (Source: [Améli](https://www.ameli.fr/assure/droits-demarches/principes/numero-securite-sociale))](https://www.ameli.fr/sites/default/files/styles/webp_ckeditor/public/thumbnails/image/infographie_assures-regle-identification-assures.gif.webp?itok=j2owVDrB){fig-width="80%"}
+
+To address this problem, the [non-significant statistical code (CSNS)](https://www.insee.fr/fr/information/7635825?sommaire=7635842) or hashed NIR, a non-identifying anonymous individual identifier, was recently implemented. The goal of this anonymized identifier is to reduce the dissemination of personal information that, although allowing civil servants and researchers to deterministically link numerous databases, provided analysts with non-essential information about the individuals in question.
+
+[^flou]: Otherwise, we enter the realm of fuzzy matching or probabilistic matching. Fuzzy matching occurs when we no longer have an exact identifier to link two databases but have partially noisy information between two sources to make the connection. For example, in a product database, we might have `Coca Cola 33CL` and in another `Coca Cola canette`, but these names hide the same product. The chapter on [Introduction to Textual Search with ElasticSearch](/content/modern-ds/elastic.qmd) addresses this issue. Probabilistic matching is another approach. In these, observations in two databases are associated not based on an identifier but on the distance between a set of characteristics in both databases. This technique is widely used in medical statistics or in the evaluation of public policies based on [_propensity score matching_](https://en.wikipedia.org/wiki/Propensity_score_matching).
+:::
+
+::: {.content-visible when-profile="fr"}
 ## Exercices d'application
 
 ### Pourquoi a-t-on besoin d'un code commune quand on a déjà son nom ?
 
 Cet exercice va revenir un peu en arrière afin de saisir pourquoi nous avons pris comme hypothèse ci-dessus que le code commune était la clé de jointure.
+:::
 
-{{< include "02_pandas_suite/_exo3_fr.qmd" >}}
+::: {.content-visible when-profile="en"}
+
+### Why do we need a commune code when we already have its name?
+
+This exercise will take a step back to understand why we assumed above that the commune code was the key for joining data.
+:::
+
+
+{{< include "02_pandas_suite/_exo3.qmd" >}}
 {{< include "02_pandas_suite/_exo3_solution.qmd" >}}
 
+::: {.content-visible when-profile="fr"}
 Ce petit exercice permet donc de se rassurer car les libellés dupliqués
 sont en fait des noms de commune identiques mais qui ne sont pas dans le même département.
 Il ne s'agit donc pas d'observations dupliquées.
 On peut donc se fier aux codes communes, qui eux sont uniques.
+:::
 
+::: {.content-visible when-profile="en"}
+This small exercise reassures us as the duplicated labels are actually the same commune names but in different departments. So, these are not duplicated observations. We can thus rely on the commune codes, which are unique.
+:::
+
+::: {.content-visible when-profile="fr"}
 ### Calculer une empreinte carbone grâce à l'association entre des sources
+:::
 
-{{< include "02_pandas_suite/_exo4_fr.qmd" >}}
+::: {.content-visible when-profile="en"}
+### Associating different sources to compute carbon footprints 
+:::
+
+{{< include "02_pandas_suite/_exo4.qmd" >}}
 {{< include "02_pandas_suite/_exo4_solution.qmd" >}}
-
 
 
 
