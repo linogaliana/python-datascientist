@@ -1,4 +1,4 @@
-name: Deploy to preview website (Netlify) and build notebooks
+name: "Pull request: deploy to preview website (Netlify) and test notebooks"
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   pages:
-    name: Render-Blog
+    name: "Preview on Netlify"
     runs-on: ubuntu-latest
     container: linogaliana/python-datascientist:latest
     steps:
@@ -21,11 +21,9 @@ jobs:
         run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
       - name: Render website
         run: |
-          export QUARTO_PROFILE=dev
           quarto --version
-          python build/append_environment.py
-          python build/tweak_render.py
-          quarto render --to html
+          quarto render --to html --profile fr
+          quarto render --to html --profile en
       - name: Install npm
         if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: actions/setup-node@v4      
@@ -64,17 +62,16 @@ jobs:
           conda list
       - name: Convert in ipynb with Quarto
         run: |
-          export QUARTO_PROFILE=dev
           quarto --version
-          python build/tweak_render.py
-          python build/pimp_notebook.py
-          quarto render content --to ipynb
+          quarto render content --to ipynb --profile fr
+          quarto render content --to ipynb --profile en
           mkdir -p temp_notebooks
           mkdir -p temp_notebooks/notebooks
-          python build/move_files.py temp_notebooks/notebooks
-          quarto render content --to ipynb --execute -M echo:true
+          python build/move_files.py --direction temp_notebooks/notebooks
+          quarto render content --to ipynb --execute -M echo:true --profile fr
+          quarto render content --to ipynb --execute -M echo:true --profile en
           mkdir -p temp_notebooks/corrections
-          python build/move_files.py temp_notebooks/corrections
+          python build/move_files.py --direction temp_notebooks/corrections
       - name: Pushes to another repository
         if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: linogaliana/github-action-push-to-another-repository@main
@@ -89,4 +86,31 @@ jobs:
           target-branch: dev
           create-target-branch-if-needed: true
           reset-repo: true
-
+  define-matrix:
+    runs-on: ubuntu-latest
+    needs: enonces
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: 'linogaliana/python-datascientist-notebooks'
+          ref: dev
+      - name: Define matrix
+        id: set-matrix
+        run: |
+          echo "::set-output name=matrix::$(find . -type f -name "*.ipynb" ! -name "_*" | jq -R -s -c 'split("\n")[:-1]')"
+  check:
+    needs: define-matrix
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    continue-on-error: true
+    strategy:
+        matrix:
+            manifest: ${{ fromJson(needs.define-matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4   
+        with:
+          repository: 'linogaliana/python-datascientist-notebooks'
+      - run: |
+          quarto render ${{ matrix.manifest }} --execute
