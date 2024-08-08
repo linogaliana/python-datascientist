@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.553">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Lino Galiana">
+<meta name="dcterms.date" content="2024-08-08">
+<meta name="description" content="Python s’est imposé comme une alternative très crédible à R dans la manipulation de données. L’écosystème Pandas a permis de démocratiser l’utilisation des DataFrames dans Python et faciliter la manipulation de données structurées grâce à la philosophie SQL. Python reste également le langage le plus pratique pour récupérer et manipuler des données moins structurées (webscraping, API). Python tend à devenir, grâce au développement d’API vers d’autres langages (C, Spark, Postgres, ElasticSearch…), le langage “one to rule them all”">
+
+<title>Python pour la data science - Partie 1: manipuler des données</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../content/manipulation/01_numpy.html" rel="next">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/quarto-contrib/fontawesome6-0.1.0/all.css" rel="stylesheet">
+<link href="../../site_libs/quarto-contrib/fontawesome6-0.1.0/latex-fontsize.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "Pas de résultats",
+    "search-matching-documents-text": "documents trouvés",
+    "search-copy-link-title": "Copier le lien vers la recherche",
+    "search-hide-matches-text": "Cacher les correspondances additionnelles",
+    "search-more-match-text": "correspondance de plus dans ce document",
+    "search-more-matches-text": "correspondances de plus dans ce document",
+    "search-clear-button-title": "Effacer",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Annuler",
+    "search-submit-button-title": "Envoyer",
+    "search-label": "Recherche"
+  }
+}</script>
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #e9f3fa;
+      }
+</style>
+<script id="toggle-light-dark-elements" type="application/javascript">
+// Extend Quarto theme toggling to allow elements to be displayed/hidden in light/dark themes
+
+// Replicated from https://github.com/quarto-dev/quarto-cli/blob/84d4659/src/resources/formats/html/templates/quarto-html.ejs
+const getColorSchemeSentinel = () => {
+  const localAlternateSentinel = 'default';
+  if (window.location.protocol !== 'file:') {
+    const storageValue = window.localStorage.getItem('quarto-color-scheme');
+    return storageValue != null ? storageValue : localAlternateSentinel;
+  } else {
+    return localAlternateSentinel;
+  }
+};
+
+// Function to toggle light and dark elements based on color scheme
+const toggleColorSchemeElements = () => {
+  const scheme = getColorSchemeSentinel();
+  const lightElements = document.getElementsByClassName('only-light');
+  const darkElements = document.getElementsByClassName('only-dark');
+
+  for (var i = 0; i < lightElements.length; i++) {
+    lightElements[i].style.display = scheme == 'default' ? 'block' : 'none';
+  }
+  for (var i = 0; i < darkElements.length; i++) {
+    darkElements[i].style.display = scheme == 'default' ? 'none' : 'block';
+  }
+};
+
+// Function to check if the user's browser prefers dark themes
+const prefersDarkTheme = () => {
+  if (window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  return false;
+};
+
+document.addEventListener('readystatechange', function() {
+  // Set the default color scheme based on browser preference
+  if (document.readyState === 'interactive' && window.location.protocol !== 'file:') {
+    const storageValue = window.localStorage.getItem('quarto-color-scheme');
+    if (storageValue == null && prefersDarkTheme()) {
+      window.localStorage.setItem('quarto-color-scheme', 'alternate');
+    }
+  }
+  // Add event listener for when the readyState is complete (and default toggler is set)
+  if (document.readyState === 'complete') {
+    // Toggle scheme once
+    toggleColorSchemeElements();
+    // Append our toggle function to the old one
+    const oldToggle = window.quartoToggleColorScheme;
+    window.quartoToggleColorScheme = () => {
+      oldToggle();
+      toggleColorSchemeElements();
+    }
+  }
+});
+
+</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+<meta name="twitter:title" content="Python pour la data science - Partie 1: manipuler des données">
+<meta name="twitter:description" content="Python s’est imposé comme une alternative très crédible à R dans
+la manipulation de données. L’écosystème Pandas a permis de démocratiser
+l’utilisation des DataFrames dans Python et faciliter la manipulation
+de données structurées grâce à la philosophie SQL. Python reste également
+le langage le plus pratique pour récupérer et manipuler
+des données moins structurées (webscraping, API). Python tend à devenir,
+grâce au développement d’API vers d’autres langages (C, Spark, Postgres,
+ElasticSearch…),
+le langage “one to rule them all”">
+<meta name="twitter:image" content="https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/panda.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="citation_title" content="Python pour la data science">
+<meta name="citation_author" content="Lino Galiana">
+<meta name="citation_publication_date" content="2023">
+<meta name="citation_cover_date" content="2023">
+<meta name="citation_year" content="2023">
+<meta name="citation_online_date" content="2024-08-08">
+<meta name="citation_fulltext_html_url" content="https://pythonds.linogaliana.fr/">
+<meta name="citation_doi" content="10.5281/zenodo.8229676">
+<meta name="citation_language" content="fr">
+<meta name="citation_reference" content="citation_title=Coding for economists;,citation_author=undefined Turrell;,citation_author=undefined contributors;,citation_publication_date=2021;,citation_cover_date=2021;,citation_year=2021;,citation_fulltext_html_url=https://aeturrell.github.io/coding-for-economists;">
+<meta name="citation_reference" content="citation_title=Hands-on machine learning with scikit-learn, keras, and TensorFlow;,citation_author=Aurélien Géron;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;">
+<meta name="citation_reference" content="citation_title=A brief history of data visualization;,citation_author=Chun-houh Chen;,citation_author=Wolfgang Härdle;,citation_author=Antony Unwin;,citation_author=Michael Friendly;,citation_publication_date=2008;,citation_cover_date=2008;,citation_year=2008;,citation_journal_title=Handbook of data visualization;,citation_publisher=Springer;">
+<meta name="citation_reference" content="citation_title=Random forests;,citation_author=Leo Breiman;,citation_publication_date=2001;,citation_cover_date=2001;,citation_year=2001;,citation_volume=45;,citation_journal_title=Machine learning;,citation_publisher=Springer;">
+<meta name="citation_reference" content="citation_title=Bagging predictors;,citation_author=Leo Breiman;,citation_publication_date=1996;,citation_cover_date=1996;,citation_year=1996;,citation_volume=24;,citation_journal_title=Machine learning;,citation_publisher=Springer;">
+<meta name="citation_reference" content="citation_title=R for data science;,citation_author=Hadley Wickham;,citation_author=Mine Çetinkaya-Rundel;,citation_author=Garrett Grolemund;,citation_publication_date=2023;,citation_cover_date=2023;,citation_year=2023;">
+<meta name="citation_reference" content="citation_title=Computational reproducibility of jupyter notebooks from biomedical publications;,citation_author=Sheeba Samuel;,citation_author=Daniel Mietchen;,citation_publication_date=2023;,citation_cover_date=2023;,citation_year=2023;,citation_fulltext_html_url=https://arxiv.org/abs/2308.07333;">
+<meta name="citation_reference" content="citation_title=Python data science handbook: Essential tools for working with data;,citation_author=Jake VanderPlas;,citation_publication_date=2016;,citation_cover_date=2016;,citation_year=2016;">
+<meta name="citation_reference" content="citation_title=Machine learning methods that economists should know about;,citation_author=Susan Athey;,citation_author=Guido W Imbens;,citation_publication_date=2019;,citation_cover_date=2019;,citation_year=2019;,citation_volume=11;,citation_journal_title=Annual Review of Economics;,citation_publisher=Annual Reviews;">
+<meta name="citation_reference" content="citation_title=Fuzzy matching on big-data an illustration with scanner data and crowd-sourced nutritional data;,citation_author=Lino Galiana;,citation_author=Milena Suarez Castillo;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_publisher=Proceedings of the 2022 &amp;amp;amp;quot;Journées de Méthodologie Statistiques&amp;quot;;">
+<meta name="citation_reference" content="citation_title=Data visualization with python and JavaScript;,citation_author=Kyran Dale;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;">
+<meta name="citation_reference" content="citation_title=Sémiologie graphique;,citation_author=Jacques Bertin;,citation_publication_date=1967;,citation_cover_date=1967;,citation_year=1967;">
+<meta name="citation_reference" content="citation_title=La sémiologie graphique de jacques bertin a cinquante ans;,citation_author=Gilles Palsky;,citation_publication_date=2017;,citation_cover_date=2017;,citation_year=2017;,citation_journal_title=Visions carto (en ligne);">
+<meta name="citation_reference" content="citation_title=Fundamentals of data visualization: A primer on making informative and compelling figures;,citation_author=Claus O Wilke;,citation_publication_date=2019;,citation_cover_date=2019;,citation_year=2019;">
+<meta name="citation_reference" content="citation_title=How to train BERT with an academic budget;,citation_author=Peter Izsak;,citation_author=Moshe Berchansky;,citation_author=Omer Levy;,citation_publication_date=2021;,citation_cover_date=2021;,citation_year=2021;,citation_fulltext_html_url=https://arxiv.org/abs/2104.07705;">
+<meta name="citation_reference" content="citation_title=Python for data analysis: Data wrangling with pandas, NumPy, and IPython;,citation_author=Wes McKinney;,citation_publication_date=2012;,citation_cover_date=2012;,citation_year=2012;">
+<meta name="citation_reference" content="citation_title=Residential segregation, daytime segregation and spatial frictions: An analysis from mobile phone data;,citation_author=Lino Galiana;,citation_author=François Sémécurbe;,citation_author=Benjamin Sakarovitch;,citation_author=Zbigniew Smoreda;,citation_publication_date=2020;,citation_cover_date=2020;,citation_year=2020;,citation_publisher=Insee Working Paper;">
+<meta name="citation_reference" content="citation_title=Fuzzy matching on big-data: An illustration with scanner and crowd-sourced nutritional datasets;,citation_abstract=Food retailers’ scanner data provide unprecedented details on local consumption, provided that product identifiers allow a linkage with features of interest, such as nutritional information. In this paper, we enrich a large retailer dataset with nutritional information extracted from crowd-sourced and administrative nutritional datasets. To compensate for imperfect matching through the barcode, we develop a methodology to efficiently match short textual descriptions. After a preprocessing step to normalize short labels, we resort to fuzzy matching based on several tokenizers (including n-grams) by querying an ElasticSearch customized index and validate candidates echos as matches with a Levensthein edit-distance and an embedding-based similarity measure created from a siamese neural network model. The pipeline is composed of several steps successively relaxing constraints to find relevant matching candidates.;,citation_author=Lino Galiana;,citation_author=Milena Suarez Castillo;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_fulltext_html_url=https://doi.org/10.1145/3524458.3547244;,citation_doi=10.1145/3524458.3547244;,citation_isbn=9781450392846;,citation_conference_title=Proceedings of the 2022 ACM conference on information technology for social good;,citation_conference=Association for Computing Machinery;,citation_series_title=GoodIT ’22;">
+<meta name="citation_reference" content="citation_title=Guide de sémiologie cartographique;,citation_author=undefined Insee;,citation_publication_date=2018;,citation_cover_date=2018;,citation_year=2018;,citation_publisher=Insee Working Paper;">
+<meta name="citation_reference" content="citation_title=Energy and policy considerations for deep learning in NLP;,citation_author=Emma Strubell;,citation_author=Ananya Ganesh;,citation_author=Andrew McCallum;,citation_publication_date=2019;,citation_cover_date=2019;,citation_year=2019;,citation_fulltext_html_url=https://arxiv.org/abs/1906.02243;">
+<meta name="citation_reference" content="citation_title=High-resolution image synthesis with latent diffusion models;,citation_author=Robin Rombach;,citation_author=Andreas Blattmann;,citation_author=Dominik Lorenz;,citation_author=Patrick Esser;,citation_author=Björn Ommer;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_conference_title=Proceedings of the IEEE/CVF conference on computer vision and pattern recognition (CVPR);">
+<meta name="citation_reference" content="citation_title=Apache arrow and the&amp;amp;amp;quot; 10 things i hate about pandas;,citation_author=Wes McKinney;,citation_publication_date=2017;,citation_cover_date=2017;,citation_year=2017;,citation_volume=21;,citation_journal_title=Blog, September;">
+<meta name="citation_reference" content="citation_title=Many researchers were not compliant with their published data sharing statement: Mixed-methods study;,citation_author=Mirko Gabelica;,citation_author=Ružica Bojčić;,citation_author=Livia Puljak;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_journal_title=Journal of Clinical Epidemiology;,citation_publisher=Elsevier;">
+<meta name="citation_reference" content="citation_title=Credit scoring in the era of big data;,citation_author=Mikella Hurley;,citation_author=Julius Adebayo;,citation_publication_date=2016;,citation_cover_date=2016;,citation_year=2016;,citation_volume=18;,citation_journal_title=Yale JL &amp;amp;amp; Tech.;,citation_publisher=HeinOnline;">
+<meta name="citation_reference" content="citation_title=Econometrics and machine learning;,citation_author=Arthur Charpentier;,citation_author=Emmanuel Flachaire;,citation_author=Antoine Ly;,citation_publication_date=2018;,citation_cover_date=2018;,citation_year=2018;,citation_issue=1;,citation_volume=505;,citation_journal_title=Economie et Statistique;,citation_publisher=Persée-Portail des revues scientifiques en SHS;">
+<meta name="citation_reference" content="citation_title=Machine learning: An applied econometric approach;,citation_author=Sendhil Mullainathan;,citation_author=Jann Spiess;,citation_publication_date=2017-05;,citation_cover_date=2017-05;,citation_year=2017;,citation_fulltext_html_url=https://www.aeaweb.org/articles?id=10.1257/jep.31.2.87;,citation_issue=2;,citation_doi=10.1257/jep.31.2.87;,citation_volume=31;,citation_journal_title=Journal of Economic Perspectives;">
+<meta name="citation_reference" content="citation_title=Le problème du réalisme des hypothèses en économie politique;,citation_author=Pierre Salmon;,citation_publication_date=2010;,citation_cover_date=2010;,citation_year=2010;">
+<meta name="citation_reference" content="citation_title=The methodology of positive economics;,citation_author=Milton Friedman;,citation_publication_date=1953;,citation_cover_date=1953;,citation_year=1953;,citation_inbook_title=Essays in positive economics;">
+<meta name="citation_reference" content="citation_title=L’empreinte carbone du numérique;,citation_author=undefined Arcep;,citation_publication_date=2019;,citation_cover_date=2019;,citation_year=2019;">
+<meta name="citation_reference" content="citation_title=Leakage and the reproducibility crisis in ML-based science;,citation_author=Sayash Kapoor;,citation_author=Arvind Narayanan;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_fulltext_html_url=https://arxiv.org/abs/2207.07048;,citation_doi=10.48550/ARXIV.2207.07048;,citation_publisher=arXiv;">
+<meta name="citation_reference" content="citation_title=Data scientist, the sexiest job of the 21st century;,citation_author=Thomas H Davenport;,citation_author=DJ Patil;,citation_publication_date=2012;,citation_cover_date=2012;,citation_year=2012;,citation_fulltext_html_url=https://hbr.org/2012/10/data-scientist-the-sexiest-job-of-the-21st-century;,citation_issue=5;,citation_volume=90;,citation_journal_title=Harvard business review;">
+<meta name="citation_reference" content="citation_title=Is data scientist still the sexiest job of the 21st century?;,citation_author=Thomas H Davenport;,citation_author=DJ Patil;,citation_publication_date=2012;,citation_cover_date=2012;,citation_year=2012;,citation_fulltext_html_url=https://hbr.org/2012/10/data-scientist-the-sexiest-job-of-the-21st-century;,citation_issue=5;,citation_volume=90;,citation_journal_title=Harvard business review;">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Recherche"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Basculer la navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-introduction" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Introduction</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-introduction">    
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/01_installation.html">
+ <span class="dropdown-text">Configuration de Python</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/02_DS_environment.html">
+ <span class="dropdown-text">L’environnement Python pour la data science</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/03_data_analysis.html">
+ <span class="dropdown-text">Démarche à adopter face à un jeu de données</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/04_python_practice.html">
+ <span class="dropdown-text">Bonne pratique de Python</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/05_rappels_types.html">
+ <span class="dropdown-text">Quelques rappels sur les principes de base de Python</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/06_rappels_fonctions.html">
+ <span class="dropdown-text">Modules, tests, boucles, fonctions</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/07_rappels_classes.html">
+ <span class="dropdown-text">Les classes en Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-wrangle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Wrangle</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-wrangle">    
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/01_numpy.html">
+ <span class="dropdown-text">Numpy, la brique de base de la data science</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/02_pandas_intro.html">
+ <span class="dropdown-text">Introduction à Pandas</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/02_pandas_suite.html">
+ <span class="dropdown-text">Statistiques par groupe et association de plusieurs jeux de données avec Pandas</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/03_geopandas_intro.html">
+ <span class="dropdown-text">Introduction aux données spatiales avec Geopandas</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/04a_webscraping_TP.html">
+ <span class="dropdown-text">Web scraping avec Python</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/04c_API_TP.html">
+ <span class="dropdown-text">Récupérer des données avec des API depuis Python</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/04b_regex_TP.html">
+ <span class="dropdown-text">Maîtriser les expressions régulières</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-communicate" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Communicate</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-communicate">    
+        <li>
+    <a class="dropdown-item" href="../../content/visualisation/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/visualisation/matplotlib.html">
+ <span class="dropdown-text">De beaux graphiques avec python : mise en pratique</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/visualisation/maps.html">
+ <span class="dropdown-text">De belles cartes avec python : mise en pratique</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-model" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Model</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-model">    
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/0_preprocessing.html">
+ <span class="dropdown-text">Préparation des données pour construire un modèle</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/1_modelevaluation.html">
+ <span class="dropdown-text">Evaluer la qualité d’un modèle</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/2_SVM.html">
+ <span class="dropdown-text">Classification: premier modèle avec les SVM</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/3_regression.html">
+ <span class="dropdown-text">Régression : une introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/4_featureselection.html">
+ <span class="dropdown-text">Sélection de variables : une introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/5_clustering.html">
+ <span class="dropdown-text">Clustering</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/6_pipeline.html">
+ <span class="dropdown-text">Premier pas vers l’industrialisation avec les pipelines scikit</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/7_mlapi.html">
+ <span class="dropdown-text">Mettre à disposition un modèle par le biais d’une API</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-nlp" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">NLP</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-nlp">    
+        <li>
+    <a class="dropdown-item" href="../../content/NLP/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/NLP/01_intro.html">
+ <span class="dropdown-text">Nettoyer et structurer l’information dans les données textuelles</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/NLP/02_exoclean.html">
+ <span class="dropdown-text">L’analyse fréquentiste par l’approche bag-of-words : intérêt et limites</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/NLP/03_lda.html">
+ <span class="dropdown-text">Latent Dirichlet Allocation (LDA)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/NLP/04_word2vec.html">
+ <span class="dropdown-text">Méthodes de vectorisation : comptages et word embeddings</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/NLP/05_exo_supp.html">
+ <span class="dropdown-text">Exercices supplémentaires</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-in-depth" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">In-depth</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-in-depth">    
+        <li>
+    <a class="dropdown-item" href="../../content/modern-ds/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modern-ds/continuous_integration.html">
+ <span class="dropdown-text">Intégration continue avec Python</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modern-ds/s3.html">
+ <span class="dropdown-text">Les nouveaux modes d’accès aux données : le format parquet et les données sur le cloud</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modern-ds/elastic_approfondissement.html">
+ <span class="dropdown-text">Approfondissement ElasticSearch pour des recherches de proximité géographique</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modern-ds/elastic_intro.html">
+ <span class="dropdown-text">Introduction à ElasticSearch pour la recherche textuelle</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-git" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Git</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-git">    
+        <li>
+    <a class="dropdown-item" href="../../content/git/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/git/introgit.html">
+ <span class="dropdown-text">Git : un élément essentiel au quotidien</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/git/exogit.html">
+ <span class="dropdown-text">Un cadavre exquis pour découvrir Git</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-annexes" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Annexes</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-annexes">    
+        <li>
+    <a class="dropdown-item" href="../../content/annexes/evaluation.html">
+ <span class="dropdown-text">Evaluation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/annexes/corrections.html">
+ <span class="dropdown-text">Corrections</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://linogaliana.github.io/python-datascientist-slides/#/title-slide">
+ <span class="dropdown-text">Slides de présentation</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools tools-wide">
+    <a href="https://github.com/linogaliana/python-datascientist" title="" class="quarto-navigation-tool px-1" aria-label=""><i class="bi bi-github"></i></a>
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Basculer le mode sombre"><i class="bi"></i></a>
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Basculer en mode lecteur">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Basculer la barre latérale" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../content/manipulation/index.html">Introduction</a></li></ol></nav>
+        <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Basculer la barre latérale" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Partie 1: manipuler des données</h1>
+                  <div>
+        <div class="description">
+          <p><code>Python</code> s’est imposé comme une alternative très crédible à <code>R</code> dans
+          la manipulation de données. L’écosystème <code>Pandas</code> a permis de démocratiser
+          l’utilisation des DataFrames dans <code>Python</code> et faciliter la manipulation
+          de données structurées grâce à la philosophie <code>SQL</code>. <code>Python</code> reste également
+          le langage le plus pratique pour récupérer et manipuler
+          des données moins structurées (<em>webscraping</em>, API). <code>Python</code> tend à devenir,
+          grâce au développement d’API vers d’autres langages (<code>C</code>, <code>Spark</code>, <code>Postgres</code>,
+          <code>ElasticSearch</code>…),
+          le langage <em>“one to rule them all”</em></p>
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">Manipulation</div>
+                <div class="quarto-category">Introduction</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Auteur·rice</div>
+      <div class="quarto-title-meta-contents">
+               <p>Lino Galiana </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Date de publication</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">2024-08-08</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/index.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/01_numpy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Numpy, la brique de base de la data science</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/02_pandas_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction à Pandas</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/02_pandas_suite.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Statistiques par groupe et association de plusieurs jeux de données avec Pandas</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/03_geopandas_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction aux données spatiales avec Geopandas</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/04a_webscraping_TP.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Web scraping avec Python</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/04c_API_TP.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Récupérer des données avec des API depuis Python</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/04b_regex_TP.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Maîtriser les expressions régulières</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Sur cette page</h2>
+   
+  <ul>
+  <li><a href="#résumé-de-cette-partie" id="toc-résumé-de-cette-partie" class="nav-link active" data-scroll-target="#résumé-de-cette-partie">Résumé de cette partie</a></li>
+  <li><a href="#exercices" id="toc-exercices" class="nav-link" data-scroll-target="#exercices">Exercices</a></li>
+  <li><a href="#pour-aller-plus-loin" id="toc-pour-aller-plus-loin" class="nav-link" data-scroll-target="#pour-aller-plus-loin">Pour aller plus loin</a>
+  <ul class="collapse">
+  <li><a href="#références" id="toc-références" class="nav-link" data-scroll-target="#références">Références</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/linogaliana/python-datascientist/edit/master/content/manipulation/index.qmd" class="toc-action"><i class="bi bi-github"></i>Modifier cette page</a></li><li><a href="https://github.com/linogaliana/python-datascientist/issues/new" class="toc-action"><i class="bi empty"></i>Faire part d'un problème</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+<p><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<a href="#" onclick="this.href = location.href.replace('/fr/', '/').replace(/^(https?:\/\/[^\/]+)\//, '$1/en/');" class="button-cta">
+<button class="btn"><i class="fa fa-language"></i> Switch to English version 🇬🇧 🇺🇸</button>
+</a></p>
+<p>Si on associe souvent les <em>data scientists</em> à la mise en oeuvre
+de modèles d’intelligence artificielle, il est important
+de ne pas oublier que l’entraînement et l’utilisation
+de ces modèles ne représente pas
+forcément le quotidien des <em>data scientists</em>.</p>
+<p>En pratique,
+la récupération de sources de données hétérogènes, la structuration
+et harmonisation de celles-ci en vue d’une analyse exploratoire
+préalable à la modélisation ou la visualisation
+représente une part importante du travail des <em>data scientists</em>.
+Dans de nombreux environnements c’est même l’essence du travail
+du <em>data scientist</em>.
+L’élaboration de modèles pertinents requiert en effet une réflexion approfondie sur les données ;
+une étape que l’on ne saurait négliger.</p>
+<p>Ce cours,
+comme de nombreuses ressources introductives sur
+la <em>data science</em> <span class="citation" data-cites="wickham2023r vanderplas2016python mckinney2012python">(<a href="#ref-wickham2023r" role="doc-biblioref">Wickham, Çetinkaya-Rundel, et Grolemund 2023</a>; <a href="#ref-vanderplas2016python" role="doc-biblioref">VanderPlas 2016</a>; <a href="#ref-mckinney2012python" role="doc-biblioref">McKinney 2012</a>)</span>,
+proposera donc beaucoup d’éléments sur la manipulation de données, compétence
+essentielle pour les <em>data scientists</em>.</p>
+<p>Les logiciels de programmation
+orientés autour du concept de base de données
+sont devenus les outils principaux des <em>data scientists</em>.
+Le fait de pouvoir appliquer un certain nombre d’opérations
+standards sur des bases de données, quelle que soit leur nature,
+permet aux programmeurs d’être plus efficaces que s’ils devaient
+répéter ces opérations à la main, comme dans <code>Excel</code>.</p>
+<p>Tous les langages de programmation dominants dans l’écosystème
+de la <em>data science</em> reposent sur le principe du <em>dataframe</em>.
+Il s’agit même d’un objet central dans certains logiciels,
+notamment <code>R</code>.
+La logique <a href="https://fr.wikipedia.org/wiki/Structured_Query_Language"><code>SQL</code></a>,
+un langage de déclaration d’opérations sur des données qui a déjà plus de cinquante ans,
+offre un cadre pertinent pour effectuer des opérations standardisées
+sur les colonnes (création de nouvelles colonnes, sélection de sous-ensemble de lignes…).</p>
+<p>Néanmoins, le <em>dataframe</em> ne s’est imposé que récemment en <code>Python</code>,
+grâce au package <code>Pandas</code> créé
+par <a href="https://fr.wikipedia.org/wiki/Wes_McKinney">Wes McKinney</a>.
+L’essor de la librairie <code>Pandas</code> (téléchargée plus de 5 millions de fois
+par jour en 2023) est pour beaucoup dans le succès de <code>Python</code>
+dans l’écosystème de la <em>data science</em> et a amené, en quelques années,
+a un renouvellement complet de la manière de coder en <code>Python</code>, ce
+langage si malléable, autour de l’analyse de données.</p>
+<p>Cette partie du cours est une introduction
+générale à l’écosystème très riche de
+la manipulation de données avec <code>Python</code>.
+Ces chapitres évoquent aussi bien la récupération de données
+que la restructuration et la production d’analyse
+à partir de celles-ci.</p>
+<section id="résumé-de-cette-partie" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="résumé-de-cette-partie">Résumé de cette partie</h2>
+<p><code>Pandas</code> est devenu incontournable dans l’écosystème <code>Python</code> pour la <em>data science</em>.
+<code>Pandas</code> est lui-même construit à partir du package <code>Numpy</code>, qu’il est utile de comprendre
+pour être à l’aise avec <code>Pandas</code>. <code>Numpy</code> est une librairie bas-niveau
+pour stocker et manipuler des données.
+<code>Numpy</code> est au coeur de l’écosystème de la <em>data science</em> car la plupart des librairies, même celles
+qui manient des objets destructurés,
+utilisent des objets construits à partir de <code>Numpy</code><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<p>L’approche <code>Pandas</code>, qui offre un point d’entrée harmonisé pour manipuler
+des jeux de données de nature très différente,
+a été étendue aux objets géographiques avec <code>Geopandas</code>.
+Il est ainsi possible de manipuler des données géographiques comme s’il
+s’agissait de données structurées classiques. Les données géographiques et
+la représentation cartographique deviennent de plus en plus commun avec
+la multiplication de données ouvertes localisées et de <em>big-data</em> géolocalisées.</p>
+<p>Cependant, les données structurées, importées depuis des fichiers plats
+ne représentent pas l’unique source de données. Les API et le <em>webscraping</em>
+permettent de télécharger ou d’extraire
+des données de manière très flexible depuis des pages web ou des guichets
+spécialisés. Ces données, notamment
+celles obtenues par <em>webscraping</em> nécessitent souvent un peu plus de travail
+de nettoyage de données, notamment des chaînes de caractère.</p>
+<p>L’écosystème <code>Pandas</code> représente donc un couteau-suisse
+pour l’analyse de données. C’est pour cette raison que ce cours
+développera beaucoup de contenu dessus.
+Avant d’essayer de mettre en oeuvre une solution <em>ad hoc</em>, il est
+souvent utile de se poser la question suivante : <em>“ne pourrais-je pas le faire
+avec les fonctionalités de base de <code>Pandas</code> ?”</em> Se poser cette question peut
+éviter des chemins ardus et faire économiser beaucoup de temps.</p>
+<p>Néanmoins, <code>Pandas</code> n’est pas
+adapté à des données ayant une volumétrie
+importante. Pour traiter de telles
+données, il est plutôt recommander
+de privilégier <code>Polars</code> ou <code>Dask</code> qui reprennent la logique de <code>Pandas</code> mais
+optimisent son fonctionnement, <code>Spark</code> si on a une infrastructure adaptée, généralement dans
+des environnements <em>big data</em>, ou
+<code>DuckDB</code> si on est prêt à utiliser des requêtes SQL plutôt qu’une librairie haut-niveau.</p>
+</section>
+<section id="exercices" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="exercices">Exercices</h2>
+<p>Cette partie présente à la fois des tutoriels détaillés
+et des exercices guidés.</p>
+<p>Il est
+possible de les consulter sur ce site ou d’utiliser l’un des
+badges présents en début de chapitre, par exemple
+ceux-ci pour ouvrir
+le <a href="02b_pandas_TP/">chapitre d’exercices sur <code>Pandas</code></a>:</p>
+<div class="cell markdown">
+<p class="badges">
+<a href="https://github.com/linogaliana/python-datascientist-notebooks/blob/main/notebooks/manipulation/02b_pandas_TP.ipynb" class="github"><i class="fab fa-github"></i></a>
+<a href="https://downgit.github.io/#/home?url=https://github.com/linogaliana/python-datascientist-notebooks/blob/main/notebooks/manipulation/02b_pandas_TP.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/Download-Notebook-important?logo=Jupyter" alt="Download"></a>
+<a href="https://nbviewer.jupyter.org/github/linogaliana/python-datascientist-notebooksblob/main/notebooks/manipulation/02b_pandas_TP.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/Visualize-nbviewer-blue?logo=Jupyter" alt="nbviewer"></a>
+<a href="https://datalab.sspcloud.fr/launcher/ide/jupyter-python?autoLaunch=true&amp;onyxia.friendlyName=%C2%AB02b_pandas_TP%C2%BB&amp;init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB&amp;init.personalInitArgs=%C2%ABmanipulation%2002b_pandas_TP%C2%BB&amp;security.allowlist.enabled=false" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/SSP%20Cloud-Tester_avec_Jupyter-orange?logo=Jupyter&amp;logoColor=orange" alt="Onyxia"></a>
+<a href="https://datalab.sspcloud.fr/launcher/ide/vscode-python?autoLaunch=true&amp;onyxia.friendlyName=%C2%AB02b_pandas_TP%C2%BB&amp;init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-vscode.sh%C2%BB&amp;init.personalInitArgs=%C2%ABmanipulation%2002b_pandas_TP%C2%BB&amp;security.allowlist.enabled=false" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/SSP%20Cloud-Tester_avec_VSCode-blue?logo=visualstudiocode&amp;logoColor=blue" alt="Onyxia"></a><br>
+<a href="https://colab.research.google.com/github/linogaliana/python-datascientist-notebooks/blob/main/notebooks/manipulation/02b_pandas_TP.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
+<a href="https://github.dev/linogaliana/python-datascientist-notebooks/notebooks/manipulation/02b_pandas_TP.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/static/v1?logo=visualstudiocode&amp;label=&amp;message=Open%20in%20Visual%20Studio%20Code&amp;labelColor=2c2c32&amp;color=007acc&amp;logoColor=007acc" alt="githubdev"></a>
+</p>
+<p></p>
+</div>
+</section>
+<section id="pour-aller-plus-loin" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="pour-aller-plus-loin">Pour aller plus loin</h2>
+<p>Ce cours n’aborde pas vraiment les questions de volumétrie ou de vitesse de
+calcul.
+<code>Pandas</code> peut montrer ses limites dans ce domaine sur des jeux de données
+d’une volumétrie conséquente (plusieurs Gigas).</p>
+<p>Il est ainsi intéressant de porter attention à:</p>
+<ul>
+<li>Le livre <a href="https://tomaugspurger.github.io/modern-1-intro.html">Modern Pandas</a>
+pour obtenir des éléments supplémentaires sur la question de la performance
+avec <code>Pandas</code> ;</li>
+<li>La question des
+<a href="https://chrisalbon.com/machine_learning/vectors_matrices_and_arrays/create_a_sparse_matrix/">objets <em>sparse</em></a> ;</li>
+<li>Les <em>packages</em> <a href="https://dask.org/"><code>Dask</code></a> ou <a href="https://ssphub.netlify.app/post/polars/"><code>Polars</code></a> pour accélérer les calculs ;</li>
+<li><a href="https://duckdb.org/docs/api/python/overview.html"><code>DuckDB</code></a> pour effectuer de manière très efficace des requêtes SQL ;</li>
+<li><a href="https://spark.apache.org/docs/latest/api/python/index.html"><code>PySpark</code></a> pour des données très volumineuses.</li>
+</ul>
+<section id="références" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="références">Références</h3>
+<p>Voici une bibliographie sélective des ouvrages
+intéressants en complément des chapitres de la partie “Manipulation” de ce cours :</p>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-mckinney2012python" class="csl-entry" role="listitem">
+McKinney, Wes. 2012. <em>Python for data analysis: Data wrangling with Pandas, NumPy, and IPython</em>. " O’Reilly Media, Inc.".
+</div>
+<div id="ref-vanderplas2016python" class="csl-entry" role="listitem">
+VanderPlas, Jake. 2016. <em>Python data science handbook: Essential tools for working with data</em>. " O’Reilly Media, Inc.".
+</div>
+<div id="ref-wickham2023r" class="csl-entry" role="listitem">
+Wickham, Hadley, Mine Çetinkaya-Rundel, et Garrett Grolemund. 2023. <em>R for data science</em>. " O’Reilly Media, Inc.".
+</div>
+</div>
+
+
+</section>
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Retour au sommet</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Notes de bas de page</h2>
+
+<ol>
+<li id="fn1"><p>Certaines librairies commencent, petit à petit, à s’émanciper
+de <code>Numpy</code> qui n’est pas toujours le plus adapté pour la gestion
+de certains types de données. Le <em>framework</em> <code>Arrow</code> tend à devenir
+la couche basse utilisée par de plus en plus de librairies de <em>data science</em>.
+<a href="https://datapythonista.me/blog/pandas-20-and-the-arrow-revolution-part-i">Ce <em>post</em> de blog</a> approfondit
+de manière très pédagogique ce sujet.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@book{galiana2023,
+  author = {Galiana, Lino},
+  title = {Python pour la data science},
+  date = {2023},
+  url = {https://pythonds.linogaliana.fr/},
+  doi = {10.5281/zenodo.8229676},
+  langid = {fr}
+}
+</code><button title="Copier vers le presse-papier" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">Veuillez citer ce travail comme suit&nbsp;:</div><div id="ref-galiana2023" class="csl-entry quarto-appendix-citeas" role="listitem">
+Galiana, Lino. 2023. <em>Python pour la data science</em>. <a href="https://doi.org/10.5281/zenodo.8229676">https://doi.org/10.5281/zenodo.8229676</a>.
+</div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+    const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+    const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+    let newTheme = '';
+    if(darkModeDefault) {
+      newTheme = isAlternate ? baseTheme : alternateTheme;
+    } else {
+      newTheme = isAlternate ? alternateTheme : baseTheme;
+    }
+    const changeGiscusTheme = () => {
+      // From: https://github.com/giscus/giscus/issues/336
+      const sendMessage = (message) => {
+        const iframe = document.querySelector('iframe.giscus-frame');
+        if (!iframe) return;
+        iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+      }
+      sendMessage({
+        setConfig: {
+          theme: newTheme
+        }
+      });
+    }
+    const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+    if (isGiscussLoaded) {
+      changeGiscusTheme();
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455)
+    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+      manageTransitions("body", false);
+      window.scrollTo(0, 1);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        manageTransitions("body", true);
+      }, 40);  
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  const darkModeDefault = false;
+  let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+    toggleGiscusIfUsed(toAlternate, darkModeDefault);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } else {
+    toggleColorMode(false);
+  }
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copié");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copié");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/pythonds\.linogaliana\.fr");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<script src="https://giscus.app/client.js" data-repo="linogaliana/python-datascientist" data-repo-id="MDEwOlJlcG9zaXRvcnkyODAxNjE2Nzc=" data-category="General" data-category-id="DIC_kwDOELLtjc4B-5TX" data-mapping="title" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="light" data-lang="en" crossorigin="anonymous" async="">
+</script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark">
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../content/manipulation/01_numpy.html" class="pagination-link" aria-label="Numpy, la brique de base de la data science">
+        <span class="nav-page-text">Numpy, la brique de base de la data science</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Python pour la <em>data science</em>, Lino Galiana.<br>
+Licence <i class="fa-brands fa-creative-commons" aria-label="creative-commons"></i><br>
+Code source disponible sur <a href="https://github.com/linogaliana/python-datascientist"><code>Github</code></a></p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/linogaliana/python-datascientist/edit/master/content/manipulation/index.qmd" class="toc-action"><i class="bi bi-github"></i>Modifier cette page</a></li><li><a href="https://github.com/linogaliana/python-datascientist/issues/new" class="toc-action"><i class="bi empty"></i>Faire part d'un problème</a></li></ul></div></div>
+    <div class="nav-footer-right">
+<p>Site construit avec <i class="fa-brands fa-python" aria-label="python"></i> et <a href="https://quarto.org/"><code>Quarto</code></a><br>
+Inspiration pour la mise en forme du site <a href="https://www.andreashandel.com">ici</a><br>
+<a href="https://github.com/linogaliana/python-datascientist">Code source disponible sur <i class="fa-brands fa-github" aria-label="github"></i> <code>GitHub</code></a></p>
+</div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
