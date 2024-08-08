@@ -68,33 +68,29 @@ Here are, for example, these buttons for the <code>numpy</code> tutorial:
 </p>
 
 
-
 <h2>
-Utilisation de l'image Docker </h2> [![Docker Pulls](https://img.shields.io/docker/pulls/linogaliana/python-datascientist)](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general)
+Using the Docker Image</h2> [![Docker Pulls](https://img.shields.io/docker/pulls/linogaliana/python-datascientist)](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general)
 
-
-Pour améliorer la reproductibilité des exemples, une image `Docker` est 
-automatiquement construite et mise à disposition depuis 
+To improve the reproducibility of the examples, a `Docker` image is 
+automatically built and made available from 
 [DockerHub](https://hub.docker.com/repository/docker/linogaliana/python-datascientist).
 
 </details>
 
-
 <details>
 <summary>
-<h2>Construction du site web
+<h2>Website Construction
 </h2>
 </summary>
 
-Le site est construit de manière automatique grâce à [`Quarto`](https://quarto.org/)
-à partir d'un environnement conteneurisé [`Docker`](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general) 
-La reproductibilité des exemples et des exercices est testée avec 
+The site is automatically built using [`Quarto`](https://quarto.org/)
+from a containerized environment [`Docker`](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general). 
+The reproducibility of the examples and exercises is tested with 
 `Github Actions` ([![build-doc Actions Status](https://github.com/linogaliana/python-datascientist/actions/workflows/prod.yml/badge.svg)](https://github.com/linogaliana/python-datascientist/actions)).
-Les _notebooks_ sont générés de manière à être cohérente avec le site web
-et sont maintenant stockés sur un [dépôt à part](https://github.com/linogaliana/python-datascientist-notebooks).
+The notebooks are generated to be consistent with the website
+and are now stored in a [separate repository](https://github.com/linogaliana/python-datascientist-notebooks).
 
-L'environnement `Conda` nécessaire pour faire tourner l'ensemble du
-cours est disponible dans un fichier [`environment.yml`](https://github.com/linogaliana/python-datascientist-docker/blob/main/environment.yml). 
-Il est recommandé d'utiliser la `conda-forge` afin de bénéficier de versions
-récentes des packages. 
+The `Conda` environment needed to run the entire course is available in a [`environment.yml`](https://github.com/linogaliana/python-datascientist-docker/blob/main/environment.yml) file. 
+It is recommended to use the `conda-forge` to benefit from recent
+versions of the packages.
 </details>

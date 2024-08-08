@@ -11,6 +11,11 @@
 
 [![DOI](https://zenodo.org/badge/280161677.svg)](https://zenodo.org/badge/latestdoi/280161677)
 
+> [!NOTE]  
+> Vous voyez la version française 🇫🇷  du `README`. Pour lire la version anglaise 🇬🇧🇺🇸, vous pouvez cliquer sur le lien ci-dessous
+> 
+> [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/linogaliana/python-datascientist/blob/main/README.md)
+
 
 <img src="/content/gif_python.gif" width="250" />
 
