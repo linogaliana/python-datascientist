@@ -106,3 +106,4 @@ cours est disponible dans un fichier [`environment.yml`](https://github.com/lino
 Il est recommandé d'utiliser la `conda-forge` afin de bénéficier de versions
 récentes des packages. 
 </details>
+
