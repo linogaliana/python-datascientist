@@ -1,4 +1,4 @@
-# Data science with Python <img height="28" width="28" src="https://cdn.simpleicons.org/python/00ccff99" />
+# Python pour la data science <img height="28" width="28" src="https://cdn.simpleicons.org/python/00ccff99" />
 
 [![build-doc Actions Status](https://github.com/linogaliana/python-datascientist/actions/workflows/prod.yml/badge.svg)](https://github.com/linogaliana/python-datascientist/actions)
 
@@ -12,50 +12,58 @@
 [![DOI](https://zenodo.org/badge/280161677.svg)](https://zenodo.org/badge/latestdoi/280161677)
 
 > [!NOTE]  
-> This is the English 🇬🇧🇺🇸 version of the `README`. If you want to see the French 🇫🇷 version, you can click on the link below:
+> Vous voyez la version française 🇫🇷  du `README`. Pour lire la version anglaise 🇬🇧🇺🇸, vous pouvez cliquer sur le lien ci-dessous
 > 
-> [![fr](https://img.shields.io/badge/lang-fr-red.svg)](https://github.com/linogaliana/python-datascientist/blob/main/doc/README-fr.md)
-
+> [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/linogaliana/python-datascientist/blob/main/README.md)
 
 
 <img src="/content/gif_python.gif" width="250" />
 
-This GitHub repository <img height="18" width="18" src="https://cdn.simpleicons.org/github/00ccff99" />
-stores the source files used to build the site
-<https://pythonds.linogaliana.fr/>.
+Ce dépôt `Github` <img height="18" width="18" src="https://cdn.simpleicons.org/github/00ccff99" />
+stocke les fichiers sources ayant permis de construire le site
+<https://pythonds.linogaliana.fr/>. 
 
-It contains the entire course *Python for Data Science* <img height="18" width="18" src="https://cdn.simpleicons.org/python/00ccff99" />
-that I teach in the second year (Master 1) at [ENSAE](https://www.ensae.fr/).
+Il s'agit de l'ensemble du cours *Python pour la data science* <img height="18" width="18" src="https://cdn.simpleicons.org/python/00ccff99" />
+que je donne en deuxième année (Master 1) de l'[ENSAE](https://www.ensae.fr/).
 
 ## Syllabus
 
-The syllabus is available [on the ENSAE website](https://www.ensae.fr/courses/1425-python-pour-le-data-scientist) and on the [course website](https://pythonds.linogaliana.fr/).
 
-Overall, it offers a very comprehensive content that can satisfy both beginners in data science and those looking for more advanced content:
+Le syllabus est disponible [sur le site de l'ENSAE](https://www.ensae.fr/courses/1425-python-pour-le-data-scientist) et sur le [site web du cours](https://pythonds.linogaliana.fr/).
 
-1. __Data Manipulation__: standard data manipulation (`Pandas`), geographical data (`Geopandas`), data retrieval (web scraping, API)...
-1. __Data Visualization__: classic visualizations (`Matplotlib`, `Seaborn`), cartography, interactive visualizations (`Plotly`, `Folium`)
-1. __Modeling__: machine learning (`Scikit`), econometrics
-1. __Text Data Processing (NLP)__: introduction to tokenization with `NLTK` and `SpaCy`, modeling...
-1. **Introduction to Modern Data Science**: cloud computing, `ElasticSearch`, continuous integration...
+Globalement, il propose un contenu très complet pouvant autant 
+satisfaire des débutants en 
+_data science_ que des personnes à la recherche de contenu plus avancé :
 
-The content of this site is based on open data, whether French data (mainly from the central platform [`data.gouv`](https://www.data.gouv.fr) or the website of [Insee](https://www.insee.fr)) or American data.
+1. __Manipulation de données__ : manipulation de données standards (`Pandas`), données géographiques (`Geopandas`), récupération de données (webscraping, API)...
+1. __Visualisation de données__ : visualisations classiques (`Matplotlib`, `Seaborn`), cartographie, visualisations réactives (`Plotly`, `Folium`)
+1. __Modélisation__ : _machine learning_ (`Scikit`), économétrie
+1. __Traitement de données textuelles__ (NLP): découverte de la tokenisation avec `NLTK` et `SpaCy`, modélisation...
+1. **Introduction à la _data science_ moderne** : _cloud computing_, `ElasticSearch`, intégration continue...
 
-A good complement to the website's content is the course we give with Romain Avouac ([@avouacr](https://github.com/avouacr)) in the final year at ENSAE, more focused on the production of data science projects: [https://ensae-reproductibilite.github.io/website/](https://ensae-reproductibilite.github.io/website/)
+L'ensemble du contenu de ce site s'appuie sur des données
+ouvertes, qu'il s'agisse de données françaises (principalement
+issues de la plateforme
+centralisatrice [`data.gouv`](https://www.data.gouv.fr) ou du site
+_web_ de l'[Insee](https://www.insee.fr)) ou de données
+américaines.
+
+Un bon complément du contenu du site web est le cours que nous donnons avec Romain Avouac ([@avouacr](https://github.com/avouacr)) en dernière année de l'ENSAE plus tourné autour de la mise en production de projets _data science_ : [https://ensae-reproductibilite.github.io/website/](https://ensae-reproductibilite.github.io/website/)
 
 
 <details>
 <summary>
 <h2>
-Testing Python examples
+Tester les codes Python
 </h2>
 </summary>
 
-You can use a personal installation of `Python` or shared servers. On the website, a series of buttons are available to easily test the examples on `Jupyter` notebooks in the configuration that suits you best.
+Il est possible d'utiliser une installation personnelle de `Python` ou 
+des serveurs partagés. Sur le site web, une série de boutons sont mis
+à disposition pour faciliter les tests des exemples sur des 
+notebooks `Jupyter` dans la configuration qui vous sied le mieux.
 
-<p>
-Here are, for example, these buttons for the <code>numpy</code> tutorial:
-</p>
+<p>Voici, par exemple, ces boutons pour le tutoriel <code>numpy</code></p>
 
 <p class="badges">
 <a href="https://github.com/linogaliana/python-datascientist-notebooks/blob/main/notebooks/course/manipulation/01_numpy.ipynb" class="github"><i class="fab fa-github"></i></a>
@@ -68,29 +76,34 @@ Here are, for example, these buttons for the <code>numpy</code> tutorial:
 </p>
 
 
-<h2>
-Using the Docker Image</h2> [![Docker Pulls](https://img.shields.io/docker/pulls/linogaliana/python-datascientist)](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general)
 
-To improve the reproducibility of the examples, a `Docker` image is 
-automatically built and made available from 
+<h2>
+Utilisation de l'image Docker </h2> [![Docker Pulls](https://img.shields.io/docker/pulls/linogaliana/python-datascientist)](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general)
+
+
+Pour améliorer la reproductibilité des exemples, une image `Docker` est 
+automatiquement construite et mise à disposition depuis 
 [DockerHub](https://hub.docker.com/repository/docker/linogaliana/python-datascientist).
 
 </details>
 
+
 <details>
 <summary>
-<h2>Website Construction
+<h2>Construction du site web
 </h2>
 </summary>
 
-The site is automatically built using [`Quarto`](https://quarto.org/)
-from a containerized environment [`Docker`](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general). 
-The reproducibility of the examples and exercises is tested with 
+Le site est construit de manière automatique grâce à [`Quarto`](https://quarto.org/)
+à partir d'un environnement conteneurisé [`Docker`](https://hub.docker.com/repository/docker/linogaliana/python-datascientist/general) 
+La reproductibilité des exemples et des exercices est testée avec 
 `Github Actions` ([![build-doc Actions Status](https://github.com/linogaliana/python-datascientist/actions/workflows/prod.yml/badge.svg)](https://github.com/linogaliana/python-datascientist/actions)).
-The notebooks are generated to be consistent with the website
-and are now stored in a [separate repository](https://github.com/linogaliana/python-datascientist-notebooks).
+Les _notebooks_ sont générés de manière à être cohérente avec le site web
+et sont maintenant stockés sur un [dépôt à part](https://github.com/linogaliana/python-datascientist-notebooks).
 
-The `Conda` environment needed to run the entire course is available in a [`environment.yml`](https://github.com/linogaliana/python-datascientist-docker/blob/main/environment.yml) file. 
-It is recommended to use the `conda-forge` to benefit from recent
-versions of the packages.
+L'environnement `Conda` nécessaire pour faire tourner l'ensemble du
+cours est disponible dans un fichier [`environment.yml`](https://github.com/linogaliana/python-datascientist-docker/blob/main/environment.yml). 
+Il est recommandé d'utiliser la `conda-forge` afin de bénéficier de versions
+récentes des packages. 
 </details>
+
