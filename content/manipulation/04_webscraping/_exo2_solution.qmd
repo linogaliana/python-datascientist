@@ -1,0 +1,132 @@
+```{python}
+#| output: false
+
+import urllib
+import bs4
+import collections
+import pandas as pd
+```
+
+```{python}
+# 1. We need to use Mozilla user-agent for that site
+import requests
+
+url_root = 'http://pokemondb.net/pokedex/national'
+req = requests.get(
+    url_root,
+    headers={'User-Agent': 'Mozilla/5.0'}
+)
+page = bs4.BeautifulSoup(req.content, "lxml")
+```
+
+
+```{python}
+#| output: false
+
+# Question 2
+def get_page(pokemon_name):
+    """
+    Function enabling to retrieve pokemon info from a page, e.g. https://pokemondb.net/pokedex/bulbasaur
+    """
+    url_pokemon = f'http://pokemondb.net/pokedex/{pokemon_name}'
+    req = requests.get(
+        url_pokemon,
+        headers={'User-Agent': 'Mozilla/5.0'}
+    )
+    page = bs4.BeautifulSoup(req.content, "lxml")
+    return page
+```
+
+```{python}
+#| output: false
+
+# Question 3 
+
+# Exploration
+page_pokemon = get_page("bulbasaur")
+
+indice_tableau = 0 #premier tableau : 0
+print("\n tableau", indice_tableau+1, " : deux premières lignes")
+tableau_1 = page_pokemon.findAll('table', { 'class' : "vitals-table"})[indice_tableau] 
+for elements in tableau_1.find('tbody').findChildren(['tr'])[0:2]:  #Afficher les 2 éléments du tableau
+    print(elements.findChild('th'))
+    print(elements.findChild('td'))
+print("\n\n\n")
+
+# Generalization
+def get_cara_pokemon(pokemon_name):
+    page = get_page(pokemon_name)
+    data = {}
+    for table in page.findAll('table', { 'class' : "vitals-table"})[0:4] :
+        table_body = table.find('tbody')
+        for rows in table_body.findChildren(['tr']) :
+            if len(rows) > 1 : # attention aux tr qui ne contiennent rien
+                column = rows.findChild('th').getText()
+                cells = rows.findChild('td').getText()
+                cells = cells.replace('\t','').replace('\n',' ')
+                data[column] = cells
+                data['name'] = pokemon_name
+    return data
+```
+
+::: {.content-visible when-profile="fr"}
+À l'issue de la question 3,
+vous devriez obtenir une liste de caractéristiques proche de celle-ci :
+:::
+
+::: {.content-visible when-profile="en"}
+At the end of question 3,
+you should obtain a list of characteristics similar to this one:
+:::
+
+```{python}
+get_cara_pokemon("bulbasaur")
+```
+
+::: {.content-visible when-profile="fr"}
+La structure est ici en dictionnaire, ce qui est pratique.
+:::
+
+::: {.content-visible when-profile="en"}
+The structure here is a dictionary, which is convenient.
+:::
+
+```{python}
+#| output: false
+
+# 4. Récupérez la liste de noms des pokémons
+liste_pokemon =[]
+for pokemon in page.findAll('span', {'class': 'infocard-lg-img'}) :
+    pokemon = pokemon.find('a').get('href').replace("/pokedex/",'')
+    liste_pokemon.append(pokemon)
+print(len(liste_pokemon)) #898
+liste_pokemon[0:10]
+```
+
+::: {.content-visible when-profile="fr"}
+Enfin, vous pouvez intégrer les informations 
+des dix premiers pokémons à un
+`DataFrame`, qui aura l'aspect suivant :
+:::
+
+::: {.content-visible when-profile="en"}
+Finally, you can integrate the information 
+of the first ten Pokémon into a
+`DataFrame`, which will look like this:
+:::
+
+```{python}
+#| output: false
+
+# Question 5
+items = []
+for pokemon in liste_pokemon[0:10] :
+    item = get_cara_pokemon(pokemon)
+    items.append(item)
+df = pd.DataFrame(items)
+```
+
+```{python}
+#| echo: false
+df.head()
+```
