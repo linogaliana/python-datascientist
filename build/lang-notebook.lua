@@ -25,16 +25,19 @@ end
 local function get_text_language(filename_relative)
     local text
     -- Add html formatting around
-    local headBox = "<div class=\"alert alert-info\" role=\"alert\">\n" ..
-        "<h3 class=\"alert-heading\">Version</h3>\n"
-
+    local headBox
+    
     if ends_with(filename_relative, "_en.html") then
+        headBox = "<div class=\"alert alert-info\" role=\"alert\">\n" ..
+        "<h3 class=\"alert-heading\">Version 🇬🇧 🇺🇸</h3>\n"
         text = "This is the English 🇬🇧 🇺🇸 version of that chapter," ..
             "to see the French version go " ..
             "<a href=\"" .. filename_relative:gsub("_en.html", ".html") ..
             "\">there</a>"
         quarto.log.output("Language detected: english")  -- Debug print
     else
+        headBox = "<div class=\"alert alert-info\" role=\"alert\">\n" ..
+        "<h3 class=\"alert-heading\">Version 🇫🇷</h3>\n"
         text = "This is the French version 🇫🇷 of that chapter," ..
             "to see the English version go " ..
             "<a href=\"" .. filename_relative:gsub("_fr.html", "_en.html") ..
