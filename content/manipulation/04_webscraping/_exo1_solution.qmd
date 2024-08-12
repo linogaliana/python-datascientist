@@ -1,0 +1,203 @@
+::: {.content-visible when-profile="fr"}
+1️⃣ Trouver le tableau
+:::
+
+::: {.content-visible when-profile="en"}
+1️⃣ Find the table
+:::
+
+```{python}
+#| echo: true
+# on identifie le tableau en question : c'est le premier qui a cette classe "wikitable sortable"
+tableau_participants = page.find('table', {'class' : 'wikitable sortable'})
+```
+
+```{python}
+#| echo: true
+#| output: asis
+print(tableau_participants)
+```
+
+::: {.content-visible when-profile="fr"}
+2️⃣ Récupérer chaque ligne du tableau
+
+On recherche d'abord toutes les lignes du tableau avec la balise `tr`
+:::
+
+::: {.content-visible when-profile="en"}
+2️⃣ Retrieve each row from the table
+
+Let's first search for the rows where `tr` tag appears
+:::
+
+
+```{python}
+#| echo: true
+table_body = tableau_participants.find('tbody')
+rows = table_body.find_all('tr')
+```
+
+::: {.content-visible when-profile="fr"}
+On obtient une liste où chaque élément est une des lignes du tableau
+Pour illustrer cela, on va d'abord afficher la première ligne.
+Celle-ci correspond aux entêtes de colonne:
+:::
+
+::: {.content-visible when-profile="en"}
+You get a list where each element is one of the rows in the table.
+To illustrate this, we will first display the first row.
+This corresponds to the column headers:
+:::
+
+```{python}
+#| echo: true
+print(rows[0])
+```
+
+::: {.content-visible when-profile="fr"}
+La seconde ligne va correspondre à la ligne du premier club présent dans le tableau :
+:::
+
+::: {.content-visible when-profile="en"}
+The second row will correspond to the row of the first club listed in the table:
+:::
+
+```{python}
+#| echo: true
+print(rows[1])
+```
+
+::: {.content-visible when-profile="fr"}
+3️⃣ Nettoyer les sorties en ne gardant que le texte sur une ligne
+:::
+
+::: {.content-visible when-profile="en"}
+3️⃣ Clean the outputs by keeping only the text in a row
+:::
+
+::: {.content-visible when-profile="fr"}
+On va utiliser l'attribut `text` afin de se débarrasser de toute la couche de HTML qu'on obtient à l'étape 2.
+
+Un exemple sur la ligne du premier club :
+- on commence par prendre toutes les cellules de cette ligne, avec la balise `td`.
+- on fait ensuite une boucle sur chacune des cellules et on ne garde que le texte de la cellule avec l'attribut `text`.
+- enfin, on applique la méthode `strip()` pour que le texte soit bien mis en forme (sans espace inutile etc).
+:::
+
+::: {.content-visible when-profile="en"}
+We will use the `text` attribute to strip away all the HTML layer we obtained in step 2.
+
+An example on the first club's row:
+- We start by taking all the cells in that row, using the `td` tag.
+- Then, we loop through each cell and keep only the text from the cell using the `text` attribute.
+- Finally, we apply the `strip()` method to ensure the text is properly formatted (no unnecessary spaces, etc.).
+:::
+
+```{python}
+#| echo: true
+cols = rows[1].find_all('td')
+print(cols[0])
+print(cols[0].text.strip())
+```
+
+```{python}
+#| echo: true
+for ele in cols : 
+    print(ele.text.strip())
+```
+
+::: {.content-visible when-profile="fr"}
+4️⃣ Généraliser sur toutes les lignes :
+:::
+
+::: {.content-visible when-profile="en"}
+4️⃣ Generalize for all rows:
+:::
+
+```{python}
+#| echo: true
+for row in rows:
+    cols = row.find_all('td')
+    cols = [ele.text.strip() for ele in cols]
+    print(cols)
+```
+
+::: {.content-visible when-profile="fr"}
+On a bien réussi à avoir les informations contenues dans le tableau des participants du championnat.
+Mais la première ligne est étrange : c'est une liste vide ... 
+
+Il s'agit des en-têtes : elles sont reconnues par la balise `th` et non `td`. 
+
+On va mettre tout le contenu dans un dictionnaire, pour le transformer ensuite en DataFrame pandas : 
+:::
+
+::: {.content-visible when-profile="en"}
+We have successfully retrieved the information contained in the participants' table.
+But the first row is strange: it's an empty list...
+
+These are the headers: they are recognized by the `th` tag, not `td`.
+
+We will put all the content into a dictionary, to later convert it into a pandas DataFrame:
+:::
+
+```{python}
+#| code-overflow: wrap
+#| echo: true
+
+dico_participants = dict()
+for row in rows:
+    cols = row.find_all('td')
+    cols = [ele.text.strip() for ele in cols]
+    if len(cols) > 0 : 
+        dico_participants[cols[0]] = cols[1:]
+dico_participants
+```
+
+```{python}
+#| echo: true
+data_participants = pandas.DataFrame.from_dict(dico_participants,orient='index')
+data_participants.head()
+```
+
+::: {.content-visible when-profile="fr"}
+5️⃣ Récupérer les en-têtes du tableau :
+:::
+
+::: {.content-visible when-profile="en"}
+5️⃣ Retrieve the table headers:
+:::
+
+```{python}
+#| echo: true
+for row in rows:
+    cols = row.find_all('th')
+    print(cols)
+    if len(cols) > 0 : 
+        cols = [ele.get_text(separator=' ').strip().title() for ele in cols]
+        columns_participants = cols
+```
+
+```{python}
+#| echo: true
+columns_participants
+```
+
+::: {.content-visible when-profile="fr"}
+6️⃣ Finalisation du tableau 
+:::
+
+::: {.content-visible when-profile="en"}
+6️⃣ Finalize the table
+:::
+
+```{python}
+#| echo: true
+data_participants.columns = columns_participants[1:]
+```
+
+```{python}
+#| echo: true
+data_participants.head()
+```
+
+
