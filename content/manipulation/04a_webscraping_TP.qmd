@@ -699,119 +699,194 @@ Try to understand step by step what is done in the following steps (retrieving a
 #| echo: true
 #| output: false
 
-import urllib
+import requests
+import bs4
 import pandas as pd
-import bs4 
 
-division=[]
-equipe=[]
-stade=[]
-latitude_stade=[]        
-longitude_stade=[]     
 
-url_list=["http://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020", "http://fr.wikipedia.org/wiki/Championnat_de_France_de_football_de_Ligue_2_2019-2020"]
+def retrieve_page(url: str) -> bs4.BeautifulSoup:
+    """
+    Retrieves and parses a webpage using BeautifulSoup.
 
-for url_ligue in url_list :
-       
-    print(url_ligue)
-    sock = urllib.request.urlopen(url_ligue).read() 
-    page=bs4.BeautifulSoup(sock)
+    Args:
+        url (str): The URL of the webpage to retrieve.
 
-# Rechercher les liens des équipes dans la liste disponible sur wikipedia 
+    Returns:
+        bs4.BeautifulSoup: The parsed HTML content of the page.
+    """
+    r = requests.get(url)
+    page = bs4.BeautifulSoup(r.content, 'html.parser')
+    return page
 
-    for team in page.findAll('span' , {'class' : 'toponyme'}) :  
-        
-        # Indiquer si c'est de la ligue 1 ou de la ligue 2
-        
-        if url_ligue==url_list[0] :
-            division.append("L1")
-        else :
-            division.append("L2")
 
-       # Trouver le nom et le lien de l'équipe
-            
-        if team.find('a')!=None :
-            team_url=team.find('a').get('href')
-            name_team=team.find('a').get('title')
-            equipe.append(name_team)
-            url_get_info = "http://fr.wikipedia.org"+team_url
-            print(url_get_info)
- 
-       # aller sur la page de l'équipe
-           
-            search = urllib.request.urlopen(url_get_info).read()
-            search_team=bs4.BeautifulSoup(search)
+def extract_team_name_url(team: bs4.element.Tag) -> dict:
+    """
+    Extracts the team name and its corresponding Wikipedia URL.
 
-       # trouver le stade             
-            compteur = 0
-            for stadium in search_team.findAll('tr'):
-                for x in stadium.findAll('th' , {'scope' : 'row'} ) :
-                    if x.contents[0].string=="Stade" and compteur == 0:
-                        compteur = 1
-                        # trouver le lien du stade et son nom
-                        url_stade=stadium.findAll('a')[1].get('href')
-                        name_stadium=stadium.findAll('a')[1].get('title')
-                        stade.append(name_stadium)
-                        url_get_stade = "http://fr.wikipedia.org"+url_stade
-                        print(url_get_stade)
-                        
-                        # Aller sur la page du stade et trouver ses coodronnées géographiques
-                        
-                        search_stade = urllib.request.urlopen(url_get_stade).read()
-                        soup_stade=bs4.BeautifulSoup(search_stade) 
-                        kartographer = soup_stade.find('a',{'class': "mw-kartographer-maplink"})
-                        if kartographer == None :
-                          latitude_stade.append(None)
-                          longitude_stade.append(None) 
-                        else :
-                            for coordinates in kartographer :
-                                print(coordinates)
-                                liste =   coordinates.split(",")          
-                                latitude_stade.append(str(liste[0]).replace(" ", "") + "'")
-                                longitude_stade.append(str(liste[1]).replace(" ", "") + "'")
-                            
+    Args:
+        team (bs4.element.Tag): The BeautifulSoup tag containing the team information.
 
-dict = {'division' : division , 'equipe': equipe, 'stade': stade, 'latitude': latitude_stade, 'longitude' : longitude_stade}
-data = pd.DataFrame(dict)
-data = data.dropna()
+    Returns:
+        dict: A dictionary with the team name as the key and the Wikipedia URL as the value, or None if not found.
+    """
+    try:
+        team_url = team.find('a').get('href')
+        equipe = team.find('a').get('title')
+        url_get_info = f"http://fr.wikipedia.org{team_url}"
+        print(f"Retrieving information for {equipe}")
+        return {equipe: url_get_info}
+    except AttributeError:
+        print(f"No <a> tag for \"{team}\"")
+        return None
+
+
+def explore_team_page(wikipedia_team_url: str) -> bs4.BeautifulSoup:
+    """
+    Retrieves and parses a team's Wikipedia page.
+
+    Args:
+        wikipedia_team_url (str): The URL of the team's Wikipedia page.
+
+    Returns:
+        bs4.BeautifulSoup: The parsed HTML content of the team's Wikipedia page.
+    """
+    r = requests.get(wikipedia_team_url)
+    page = bs4.BeautifulSoup(r.content, 'html.parser')
+    return page
+
+
+def extract_stadium_info(search_team: bs4.BeautifulSoup) -> tuple:
+    """
+    Extracts stadium information from a team's Wikipedia page.
+
+    Args:
+        search_team (bs4.BeautifulSoup): The parsed HTML content of the team's Wikipedia page.
+
+    Returns:
+        tuple: A tuple containing the stadium name, latitude, and longitude, or (None, None, None) if not found.
+    """
+    for stadium in search_team.findAll('tr'):
+        try:
+            header = stadium.find('th', {'scope': 'row'})
+            if header and header.contents[0].string == "Stade":
+                name_stadium, url_get_stade = extract_stadium_name_url(stadium)
+                if name_stadium and url_get_stade:
+                    latitude, longitude = extract_stadium_coordinates(url_get_stade)
+                    return name_stadium, latitude, longitude
+        except (AttributeError, IndexError) as e:
+            print(f"Error processing stadium information: {e}")
+    return None, None, None
+
+
+def extract_stadium_name_url(stadium: bs4.element.Tag) -> tuple:
+    """
+    Extracts the stadium name and URL from a stadium element.
+
+    Args:
+        stadium (bs4.element.Tag): The BeautifulSoup tag containing the stadium information.
+
+    Returns:
+        tuple: A tuple containing the stadium name and its Wikipedia URL, or (None, None) if not found.
+    """
+    try:
+        url_stade = stadium.findAll('a')[1].get('href')
+        name_stadium = stadium.findAll('a')[1].get('title')
+        url_get_stade = f"http://fr.wikipedia.org{url_stade}"
+        return name_stadium, url_get_stade
+    except (AttributeError, IndexError) as e:
+        print(f"Error extracting stadium name and URL: {e}")
+        return None, None
+
+
+def extract_stadium_coordinates(url_get_stade: str) -> tuple:
+    """
+    Extracts the coordinates of a stadium from its Wikipedia page.
+
+    Args:
+        url_get_stade (str): The URL of the stadium's Wikipedia page.
+
+    Returns:
+        tuple: A tuple containing the latitude and longitude of the stadium, or (None, None) if not found.
+    """
+    try:
+        soup_stade = retrieve_page(url_get_stade)
+        kartographer = soup_stade.find('a', {'class': "mw-kartographer-maplink"})
+        if kartographer:
+            coordinates = kartographer.get('data-lat') + "," + kartographer.get('data-lon')
+            latitude, longitude = coordinates.split(",")
+            return latitude.strip(), longitude.strip()
+        else:
+            return None, None
+    except Exception as e:
+        print(f"Error extracting stadium coordinates: {e}")
+        return None, None
+
+
+def extract_team_info(url_team_tag: bs4.element.Tag) -> dict:
+    """
+    Extracts information about a team, including its stadium and coordinates.
+
+    Args:
+        url_team_tag (bs4.element.Tag): The BeautifulSoup tag containing the team information.
+
+    Returns:
+        dict: A dictionary with details about the team, including its division, name, stadium, latitude, and longitude.
+    """
+    team_info = extract_team_name_url(url_team_tag)
+    url_team_wikipedia = next(iter(team_info.values()))
+    name_team = next(iter(team_info.keys()))
+    search_team = explore_team_page(url_team_wikipedia)
+    name_stadium, latitude, longitude = extract_stadium_info(search_team)
+    dict_stadium_team = {
+        'division': division,
+        'equipe': name_team,
+        'stade': name_stadium,
+        'latitude': latitude,
+        'longitude': longitude
+    }
+    return dict_stadium_team
+
+
+def retrieve_all_stadium_from_league(url_list: dict, division: str = "L1") -> pd.DataFrame:
+    """
+    Retrieves information about all stadiums in a league.
+
+    Args:
+        url_list (dict): A dictionary mapping divisions to their Wikipedia URLs.
+        division (str): The division for which to retrieve stadium information.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing information about the stadiums in the specified division.
+    """
+    page = retrieve_page(url_list[division])
+    teams = page.findAll('span', {'class': 'toponyme'})
+    all_info = []
+
+    for team in teams:
+        all_info.append(extract_team_info(team))
+
+    stadium_df = pd.DataFrame(all_info)
+    return stadium_df
+
+
+# URLs for different divisions
+url_list = {
+    "L1": "http://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020",
+    "L2": "http://fr.wikipedia.org/wiki/Championnat_de_France_de_football_de_Ligue_2_2019-2020"
+}
+
+# Retrieve stadiums information for Ligue 1
+stades_ligue1 = retrieve_all_stadium_from_league(url_list, "L1")
+stades_ligue2 = retrieve_all_stadium_from_league(url_list, "L2")
+
+stades = pd.concat(
+    [stades_ligue1, stades_ligue2]
+)
 ```
 
 ```{python}
 #| echo: true
-data.head(5)
-```
-
-::: {.content-visible when-profile="fr"}
-On va transformer les coordonnées en degrés en coordonnées numériques
-afin d'être en mesure de faire une carte.
-:::
-
-::: {.content-visible when-profile="en"}
-We will convert the coordinates from degrees to numerical coordinates
-to be able to create a map.
-:::
-
-```{python}
-#| echo: true
-import re
-
-def dms2dd(degrees, minutes, seconds, direction):
-    dd = float(degrees) + float(minutes)/60 + float(seconds)/(60*60);
-    if direction in ('S', 'O'):
-        dd *= -1
-    return dd
-
-def parse_dms(dms):
-    parts = re.split('[^\d\w]+', dms)
-    lat = dms2dd(parts[0], parts[1], parts[2], parts[3])
-    #lng = dms2dd(parts[4], parts[5], parts[6], parts[7])
-    return lat
-```
-
-```{python}
-#| echo: true
-data['latitude'] = data['latitude'].apply(parse_dms)
-data['longitude'] = data['longitude'].apply(parse_dms)
+stades.head(5)
 ```
 
 ::: {.content-visible when-profile="fr"}
@@ -839,23 +914,30 @@ use `folium` for this, which is introduced in the
 #| output: false
 
 import geopandas as gpd
-from pathlib import Path
 import folium
 
-gdf = gpd.GeoDataFrame(
-    data, geometry=gpd.points_from_xy(data.longitude, data.latitude))
+stades = stades.dropna(subset = ['latitude', 'longitude'])
+stades.loc[:, ['latitude', 'longitude']] = (
+    stades
+    .loc[:, ['latitude', 'longitude']]
+    .astype(float)
+)
+stadium_locations = gpd.GeoDataFrame(
+    stades, geometry = gpd.points_from_xy(stades.longitude, stades.latitude)
+)
 
-Path("leaflet").mkdir(parents=True, exist_ok=True)
-
-center = gdf[['latitude', 'longitude']].mean().values.tolist()
-sw = gdf[['latitude', 'longitude']].min().values.tolist()
-ne = gdf[['latitude', 'longitude']].max().values.tolist()
+center = stadium_locations[['latitude', 'longitude']].mean().values.tolist()
+sw = stadium_locations[['latitude', 'longitude']].min().values.tolist()
+ne = stadium_locations[['latitude', 'longitude']].max().values.tolist()
 
 m = folium.Map(location = center, tiles='openstreetmap')
 
 # I can add marker one by one on the map
-for i in range(0,len(gdf)):
-    folium.Marker([gdf.iloc[i]['latitude'], gdf.iloc[i]['longitude']], popup=gdf.iloc[i]['stade']).add_to(m) 
+for i in range(0,len(stadium_locations)):
+    folium.Marker(
+        [stadium_locations.iloc[i]['latitude'], stadium_locations.iloc[i]['longitude']],
+        popup=stadium_locations.iloc[i]['stade']
+    ).add_to(m) 
 
 m.fit_bounds([sw, ne])
 ```
