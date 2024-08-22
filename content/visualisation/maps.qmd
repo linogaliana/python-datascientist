@@ -1,9 +1,5 @@
 ---
 title: "De belles cartes avec python : mise en pratique"
-draft: false
-weight: 20
-slug: cartoTP
-type: book
 tags:
   - Visualisation
   - geopandas
@@ -25,6 +21,7 @@ description: |
   de visualiser la fréquentation par les
   vélos des routes parisiennes.
 image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/cartography.png
+echo: false
 ---
 
 ::: {.content-visible when-format="html"}
@@ -42,7 +39,7 @@ la page de l'*open-data* de la ville de Paris
 <h3 class="alert-heading"><i class="fa fa-comment"></i> Note</h3>
 ```
 
-Produire de belles cartes demande du temps mais aussi du bon sens. En fonction de la structure des données, certaines représentations sont à éviter voire à exclure. L'excellent guide [disponible ici](https://juliedjidji.github.io/memocarto/semio.html) propose quelques règles et évoque les erreurs à éviter lorsqu'on désire effectuer des
+Produire de belles cartes demande du temps mais aussi du bon sens. En fonction de la structure des données, certaines représentations sont à éviter voire à exclure. Un guide [disponible ici](https://juliedjidji.github.io/memocarto/semio.html) propose quelques règles et évoque les erreurs à éviter lorsqu'on désire effectuer des
 représentations spatiales. 
 Celui-ci reprend un [guide de sémiologie cartographique](https://www.insee.fr/fr/statistiques/3640429)
 produit par l'Insee qui propose de nombreux conseils pratiques pour produire des représentations
@@ -65,7 +62,7 @@ Ce TP vise à initier :
 Les données utilisées sont :
 
 * Un sous-ensemble des données de [paris open data](https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/information/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name) a été mis à disposition
-sur {{< githubrepo >}} pour faciliter l'import (élimination des colonnes
+sur `Github` pour faciliter l'import (élimination des colonnes
 qui ne nous servirons pas mais ralentissent l'import)
 * [La localisation précise des stations](https://parisdata.opendatasoft.com/explore/dataset/comptage-velo-compteurs/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
 * [Arrondissements parisiens](https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
@@ -103,6 +100,7 @@ packages au préalable:
 Dans la première partie, nous allons utiliser les packages suivants :
 
 ```{python}
+#| echo: true
 import pandas as pd
 import geopandas as gpd
 import contextily as ctx
@@ -170,8 +168,7 @@ arrondissements = carti_download(
 
 
 ```{python}
-#| include: false
-#| show: false
+#| output: false
 #| label: download-read-comptages
 
 # 1. Chargement de "comptages"
@@ -182,8 +179,7 @@ comptages = pd.read_csv('https://minio.lab.sspcloud.fr/projet-formation/diffusio
 
 
 ```{python}
-#| include: false
-#| show: false
+#| output: false
 #| label: download-read-compteurs
 
 #2. Chargement de "compteurs"
@@ -193,14 +189,15 @@ compteurs = gpd.read_file("https://parisdata.opendatasoft.com/api/explore/v2.1/c
 
 
 ```{python}
-compteurs = compteurs.loc[~compteurs["nom_compteur"].str.contains(r"(Bike IN|Bike OUT)")]
+compteurs = compteurs.loc[
+  ~compteurs["nom_compteur"].str.contains(r"(Bike IN|Bike OUT)")
+]
 ```
 
 
 
 ```{python}
-#| include: false
-#| show: false
+#| output: false
 
 from cartiflette import carti_download
 
@@ -219,9 +216,6 @@ arrondissements = carti_download(
 ```
 
 ```{python}
-#| include: false
-#| show: false
-
 # 4. Localisation des compteurs
 compteurs.plot()
 ```
@@ -266,8 +260,7 @@ Représenter une carte des `compteurs` avec le fonds de carte des `arrondissemen
 :::
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # Carte des compteurs par arrondissement
 ax = arrondissements.plot(edgecolor = 'black', facecolor="none", figsize = (10,10))
@@ -307,8 +300,7 @@ Repartir de la carte précédente.
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 1. Ajout d'un fond de carte sur la précédente carte
 ax = arrondissements.to_crs("EPSG:3857").plot(edgecolor = 'black', facecolor="none", figsize = (10,10))
@@ -325,8 +317,7 @@ ax.get_figure()
 ```
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 2. Choix d'un fond de carte plus approprié (visualisation des grands axes)
 ax = arrondissements.to_crs("EPSG:3857").plot(edgecolor = 'black', facecolor="none", figsize = (10,10))
@@ -355,7 +346,13 @@ Le principe de la *heatmap* est de construire, à partir d'un nuage de point bid
 <h3 class="alert-heading"><i class="fa fa-comment"></i> Exercice 3 : Ajouter un fonds de carte avec contextily</h3>
 ```
 
-Pour le moment, la fonction  `geoplot.kdeplot` n'incorpore pas toutes les fonctionalités de `seaborn.kdeplot`. Pour être en mesure de construire une `heatmap` avec des données pondérées (cf. [cette issue dans le dépôt seaborn](https://github.com/mwaskom/seaborn/issues/1364)), il y a une astuce. Il faut simuler *k* points de valeur 1 autour de la localisation observée. La fonction ci-dessous, qui m'a été bien utile, est pratique
+Pour le moment, la fonction  `geoplot.kdeplot` n'incorpore pas toutes les fonctionalités de `seaborn.kdeplot`. Pour être en mesure de construire une `heatmap` avec des données pondérées (cf. [cette issue dans le dépôt seaborn](https://github.com/mwaskom/seaborn/issues/1364)), il y a une astuce. Il faut simuler *k* points de valeur 1 autour de la localisation observée. La fonction ci-dessous, qui m'a été bien utile, est pratique et est donnée pour vous aider. 
+
+```{=html}
+</div>
+```
+:::
+
 
 ```{python}
 #| echo: true
@@ -397,13 +394,6 @@ def expand_points(shapefile,
     return gdf
 ```
 
-```{=html}
-</div>
-```
-:::
-
-
-
 ::: {.cell .markdown}
 ```{=html}
 <div class="alert alert-success" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #3fb618;">
@@ -426,8 +416,7 @@ def expand_points(shapefile,
 :::
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 #1. Calcul du trafic moyen
 comptages['timestamp'] = pd.to_datetime(comptages['Date et heure de comptage'], format='%Y-%m-%dT%H:%M:%SZ', errors='coerce')
@@ -443,8 +432,7 @@ df2 = compteurs.merge(df2, left_on = "id_compteur", right_on = 'Identifiant du c
 
 
 ```{python}
-#| include: false
-#| show: false
+#| output: false
 
 #2. Creation de la fonction explode_data
 # La fonction expand_points multiplie le nombre de points de manière à créer une heatmap
@@ -461,8 +449,7 @@ def explode_data(data, index_var = "id_compteur", weight_var = 'Comptage horaire
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 #3. Application de explode_data à df1 et df2
 df1_exploded = explode_data(df1)
@@ -475,57 +462,9 @@ df2_exploded = explode_data(df2)
 ```
 
 
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #3fb618;">
-<h3 class="alert-heading"><i class="fa fa-pencil"></i> Exercice 5 : Heatmap, enfin !</h3>
-```
-
-Représenter, pour ces deux moments de la journée, la `heatmap` du trafic de vélo avec `geoplot.kdeplot`. Pour cela :
-
-- Appliquer la fonction `geoplot.kdeplot` avec comme consignes :
-    + d'utiliser les arguments `shade=True` et `shade_lowest=True` pour colorer l'intérieur des courbes de niveaux obtenues ; 
-    + d'utiliser une palette de couleur rouge avec une transparence modérée (`alpha = 0.6`)
-    + d'utiliser l'argument `clip` pour ne pas déborder hors de Paris (en cas de doute, se référer à l'aide de `geoplot.kdeplot`)
-    + L'argument `bw` (pour *bandwidth*) détermine le plus ou moins fort lissage spatial. Vous pouvez partir d'un bandwidth égal à 0.01 et le faire varier pour voir l'effet sur le résultat 
-    
-- Ne pas oublier d'ajouter les arrondissements. Avec `geoplot`, il faut utiliser `geoplot.polyplot`. 
-
-```{=html}
-</div>
-```
-:::
-
-```{python}
-#| include: false
-#| echo: false
-#| eval: false
-
-# Exercice 5 : heatmap
-fig = plt.figure()
-ax = geoplot.kdeplot(df1_exploded,
-                      figsize=(10, 10),
-                      shade=True, shade_lowest=True,
-                      alpha = 0.6,
-                      clip = arrondissements,
-                      cmap="Reds",
-                      bw=.35
-                    )
-# truc bizarre: bandwidth doit etre beaucoup plus fort sur ma machine windows que sur un notebook tournant sur linux
-# pour produire résultat équivalent
-geoplot.polyplot(arrondissements, ax = ax, zorder = 1)
-```
-
-```{python}
-ax.get_figure()
-```
-
-
-
 # Des cartes réactives grâce à `folium`
 
-De plus en plus de données de visualisation reposent sur la cartographie réactive. Que ce soit dans l'exploration des données ou dans la représentation finale de résultats, la cartographie réactive est très appréciable. 
+De plus en plus d'applications de visualisation reposent sur la cartographie réactive. Que ce soit dans l'exploration des données ou dans la représentation finale de résultats, la cartographie réactive est très appréciable. 
 
 `folium` offre une interface très flexible et très facile à prendre à main. Les cartes sont construites grâce à la librairie JavaScript `Leaflet.js` mais, sauf si on désire aller loin dans la customisation du résultat, il n'est pas nécessaire d'avoir des notions dans le domaine. 
 
@@ -539,6 +478,7 @@ Le bout de code suivant permet de calculer le centre de la carte
 
 ```{python}
 #| echo: true
+compteurs = gpd.read_file("https://parisdata.opendatasoft.com/api/explore/v2.1/catalog/datasets/comptage-velo-compteurs/exports/geojson?lang=fr&timezone=Europe%2FBerlin")
 compteurs['lon'] = compteurs.geometry.x
 compteurs['lat'] = compteurs.geometry.y
 center = compteurs[['lat', 'lon']].mean().values.tolist()
@@ -585,8 +525,7 @@ Les longitudes représentent les *x* (axe ouest-est) et les latitudes *y* (axe s
 :::
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 #1. Calcul du centre de la carte de "compteurs" et des bornes sw et ne
 compteurs['lon'] = compteurs.geometry.x
@@ -599,12 +538,10 @@ ne = compteurs[['lat', 'lon']].max().values.tolist()
 
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # 2. Carte interactive
 from pathlib import Path
-Path("leaflet").mkdir(parents=True, exist_ok=True)
 m = folium.Map(location = center, tiles='OpenStreetMap')
 
 # Ajout des markers 1 à 1 sur la carte
@@ -615,8 +552,6 @@ m.fit_bounds([sw, ne])
 
 
 ```{python}
-#| echo : true
-#| output: false
 # Afficher la carte
 m
 ```
@@ -642,8 +577,7 @@ Faire la même carte, avec des ronds proportionnels au nombre de comptages :
 :::
 
 ```{python}
-#| include: false
-#| echo: false
+#| output: false
 
 # Exercice 7
 df1['color'] = 'green'
@@ -655,8 +589,6 @@ df1['lat'] = df1.geometry.y
 center = df1[['lat', 'lon']].mean().values.tolist()
 sw = df1[['lat', 'lon']].min().values.tolist()
 ne = df1[['lat', 'lon']].max().values.tolist()
-
-
 
 m = folium.Map(location = center, tiles='OpenStreetMap')
 
@@ -679,8 +611,6 @@ m.fit_bounds([sw, ne])
 La carte obtenue doit ressembler à la suivante :
 
 ```{python}
-#| echo : true
-#| output: false
 # Afficher la carte
 m
 ```
@@ -729,7 +659,6 @@ Vous pouvez utiliser la variable créée à la question 5 pour les couleurs.
 :::
 
 ```{python}
-#| echo: false
 #| output: false
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -752,7 +681,6 @@ departements = df.dissolve("INSEE_DEP")
 ```
 
 ```{python}
-#| echo: false
 # 4/ et 5/
 df['surface'] = df.area.div(10**6)
 df['densite'] = (df['POPULATION']/df['surface'])
@@ -764,7 +692,6 @@ df['markercolor'] = pd.cut(
 ```
 
 ```{python}
-#| echo: false
 # 7/
 df_points = df.copy()
 df_points["geometry"] = df_points["geometry"].centroid
@@ -773,7 +700,6 @@ df_points["geometry"] = df_points["geometry"].centroid
 La carte obtenue devrait ressembler à celle-ci :
 
 ```{python}
-#| echo: false
 # 8/ 
 ax = df.plot(
     color="lightgray", edgecolor="grey",
