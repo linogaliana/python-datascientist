@@ -493,6 +493,15 @@ d'optimisation difficilement tractable.
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 
+df2.replace([np.inf, -np.inf], np.nan, inplace=True)
+X_train, X_test, y_train, y_test = train_test_split(
+    df2.drop(["per_gop"], axis = 1),
+    100*df2[['per_gop']], test_size=0.2, random_state=0
+)
+
+numerical_features = X_train.select_dtypes(include='number').columns.tolist()
+categorical_features = X_train.select_dtypes(exclude='number').columns.tolist()
+
 numeric_pipeline = Pipeline(steps=[
     ('impute', SimpleImputer(strategy='mean')),
     ('scale', StandardScaler())
@@ -574,6 +583,8 @@ prédire le résultat Républicain :
 #| output: false
 from sklearn.linear_model import LassoCV
 
+my_alphas = np.array([0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0])
+
 lcv = (
   LassoCV(
     alphas=my_alphas,
@@ -599,6 +610,24 @@ utilisé pour faire tourner un nouveau _pipeline_:
 ```{python}
 #| echo: true
 #| output: false
+from sklearn.compose import make_column_transformer, ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+numeric_pipeline = Pipeline(steps=[
+    ('impute', SimpleImputer(strategy='mean')),
+    ('scale', StandardScaler())
+])
+
+categorical_pipeline = Pipeline(steps=[
+    ('impute', SimpleImputer(strategy='most_frequent')),
+    ('one-hot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
+])
+
+preprocessor = ColumnTransformer(transformers=[
+    ('number', numeric_pipeline, numerical_features),
+    ('category', categorical_pipeline, categorical_features)
+])
+
 model = Lasso(
   fit_intercept=False, 
   alpha = lcv.alpha_
@@ -608,7 +637,6 @@ lasso_pipeline = Pipeline(steps=[
     ('preprocess', preprocessor),
     ('model', model)
 ])
-
 
 lasso_optimal = lasso_pipeline.fit(X_train,y_train)
 
