@@ -1,5 +1,6 @@
 #!/bin/bash
 
+pip install -r requirements.txt
 quarto render --profile fr --to html
 quarto render --profile en --to html
 cd _site/
