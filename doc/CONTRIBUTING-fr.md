@@ -1,6 +1,12 @@
 # Guide pour accompagner les personnes désirant contribuer à améliorer le contenu de ce site
 
-L'ensemble des contenus de ce site web est contributif et peut être amélioré de manière collaborative selon vos compétences et appétences. 
+> [!NOTE]  
+> Vous voyez la version française 🇫🇷  du `CONTRIBUTING`. Pour lire la version anglaise 🇬🇧🇺🇸, vous pouvez cliquer sur le lien ci-dessous
+> 
+> [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/linogaliana/python-datascientist/blob/main/doc/CONTRIBUTING-en.md)
+
+
+L'ensemble des contenus de ce site web est contributif et peut être amélioré de manière collaborative selon vos compétences et appétences. Merci beaucoup si vous êtes prêts à apporter votre concours à l'amélioration du site.
 
 L'objectif de ce `CONTRIBUTING` est de guider toute personne intéressée par la suggestion de contenu vers le moyen le plus adéquat. Ce fichier présentera la marche à suivre principalement pour les propositions de contenu substantielles, qui nécessitent un accompagnement car elles demandent la compréhension du fonctionnement du site. Néanmoins, pour les petites suggestions de modification, il est recommandé de passer directement par l'interface de `Github`: il n'est pas nécessaire de comprendre le fonctionnement (complexe) du site pour pointer un lien mort, pour modifier une coquille ou une référence vers une figure qui n'existe pas ! 
 
@@ -164,8 +170,10 @@ Exemple de prompt pour avoir la traduction par `ChatGPT`
 
 Imaginons que vous ayez fait des modifications sur un fichier et que vous désirez les tester. 
 
+### Prévisualiser l'apparence sur le site web
+
 - [ ] Mettre à jour `_quarto.yml` (ne pas toucher à `_quarto-prod.yml`) pour inclure votre fichier dans la liste `render` ;
-- [ ] Lancer le script `.build/preview_all.sh` en ligne de commande, celui-ci comporte les lignes suivantes:
+- [ ] Lancer le script `/build/preview_all.sh` en ligne de commande, celui-ci comporte les lignes suivantes:
 
 ```python
 pip install -r requirements.txt
@@ -185,3 +193,13 @@ qui permettent:
 
 _Accéder au contenu prévisualisé pour les utilisateurs du SSPCloud_:
 ![](https://raw.githubusercontent.com/InseeFrLab/funathon2024_sujet2/main/img/readme_app6.png)
+
+### Vérifier que le notebook fonctionne
+
+- [ ] Lancer le script `/build/preview_notebook.sh` en ligne de commande avec en argument le nom de votre fichier. Par exemple,
+
+```python
+./dev-scripts/preview_notebook.sh content/manipulation/01_numpy.qmd
+```
+
+Ce test est un test automatisé, il ne fait que vérifier que le code dans le notebook fonctionne bien. Si vous voulez voir à quoi ressemble le notebook qui sera mis à disposition à l'issue de la validation de la modification, vous pouvez ouvrir le fichier `toto.ipynb` et regarder celui-ci. 
