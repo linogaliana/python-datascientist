@@ -1,13 +1,16 @@
-# Guide to assist those wishing to contribute to improving the content of this site
+# Guide to assist people wishing to contribute to improve this course
+
 
 > [!NOTE]  
 > You are viewing the French 🇫🇷 version of the `CONTRIBUTING` guide. To read the English 🇬🇧🇺🇸 version, you can click the link below:
 > 
 > [![fr](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/linogaliana/python-datascientist/blob/main/doc/CONTRIBUTING-fr.md)
 
-All content on this website is contributory and can be collaboratively improved according to your skills and preferences. Thank you very much if you are ready to contribute to the enhancement of the site.
+All content on this website is contributory and can be collaboratively improved according to your skills and preferences. __Thank you very much if you are ready to contribute to the enhancement of the site!__
 
-The purpose of this `CONTRIBUTING` guide is to direct anyone interested in suggesting content to the most appropriate method. This document will mainly outline the process for substantial content proposals, which require guidance because they demand an understanding of the site's workings. However, for small suggestions, it is recommended to go directly through the `GitHub` interface: it's not necessary to understand the (complex) functioning of the site to point out a dead link, correct a typo, or fix a reference to a non-existent figure!
+The purpose of this `CONTRIBUTING` guide is to direct anyone interested in suggesting content to the most appropriate method. This document will mainly outline the process for substantial content proposals, which require guidance because they demand an understanding of the site's workings. 
+
+However, for small suggestions, it is recommended to go directly through the `GitHub` interface: it's not necessary to understand the (complex) functioning of the site to point out a dead link, correct a typo, or fix a reference to a non-existent figure!
 
 > [!NOTE]
 > This `CONTRIBUTING` guide should not be intimidating; on the contrary, its goal is to assist users who wish to make more substantial modifications by showing them that the site's functioning is not as daunting as it seems.
@@ -32,7 +35,7 @@ The rest of this guide assumes you are in the latter scenario, i.e., making a su
 
 ### Principle
 
-The website and notebooks are built using [`Quarto`](https://quarto.org/). The `Python` resources <img height="28" width="28" src="https://cdn.simpleicons.org/python/00ccff99" /> provided through this `GitHub` repository are of two types:
+The website and notebooks are built using [`Quarto`](https://quarto.org/). `Python` resources provided through this `GitHub` repository are of two types:
 
 * The website [pythonds.linogaliana.fr/](https://pythonds.linogaliana.fr/) is the main content produced from this repository. It is the html _output_ constructed by `Quarto` (see below);
 * The _notebooks_ offer the same textual content with executable code in a `Jupyter` or `VSCode` environment of your choice. They are the ipynb _output_ constructed by `Quarto` (see below). This is important because the _notebook_ is not, as is often the case, the source file but a production from another source of truth: therefore, it is not on the _notebooks_ that you can make your modification suggestions.

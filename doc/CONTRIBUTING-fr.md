@@ -6,9 +6,11 @@
 > [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/linogaliana/python-datascientist/blob/main/doc/CONTRIBUTING-en.md)
 
 
-L'ensemble des contenus de ce site web est contributif et peut être amélioré de manière collaborative selon vos compétences et appétences. Merci beaucoup si vous êtes prêts à apporter votre concours à l'amélioration du site.
+L'ensemble des contenus de ce site web est contributif et peut être amélioré de manière collaborative selon vos compétences et appétences. __Merci beaucoup si vous êtes prêts à apporter votre concours à l'amélioration du site!__
 
-L'objectif de ce `CONTRIBUTING` est de guider toute personne intéressée par la suggestion de contenu vers le moyen le plus adéquat. Ce fichier présentera la marche à suivre principalement pour les propositions de contenu substantielles, qui nécessitent un accompagnement car elles demandent la compréhension du fonctionnement du site. Néanmoins, pour les petites suggestions de modification, il est recommandé de passer directement par l'interface de `Github`: il n'est pas nécessaire de comprendre le fonctionnement (complexe) du site pour pointer un lien mort, pour modifier une coquille ou une référence vers une figure qui n'existe pas ! 
+L'objectif de ce `CONTRIBUTING` est de guider toute personne intéressée par la suggestion de contenu vers le moyen le plus adéquat. Ce fichier présentera la marche à suivre principalement pour les propositions de contenu substantielles, qui nécessitent un accompagnement car elles demandent la compréhension du fonctionnement du site. 
+
+Néanmoins, pour les petites suggestions de modification, il est recommandé de passer directement par l'interface de `Github`: il n'est pas nécessaire de comprendre le fonctionnement (complexe) du site pour pointer un lien mort, pour modifier une coquille ou une référence vers une figure qui n'existe pas ! 
 
 > [!NOTE]
 > Ce `CONTRIBUTING` ne doit pas vous apparaître comme étant intimidant ; au contraire, l'objectif de celui-ci est d'accompagner les utilisateurs désirant faire les modifications les plus substantielles pour leur montrer que le fonctionnement de ce site est moins sorcier qu'il en a l'air. 
@@ -35,7 +37,7 @@ La suite de ce guide supposera que vous vous trouvez dans le dernier scénario, 
 
 ### Principe
 
-Le site web et les notebooks sont construits à partir de [`Quarto`](https://quarto.org/). Les ressources `Python` <img height="28" width="28" src="https://cdn.simpleicons.org/python/00ccff99" /> mises à disposition grâce à ce dépôt `Github` sont de deux types:
+Le site web et les notebooks sont construits à partir de [`Quarto`](https://quarto.org/). Les ressources `Python` mises à disposition grâce à ce dépôt `Github` sont de deux types:
 
 * Le site web [pythonds.linogaliana.fr/](https://pythonds.linogaliana.fr/) est le contenu principal produit à partir de ce dépôt. Il s'agit de l'_output_ html construit par `Quarto` (voir plus bas) ;
 * Les _notebooks_ proposent le même contenu textuel avec du code exécutable dans un environnement `Jupyter` ou `VSCode` de votre choix. Il s'agit de l'_output_ ipynb construit par `Quarto` (voir plus bas). Ceci est important car le _notebook_ n'est pas, comme c'est souvent le cas, le fichier source mais une production à partir d'une autre source de vérité: ce ne sont donc pas les _notebooks_ sur lesquels vous pourrez faire vos suggestions de modification.
