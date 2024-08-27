@@ -9,7 +9,7 @@ quarto render --profile fr
 
 # Run the Python script to modify sidebars for English
 echo "Modifying sidebars to English..."
-python build/sidebar.py --to english
+#python build/sidebar.py --to english
 
 # Render the Quarto project with the English profile
 echo "Rendering Quarto project with English profile..."
@@ -17,7 +17,7 @@ quarto render --profile en
 
 # Run the Python script to modify sidebars back to French
 echo "Modifying sidebars back to French..."
-python build/sidebar.py --to french
+#python build/sidebar.py --to french
 
 echo "Build process completed successfully."
 python -m http.server 5000 --bind 0.0.0.0
