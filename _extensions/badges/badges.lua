@@ -154,7 +154,15 @@ function reminder_badges(args, kwargs)
 
   -- Concatenate badges and ensure the result is treated as HTML
   local badges_html = table.concat(badges, type == "html" and "\n" or " ")
-  return pandoc.RawBlock('html', badges_html)
+  badges_html = pandoc.RawBlock('html', badges_html)
+  if quarto.doc.is_format("ipynb") then
+    return pandoc.Div(
+      badges_html,
+      {class = "markdown"}
+    )    
+  end
+
+  return badges_html
 end
 
 -- Main function to print badges
