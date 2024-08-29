@@ -6,11 +6,11 @@
 > [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/linogaliana/python-datascientist/blob/main/doc/CONTRIBUTING-en.md)
 
 
-L'ensemble des contenus de ce site web est contributif et peut être amélioré de manière collaborative selon vos compétences et appétences. __Merci beaucoup si vous êtes prêts à apporter votre concours à l'amélioration du site!__
+L'ensemble des contenus de ce site web est contributif et peut être amélioré de manière collaborative selon vos compétences et appétences. __Merci beaucoup si vous êtes prêts à apporter votre concours à l'amélioration du site !__
 
 L'objectif de ce `CONTRIBUTING` est de guider toute personne intéressée par la suggestion de contenu vers le moyen le plus adéquat. Ce fichier présentera la marche à suivre principalement pour les propositions de contenu substantielles, qui nécessitent un accompagnement car elles demandent la compréhension du fonctionnement du site. 
 
-Néanmoins, pour les petites suggestions de modification, il est recommandé de passer directement par l'interface de `Github`: il n'est pas nécessaire de comprendre le fonctionnement (complexe) du site pour pointer un lien mort, pour modifier une coquille ou une référence vers une figure qui n'existe pas ! 
+Néanmoins, pour les petites suggestions de modification, il est recommandé de passer directement par l'interface de `Github`: il n'est pas nécessaire de comprendre le fonctionnement (complexe) du site pour pointer un lien mort, pour modifier une coquille ou une référence vers une figure qui n'existe pas !
 
 > [!NOTE]
 > Ce `CONTRIBUTING` ne doit pas vous apparaître comme étant intimidant ; au contraire, l'objectif de celui-ci est d'accompagner les utilisateurs désirant faire les modifications les plus substantielles pour leur montrer que le fonctionnement de ce site est moins sorcier qu'il en a l'air. 
@@ -30,17 +30,17 @@ Les suggestions de modifications peuvent principalement êtres faites par deux b
     + Pour une modification marginale du texte, par exemple une coquille, vous pouvez faire directement ceci grâce au bouton `Edit` de `Github`. 
     + Pour une modification plus substantielle du contenu, avant de faire une grosse _pull request_, n'hésitez pas à ouvrir une [_issue_](https://github.com/linogaliana/python-datascientist/issues) pour échanger sur la modification que vous voudriez mettre en oeuvre.
 
-La suite de ce guide supposera que vous vous trouvez dans le dernier scénario, c'est à dire une modification substantielle du contenu qui a été discuté dans une [_issue_](https://github.com/linogaliana/python-datascientist/issues). L'objectif de la suite de ce guide est de vous donner toute l'information utile pour comprendre la logique du dépôt. 
+La suite de ce guide supposera que vous vous trouvez dans le dernier scénario, c'est à dire une modification substantielle du contenu qui a été discutée dans une [_issue_](https://github.com/linogaliana/python-datascientist/issues). L'objectif de la suite de ce guide est de vous donner toute l'information utile pour comprendre la logique du dépôt. 
 
 
 ## Fonctionnement du dépôt
 
 ### Principe
 
-Le site web et les notebooks sont construits à partir de [`Quarto`](https://quarto.org/). Les ressources `Python` mises à disposition grâce à ce dépôt `Github` sont de deux types:
+Le site web et les notebooks sont construits à partir de [`Quarto`](https://quarto.org/). Les ressources `Python` mises à disposition grâce à ce dépôt `Github` sont de deux types :
 
 * Le site web [pythonds.linogaliana.fr/](https://pythonds.linogaliana.fr/) est le contenu principal produit à partir de ce dépôt. Il s'agit de l'_output_ html construit par `Quarto` (voir plus bas) ;
-* Les _notebooks_ proposent le même contenu textuel avec du code exécutable dans un environnement `Jupyter` ou `VSCode` de votre choix. Il s'agit de l'_output_ ipynb construit par `Quarto` (voir plus bas). Ceci est important car le _notebook_ n'est pas, comme c'est souvent le cas, le fichier source mais une production à partir d'une autre source de vérité: ce ne sont donc pas les _notebooks_ sur lesquels vous pourrez faire vos suggestions de modification.
+* Les _notebooks_ proposent le même contenu textuel avec du code exécutable dans un environnement `Jupyter` ou `VSCode` de votre choix. Il s'agit de l'_output_ ipynb construit par `Quarto` (voir plus bas). Ceci est important car le _notebook_ n'est pas, comme c'est souvent le cas, le fichier source mais une production à partir d'une autre source de vérité : ce ne sont donc pas les _notebooks_ sur lesquels vous pourrez faire vos suggestions de modification.
 
 Le contenu bilingue est géré par le biais des [_profiles_](https://quarto.org/docs/projects/profiles.html) `Quarto`. Par conséquent, les fichiers bilingues proposent de nombreuses balises du type `::: {.content-visible when-profile="en"}` ou `::: {.content-visible when-profile="fr"}` pour gérer le contenu affiché dans la version anglaise ou française. Ce choix permet de limiter les redondances de code tout en ayant un contenu adaptatif pour le lecteur de la version web (pour la version _notebook_, seule la langue choisie est affichée mais les versions françaises et anglaises coexistent). 
 
@@ -54,7 +54,7 @@ Le dépôt est structuré sous la forme d'un projet `Quarto`. Le comportement de
     + Le second sert lors de la construction du site dans son ensemble lors de la phase d'intégration continue (cf. ci-dessous). Sauf modification volontaire du comportement du site web, il ne doit pas être modifié. 
 * `_quarto-fr.yml` et `_quarto-en.yml` gèrent le paramétrage des versions françaises et anglaises, en complément du paramétrage global expliqué précédemment. Par défaut, la version française est construite exclusivement. Le script `build/preview_all.sh` sur lequel nous reviendrons illustrera comment _build_ une version multilingue du site web. 
 
-Les principaux dossiers 📁 du dépôt sont:
+Les principaux dossiers 📁 du dépôt sont :
 
 * `content/`: les fichiers source à l'origine du site web (en supplément de la page d'accueil `index.qmd`) ;
 * `build/`: des scripts utiles pour l'intégration continue ou pour surcharger des paramètres pour certains chapitres ;
@@ -69,12 +69,9 @@ Les principaux dossiers 📁 du dépôt sont:
 
 ### Environnement de développement prêt à l'emploi pour les utilisateurs du `SSPCloud`
 
-Pour les utilisateurs du `SSPCloud`, voici l'environnement que j'utilise pour développer mes supports:
+Pour les utilisateurs du `SSPCloud`, voici l'environnement que j'utilise pour développer mes supports :
 
 <a href="https://datalab.sspcloud.fr/launcher/ide/vscode-python?name=python%20ENSAE&version=1.11.39&autoLaunch=false&kubernetes.role=«admin»&networking.user.enabled=true&git.cache=«36000»&git.repository=«https%3A%2F%2Fgithub.com%2Flinogaliana%2Fpython-datascientist.git»&init.personalInit=«https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Finit-scripts%2Fmain%2Finstall-copilot.sh»" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&amp;color=yellow?logo=Python" alt="Onyxia"></a><br>
-
-> [!NOTE]
-> La prévisualisation nécessite un environnement d'exécution `Quarto` avec `Python`. Les agents publics, étudiants et chercheurs peuvent bénéficier d'un tel environnement gratuitement grâce à l'infrastructure [`SSPCloud`](https://datalab.sspcloud.fr/?lang=fr) développée par l'Insee. Celle-ci sera bien plus malléable et puissante que `Google Colab`. 
 
 ### Etapes préliminaires
 
@@ -175,7 +172,7 @@ Imaginons que vous ayez fait des modifications sur un fichier et que vous désir
 ### Prévisualiser l'apparence sur le site web
 
 - [ ] Mettre à jour `_quarto.yml` (ne pas toucher à `_quarto-prod.yml`) pour inclure votre fichier dans la liste `render` ;
-- [ ] Lancer le script `/build/preview_all.sh` en ligne de commande, celui-ci comporte les lignes suivantes:
+- [ ] Lancer le script `/build/preview_all.sh` en ligne de commande, celui-ci comporte les lignes suivantes :
 
 ```python
 pip install -r requirements.txt
@@ -190,7 +187,7 @@ qui permettent:
 1. Installer les dépendances (si ce n'est pas déjà fait) ;
 2. Construire le site, en Anglais et en Français
 3. Lancer un serveur local qui permet de prévisualiser le site web
-    + Si vous utilisez l'environnement du `SSPCloud` (comme suggéré ci-dessus, si vous êtes éligibles), dans le `README` de votre projet, vous avez un lien qui vous permet de voir votre site web et naviguer dans celui-ci (cf. capture ci-dessous)
+    + Si vous utilisez l'environnement du `SSPCloud` (comme suggéré ci-dessus, si vous êtes éligible), dans le `README` de votre projet, vous avez un lien qui vous permet de voir votre site web et naviguer dans celui-ci (cf. capture ci-dessous)
     + Si vous êtes dans un environnement local, le site devrait être accessible par le biais de https://0.0.0.0:5000
 
 _Accéder au contenu prévisualisé pour les utilisateurs du SSPCloud_:
