@@ -17,7 +17,6 @@
 > [![fr](https://img.shields.io/badge/lang-fr-red.svg)](https://github.com/linogaliana/python-datascientist/blob/main/doc/README-fr.md)
 
 
-
 <img src="/content/gif_python.gif" width="250" />
 
 This GitHub repository <img height="18" width="18" src="https://cdn.simpleicons.org/github/00ccff99" />
