@@ -79,11 +79,10 @@ de données.
 
 # Données
 
-Un sous-ensemble des données de [Paris _Open Data_](https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/information/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name) a été mis à disposition
-pour faciliter l'import. 
-Il s'agit d'une extraction, qui commence à dater, des données disponibles
-sur le site où seules les colonnes
-qui servent à cet exercice ont été conservées.
+Ce chapitre s'appuie sur les données de comptage des passages de vélo dans les points de mesure parisiens diffusés sur le site de l'_open data_ de la ville de Paris. 
+
+L'exploitation de l'ensemble de l'historique a été grandement facilité par la diffusion des données au format `Parquet` (évoqué dans les approfondissements du [deuxième chapitre consacré à `Pandas`](/content/manipulation/02_pandas_suite.qmd)), un format moderne plus pratique que le CSV. Pour en savoir plus sur ce format, vous pouvez consulter les ressources évoquées dans le paragraphe consacré à ce format dans le chapitre `Pandas`. 
+
 
 # Premières productions graphiques avec l'API `Matplotlib` de `Pandas`
 
@@ -113,17 +112,7 @@ analyse statistique. Il est donc nécessaire dans un premier temps
 de synthétiser celles-ci par des agrégations afin d'avoir un
 graphique lisible. 
 
-1. Importer les données de compteurs de vélos. Vous pouvez utiliser l'url <https://minio.lab.sspcloud.fr/projet-formation/diffusion/python-datascientist/bike.csv>. 
-
-<details>
-<summary>
-⚠️ Warning sur le format de données
-</summary>
-
-Il s'agit de données
-compressées au format `gzip`, il faut donc utiliser l'option `compression = 'gzip'`
-
-</details>
+1. Importer les données de compteurs de vélos. Les données étant diffusées sous forme de `Parquet` (évoqué dans les approfondissements du [deuxième chapitre consacré à `Pandas`](/content/manipulation/02_pandas_suite.qmd)), nous donnons directement le code permettant de lire celles-ci avec `Python` sous cet exercice.
 
 2. Garder les dix bornes à la moyenne la plus élevée.
 Comme pour obtenir un graphique ordonné du plus grand au plus petit,
@@ -150,14 +139,7 @@ pour reproduire la figure 2 de l'_open data_ parisien
 ```
 :::
 
-
-```{python}
-#1. Importation des données de vélo
-import pandas as pd
-
-url = "https://minio.lab.sspcloud.fr/projet-formation/diffusion/python-datascientist/bike.csv"
-df = pd.read_csv(url)
-```
+{{< include "_prepare_data_bike.qmd" >}}
 
 ::: {.cell .markdown}
 ```{=html}
@@ -181,11 +163,11 @@ df.head(3)
 ```{python}
 df1 = (
     df
-    .groupby('Nom du compteur')
-    .agg({'Comptage horaire': "mean"})
-    .sort_values('Comptage horaire', ascending = False)
+    .groupby('nom_compteur')
+    .agg({'sum_counts': "mean"})
+    .sort_values('sum_counts', ascending = False)
     .head(10)
-    .sort_values('Comptage horaire')    
+    .sort_values('sum_counts')    
 )
 ```
 
@@ -238,11 +220,11 @@ p1.figure
 # Question 4
 df2 = (
     df
-    .groupby('Nom du compteur')
-    .agg({'Comptage horaire': "sum"})
-    .sort_values('Comptage horaire', ascending = False)
+    .groupby('nom_compteur')
+    .agg({'sum_counts': "sum"})
+    .sort_values('sum_counts', ascending = False)
     .head(10)
-    .sort_values('Comptage horaire')
+    .sort_values('sum_counts')
 )
 ```
 
@@ -330,17 +312,16 @@ style avec `sns.set_style("ticks", {"xtick.color": "red"})`
 #| output: false
 
 # 1. Réinitialiser les index.
-df1 = df1.reset_index().sort_values("Comptage horaire", ascending = False)
-df2 = df2.reset_index().sort_values("Comptage horaire", ascending = False)
+df1 = df1.reset_index().sort_values("sum_counts", ascending = False)
+df2 = df2.reset_index().sort_values("sum_counts", ascending = False)
 ```
 
 ```{python}
 #| output: false
 
-
 # 2. Graphique avec sns.catplot
 g = sns.catplot(
-    x='Comptage horaire', y='Nom du compteur',
+    x='sum_counts', y='nom_compteur',
     data=df1, kind = "bar",
     height = 5, aspect = 4,
     color = "red")
@@ -361,7 +342,7 @@ on obtient une figure proche de celle de l'_open data_ parisien.
 #| output: false
 
 # 3. Ajout d'éléments de légende
-g = sns.catplot(x='Comptage horaire', y='Nom du compteur', data=df1, kind = "bar", height = 5, aspect = 4, color = "red")
+g = sns.catplot(x='sum_counts', y='nom_compteur', data=df1, kind = "bar", height = 5, aspect = 4, color = "red")
 g.set_axis_labels('Moyenne du comptage par heure sur la période sélectionnée', 'Nom du compteur')
 plt.title('Les 10 compteurs avec la moyenne horaire la plus élevée')
 g
@@ -372,7 +353,7 @@ g
 
 # 4. Coloration en rouge de l'axe des x.
 sns.set_style("ticks", {"xtick.color": "red"})
-g = sns.catplot(x='Comptage horaire', y='Nom du compteur', data=df1, kind = "bar", height = 10, aspect = 2, color = "red")
+g = sns.catplot(x='sum_counts', y='nom_compteur', data=df1, kind = "bar", height = 10, aspect = 2, color = "red")
 g.set_axis_labels('Moyenne du comptage par heure sur la période sélectionnée', 'Nom du compteur')
 plt.title('Les 10 compteurs avec la moyenne horaire la plus élevée')
 plt.savefig('top10_sns.png', bbox_inches='tight')
@@ -433,12 +414,12 @@ my_range=range(1,len(df2.index)+1)
 
 sns.set_style("ticks", {"xtick.color": "forestgreen"})
 
-plt.hlines(y=my_range, xmin=0, xmax=df2['Comptage horaire'], color='black', alpha = 0.4)
-plt.plot(df2['Comptage horaire'], my_range, "o", color = "forestgreen")
+plt.hlines(y=my_range, xmin=0, xmax=df2['sum_counts'], color='black', alpha = 0.4)
+plt.plot(df2['sum_counts'], my_range, "o", color = "forestgreen")
 
-plt.yticks(my_range, df2['Nom du compteur'])
+plt.yticks(my_range, df2['nom_compteur'])
 plt.title("Les 10 compteurs ayant comptabilisés le plus de vélos", loc='left')
-plt.xlabel('Nom du compteur')
+plt.xlabel('sum_counts')
 plt.ylabel('La somme des vélos comptabilisés sur la période sélectionnée')
 ```
 
@@ -467,15 +448,12 @@ temporelles : changer le format d'une date pour pouvoir faire une agrégation
 <h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4: barplot des comptages mensuels</h3>
 ```
 
-1. Utiliser `to_datetime` du package `Pandas` pour transformer la variable `Date et heure de comptage`
-en horodatage car le type de celle-ci a été mal interprété à la lecture du fichier. 
-Le format à utiliser est `%Y-%m-%dT%H:%M:%SZ`. Il peut être nécessaire d'utiliser également l'option `errors='coerce'`
-2. Créer une variable `month`
+1. Créer une variable `month`
 dont le format respecte, par exemple, le schéma `2019-08` grâce à la bonne option de la méthode `dt.to_period`
-3. Appliquer les conseils précédents pour construire et améliorer
+2. Appliquer les conseils précédents pour construire et améliorer
 graduellement un graphique afin d'obtenir une figure similaire
 à la 3e production sur la page de l'_open data_ parisien.
-4. Question optionnelle: représenter la même information sous forme de _lollipop_
+3. Question optionnelle: représenter la même information sous forme de _lollipop_
 
 ```{=html}
 </div>
@@ -483,15 +461,14 @@ graduellement un graphique afin d'obtenir une figure similaire
 :::
 
 ```{python}
-# Questions 1 et 2
-df['timestamp'] = pd.to_datetime(df['Date et heure de comptage'], format='%Y-%m-%dT%H:%M:%SZ', errors='coerce')
-df['month'] = df['timestamp'].dt.to_period('M')
+# Questions 1
+df['month'] = df['date'].dt.to_period('M')
 ```
 
 ```{python}
-# Question 3
-df3 = df.groupby('month').agg({'Comptage horaire':'mean'}).reset_index()
-df3 = df3.rename(columns = {"Comptage horaire": "value"})
+# Question 2
+df3 = df.groupby('month').agg({'sum_counts':'mean'}).reset_index()
+df3 = df3.rename(columns = {"sum_counts": "value"})
 df3.head(2)
 ```
 
@@ -515,8 +492,8 @@ figure3 = (
 
 # Question 3: version seaborn
 sns.set_style("whitegrid")
-df3 = df.groupby('month').agg({'Comptage horaire':'mean'}).reset_index()
-g = sns.catplot(x='month', y='Comptage horaire', data=df3, kind = "bar", height = 5, aspect = 4, color = "yellow")
+df3 = df.groupby('month').agg({'sum_counts':'mean'}).reset_index()
+g = sns.catplot(x='month', y='sum_counts', data=df3, kind = "bar", height = 5, aspect = 4, color = "yellow")
 g.set_axis_labels('Date et heure de comptage', 'Moyenne mensuelle du comptage par heure sur la période sélectionnée')
 plt.title('Moyenne mensuelle des comptages vélos')
 ```
@@ -528,7 +505,7 @@ figure3
 Si vous préférez représenter cela sous forme de _lollipop_[^notecouleur]:
 
 ```{python}
-(ggplot(df3, aes(x = "month", y = "Comptage horaire")) +
+(ggplot(df3, aes(x = "month", y = "value")) +
   geom_segment(aes(xend = "month", yend = 0)) +
   geom_point( color="#ffcd00", size=4) +
   labs(x = "Date et heure de comptage", y = "Moyenne mensuelle du comptage par heure\nsur la période sélectionnée",
@@ -564,14 +541,14 @@ du type `2021-05-01` avec `dt.day`.
 :::
 
 ```{python}
-df['day'] = df.timestamp.dt.date
-moyenne_quotidienne = df.groupby('day', as_index=False).agg({'Comptage horaire':'mean'})
+df['day'] = df['date'].dt.date
+moyenne_quotidienne = df.groupby('day', as_index=False).agg({'sum_counts':'mean'})
 moyenne_quotidienne['day'] = pd.to_datetime(moyenne_quotidienne['day'])
 ```
 
 ```{python}
 # Version plotnine
-figure4 = (ggplot(moyenne_quotidienne, aes(x = "day", y = 'Comptage horaire')) +
+figure4 = (ggplot(moyenne_quotidienne, aes(x = "day", y = 'sum_counts')) +
   geom_line(color = "magenta") +
   geom_area(fill="magenta", alpha = 0.6) +
   labs(x = "Date et heure de comptage (Jour)", y = "Moyenne journalière du comptage par heure\nsur la période sélectionnée",
@@ -584,7 +561,7 @@ figure4 = (ggplot(moyenne_quotidienne, aes(x = "day", y = 'Comptage horaire')) +
 
 # Version matplotlib
 plt.clf()
-ax = sns.lineplot(x='day', y='Comptage horaire', data=moyenne_quotidienne, color = "magenta")
+ax = sns.lineplot(x='day', y='sum_counts', data=moyenne_quotidienne, color = "magenta")
 l1 = ax.lines[0]
 x1 = l1.get_xydata()[:, 0]
 y1 = l1.get_xydata()[:, 1]
@@ -704,8 +681,8 @@ groupe stockant les trois plus fortes valeurs puis les autres.
 ```{python}
 #| output: false
 # 1. Graphique avec fond blanc
-fig = px.bar(df1.sort_values('Comptage horaire', ascending=True), orientation='h', x='Comptage horaire',
-             y='Nom du compteur', color_discrete_sequence=["red"], template="plotly_white")
+fig = px.bar(df1.sort_values('sum_counts', ascending=True), orientation='h', x='sum_counts',
+             y='nom_compteur', color_discrete_sequence=["red"], template="plotly_white")
 
 fig.update_layout(
     title='Les 10 compteurs avec la moyenne horaire la plus élevée',
@@ -717,9 +694,9 @@ fig.update_xaxes(title_font=dict(color='red'))
 #| output: false
 
 #2. Graphique avec thème sombre
-df1['top'] = df1['Comptage horaire'] > df1.sort_values('Comptage horaire', ascending=False)['Comptage horaire'][3]
-fig2 = px.bar(df1.sort_values('Comptage horaire', ascending=True), orientation='h', x='Comptage horaire',
-              y='Nom du compteur',  color='top', # attention, l'argument color ne semble pas toujours fonctionner
+df1['top'] = df1['sum_counts'] > df1.sort_values('sum_counts', ascending=False)['sum_counts'][3]
+fig2 = px.bar(df1.sort_values('sum_counts', ascending=True), orientation='h', x='sum_counts',
+              y='nom_compteur',  color='top', # attention, l'argument color ne semble pas toujours fonctionner
               template="plotly_dark",
               color_discrete_sequence=['red','green'])
 fig2.update_layout(
