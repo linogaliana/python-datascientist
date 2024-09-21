@@ -26,5 +26,6 @@ RUN pip freeze
 
 RUN python -m spacy download en_core_web_sm
 
+
 EXPOSE 5000
 CMD ["pip", "freeze"]
