@@ -1,0 +1,56 @@
+```{python}
+#| echo: true
+import os
+import requests
+from tqdm import tqdm
+import pandas as pd
+import duckdb
+
+url = 'https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/comptage-velo-donnees-compteurs/exports/parquet?lang=fr&timezone=Europe%2FParis'
+filename = 'comptage_velo_donnees_compteurs.parquet'
+
+
+# DOWNLOAD FILE --------------------------------
+
+# Perform the HTTP request and stream the download
+response = requests.get(url, stream=True)
+
+if not os.path.exists(filename):
+    # Perform the HTTP request and stream the download
+    response = requests.get(url, stream=True)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Get the total size of the file from the headers
+        total_size = int(response.headers.get('content-length', 0))
+
+        # Open the file in write-binary mode and use tqdm to show progress
+        with open(filename, 'wb') as file, tqdm(
+                desc=filename,
+                total=total_size,
+                unit='B',
+                unit_scale=True,
+                unit_divisor=1024,
+        ) as bar:
+            # Write the file in chunks
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:  # filter out keep-alive chunks
+                    file.write(chunk)
+                    bar.update(len(chunk))
+    else:
+        print(f"Failed to download the file. Status code: {response.status_code}")
+else:
+    print(f"The file '{filename}' already exists.")
+
+# READ FILE AND CONVERT TO PANDAS --------------------------
+
+query = """
+SELECT id_compteur, nom_compteur, id, sum_counts, date 
+FROM read_parquet('comptage_velo_donnees_compteurs.parquet')
+"""
+
+# READ WITH DUCKDB AND CONVERT TO PANDAS
+df = duckdb.sql(query).df()
+
+df.head(3)
+```
