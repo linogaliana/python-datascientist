@@ -355,9 +355,19 @@ The code to download the data is as follows:
 ```{python}
 #| echo: true
 #| output: false
+#| eval: false
 from pynsee.download import download_file
 filosofi = download_file("FILOSOFI_COM_2016")
 ```
+
+```{python}
+#| echo: false
+#| output: false
+import pandas as pd
+backup_filosofi = "https://minio.lab.sspcloud.fr/lgaliana/data/python-ENSAE/filosofi.parquet"
+filosofi = pd.read_parquet(backup_filosofi)
+```
+
 
 ::: {.content-visible when-profile="fr"}
 Le _DataFrame_ en question a l'aspect suivant :
@@ -509,11 +519,26 @@ To illustrate the application of this principle to counting, we can count the nu
 
 ```{python}
 #| echo: true
+import requests
+from io import StringIO
 import pandas as pd
 
 url_cog_2023 = "https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv"
-cog_2023 = pd.read_csv(url_cog_2023) 
+url_backup = "https://minio.lab.sspcloud.fr/lgaliana/data/python-ENSAE/cog_2023.csv"
+
+# Try-except clause to avoid timout issue sometimes
+# Without timeout problem, pd.read_csv(url_cog_2023) would be sufficient 
+try: 
+  response = requests.get(url_cog_2023)
+  response.raise_for_status()
+  cog_2023 = pd.read_csv(StringIO(response.text))
+except requests.exceptions.Timeout:
+  print("Failing back to backup")
+  cog_2023 = pd.read_csv(url_backup)
 ```
+
+
+
 
 ::: {.content-visible when-profile="fr"}
 
