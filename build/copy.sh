@@ -7,3 +7,5 @@ mc cp dvf.parquet s3/lgaliana/data/python-ENSAE/dvf.parquet
 
 wget -O cog_2023.csv https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv
 mc cp cog_2023.csv s3/lgaliana/data/python-ENSAE/cog_2023.csv
+
+mc cp filosofi.parquet s3/lgaliana/data/python-ENSAE/filosofi.parquet
