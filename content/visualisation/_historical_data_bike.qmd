@@ -1,0 +1,192 @@
+```{python}
+#| code-fold: true
+#| code-summary: Voir le code pour bénéficier d'un historique plus long de données
+#| echo: true
+#| output: false
+
+import requests
+import zipfile
+import io
+import os
+import pandas as pd
+import geopandas as gpd
+
+list_useful_columns = [
+        "Identifiant du compteur", "Nom du compteur",
+        "Identifiant du site de comptage",
+        "Nom du site de comptage",
+        "Comptage horaire",
+        "Date et heure de comptage"        
+    ]
+
+
+# GENERIC FUNCTION TO RETRIEVE DATA -------------------------
+
+
+def download_unzip_and_read(url, extract_to='.'):
+    """
+    Downloads a zip file from the specified URL, extracts its contents, and reads the CSV file based on the filename pattern in the URL.
+    
+    Parameters:
+    - url (str): The URL of the zip file to download.
+    - extract_to (str): The directory where the contents of the zip file should be extracted.
+    
+    Returns:
+    - df (DataFrame): The loaded pandas DataFrame from the extracted CSV file.
+    """
+    try:
+        # Extract the file pattern from the URL (filename without the extension)
+        file_pattern = url.split('/')[-1].replace('_zip/', '')
+
+        
+        # Send a GET request to the specified URL to download the file
+        response = requests.get(url)
+        response.raise_for_status()  # Ensure we get a successful response
+        
+        # Create a ZipFile object from the downloaded bytes
+        with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+            # Extract all the contents to the specified directory
+            z.extractall(path=extract_to)
+            print(f"Extracted all files to {os.path.abspath(extract_to)}")
+            
+            # Look for the file matching the pattern
+            extracted_files = os.listdir(extract_to)
+            csv_filename = [f for f in extracted_files if file_pattern in f and f.endswith('.csv')]
+            
+            if not csv_filename:
+                print(f"No file matching pattern '{file_pattern}' found.")
+                return None
+            
+            # Read the first matching CSV file into a pandas DataFrame
+            csv_path = os.path.join(extract_to, csv_filename[0])
+            print(f"Reading file: {csv_path}")
+            df = pd.read_csv(csv_path, sep=";")
+            
+            # CONVERT TO GEOPANDAS
+            df[['latitude', 'longitude']] = df['Coordonnées géographiques'].str.split(',', expand=True)
+            df['latitude'] = pd.to_numeric(df['latitude'])
+            df['longitude'] = pd.to_numeric(df['longitude'])
+            gdf = gpd.GeoDataFrame(
+                df, geometry=gpd.points_from_xy(df.longitude, df.latitude)
+            )
+            # CONVERT TO TIMESTAMP     
+            df["Date et heure de comptage"] = pd.to_datetime(
+                df["Date et heure de comptage"],
+                format="%Y-%m-%dT%H:%M:%S",
+                errors="coerce"
+            )            
+            gdf = df.loc[
+                :, list_useful_columns
+            ]
+            return gdf
+    
+    except requests.exceptions.RequestException as e:
+        print(f"Error: The downloaded file has not been found: {e}")
+        return None
+    except zipfile.BadZipFile as e:
+        print(f"Error: The downloaded file is not a valid zip file: {e}")
+        return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
+def read_historical_bike_data(year):
+    dataset = "comptage_velo_donnees_compteurs"
+    url_comptage = f"https://opendata.paris.fr/api/datasets/1.0/comptage-velo-historique-donnees-compteurs/attachments/{year}_{dataset}_csv_zip/"
+    df_comptage = download_unzip_and_read(url_comptage, extract_to='./extracted_files')
+    if (df_comptage is None):
+        url_comptage_alternative = url_comptage.replace("_csv_zip", "_zip")
+        df_comptage = download_unzip_and_read(url_comptage_alternative, extract_to=f'./extracted_files_{year}')
+    return df_comptage
+
+
+# IMPORT HISTORICAL DATA -----------------------------
+
+historical_bike_data = pd.concat(
+    [read_historical_bike_data(year) for year in range(2018, 2024)]
+)
+
+rename_columns_dict = {
+    "Identifiant du compteur": "id_compteur",
+    "Nom du compteur": "nom_compteur",
+    "Identifiant du site de comptage": "id",
+    "Nom du site de comptage": "nom_site",
+    "Comptage horaire": "sum_counts",
+    "Date et heure de comptage": "date"
+}
+
+
+historical_bike_data = historical_bike_data.rename(
+    columns=rename_columns_dict
+)
+
+
+# IMPORT LATEST MONTHS ----------------
+
+import os
+import requests
+from tqdm import tqdm
+import pandas as pd
+import duckdb
+
+url = 'https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/comptage-velo-donnees-compteurs/exports/parquet?lang=fr&timezone=Europe%2FParis'
+filename = 'comptage_velo_donnees_compteurs.parquet'
+
+
+# DOWNLOAD FILE --------------------------------
+
+# Perform the HTTP request and stream the download
+response = requests.get(url, stream=True)
+
+if not os.path.exists(filename):
+    # Perform the HTTP request and stream the download
+    response = requests.get(url, stream=True)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Get the total size of the file from the headers
+        total_size = int(response.headers.get('content-length', 0))
+
+        # Open the file in write-binary mode and use tqdm to show progress
+        with open(filename, 'wb') as file, tqdm(
+                desc=filename,
+                total=total_size,
+                unit='B',
+                unit_scale=True,
+                unit_divisor=1024,
+        ) as bar:
+            # Write the file in chunks
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:  # filter out keep-alive chunks
+                    file.write(chunk)
+                    bar.update(len(chunk))
+    else:
+        print(f"Failed to download the file. Status code: {response.status_code}")
+else:
+    print(f"The file '{filename}' already exists.")
+
+
+# READ FILE AND CONVERT TO PANDAS
+query = """
+SELECT id_compteur, nom_compteur, id, sum_counts, date 
+FROM read_parquet('comptage_velo_donnees_compteurs.parquet')
+"""
+
+# READ WITH DUCKDB AND CONVERT TO PANDAS
+df = duckdb.sql(query).df()
+
+df.head(3)
+
+
+# PUT THEM TOGETHER ----------------------------
+
+historical_bike_data = (
+    historical_bike_data
+    .loc[historical_bike_data["date"] < df["date"].min()]
+)
+
+df = pd.concat(
+    [historical_bike_data, df]
+)
+```
