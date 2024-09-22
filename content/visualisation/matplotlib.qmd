@@ -318,6 +318,8 @@ df2 = df2.reset_index().sort_values("sum_counts", ascending = False)
 
 ```{python}
 #| output: false
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # 2. Graphique avec sns.catplot
 g = sns.catplot(
@@ -332,6 +334,7 @@ A l'issue de la question 2, c'est-à-dire en utilisant
 un _barplot_, on obtient :
 
 ```{python}
+#| echo: false
 g.figure.get_figure()
 ```
 
@@ -427,12 +430,17 @@ plt.ylabel('La somme des vélos comptabilisés sur la période sélectionnée')
 
 # Premières agrégations temporelles
 
-On va maintenant se concentrer sur la dimension spatiale de notre
+On va maintenant se concentrer sur la dimension temporelle de notre
 jeu de données à travers deux approches :
 
 - Un diagramme en barre synthétisant l'information de notre jeu de données
 de manière mensuelle ;
 - Des séries instructives sur la dynamique temporelle. Cela sera l'objet de la prochaine partie.
+
+
+Avant cela, nous allons enrichir ces données pour bénéficier d'un historique plus long, permettant notamment d'avoir la période Covid dans nos données, ce qui présente un intérêt du fait de la dynamique particulière du trafic dans cette période (arrêt brutal, reprise très forte...). 
+
+{{< include "/content/visualisation/_historical_data_bike.qmd" >}}
 
 
 Pour commencer, reproduisons la troisième figure qui est, encore une fois, 
@@ -450,10 +458,10 @@ temporelles : changer le format d'une date pour pouvoir faire une agrégation
 
 1. Créer une variable `month`
 dont le format respecte, par exemple, le schéma `2019-08` grâce à la bonne option de la méthode `dt.to_period`
-2. Appliquer les conseils précédents pour construire et améliorer
+1. Appliquer les conseils précédents pour construire et améliorer
 graduellement un graphique afin d'obtenir une figure similaire
-à la 3e production sur la page de l'_open data_ parisien.
-3. Question optionnelle: représenter la même information sous forme de _lollipop_
+à la 3e production sur la page de l'_open data_ parisien. Faire cette figure d'abord depuis début 2022 puis sur toute la période de notre historique 
+1. Question optionnelle: représenter la même information sous forme de _lollipop_
 
 ```{=html}
 </div>
@@ -467,29 +475,45 @@ df['month'] = df['date'].dt.to_period('M')
 
 ```{python}
 # Question 2
-df3 = df.groupby('month').agg({'sum_counts':'mean'}).reset_index()
+df3 = (
+    df.loc[df['date'].dt.year>=2022]
+    .groupby('month')
+    .agg({'sum_counts':'mean'})
+    .reset_index()
+)
 df3 = df3.rename(columns = {"sum_counts": "value"})
 df3.head(2)
 ```
 
 ```{python}
-#| output: false
 from plotnine import *
 
-# Question 3: version plotnine
-figure3 = (
-    ggplot(df3) +
-    geom_bar(aes(x = "month", y = "value"), fill = "#ffcd00", stat = "identity") +
-    labs(x = "Date et heure de comptage", y = "Moyenne mensuelle du comptage par heure\nsur la période sélectionnée",
-       title = "Moyenne mensuelle des comptages vélos") +
-       theme_minimal() +
-       theme(
-        axis_text_x = element_text(angle = 45, hjust = 1),
-        axis_title_y = element_text(color = "#ffcd00", face = "bold"),
-        plot_title = element_text(hjust = 0.5)
+# Question 3: plotnine generic function
+def figure3(df):
+    figure3 = (
+        ggplot(df3) +
+        geom_bar(aes(x = "month", y = "value"), fill = "#ffcd00", stat = "identity") +
+        labs(x = "Date et heure de comptage", y = "Moyenne mensuelle du comptage par heure\nsur la période sélectionnée",
+        title = "Moyenne mensuelle des comptages vélos") +
+        theme_minimal() +
+        theme(
+            axis_text_x = element_text(angle = 45, hjust = 1),
+            axis_title_y = element_text(color = "#ffcd00", face = "bold"),
+            plot_title = element_text(hjust = 0.5)
+            )
         )
-    )
+    return figure3
+```
 
+La figure avec les données depuis début 2022 aura cet aspect si elle a été construite avec `plotnine`:
+
+```{python}
+figure3(df3)
+```
+
+Avec `seaborn`, elle ressemblera plutôt à ceci:
+
+```{python}
 # Question 3: version seaborn
 sns.set_style("whitegrid")
 df3 = df.groupby('month').agg({'sum_counts':'mean'}).reset_index()
@@ -498,22 +522,37 @@ g.set_axis_labels('Date et heure de comptage', 'Moyenne mensuelle du comptage pa
 plt.title('Moyenne mensuelle des comptages vélos')
 ```
 
-```{python}
-figure3
-```
 
 Si vous préférez représenter cela sous forme de _lollipop_[^notecouleur]:
 
 ```{python}
-(ggplot(df3, aes(x = "month", y = "value")) +
-  geom_segment(aes(xend = "month", yend = 0)) +
-  geom_point( color="#ffcd00", size=4) +
-  labs(x = "Date et heure de comptage", y = "Moyenne mensuelle du comptage par heure\nsur la période sélectionnée",
-       title = "Moyenne mensuelle des comptages vélos") +
-  theme_minimal() +
-  theme(axis_text_x = element_text(angle = 45, hjust = 1),
-        plot_title = element_text(hjust = 0.5))
+(
+    ggplot(df3, aes(x = "month", y = "value")) +
+    geom_segment(aes(xend = "month", yend = 0)) +
+    geom_point( color="#ffcd00", size=4) +
+    labs(
+        x = "Date et heure de comptage", y = "Moyenne mensuelle du comptage par heure\nsur la période sélectionnée",
+        title = "Moyenne mensuelle des comptages vélos"
+    ) +
+    theme_minimal() +
+    theme(
+        axis_text_x = element_text(angle = 45, hjust = 1),
+        plot_title = element_text(hjust = 0.5)
+    )
 )
+```
+
+Enfin, sur l'ensemble de la période, la série prendra plutôt cette forme:
+
+```{python}
+df3 = (
+    df
+    .groupby('month')
+    .agg({'sum_counts':'mean'})
+    .reset_index()
+)
+df3 = df3.rename(columns = {"sum_counts": "value"})
+figure3(df3)
 ```
 
 [^notecouleur]: J'ai retiré la couleur sur l'axe des ordonnées qui, je trouve,
