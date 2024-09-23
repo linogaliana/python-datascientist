@@ -86,9 +86,10 @@ Ce chapitre s'appuie sur les données de comptage des passages de vélo dans les
 
 L'exploitation de l'historique récent a été grandement facilité par la diffusion des données au format `Parquet`, un format moderne plus pratique que le CSV. Pour en savoir plus sur ce format, vous pouvez consulter les ressources évoquées dans le paragraphe consacré à ce format dans le [chapitre d'approfondissement](/content/manipulation/02_pandas_suite.qmd). 
 
+{{< include "_prepare_data_bike.qmd" >}}
+
 
 # Premières productions graphiques avec l'API `Matplotlib` de `Pandas`
-
 
 Chercher à produire une visualisation parfaite du premier coup est
 illusoire. Il est beaucoup plus réaliste d'améliorer graduellement 
@@ -103,164 +104,87 @@ rapidement un _barplot_ puis l'améliorer graduellement.
 Dans cette partie, nous allons ainsi
 reproduire les deux premiers graphiques de la
 [page d'analyse des données](https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/dataviz/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name) :
-*Les 10 compteurs avec la moyenne horaire la plus élevée* et *Les 10 compteurs ayant comptabilisé le plus de vélos*. Les valeurs chiffrées des graphiques seront différentes de celles de la page en ligne, c'est normal, nous travaillons sur des données plus anciennes. 
+*Les 10 compteurs avec la moyenne horaire la plus élevée* et *Les 10 compteurs ayant comptabilisé le plus de vélos*. Les valeurs chiffrées des graphiques peuvent être différentes de celles de la page en ligne, c'est normal, car nous ne travaillons pas systématiquement sur les données ayant la même fraicheur que celles en ligne. 
+
+Pour importer les librairies graphiques que nous utiliserons dans ce chapitre, il faut faire
 
 ```{python}
 #| echo: true
 import matplotlib.pyplot as plt
 import seaborn as sns
+from plotnine import * #<1>
+```
+1. Importer des librairies sous la forme `from package import *` n'est pas une très bonne pratique. Néanmoins, pour un _package_ comme `plotnine`, dont nous allons utiliser de nombreuses fonctions, ce serait un peu fastidieux d'importer les fonctions au cas par cas. De plus, cela permet de réutiliser presque tels quels les exemples de code de la librairie `R` `ggplot`, nombreux sur internet avec démonstrations visuelles. `from package import *` est l'équivalent `Python` de la pratique `library(package)` en `R`. 
+
+
+## Comprendre, en quelques mots, le principe de `matplotlib` 
+
+`matplotlib` date du début des années 2000 et a émergé pour proposer une alternative en `Python` à la création de graphiques sous `Matlab`, un logiciel propriétaire de calcul numérique. `matplotlib` est donc une librairie assez ancienne, antérieure à l'émergence de `Python` dans l'écosystème du traitement de données. Cela s'en ressent sur la logique de construction de `matplotlib` qui n'est pas toujours intuitive lorsqu'on est familier de l'écosystème moderne de la _data science_. Heureusement, il existe de nombreuses librairies qui s'appuient sur `matplotlib` mais qui visent à founir une syntaxe plus familière aux _data scientists_.
+
+`matplotlib` propose principalement deux niveaux d'abstraction: la figure et les axes. La figure est, en quelques sortes, la "toile" globale qui contient un ou plusieurs axes dans lesquels s'inséreront des graphiques.  Selon les cas, il faudra jouer avec les paramètres de figure ou d'axe, ce qui rend très flexible la construction d'un graphique mais peut également être déroutant car on ne sait jamais trop quel niveau d'abstraction il faut modifier pour mettre à jour sa figure[^chatGPT]. Comme le montre la @fig-matplotlib, tout les éléments d'une figure sont paramétrables. 
+
+[^chatGPT]: Heureusement, comme il existe un énorme corpus de code en ligne utilisant `matplotlib`, les assistants de code comme `ChatGPT` ou `Github Copilot` sont précieux pour construire un graphique à partir d'instructions.  
+
+![Comprendre l'architecture d'une figure `matplotlib` (Source: [documentation officielle](https://matplotlib.org/stable/users/explain/quick_start.html))](https://matplotlib.org/stable/_images/anatomy.png){#fig-matplotlib}
+
+En pratique, il existe deux manières de créer et mettre à jour sa figure selon qu'on préfère passer par:
+
+- l'approche explicite, héritière d'une logique de programmation orientée objet, où on crée des objets `Figure` et `Axes` et met à jour ceux-ci.
+- l'approche implicite, basée sur l'interface `pyplot` qui utilise une succession de fonctions pour mettre à jour les objets créés implicitement.
+
+::: {.panel-tabset group="matplotlib-abstraction"}
+## Approche explicite (approche orientée POO)
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 2, 100)  # Sample data.
+
+# Note that even in the OO-style, we use `.pyplot.figure` to create the Figure.
+fig, ax = plt.subplots(figsize=(5, 2.7), layout='constrained')
+ax.plot(x, x, label='linear')  # Plot some data on the Axes.
+ax.plot(x, x**2, label='quadratic')  # Plot more data on the Axes...
+ax.plot(x, x**3, label='cubic')  # ... and some more.
+ax.set_xlabel('x label')  # Add an x-label to the Axes.
+ax.set_ylabel('y label')  # Add a y-label to the Axes.
+ax.set_title("Simple Plot")  # Add a title to the Axes.
+ax.legend()  # Add a legend.
 ```
 
+Source: [Documentation officielle de `matplotlib`](https://matplotlib.org/stable/users/explain/quick_start.html)
 
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 1 : Importer les données et produire un premier graphique</h3>
+## Approche implicite
+
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 2, 100)  # Sample data.
+
+plt.figure(figsize=(5, 2.7), layout='constrained')
+plt.plot(x, x, label='linear')  # Plot some data on the (implicit) Axes.
+plt.plot(x, x**2, label='quadratic')  # etc.
+plt.plot(x, x**3, label='cubic')
+plt.xlabel('x label')
+plt.ylabel('y label')
+plt.title("Simple Plot")
+plt.legend()
 ```
 
-Les données comportent plusieurs dimensions pouvant faire l'objet d'une 
-analyse statistique. Il est donc nécessaire dans un premier temps
-de synthétiser celles-ci par des agrégations afin d'avoir un
-graphique lisible. 
+Source: [Documentation officielle de `matplotlib`](https://matplotlib.org/stable/users/explain/quick_start.html)
 
-1. Importer les données de compteurs de vélos. Les données étant diffusées sous forme de `Parquet` (évoqué dans les approfondissements du [deuxième chapitre consacré à `Pandas`](/content/manipulation/02_pandas_suite.qmd)), nous donnons directement le code permettant de lire celles-ci avec `Python` sous cet exercice.
-
-2. Garder les dix bornes à la moyenne la plus élevée.
-Comme pour obtenir un graphique ordonné du plus grand au plus petit,
-il faut avoir les données ordonnées du plus petit au
-plus grand (oui c'est bizarre mais c'est comme ça...), réordonner
-les données ;
-
-
-3. En premier lieu, sans se préoccuper des éléments de style ni de la beauté
-du graphique, créer la structure du _barplot_ (diagramme en batons) de la
-[page d'analyse des données](https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/dataviz/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name).
-
-
-4. Pour préparer le travail sur la deuxième figure, ne conserver
-que les 10 compteurs ayant comptabilisés le plus de vélos
-
-
-5. Comme pour la question 3, créer un _barplot_
-pour reproduire la figure 2 de l'_open data_ parisien
-
-
-```{=html}
-</div>
-```
 :::
 
-{{< include "_prepare_data_bike.qmd" >}}
+Ces éléments constituent le minimum pour comprendre la logique de `matplotlib`. Pour être plus à l'aise avec ces concepts, la pratique répétée est indispensable. 
 
-::: {.cell .markdown}
-```{=html}
-<details>
-<summary>
-Premières lignes nécessaires pour cet exercice :
-</summary>
-```
+## Découvrir `matplotlib` par l'intermédiaire de `Pandas`
 
-```{python}
-#| echo: false
-df.head(3)
-```
+{{< include "/content/visualisation/01_matplotlib/_exo1.qmd" >}}
 
-```{=html}
-</details>
-```
-:::
+{{< include "/content/visualisation/01_matplotlib/_exo1_solution.qmd" >}}
 
-
-```{python}
-df1 = (
-    df
-    .groupby('nom_compteur')
-    .agg({'sum_counts': "mean"})
-    .sort_values('sum_counts', ascending = False)
-    .head(10)
-    .sort_values('sum_counts')    
-)
-```
-
-::: {.cell .markdown}
-```{=html}
-<details>
-<summary>
-Les 10 principales stations à l'issue de la question 2
-</summary>
-```
-
-```{python}
-#| echo: false
-df1.head()
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-```{python}
-#| output: false
-
-#2. Reproduction des graphiques
-
-# Graphique 1 : Les 10 compteurs avec la moyenne horaire la plus élevée
-p1 = df1.plot(kind = "barh", color = 'red')
-```
-
-::: {.cell .markdown}
-```{=html}
-<details>
-<summary>
-Figure 1 sans travail sur le style:
-</summary>
-```
-
-```{python}
-p1.figure
-```
-
-```{=html}
-</details>
-```
-:::
-
-```{python}
-# Question 4
-df2 = (
-    df
-    .groupby('nom_compteur')
-    .agg({'sum_counts': "sum"})
-    .sort_values('sum_counts', ascending = False)
-    .head(10)
-    .sort_values('sum_counts')
-)
-```
-
-```{python}
-#| output: false
-# Question 5
-p2 = df2.plot(kind = "barh", color = 'green')
-```
-
-::: {.cell .markdown}
-```{=html}
-<details>
-<summary>
-Figure 2 sans travail sur le style:
-</summary>
-```
-
-```{python}
-p2.figure
-```
-
-```{=html}
-</details>
-```
-:::
 
 
 On commence à avoir quelque chose qui commence à transmettre
@@ -270,12 +194,8 @@ On peut néanmoins remarquer plusieurs éléments problématiques
 aussi des éléments ne correspondant pas (les titres des axes, etc.) ou 
 manquants (le nom du graphique...).
 
-Comme les graphiques produits par `Pandas` suivent la logique très flexible
-de `matplotlib`, il est possible de les customiser. Cependant, c'est
-souvent beaucoup de travail et la grammaire `matplotlib` n'est
-pas aussi normalisée que celle de `ggplot` en `R`.
-Il peut être préférable de directement
-utiliser `seaborn`, qui offre quelques arguments prêts à l'emploi.
+Comme les graphiques produits par `Pandas` suivent la logique très flexible de `matplotlib`, il est possible de les customiser. Cependant, cela demande généralement beaucoup de travail et la grammaire `matplotlib` n'est pas aussi normalisée que celle de `ggplot` en `R`.
+Si on désire rester dans l'écosystème `matplotlib`, il est préférable de directement utiliser `seaborn`, qui offre quelques arguments prêts à l'emploi. Sinon on peut basculer sur l'écosystème `plotnine` qui offrira une syntaxe normalisée pour modifier les différents 
 
 
 # Utiliser directement `seaborn`
@@ -290,14 +210,12 @@ sont :
 - `sns.catplot` ;
 - `sns.barplot`.
 
-On propose d'utiliser `sns.catplot` pour cet exercice. 
+On propose d'utiliser `sns.catplot` pour cet exercice. Il s'agit d'un point d'entrée assez fréquent pour faire des graphiques d'une variable discrétisée. 
 
+## Le diagramme en barre (_barplot_)
 
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 2 : Un peu de style !</h3>
-```
+::: {.exercise}
+## Exercice 2: reproduire la première figure avec seaborn
 
 1. Réinitialiser l'index des _dataframes_ `df1` et `df2`
 pour avoir une colonne *'Nom du compteur'*. Réordonner les données
@@ -313,16 +231,13 @@ contrôler la taille du graphique vous pouvez utiliser les arguments `height` et
 4. Essayez de colorer en rouge l'axe des `x`. Vous pouvez pré-définir un
 style avec `sns.set_style("ticks", {"xtick.color": "red"})`
 
-```{=html}
-</div>
-```
 :::
 
 
 ```{python}
 #| output: false
 
-# 1. Réinitialiser les index.
+# Question 1. Reset index and order
 df1 = df1.reset_index().sort_values("sum_counts", ascending = False)
 df2 = df2.reset_index().sort_values("sum_counts", ascending = False)
 ```
@@ -346,26 +261,32 @@ un _barplot_, on obtient :
 
 ```{python}
 #| echo: false
-g.figure.get_figure()
+g
+plt.show()
 ```
 
 Après quelques réglages esthétiques, à l'issue des questions 3 et 4,
-on obtient une figure proche de celle de l'_open data_ parisien. 
+on obtient une figure proche de celle du portail _open data_ parisien. 
 
 ```{python}
 #| output: false
 
-# 3. Ajout d'éléments de légende
-g = sns.catplot(x='sum_counts', y='nom_compteur', data=df1, kind = "bar", height = 5, aspect = 4, color = "red")
+# Question 3
+g = sns.catplot(
+    x='sum_counts', y='nom_compteur',
+    data=df1,
+    kind = "bar", height = 5, aspect = 4, color = "red"
+)
 g.set_axis_labels('Moyenne du comptage par heure sur la période sélectionnée', 'Nom du compteur')
 plt.title('Les 10 compteurs avec la moyenne horaire la plus élevée')
-g
 ```
+
+Les paramètres supplémentaires proposés à la question 4 permettent finalement d'obtenir la figure
 
 ```{python}
 #| output: false
 
-# 4. Coloration en rouge de l'axe des x.
+# Question 4
 sns.set_style("ticks", {"xtick.color": "red"})
 g = sns.catplot(x='sum_counts', y='nom_compteur', data=df1, kind = "bar", height = 10, aspect = 2, color = "red")
 g.set_axis_labels('Moyenne du comptage par heure sur la période sélectionnée', 'Nom du compteur')
@@ -375,12 +296,12 @@ plt.savefig('top10_sns.png', bbox_inches='tight')
 
 ```{python}
 #| echo: false
-g.figure.get_figure()
+g
+plt.show()
 ```
 
 
-On comprend
-ainsi que le boulevard de Sébastopol est le plus emprunté,
+On comprend ainsi que le boulevard de Sébastopol est le plus emprunté,
 ce qui ne vous suprendra pas si vous faites du vélo à Paris. 
 Néanmoins, si vous n'êtes pas familiers avec la géographie parisienne,
 cela sera peu informatif pour vous, vous allez avoir besoin d'une
@@ -388,39 +309,31 @@ représentation graphique supplémentaire: une carte ! Nous verrons
 ceci lors d'un prochain chapitre. 
 
 
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 3 : reproduire la figure 2</h3>
-```
+::: {.exercise}
+## Exercice 2bis: reproduire la figure _"Les 10 compteurs ayant comptabilisé le plus de vélos"_
 
 En suivant l'approche graduelle de l'exercice 2,
-refaire le graphique *Les 10 compteurs ayant comptabilisé le plus de vélos*.
+refaire le graphique *Les 10 compteurs ayant comptabilisé le plus de vélos*
+avec `seaborn`
 
-```{=html}
-</div>
-```
 :::
 
-Les diagrammes en batons (_barplot_) sont extrêmement communs mais 
-qu'ils transmettent. Sur le plan sémiologique,
-les _lollipop charts_ sont préférables : ils
-transmettent la même information mais avec moins de bruit
-(la largeur des barres du barplot noie un peu l'information).
+## Le _lollipop chart_ comme alternative
 
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 3 (bis) : reproduire la figure 2 avec un <i>lollipop chart</i></h3>
-```
+Les diagrammes en batons (_barplot_) sont extrêmement communs, sans doute à cause de l'héritage d'Excel où ces graphiques sont faisables en deux clics. Néanmoins, en ce qui concerne le message à transmettre, ils sont loin d'être parfaits. Par exemple, les barres prennent beaucoup d'espace visuel
+ce qui peut brouiller le message à transmettre sur le rapport entre les observations. 
+
+Sur le plan sémiologique, c'est à dire sur le plan de l'efficacité du message à transmettre,
+les _lollipop charts_ sont préférables : ils
+transmettent la même information mais avec moins de signes visuels pouvant brouiller sa compréhension.
+
+
+::: {.exercise}
+## Exercice 3 (optionnel) : reproduire la figure 2 avec un _lollipop chart_
 
 En suivant l'approche graduelle de l'exercice 2,
 refaire le graphique *Les 10 compteurs ayant comptabilisé le plus de vélos*.
 
-```{=html}
-</div>
-```
 :::
 
 ```{python}
