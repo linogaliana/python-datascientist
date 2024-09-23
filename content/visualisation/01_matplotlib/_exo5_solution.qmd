@@ -1,0 +1,90 @@
+```{python}
+# Questions 1
+df['month'] = df['date'].dt.to_period('M')
+```
+
+```{python}
+# Question 2
+df3 = (
+    df.loc[df['date'].dt.year>=2022]
+    .groupby('month')
+    .agg({'sum_counts':'mean'})
+    .reset_index()
+)
+df3 = df3.rename(columns = {"sum_counts": "value"})
+df3.head(2)
+```
+
+```{python}
+from plotnine import *
+
+# Question 3: plotnine generic function
+def figure3(df):
+    figure3 = (
+        ggplot(df3) +
+        geom_bar(aes(x = "month", y = "value"), fill = "#ffcd00", stat = "identity") +
+        labs(x = "Date et heure de comptage", y = "Moyenne mensuelle du comptage par heure\nsur la période sélectionnée",
+        title = "Moyenne mensuelle des comptages vélos") +
+        theme_minimal() +
+        theme(
+            axis_text_x = element_text(angle = 45, hjust = 1),
+            axis_title_y = element_text(color = "#ffcd00", face = "bold"),
+            plot_title = element_text(hjust = 0.5)
+            )
+        )
+    return figure3
+```
+
+
+La figure avec les données depuis début 2022 aura cet aspect si elle a été construite avec `plotnine`:
+
+```{python}
+figure3(df3)
+```
+
+Avec `seaborn`, elle ressemblera plutôt à ceci:
+
+```{python}
+# Question 3: version seaborn
+sns.set_style("whitegrid")
+df3 = df.groupby('month').agg({'sum_counts':'mean'}).reset_index()
+g = sns.catplot(x='month', y='sum_counts', data=df3, kind = "bar", height = 5, aspect = 4, color = "yellow")
+g.set_axis_labels('Date et heure de comptage', 'Moyenne mensuelle du comptage par heure sur la période sélectionnée')
+plt.title('Moyenne mensuelle des comptages vélos')
+```
+
+
+Si vous préférez représenter cela sous forme de _lollipop_[^notecouleur]:
+
+```{python}
+(
+    ggplot(df3, aes(x = "month", y = "value")) +
+    geom_segment(aes(xend = "month", yend = 0)) +
+    geom_point( color="#ffcd00", size=4) +
+    labs(
+        x = "Date et heure de comptage", y = "Moyenne mensuelle du comptage par heure\nsur la période sélectionnée",
+        title = "Moyenne mensuelle des comptages vélos"
+    ) +
+    theme_minimal() +
+    theme(
+        axis_text_x = element_text(angle = 45, hjust = 1),
+        plot_title = element_text(hjust = 0.5)
+    )
+)
+```
+
+Enfin, sur l'ensemble de la période, la série prendra plutôt cette forme:
+
+```{python}
+df3 = (
+    df
+    .groupby('month')
+    .agg({'sum_counts':'mean'})
+    .reset_index()
+)
+df3 = df3.rename(columns = {"sum_counts": "value"})
+figure3(df3)
+```
+
+[^notecouleur]: J'ai retiré la couleur sur l'axe des ordonnées qui, je trouve,
+apporte peu à la figure voire dégrade la compréhension du message. 
