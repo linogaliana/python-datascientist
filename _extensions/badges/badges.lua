@@ -25,6 +25,7 @@ function reminder_badges(args, kwargs)
 
   -- Get the language from the environment variable
   local lang = os.getenv("QUARTO_PROFILE") or "fr" -- Default to "fr" if QUARTO_PROFILE is not set
+  local langpath = ""
   quarto.log.output("Language: " .. lang)
 
   -- Ensure kwargs is a table
@@ -59,6 +60,7 @@ function reminder_badges(args, kwargs)
   end
   if lang == "en" then
     substitution = substitution .. "/en"
+    langpath = "/en"
   end
 
   notebook = notebook:gsub("content", substitution)
@@ -67,16 +69,24 @@ function reminder_badges(args, kwargs)
   local githubAlias = "github.com/linogaliana/python-datascientist-notebooks"
   local githubRepoNotebooks = "https://" .. githubAlias
   local githubLink = githubRepoNotebooks .. "/blob/main" .. notebook
-  local githubBadge = make_badge(githubLink, "https://img.shields.io/static/v1?logo=github&label=&message=View%20on%20GitHub&color=181717", "View on GitHub", badge_class)
+  local githubBadge = make_badge(
+    githubLink,
+    "https://img.shields.io/static/v1?logo=github&label=&message=View%20on%20GitHub&color=181717",
+    "View on GitHub", badge_class)
 
   local section, chapter = notebook:match("([^/]+)/([^/]+)$")
   local chapterNoExtension = chapter:gsub("%.ipynb$", "")
+  if lang == "en" then
+    chapterNoExtension = "en/" .. chapterNoExtension
+  end
+
 
   local onyxiaInitArgs = { section, chapterNoExtension }
   if correction then
     table.insert(onyxiaInitArgs, "correction")
   end
 
+  quarto.log.output(onyxiaInitArgs)
   local gpuSuffix
   if (GPU == "true") then
     gpuSuffix = "-gpu"
@@ -94,7 +104,7 @@ function reminder_badges(args, kwargs)
   
   sspcloudJupyterLinkLauncher = sspcloudJupyterLinkLauncher ..
       "&init.personalInit=" ..
-      "«https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist-" .. lang .. "%2Fmaster%2Fsspcloud%2Finit-jupyter.sh»" ..
+      "«https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist" .. "%2Fmain%2Fsspcloud%2Finit-jupyter.sh»" ..
       "&init.personalInitArgs=" ..
       "«" .. table.concat(onyxiaInitArgs, "%20") .. "»" ..
       "&security.allowlist.enabled=false"
@@ -110,7 +120,7 @@ function reminder_badges(args, kwargs)
 
   sspcloudVscodeLinkLauncher = sspcloudVscodeLinkLauncher ..
       "&init.personalInit=" ..
-      "«https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist-" .. lang .. "%2Fmaster%2Fsspcloud%2Finit-vscode.sh»" ..
+      "«https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist" .. "%2Fmain%2Fsspcloud%2Finit-vscode.sh»" ..
       "&init.personalInitArgs=" ..
       "«" .. table.concat(onyxiaInitArgs, "%20") .. "»" ..
       "&security.allowlist.enabled=false"
@@ -118,7 +128,7 @@ function reminder_badges(args, kwargs)
   local sspcloudVscodeBadge = make_badge(sspcloudVscodeLinkLauncher, "https://img.shields.io/badge/SSP%20Cloud-Tester_avec_VSCode-blue?logo=visualstudiocode&logoColor=blue", "Onyxia", badge_class)
 
   local colabLink = string.format(
-    "https://colab.research.google.com/github/linogaliana/python-datascientist-" .. lang .. "/blob/main/%s",
+    "https://colab.research.google.com/github/linogaliana/python-datascientist-notebooks/" .. langpath .. "/blob/main/%s",
     notebook
   )
 
