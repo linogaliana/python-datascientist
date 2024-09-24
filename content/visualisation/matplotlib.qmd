@@ -14,9 +14,9 @@ echo: false
 bibliography: ../../reference.bib
 ---
 
-::: {.content-visible when-format="html"}
-{{< include "../../build/_printBadges.qmd" >}}
-:::
+{{< badges
+    printMessage="true"
+>}}
 
 La pratique de la _data visualisation_ se fera, dans ce cours, en répliquant des graphiques qu'on peut trouver sur
 la page de l'*open data* de la ville de Paris 
@@ -527,3 +527,44 @@ fig2.show()
 
 :::
 
+
+## La librairie `altair`
+
+Comme `ggplot`/`plotnine`, `Vega` est un écosystème graphique visant à proposer une implémentation de la grammaire des graphiques de @wilkinson2012grammar. La syntaxe de `Vega` est donc basée sur un principe déclaratif: on déclare une construction par couches et transformations de données progressives. 
+
+A l'origine, `Vega` est basée sur une syntaxe JSON, d'où son lien fort avec `Javascript`. Néanmoins, il existe une API Python qui permet de faire ce type de figures interactives nativement en Python. Pour comprendre la logique de construction d'un code `altair`, voici comment répliquer la figure précédente avec:
+
+
+```{python}
+#| code-fold: true
+#| code-summary: "Voir l'architecture d'une figure altair"
+#| echo: true
+import altair as alt
+
+color_scale = alt.Scale(domain=[True, False], range=['green', 'red'])
+
+fig2 = (
+    alt.Chart(df1) 
+    .mark_bar() #<1>
+    .encode( #<2>
+        x=alt.X('average(sum_counts):Q', title='Moyenne du comptage par heure sur la période sélectionnée'), #<3>
+        y=alt.Y('nom_compteur:N', sort='-x', title=''),
+        color=alt.Color('top:N', scale=color_scale, legend=alt.Legend(title="Top")),
+        tooltip=[
+            alt.Tooltip('nom_compteur:N', title='Nom du compteur'),
+            alt.Tooltip('sum_counts:Q', title='Moyenne horaire')
+            ] #<4>
+    ).properties( #<5>
+        title='Les 10 compteurs avec la moyenne horaire la plus élevée'
+    ).configure_view(
+        strokeOpacity=0 
+    )
+)
+
+fig2.interactive()
+```
+1. On déclare d'abord le _dataframe_ qui sera utilisé, comme nous le faisions avec `ggplot(df)` avec `plotnine`. Puis le type de figure désirée (ici un diagramme en barre, `mark_bar` dans la grammaire d'`altair`)
+2. On définit notre couche principale avec `encode`. Celle-ci peut accepter simplement des noms de colonnes ou des constructeurs plus complexes, comme ici
+3. On définit un constructeur pour notre axe des _x_, à la fois pour gérer l'échelle des valeurs mais aussi les paramètres de celle-ci (labels, etc.). Ici, on définit l'axe des _x_ comme une valeur continue (`:Q`), moyenne de `sum_counts` pour chaque valeur de $y$. Cette moyenne n'est pas indispensable, on aurait pu se contenter d'écrire `sum_counts:Q` voire même `sum_counts` mais c'est pour illustrer la gestion des transformations de données dans `altair`
+4. Le _tooltip_ nous permet de gérer l'interactivité de notre figure. 
+5. Les propriétés viennent à la fin de notre déclaration pour finaliser la figure
