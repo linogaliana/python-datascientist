@@ -6,20 +6,19 @@ CHAPTER=$2
 #FILE="notebooks/course/manipulation/01_numpy.ipynb"
 
 WORK_DIR="/home/onyxia/work"
-CLONE_DIR="${WORK_DIR}/repo-git"
 if [[ "$3" == "correction" ]];
 then 
+  PATH_WITHIN="notebooks"
   COURSE_DIR="${CLONE_DIR}/corrections"
 else
+  PATH_WITHIN="corrections"
   COURSE_DIR="${CLONE_DIR}/notebooks"
 fi
 
-# Clone course repository
-REPO_URL="https://github.com/linogaliana/python-datascientist-notebooks.git"
-git clone --depth 1 $REPO_URL $CLONE_DIR
+BASE_URL="https://raw.githubusercontent.com/linogaliana/python-datascientist-notebooks/main"
+NOTEBOOK_PATH="${PATH_WITHIN}/${SECTION}/${CHAPTER}.ipynb"
+DOWNLOAD_URL="${BASE_URL}/${NOTEBOOK_PATH}"
 
-# Put relevant notebook in formation dir
-cp "${COURSE_DIR}/${SECTION}/${CHAPTER}.ipynb" "${WORK_DIR}"
-
-# Remove useless repository
-rm -rf $CLONE_DIR
+# Download the notebook directly using curl
+echo $DOWNLOAD_URL
+curl -L $DOWNLOAD_URL -o "${WORK_DIR}/${CHAPTER}.ipynb"
