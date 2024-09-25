@@ -6,8 +6,7 @@ parser = argparse.ArgumentParser(
     description="Modify a YAML file and replace a specific filter value."
 )
 parser.add_argument(
-    "filename",
-    nargs="?",
+    "--filename",
     default="_quarto-prod.yml",
     help="YAML file to be modified. Default is '_quarto-prod.yml'.",
 )
