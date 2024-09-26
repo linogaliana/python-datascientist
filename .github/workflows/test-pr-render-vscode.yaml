@@ -1,0 +1,58 @@
+name: "Pull request: deploy to preview website (Netlify) and test notebooks"
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  enonces-vscode:
+    name: Render notebooks
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Configure safe.directory  # Workaround for actions/checkout#760
+        run: |
+          git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+          git config --global --add safe.directory /__w/python-datascientist/python-datascientist-notebooks
+      - shell: bash
+        run: |
+          ls
+          conda info
+          conda list
+      - name: Convert in ipynb with Quarto
+        run: |
+          quarto --version
+          rm _quarto.yml
+          python ./build/nice-vscode/tweak_pipeline_vscode.py --filename _quarto.yml
+          cp ./build/nice-vscode/lang-notebook-vscode.lua ./build/lang-notebook.lua
+          cp _quarto-prod2.yml _quarto.yml
+          quarto render content --to ipynb --profile fr
+          quarto render content --to ipynb --profile en
+          mkdir -p temp_notebooks
+          mkdir -p temp_notebooks/notebooks
+          python build/move_files.py --direction temp_notebooks/notebooks
+          quarto render content --to ipynb --execute -M echo:true --profile fr
+          quarto render content --to ipynb --execute -M echo:true --profile en
+          mkdir -p temp_notebooks/corrections
+          python build/move_files.py --direction temp_notebooks/corrections
+      - name: Pushes to another repository (VSCode)
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: linogaliana/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          source-directory: 'temp_notebooks/'
+          destination-repository-username: 'linogaliana'
+          destination-repository-name: 'python-datascientist-notebooks-vscode'
+          user-email: lino.galiana@insee.fr
+          destination-github-username: linogaliana
+          target-branch: dev
+          create-target-branch-if-needed: true
+          reset-repo: true
