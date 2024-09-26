@@ -28,6 +28,8 @@ filters = data.get("filters", [])
 for i, filter_item in enumerate(filters):
     if filter_item == "build/callout-jupyter.lua":
         filters[i] = "build/nice-vscode/callout-vscode.lua"
+    if filter_item == "build/lang-notebook.lua":
+        filters[i] = "build/nice-vscode/lang-notebook-vscode.lua"
 
 # Write the modified YAML back to the output file
 with open(args.output, "w", encoding="utf-8") as file:
