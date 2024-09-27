@@ -14,8 +14,6 @@ image: https://ensae-reproductibilite.github.io/website/snakedolls.jpg
 echo: false
 ---
 
-{{< badges >}}
-
 Le [chapitre d'introduction](/content/git/index.qmd) de la partie a évoqué les enjeux, présentés de manière synthétique
 dans un [cours dédié fait avec Romain Avouac](https://inseefrlab.github.io/formation-bonnes-pratiques-git-R/slides/complete.html)
 
@@ -45,11 +43,6 @@ Les élèves de l'ENSAE, et plus globalement l'ensemble des personnes pouvant b�
 ont à disposition des environnements de développement `Python` avec `Git` préinstallé et accessible par l'intermédiaire d'interfaces connectées aux IDE. Ce _notebook_ est lançable sur cette infrastructure par le biais de ces boutons
 
 [^eligibilite]: Pour savoir si vous êtes éligibles au SSPCloud, vous pouvez cliquer sur [ce lien](https://auth.lab.sspcloud.fr/auth/realms/sspcloud/login-actions/authenticate?client_id=onyxia) et consulter la liste des domaines autorisés. 
-
-{{< badges
-    printMessage="false"
-    onyxiaOnly="true"
->}}
 
 Si vous n'êtes pas éligibles au `SSPCloud`, le chemin pour obtenir un environnement prêt à l'emploi pour `Git` et `Python` est plus tortueux. Il est recommandé de télécharger et installer [`VSCode`](https://code.visualstudio.com/), d'ajouter _a minima_ les [extensions `Python`](https://code.visualstudio.com/docs/languages/python) et [`GitLens`](https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens). Il est bien sûr possible d'aller plus loin dans la customisation de l'environnement de développement mais ce sont les briques minimales pour avoir un environnement local fonctionnel et ergonomique. 
 
@@ -188,6 +181,182 @@ connu de vous seuls.
 :::
 
 ### Créer un jeton
+
+La [documentation officielle](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) comporte un certain nombre de captures d'écran expliquant
+comment procéder. En gardant cette documentation ouverte en cas de doute, et les instructions du prochain exercice, nous allons pouvoir créer un jeton d'authentification. 
+
+::: {.exercise}
+## Exercice 2 : Créer un _token_
+
+Suivre la
+[documentation officielle](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) en ne donnant que les droits `repo` au jeton[^droits].
+
+[^droits]: Comme vous pouvez le voir, il y a de nombreux niveaux de droits différents. Votre mot de passe a en fait tout ces droits, ce qui illustre bien le pouvoir dangereux de celui-ci s'il est découvert, que ce soit du fait d'une révélation par erreur ou d'un _hacking_ de celui-ci par quelqu'un malveillant. L'utilisation de _token_ sécurise énormément votre dépôt puisqu'il ne peut pas être supprimé si le _token_ a des droits limités. De plus, si la branche principale est protégée, ce qui est le comportement par défaut de `Github`, il ne sera pas possible sans mot de passe de détruire l'historique du dépôt. 
+
+Pour résumer les étapes devraient être les suivantes :
+
+*Settings > Developers Settings > Personal Access Token > Generate a new token > "My bash script" > Expiration "30 days" > cocher juste "repo" > Generate token > Le copier*
+
+__⚠️ Gardez la page ouverte__, le _token_ n'apparaît qu'une fois et nous n'avons pas encore fait l'effort de le stocker à un endroit pérenne. Cela sera l'objet du prochain exercice. 
+
+:::
+
+Nous avons créé un _token_ et comme cela est indiqué sur la page de `Github` ou dans les consignes de l'exercice, celui-ci n'est pas pérenne. Il va donc falloir trouver un moyen de conserver celui-ci quelque part. Nous allons proposer plusieurs solutions pour cela. Ecrire celui-ci dans un fichier texte créé avec le bloc note ne fait pas parti de ces solutions, au contraire c'est une très mauvaise pratique. 
+
+::: {.exercise}
+## Exercice 3: stocker son jeton (pour les utilisateurs du `SSPCloud`)
+
+Le `SSPCloud` propose un service de stockage d'un jeton qui peut ensuite servir facilement pour s'authentifier sur `Github` quand on utilise `VSCode` ou `Jupyter`. 
+
+* Copier le jeton qui est affiché sur la page de `Github` qui a été ouverte précédemment. Ne faites pas la sélection des lettres à la main, utilisez le bouton dédié au copier-coller ({{< fa solid clipboard >}})
+* Cliquer sur la section ["Mon Compte"](https://datalab.sspcloud.fr/account/) du `SSPCloud`. Aller dans l'onglet `Git` et coller la valeur précédemment copiée. 
+
+On peut s'arrêter à ce stade, nous utiliserons ce jeton lors du prochain exercice. 
+
+:::
+
+::: {.exercise}
+## Exercice 3bis: stocker son jeton (pour les personnes n'ayant pas l'accès au `SSPCloud`)
+
+La solution recommandée est de stocker son jeton dans un un gestionnaire de mot de passe comme 
+[Keepass](https://keepass.fr/) (recommandé par l'Anssi). Il s'agit d'un logiciel qui stocke, de manière chiffrée, les mots de passe qui y sont conservés selon la logique du coffre fort numérique. 
+
+Au-delà de l'intérêt pour stocker un jeton Github pour ce cours, ces logiciels sont très pratiques au quotidien et sécurisent l'accès à des services numériques sensibles. Ils comportent aussi des générateurs de mot de passe forts qui permettent de réduire les risques d'usurpation numérique en rendant quasi-impossible des techniques comme [l'attaque par force brute](https://fr.wikipedia.org/wiki/Attaque_par_force_brute).
+
+:::
+
+Maintenant que nous avons stocké notre jeton dans un endroit sécurisé, nous pouvons passer à l'étape suivante qui consiste à récupérer notre dépôt distant dans une copie de travail, opération qui nous amènera à réellement utiliser le jeton que nous avons mis de côté pour le moment. 
+
+
+::: {.exercise}
+## Exercice 4a: créer un service et comprendre le principe du clône et de l'authentification (utilisateurs du SSPCloud)
+
+1. Sur le SSPCloud, se rendre dans la page [Mes Services](https://datalab.sspcloud.fr/my-services).
+
+2. Cliquer sur `➕​ Nouveau service` et choisir un service `vscode-python` (ne pas en prendre un autre).
+
+3. Laisser les paramètres par défaut et lancer le service. 
+
+4. Une fois le service prêt, cliquer sur le bouton "Cliquez pour copier le mot de passe du service". Cela va stocker le mot de passe du service (généré aléatoirement, celui-ci n'a rien à voir avec votre mot de passe général du `SSPCloud`) dans le presse papier. Ce mot de passe est également visible en clair dans la partie qui est caviardée sur la @fig-readme-sspcloud. 
+
+![](img/README.png){#fig-readme-sspcloud}
+
+5. Coller ce mot de passe dans le champ `Password` qui s'affiche quand vous ouvrez le service. 
+
+6. Dans un autre onglet, récupérer, sur la page d'accueil de votre dépôt, l'url du dépôt distant qui est accessible en cliquant à droite sur le bouton vert `<> Code`. L'URL prend la forme suivante
+
+`https://github.com/<username>/<reponame>.git`
+
+7. Ouvrir le terminal (`☰ > Terminal > New Terminal`) et commencer à taper 
+
+```python
+git clone # coller votre url de la forme https://github.com/<username>/<reponame>.git 
+```
+
+pour coller à la suite votre URL, si <kbd>CTRL</kbd>+<kbd>V</kbd> est bloqué par le navigateur, vous pouvez faire <kbd>MAJ</kbd>+<kbd>Inser</kbd>. Taper <kbd>Entrée</kbd>.
+
+8. Une page va s'ouvrir _"The extension 'GitHub' wants to sign in using GitHub"_. Refuser en cliquant sur _"Cancel"_ (les questions optionnelles montrent ce qu'il se passe quand vous acceptez, vous basculez sur un autre mode d'authentification).
+
+9. Dans la fenêtre en haut, taper votre username d'abord. Puis lorsqu'il vous demande votre mot de passe, **coller votre _token_, pas votre mot de passe `Github`** (si vous avez toujours la page `Github` ouverte, le copier de là, sinon en retournant sur la page [Mon compte](https://datalab.sspcloud.fr/account/git) du `SSPCloud`)
+
+8. Observer la mise à jour de l'explorateur de fichiers sur `VSCode`, votre `README` et votre `.gitignore` visibles sur `Github` doivent maintenant être là. 
+
+9. Taper `cd mon-petit-projet` en supposant que le dossier de votre dépôt s'appelle `mon-petit-projet`. Puis taper `git remote -v`, une commande qui demande à `Git` de voir où pointe `origin`, votre dépôt distant. La réponse devrait être l'URL que vous avez renseigné précedemment
+
+Ceci était une illustration nécessaire pour comprendre le principe de l'authentification. Le prochain exercice (4b) proposera une manière plus directe de fonctionner, qu'il est utile de connaître car elle vous évitera d'avoir à vous authentifier à chaque interaction avec le dépôt distant. 
+
+En option, pour comprendre la différence avec l'authentification déléguée proposée par VSCode, vous pouvez faire, de manière optionnelle, les consignes suivantes:
+
+1. Toujours dans le même VSCode, ouvrir un nouveau terminal (`☰ > Terminal > New Terminal`)
+
+2. Taper `git clone https://github.com/<username>/<reponame>.git repo-bis` en remplaçant `https://github.com/<username>/<reponame>.git` par l'URL de votre dépôt. Cela clônera votre dépôt dans le dossier `repo-bis` quand vous serez effectivement authentifié.
+
+3. Cette fois accepter l'authentification déléguée proposée par VSCode. Il s'agit d'une authentification à deux facteurs:
+    * Le premier facteur d'authentification est le code que `Github` vous demande de copier et de renseigner dans la page que `VSCode` désire ouvrir (il faut que vous acceptiez de copier et d'ouvrir la page). Coller ce code à 8 caractères, valider et accepter les droits demandés par l'application. 
+    * Le deuxième facteur est le code de votre application d'authentification (par exemple `Google Authenticator` ou celui que vous recevez par SMS). Mettre celui-ci et valider, le clône devrait démarrer
+
+:::
+
+Cet exercice vient de nous illustrer le principe de l'authentification et la manière dont `VSCode` peut attester de votre identité grâce à un _token_ ou à une double authentification. L'exercice suivant propose une méthode d'authentification par token un peu plus pratique que celle que nous avions mise en oeuvre ☝️. 
+
+
+::: {.exercise}
+## Exercice 4b: créer un service et comprendre le principe du clône et de l'authentification (utilisateurs du SSPCloud)
+
+Cette approche montre comment le SSPCloud injecte lors de la création d'un service VSCode le _token_ et le dépôt que vous désirez clôner. 
+
+
+1. Sur le SSPCloud, se rendre dans la page [Mes Services](https://datalab.sspcloud.fr/my-services). Vous pouvez supprimer le service existant, il n'est plus nécessaire.
+
+2. Cliquer sur `➕​ Nouveau service` et choisir un service `vscode-python` (ne pas en prendre un autre).
+
+3. Dans un autre onglet, récupérer, sur la page d'accueil de votre dépôt, l'url du dépôt distant qui est accessible en cliquant à droite sur le bouton vert `<> Code`. L'URL prend la forme suivante
+
+`https://github.com/<username>/<reponame>.git`
+
+
+* Dérouler le menu `Configuration Vscode-python` et chercher l'onglet `Git`
+
+* Dans celui-ci, vous devriez voir votre _token_ pré-injecté dans le formulaire. Ne le changez pas. 
+
+* Dans un autre onglet, récupérer, sur la page d'accueil de votre dépôt, l'url du dépôt distant qui est accessible en cliquant à droite sur le bouton vert `<> Code`. L'URL prend la forme suivante
+
+`https://github.com/<username>/<reponame>.git`
+
+Vous pouvez utiliser l'icone à droite {{< fa brands clipboard >}} pour copier l'url.
+
+* Coller celle-ci dans le champ `Repository` du formulaire de création du service sur le `SSPCloud`.  Lancer le service et attendre qu'il se crée (une vingtaine de secondes).
+
+* Le clône du dépôt distant devrait être visible dans l'aborescence des fichiers. 
+
+* Ouvrir le terminal (`☰ > Terminal > New Terminal`) et taper `git remote -v`, une commande qui demande à `Git` de voir où pointe `origin`, votre dépôt distant. La réponse prend la forme:
+
+```python
+https://ghp_XXXX@github.com/username/repository.git
+```
+
+qui se distingue de l'URL que vous aviez renseigné dans l'onglet `Git`. 
+Comme vous pouvez le voir avec cette méthode, le jeton est en clair. C'est pour cette raison qu'on utilise, plutôt que des mots de passe, des jetons
+puisque, si ces derniers sont révélés, on peut toujours les révoquer et éviter
+les problèmes
+
+:::
+
+
+::: {.exercise collapse="true"}
+## Exercice 4 alternatif: quand on ne dispose pas de compte sur le `SSPCloud`
+
+Le mode opératoire est très proche. En pratique, la seule différence est qu'il n'y a pas besoin de créer de nouveau service puisqu'une installation de `VSCode` existe déjà. 
+
+1. Sur votre navigateur, récupérer, sur la page d'accueil de votre dépôt, l'url du dépôt distant qui est accessible en cliquant à droite sur le bouton vert `<> Code`. L'URL prend la forme suivante
+
+`https://github.com/<username>/<reponame>.git`
+
+7. Ouvrir le terminal (`Terminal > New Terminal`) et commencer à taper 
+
+```
+git clone
+```
+
+et coller la valeur copiée précédemment. Ne validez pas. Avec les touches directionnelles, se placer entre `https://` et `github.com`. Récupérer dans votre navigateur ou Keepass votre jeton Github. Coller celui-ci puis ajouter `@`. Cela devrait donner 
+
+```python
+https://ghp_XXXX@github.com/username/repository.git
+```
+
+Ce qui, dans l'ensemble, fera
+
+```python
+git clone https://ghp_XXXX@github.com/username/repository.git
+```
+
+* Le clône du dépôt distant devrait être visible dans l'aborescence des fichiers. 
+
+Comme vous pouvez le voir avec cette méthode, le jeton est en clair. C'est pour cette raison qu'on utilise, plutôt que des mots de passe, des jetons
+puisque, si ces derniers sont révélés, on peut toujours les révoquer et éviter
+les problèmes
+
+:::
 
 
 
