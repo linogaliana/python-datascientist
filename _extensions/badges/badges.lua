@@ -53,6 +53,7 @@ function reminder_badges(args, kwargs)
   local printMessage = sub_value(kwargs, 'printMessage', "true")
   local container_class = sub_value(kwargs, 'container_class', 'badge-container')
   local badge_class = sub_value(kwargs, 'badge_class', 'badge')
+  local onyxiaOnly = sub_value(kwargs, 'onyxiaOnly', false)
 
   local substitution = "notebooks"
   if (correction == "true") then
