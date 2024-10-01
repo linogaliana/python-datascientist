@@ -78,7 +78,7 @@ function reminder_badges(args, kwargs)
   local section, chapter = notebook:match("([^/]+)/([^/]+)$")
   local chapterNoExtension = chapter:gsub("%.ipynb$", "")
   if lang == "en" then
-    chapterNoExtension = "en/" .. chapterNoExtension
+    section = "en/" .. section
   end
 
 
