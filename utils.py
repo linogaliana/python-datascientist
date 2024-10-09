@@ -81,11 +81,11 @@ def reminder_badges(
 
     if type == "md":
         sspcloud_jupyter_link = "[![Onyxia]"\
-            "(https://img.shields.io/badge/SSP%20Cloud-Tester_avec_Jupyter-orange?logo=Jupyter&logoColor=orange)]"\
+            "(https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_Jupyter-orange?logo=Jupyter&logoColor=orange)]"\
             f"({sspcloud_jupyter_link_launcher})"
     else:
         sspcloud_jupyter_link = f'<a href="{sspcloud_jupyter_link_launcher}" target="_blank" rel="noopener">'\
-            '<img src="https://img.shields.io/badge/SSP%20Cloud-Tester_avec_Jupyter-orange?logo=Jupyter&logoColor=orange" alt="Onyxia"></a>'
+            '<img src="https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_Jupyter-orange?logo=Jupyter&logoColor=orange" alt="Onyxia"></a>'
 
     if split == 4:
         sspcloud_jupyter_link = f'{sspcloud_jupyter_link}<br>'
@@ -97,11 +97,11 @@ def reminder_badges(
 
     if type == "md":
         sspcloud_vscode_link = "[![Onyxia]"\
-            "(https://img.shields.io/badge/SSP%20Cloud-Tester_avec_VSCode-blue?logo=visualstudiocode&logoColor=blue)]"\
+            "(https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_VSCode-blue?logo=visualstudiocode&logoColor=blue)]"\
             f"({sspcloud_vscode_link_launcher})"
     else:
         sspcloud_vscode_link = f'<a href="{sspcloud_vscode_link_launcher}" target="_blank" rel="noopener">'\
-            '<img src="https://img.shields.io/badge/SSP%20Cloud-Tester_avec_VSCode-blue?logo=visualstudiocode&logoColor=blue" alt="Onyxia"></a>'
+            '<img src="https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_VSCode-blue?logo=visualstudiocode&logoColor=blue" alt="Onyxia"></a>'
 
     if split == 5:
         sspcloud_vscode_link = f'{sspcloud_vscode_link}<br>'

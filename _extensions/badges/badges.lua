@@ -110,7 +110,7 @@ function reminder_badges(args, kwargs)
       "«" .. table.concat(onyxiaInitArgs, "%20") .. "»" ..
       "&security.allowlist.enabled=false"
 
-  local sspcloudJupyterBadge = make_badge(sspcloudJupyterLinkLauncher, "https://img.shields.io/badge/SSP%20Cloud-Tester_avec_Jupyter-orange?logo=Jupyter&logoColor=orange", "Onyxia", badge_class)
+  local sspcloudJupyterBadge = make_badge(sspcloudJupyterLinkLauncher, "https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_Jupyter-orange?logo=Jupyter&logoColor=orange", "Onyxia", badge_class)
 
   local sspcloudVscodeLinkLauncher = string.format(
     "https://datalab.sspcloud.fr/launcher/ide/vscode-%s%s?autoLaunch=true&name=%s",
@@ -126,7 +126,7 @@ function reminder_badges(args, kwargs)
       "«" .. table.concat(onyxiaInitArgs, "%20") .. "»" ..
       "&security.allowlist.enabled=false"
 
-  local sspcloudVscodeBadge = make_badge(sspcloudVscodeLinkLauncher, "https://img.shields.io/badge/SSP%20Cloud-Tester_avec_VSCode-blue?logo=visualstudiocode&logoColor=blue", "Onyxia", badge_class)
+  local sspcloudVscodeBadge = make_badge(sspcloudVscodeLinkLauncher, "https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_VSCode-blue?logo=visualstudiocode&logoColor=blue", "Onyxia", badge_class)
 
   local colabLink = string.format(
     "https://colab.research.google.com/github/linogaliana/python-datascientist-notebooks/" .. langpath .. "/blob/main/%s",
