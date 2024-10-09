@@ -108,7 +108,7 @@ function reminder_badges(args, kwargs)
       "«https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist" .. "%2Fmain%2Fsspcloud%2Finit-jupyter.sh»" ..
       "&init.personalInitArgs=" ..
       "«" .. table.concat(onyxiaInitArgs, "%20") .. "»" ..
-      "&security.allowlist.enabled=false"
+      ""
 
   local sspcloudJupyterBadge = make_badge(sspcloudJupyterLinkLauncher, "https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_Jupyter-orange?logo=Jupyter&logoColor=orange", "Onyxia", badge_class)
 
@@ -124,7 +124,7 @@ function reminder_badges(args, kwargs)
       "«https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist" .. "%2Fmain%2Fsspcloud%2Finit-vscode.sh»" ..
       "&init.personalInitArgs=" ..
       "«" .. table.concat(onyxiaInitArgs, "%20") .. "»" ..
-      "&security.allowlist.enabled=false"
+      ""
 
   local sspcloudVscodeBadge = make_badge(sspcloudVscodeLinkLauncher, "https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_VSCode-blue?logo=visualstudiocode&logoColor=blue", "Onyxia", badge_class)
 
