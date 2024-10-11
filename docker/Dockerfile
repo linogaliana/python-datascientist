@@ -1,4 +1,4 @@
-FROM inseefrlab/onyxia-vscode-python:py3.11.6-2024.04.08
+FROM inseefrlab/onyxia-vscode-python:py3.12.6-2024.10.07
 
 USER root
 
