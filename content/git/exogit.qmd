@@ -308,6 +308,97 @@ Régler le conflit et valider (`add` et `commit`). Pousser le résultat. Le main
 
 Il n'est absolument pas obligatoire que chaque projet collaboratif choisisse ce mode de collaboration. Pour de nombreux projets, où on édite pas le même bout de fichier en même temps, passer directement par `main` est suffisant. Le mode ci-dessus est important pour des projets conséquents, où la branche `main` se doit d'être irréprochable parce que, par exemple, elle entraîne une série de tests automatisés et le déploiement automatisé d'un livrable. Mais pour des projets plus modestes, il n'est pas indispensable d'aller dans un formalisme extrême. Le bon usage de `Git` est un usage pragmatique où celui-ci est utilisé pour ses avantages et où l'organisation du travail s'adapte à ceux-ci. 
 
+# Les enjeux spécifiques liés à l'interaction difficile entre `Git` et les _notebooks_
+
+Le format _notebook_ est très intéressant pour l'expérimentation et la diffusion finale de résultats. Néanmoins, la structure complexe d'un _notebook_ rend compliquée le contrôle de version. En effet, l'ouverture dans un éditeur adapté (`Jupyter` ou `VSCode`) offre une mise en forme qui ne correspond pas à la structure brute du fichier, tel qu'il est stocké sur le disque. En arrière plan, les _notebooks_ sont des JSON qui embarquent de nombreux éléments: code, résultats d'exécution, métadonnées annexes... Le suivi fin des modifications du fichier permis par `Git` est compliqué sur un fichier ayant une telle structure. L'objectif de cet exercice est d'illustrer ces enjeux et évoque quelques solutions possibles. 
+
+::: {.exercise}
+## Exercice 4 : Contrôle de version et _notebooks_, un ménage difficile
+
+Cet exercice se fait toujours en équipe. Lorsqu'il est demandé de faire un _commit_,
+lui donner un nom signifiant pour s'y retrouver facilement quand il est demandé de regarder l'historique. 
+Ne pas faire de _push_ ou _pull_ avant d'en arriver
+à la partie où cela est demandé. 
+
+1. Tous les membres de l'équipe reviennent à leur branche `main` sur leur copie de travail
+
+Chaque membre de l'équipe fait les questions suivantes. 
+
+2. Mesurer le poids de l'ensemble de l'historique en ligne de commande avec la commande
+
+```python
+du -sh .git
+```
+
+3. Télécharger le _notebook_ servant à cet exercice avant la commande suivante, en ligne de commande: 
+
+```python
+curl "https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/git/exemple.ipynb" -o "notebook.ipynb"
+```
+
+* Ne pas ouvrir ce fichier (objet de la prochaine question). 
+
+* Faire un _commit_ de ce _notebook_ puis refaire
+
+```python
+du -sh .git
+```
+
+* Observez le premier changement de poids de notre historique
+
+4. Ouvrir le _notebook_, exécuter ses cellules en les réordonnant si nécessaire pour débugger
+le fichier.
+
+* Faire un _commit_ de ce _notebook_ quand il fonctionne puis refaire
+
+```python
+du -sh .git
+```
+
+5. Maintenant, faire les modifications suivantes du fichier:
+    * Modifier la cellule `df.head(3)` en `df.head(20)` 
+    * Créer une nouvelle cellule avec le code `df["TYPEQU"].value_counts().plot(kind = "bar")`
+    * Modifier la variable `zoom_start` dans la cellule produisant la carte interactive. Fixer sa valeur à 13 plutôt que 15. 
+
+* Faire un _commit_ de ce _notebook_ quand il fonctionne puis refaire
+
+```python
+du -sh .git
+```
+
+6. Changer la couleur du _barplot_ avec l'argument `color`. Sauvegarder, committer puis refaire
+
+```python
+du -sh .git
+```
+
+7. Regarder l'historique depuis l'extension `VSCode`. Observer la manière dont évolue votre fichier à chaque _commit_. 
+
+Maintenant, nous pouvons passer à l'étape collaborative. 
+
+8. Chaque membre de l'équipe _push_:
+  * Si le _push_ fonctionne (personne la plus rapide), modifier à nouveau à nouveau la couleur du _barplot_. _Committer_ mais ne pas _pusher_ (attendre que les autres membres du groupe l'ait fait)
+  * Si le _push_ ne fonctionne pas (personnes moins rapides), réconcilier les versions. Une fois que c'est le cas, committer et pusher. 
+  * Maintenant la personne la plus rapide fait un _pull_ et règle les conflits
+
+:::
+
+
+Cet exercice permet d'illustrer trois points de difficultés avec les _notebooks_:
+
+* La taille des fichiers `ipynb` devient vite importante car les _outputs_ sont insérés dedans, de manière brute.
+* Il devient vite difficile de suivre les changements du code car celui-ci est noyé au milieu d'autres modifications (notamment celles des _outputs_).
+* La résolution de conflits est compliquée car il faut garder la structure JSON. Il est d'ailleurs fréquent qu'un _merge_ casse cette structure et rende le _notebook_ illisible.
+
+
+Pour régler ces problèmes, il existe plusieurs méthodes:
+
+* Si on désire rester sur le _notebook_ comme endroit où est stocké le code, il faut cliquer sur le bouton `Clear all outputs` avant de faire une étape `git add`. Le _package_ [`nbstripout`](https://github.com/kynan/nbstripout) peut être une solution intéressante pour ne pas avoir à le faire manuellement à chaque fois car on prend le risque d'oublier et donc de faire quand même grossir la taille du dépôt. Néanmoins, cette approche ne règle qu'une partie des problèmes puisqu'elle ne fait qu'alléger le JSON versionné, elle rend moins probable mais ne rend pas impossible le risque de casser le _notebook_ lors d'une résolution de conflit.
+* Travailler en équipe sur des _notebooks_ différents comme ceci était conseillé pour les fichiers texte. Cela permet de ne plus avoir de conflit. Cependant, cela risque d'induire des redondances de code et donc des problèmes ultérieurement si on désire synthétiser les différents travaux.
+* Adopter une structure plus modulaire en déportant le maximum de code dans des fichiers `.py` et en important les éléments adéquats dans les notebooks. Ceci permet de tirer avantage de `Git`, qui suit très bien les fichiers `.py`, tout en offrant des bénéfices sur la qualité des _notebooks_. En étant moins monolithiques, ils seront probablement de meilleure qualité. 
+
+Cette dernière approche est une manière de s'ouvrir aux bonnes pratiques qui sont évoquées dans le cours de 3e année de ["Mise en production"](https://ensae-reproductibilite.github.io/website/).
+
 
 # Conclusion
 
