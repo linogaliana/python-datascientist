@@ -24,63 +24,84 @@ image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/cartograph
 echo: false
 ---
 
-::: {.content-visible when-format="html"}
-{{< include "../../build/_printBadges.qmd" >}}
+{{< badges
+    printMessage="true"
+>}}
+
+:::: {.tip}
+## Compétences à l'issue de ce chapitre
+
+::::
+
+
+# Introduction
+
+
+La cartographie est l'une des plus anciennes représentations d'informations sous forme graphique.
+Longtemps cantonnée aux domaines militaires et administratifs ou à la synthèse d'informations pour la navigation,
+la cartographie est, au moins depuis le XIXe siècle, une des formes privilégiées de représentation de l'information. Il s'agit de l'époque où la carte par aplat de couleur, dite carte choroplèthe, a commencé à devenir une représentation de données géographiques traditionnelle. 
+
+D'après @chen2008brief, la première représentation de ce type 
+a été proposée par Charles Dupin en 1826 [@fig-dupin]
+pour représenter les niveaux d'instruction sur le territoire français. 
+L'émergence des cartes choroplèthes est en effet indissociable 
+de l'organisation du pouvoir sous forme d'entités politiques supposées unitaires. Par exemple, les cartes du monde représentent souvent des aplats de couleurs à partir
+des nations, les cartes nationales à partir d'échelons administratifs
+(régions, départements, communes, mais aussi Etats ou _landers_). 
+
+![La première carte choroplèthes par Dupin (1826)](https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Carte_figurative_de_l%27instruction_populaire_de_la_France.jpg/800px-Carte_figurative_de_l%27instruction_populaire_de_la_France.jpg){#fig-dupin width="50%" fig-align="center"}
+
+On peut voir l'émergence pendant le XIXe siècle de la
+carte choroplèthe comme un moment important de la cartographie,
+un glissement de l'usage militaire vers l'usage politique.
+Il ne s'agissait plus exclusivement
+de représenter le territoire physique mais aussi la réalité socioéconomique,
+dans des bornes administratives connues de tous. 
+
+Avec la prolifération de données géolocalisées et l'usage accru de données pour la décision, il est devenu crucial pour les _data scientists_ de savoir faire une carte rapidement. Ce chapitre, complément de celui sur les [données spatiales](/content/manipulation/03_geopandas_intro.qmd), 
+propose quelques exercices pour apprendre les enjeux de la représentation de données sous forme cartographique avec `Python`. 
+
+
+::: {.note}
+Produire de belles cartes demande du temps mais aussi du bon sens. 
+Comme toute représentation graphique, il est important de réfléchir au message
+à faire passer et aux moyens appropriés.
+La sémiologie cartographique, 
+une discipline scientifique qui s'intéresse aux messages transmis par les cartes,
+propose certaines règles pour éviter de transmettre des messages faussés,
+volontairement ou involontairement. 
+
+Certaines peuvent être retrouvées à travers des conseils pratiques
+dans
+ce [guide de sémiologie cartographique](https://www.insee.fr/fr/statistiques/3640429)
+de l'Insee. Celles-ci sont reprises
+dans [ce guide](https://juliedjidji.github.io/memocarto/semio.html).
+
+[Cette présentation](https://neocarto.github.io/docs/slides/ENTPE/docs/#/title-slide)
+de Nicolas Lambert revient, à partir de nombreux exemples, sur quelques principes
+de la _dataviz_ cartographique.
+
 :::
 
 
-La pratique de la cartographie se fera, dans ce cours, en répliquant des cartes qu'on peut trouver sur
-la page de l'*open-data* de la ville de Paris 
-[ici](https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/information/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name).
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-info" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #007bff80;">
-<h3 class="alert-heading"><i class="fa fa-comment"></i> Note</h3>
-```
-
-Produire de belles cartes demande du temps mais aussi du bon sens. En fonction de la structure des données, certaines représentations sont à éviter voire à exclure. Un guide [disponible ici](https://juliedjidji.github.io/memocarto/semio.html) propose quelques règles et évoque les erreurs à éviter lorsqu'on désire effectuer des
-représentations spatiales. 
-Celui-ci reprend un [guide de sémiologie cartographique](https://www.insee.fr/fr/statistiques/3640429)
-produit par l'Insee qui propose de nombreux conseils pratiques pour produire des représentations
-cartographiques sensées. 
-
-```{=html}
-</div>
-```
-:::
+Ce chapitre présentera d'abord quelques fonctionnalités basiques de [`Geopandas`](https://geopandas.org/mapping.html) pour la construction de cartes figées. Pour contextualiser l'information présentée, nous utiliserons des contours officiels produits par l'IGN. Nous proposerons ensuite des cartes avec une contextualisation accrue et plusieurs niveaux d'information ce qui permettra d'illustrer l'intérêt de l'utilisation de librairies réactives, s'appuyant sur `JavaScript`, comme [`Folium`](https://python-visualization.github.io/folium/latest/). 
 
 
-
-Ce TP vise à initier :
-
-* Au module graphique de [geopandas](https://geopandas.org/mapping.html) ainsi qu'aux packages [geoplot](https://residentmario.github.io/geoplot/index.html) et
-[contextily](https://contextily.readthedocs.io/en/latest/intro_guide.html) pour la construction de cartes figées. `geoplot` est construit sur `seaborn` et constitue ainsi une extension des graphiques de base.
-* Au package [folium](https://python-visualization.github.io/folium/) qui est un point d'accès vers la librairie JavaScript [leaflet](https://leafletjs.com/) permettant de produire des cartes interactives
+## Données utilisées
 
 
-Les données utilisées sont :
+Au cours de ce chapitre, nous allons utiliser
+plusieurs jeux de données pour illustrer
+différents types de cartes:
 
-* Un sous-ensemble des données de [paris open data](https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/information/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name) a été mis à disposition
-sur `Github` pour faciliter l'import (élimination des colonnes
-qui ne nous servirons pas mais ralentissent l'import)
-* [La localisation précise des stations](https://parisdata.opendatasoft.com/explore/dataset/comptage-velo-compteurs/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
-* [Arrondissements parisiens](https://opendata.paris.fr/explore/dataset/arrondissements/download/?format=geojson&timezone=Europe/Berlin&lang=fr)
+- Des comptages de population ;
+- Les limites départementales de la France métropolitaine ;
+- Les limites communales du Finistère ;
+- Le couvert forestier du département des Landes ;
+- La localisation des stations Velib ;
 
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-danger" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left: .2rem solid #ff0039;">
-<h3 class="alert-heading"><i class="fa fa-exclamation-triangle"></i> Attention</h3>
-```
 
-Certaines librairies géographiques dépendent de `rtree` qui est parfois difficile à installer car
-ce _package_ dépend de librairies compilées qui sont compliquées à installer sur `Windows`. 
-Pour installer `rtree` sur `Windows`, le mieux est d'utiliser `Anaconda`.
-
-```{=html}
-</div>
-```
-:::
+## Installations préalables
 
 Avant de pouvoir commencer, il est nécessaire d'installer quelques 
 packages au préalable:
@@ -90,638 +111,498 @@ packages au préalable:
 #| echo: true
 
 # Sur colab
-!pip install pandas fiona shapely pyproj rtree # à faire obligatoirement en premier pour utiliser rtree ou pygeos pour les jointures spatiales
-!pip install contextily
-!pip install geopandas
-!pip install geoplot
+!pip install pandas fiona shapely pyproj rtree geopandas #<1> 
 ```
+1. Ces librairies sont utiles pour l'analyse géospatiale (cf. [chapitre dédié](/content/manipulation/03_geopandas_intro.qmd))
 
-
-Dans la première partie, nous allons utiliser les packages suivants :
+Nous allons principalement avoir besoin de `Pandas` et `GeoPandas` pour ce chapitre
 
 ```{python}
 #| echo: true
 import pandas as pd
 import geopandas as gpd
-import contextily as ctx
-import geoplot
-import matplotlib.pyplot as plt
+```
+
+# Premières cartes pour connaître l'emprise spatiale de ses données
+
+Nous allons utiliser `cartiflette` qui facilite
+la récupération des fonds de carte administratifs
+de l'IGN. Ce package est un projet interministériel visant à offrir une interface simple par le biais de `Python` pour récupérer des découpages officiels de l'IGN. 
+
+En premier lieu, nous allons récupérer les limites 
+des départements:
+
+```{python}
+#| echo: true
+#| output: false
+from cartiflette import carti_download
+
+departements = carti_download(
+    values="France",
+    crs=4326,
+    borders="DEPARTEMENT",
+    vectorfile_format="geojson",
+    filter_by="FRANCE_ENTIERE_DROM_RAPPROCHES",
+    source="EXPRESS-COG-CARTO-TERRITOIRE",
+    year=2022,
+)
+```
+
+Ces données rapprochent les DROM de la France hexagonale comme c'est expliqué dans l'un des [tutoriels de `cartiflette`](https://github.com/inseeFrLab/cartiflette-website/) et comme l'exercice 1 permettra de le vérifier. 
+
+```{python}
+communes = carti_download(
+    values="29",
+    crs=4326,
+    borders="COMMUNE",
+    vectorfile_format="geojson",
+    filter_by="DEPARTEMENT",
+    source="EXPRESS-COG-CARTO-TERRITOIRE",
+    year=2022,
+)
+```
+
+L'exercice 1 vise à s'assurer que nous avons bien récupéré les contours voulus en représentant simplement. Ceci devrait être le premier réflexe de tout _geodata scientist_.
+
+::: {.exercise}
+## Exercice 1: représentation des contours avec les méthodes de `GeoPandas`
+
+1. Utiliser la méthode `plot` sur le jeu de données `departements` pour vérifier
+l'emprise spatiale. Les coordonnées affichées vous évoquent quelle projection ? Vérifier avec la méthode `crs`. 
+2. Reprojeter les données en Lambert 93 (EPSG: 2154) et faire la même carte.
+3. En utilisant les options `matplotlib` adéquates, représenter une carte avec les contours noirs, le fond blanc et sans axes.
+4. Faire la même carte pour les communes du Finistère
+:::
+
+
+La carte des départements, sans modifier aucune option, ressemble à celle-ci
+
+```{python}
+# Question 1
+departements.plot()
+```
+
+Les coordonnées affichées nous suggèrent du `WGS84`, ce qu'on peut vérifier avec la méthode CRS:
+
+```{python}
+departements.crs
+```
+
+
+Si on fait la conversion en Lambert 93 (système légal pour l'hexagone), on obtient une emprise différente mais qui est censée être plus véridique pour la métropole (par pour les DROM rapprochés puisque, par exemple, la Guyane est en principe beaucoup plus grande). 
+
+```{python}
+departements.to_crs(2154).plot()
+```
+
+Et bien sûr on retrouve facilement les cartes ratées du [chapitre sur `GeoPandas`](/content/manipulation/03_geopandas_intro.qmd), par exemple si on applique une transformation prévue pour l'Amérique du Nord:
+
+```{python}
+#| echo: true
+departements.to_crs(5070).plot()
+```
+
+Si on fait une carte un petit peu plus esthétique, cela nous donne:
+
+```{python}
+# Question 3
+ax = (
+  departements.boundary.plot(edgecolor = "black", linewidth=0.2)
+)
+ax.set_axis_off()
+```
+
+Et la même pour le Finistère:
+
+```{python}
+# Question 4
+ax = (
+  communes.boundary.plot(edgecolor = "black", linewidth=0.2)
+)
+ax.set_axis_off()
+```
+
+
+Ces cartes sont simples et pourtant elles font déjà appel à des connaissances implicites. Elles demandent déjà une connaissance du territoire. Quand nous commencerons à coloriser certains départements, savoir lesquels ont des valeurs extrêmes implique de bien connaître sa géographie française. De même, cela apparaît certes évident, mais rien ne dit dans notre carte du Finistère que ce département est bordé par l'océan. Un lecteur Français le verra comme une évidence mais ce n'est pas forcément le cas d'un lecteur étranger qui, bien sûr, ne connait pas le détail de notre géographie. 
+
+Pour cela, nous avons des parades grâce aux cartes réactives qui permettent:
+
+* D'afficher des informations contextuelles quand on passe la souris ou clique sur un élément de la carte.
+* D'afficher un fond de carte offrant des informations contextuelles comme les axes de transport, les localités ou les frontières naturelles. 
+
+
+Pour ceci, nous allons garder uniquement les données correspondant à une réelle emprise spatiale, ce qui exclut notre zoom de l'Ile de France et les DROM
+
+```{python}
+#| echo: true
+departements_no_duplicates = (
+  departements
+  .drop_duplicates(subset = "INSEE_DEP") #<1>
+)
+departements_hexagone = (
+  departements_no_duplicates
+  .loc[~departements['INSEE_DEP'].str.startswith("97")] #<2>
+)
+```
+1. On retire le zoom sur l'Île de France
+2. On ne garde que la France hexagonale
+
+On obtient bien l'hexagone:
+
+```{python}
+#| echo: true
+departements_hexagone.plot()
+```
+
+Pour le prochain exerice, nous allons avoir besoin de quelques variables supplémentaires. En premier lieu le centre géométrique de la France qui nous permettra de placer le centre de notre carte. 
+
+```{python}
+#| echo: true
+minx, miny, maxx, maxy = departements_hexagone.total_bounds
+center = [(miny + maxy) / 2, (minx + maxx) / 2]
+```
+
+Nous allons aussi avoir besoin d'un dictionnaire pour renseigner à `Folium` des informations sur les paramètres de notre carte:
+
+```{python}
+#| echo: true
+style_function = lambda x: {
+    'fillColor': 'white',  #<1>
+    'color': 'black',     
+    'weight': 1.5,        
+    'fillOpacity': 0.0   
+}
+```
+1. En fait cela permettra d'avoir une couche transparente en combinant avec le paramètre `fillOpacity` à 0%. 
+
+`style_function` est une fonction anonyme qui sera utilisée dans l'exercice. 
+
+Une information qui s'affiche lorsqu'on passe la souris s'appelle un _tooltip_ en langage de développement web. 
+
+```{python}
+#| echo: true
 import folium
-```
-
-
-
-
-
-# Première carte avec l'API `matplotlib` de `geopandas`
-
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #3fb618;">
-<h3 class="alert-heading"><i class="fa fa-pencil"></i> Exercice 1: Importer les données</h3>
-```
-Importer les données de compteurs de vélos en deux temps.
-
-1. D'abord, les comptages peuvent être trouvés à l'adresse <https://minio.lab.sspcloud.fr/projet-formation/diffusion/python-datascientist/bike.csv>. ⚠️ Il s'agit de données
-compressées au format `gzip`, il faut donc utiliser l'option `compression`. Nommer cet objet `comptages`.
-2. Importer les données de localisation des compteurs à partir de l'url <https://parisdata.opendatasoft.com/api/explore/v2.1/catalog/datasets/comptage-velo-compteurs/exports/geojson?lang=fr&timezone=Europe%2FBerlin>. Nommer cet objet `compteurs`.
-3. Faire attention à deux valeurs aberrantes. Utiliser
-la fonctionalité `str.contains` pour exclure les
-observations contenant _"Bike IN"_ ou _"Bike OUT"_
-dans la variable 
-`nom_compteur`
-3. On va également utiliser les contours d'arrondissements de la ville de Paris. Nommer cet objet `arrondissements`. Pour le créer, utiliser la fonction `carti_download` du package [`cartiflette`](https://github.com/InseeFrLab/cartiflette).
-4. Utiliser la méthode `plot` pour représenter les localisations des compteurs dans l'espace. C'est, on peut l'avouer, peu informatif sans apport extérieur. Il va donc falloir travailler un peu l'esthétique
-
-<details>
-
-<summary>
-Aide pour l'utilisation de <code>cartiflette</code>
-</summary>
-
-Le code suivant donne la structure générale, il suffit d'adapter
-l'argument `values`:
-
-```python
-from cartiflette import carti_download
-
-#3. Chargement de "arrondissements"
-arrondissements = carti_download(
-  values = ["TO_BE_COMPLETED"],
-  borders = "COMMUNE_ARRONDISSEMENT",
-  filter_by = "DEPARTEMENT",
-  crs = 4326,
-  vectorfile_format="geojson",
-  source="EXPRESS-COG-CARTO-TERRITOIRE",
-  year=2022
+tooltip = folium.GeoJsonTooltip(
+    fields=['LIBELLE_DEPARTEMENT', 'INSEE_DEP', 'POPULATION'],
+    aliases=['Département:', 'Numéro:', 'Population:'],
+    localize=True
 )
 ```
 
-</details>
+::: {.exercise}
+## Exercice 2: faire une première carte réactive avec `Folium`
 
-```{=html}
-</div>
-```
+1. Créer la couche de fond en utilisant l'objet `center` et le niveau `zoom_start` égal à 5
+2. Mettre à jour celle-ci en utilisant notre `departements_hexagone` et les paramètres `style_function` et `tooltip`
 :::
 
-
+Voici la couche de fond de la question 1:
 
 ```{python}
-#| output: false
-#| label: download-read-comptages
+m = folium.Map(location=center, zoom_start=5)
+m
+```
 
-# 1. Chargement de "comptages"
-comptages = pd.read_csv('https://minio.lab.sspcloud.fr/projet-formation/diffusion/python-datascientist/bike.csv')
-#comptages.head()
+Et une fois mise en forme, cela nous donne la carte:
+
+```{python}
+folium.GeoJson(
+    departements_hexagone,
+    style_function=style_function,
+    tooltip=tooltip
+).add_to(m)
+
+m
+```
+
+Lorsqu'on passe sa souris sur la carte ci-dessus, on obtient quelques informations contextuelles.  On peut donc jouer sur différents niveaux d'information : un premier coup d'oeil permet de se représenter les données dans l'espace, une recherche approfondie permet d'avoir des informations secondaires, utiles à la compréhension, mais pas indispensables. 
+
+Ces premiers exercices illustraient une situation
+où on ne désire représenter que les limites des polygones. C'est une carte utile pour rapidement placer
+son jeu de données dans l'espace mais ça n'apporte pas 
+d'information supplémentaire. Pour cela, il va être nécessaire
+d'utiliser les données tabulaires associées à la dimension spatiale.
+
+
+# Représenter des données : un premier exemple avec une carte de couverture forestière
+
+Pour cette partie, nous allons faire une carte du couvert forestier
+landais à partir de la BD Forêt produite par l'IGN. L'objectif n'est plus seulement de placer des limites du territoire d'intérêt mais de représenter de l'information sur celui-ci à partir des données présentes dans un _GeoDataFrame_.
+
+La BD Forêt étant
+un petit peu volumineuse dans le format _shapefile_, nous proposons
+de la récupérer dans un format plus compressé: le _geopackage_.
+
+```{python}
+#| echo: true
+foret = gpd.read_file(
+  "https://minio.lab.sspcloud.fr/projet-formation/diffusion/r-geographie/landes.gpkg"
+)
+```
+
+Nous allons aussi créer un masque pour les contours du département: 
+
+```{python}
+#| echo: true
+landes = (
+  departements
+  .loc[departements["INSEE_DEP"] == "40"].to_crs(2154)
+)
 ```
 
 
+::: {.exercise}
+## Exercice 3: première carte par aplat de couleur
+
+Créer une carte du couvert forestier des Landes à partir des données
+importées précédemment depuis la BD Forêt. Vous pouvez ajouter les limites du département pour contextualiser cette carte. 
+
+Cette carte peut être créée via `Geopandas` et `matplotlib` ou via `plotnine` (cf. [chapitre précédent](/content/visualisation/matplotlib.qmd)). 
+
+:::
+
+Comme on peut le voir sur la carte (@fig-landes), le département des Landes est très forestier. Ceci est logique puisque les deux tiers du département sont couverts, ce qu'on peut vérifier avec le calcul suivant[^landes-epsg]:
 
 ```{python}
-#| output: false
-#| label: download-read-compteurs
-
-#2. Chargement de "compteurs"
-compteurs = gpd.read_file("https://parisdata.opendatasoft.com/api/explore/v2.1/catalog/datasets/comptage-velo-compteurs/exports/geojson?lang=fr&timezone=Europe%2FBerlin")
-#compteurs.head()
+#| echo: true
+f"Part du couvert forestier dans les Landes: {float(foret.area.sum()/landes.area):.0%}"
 ```
 
+[^landes-epsg]: Ce calcul est possible car les deux bases sont en projection Lambert 93 pour lequel les opérations géométriques (dont les calculs de surface) sont autorisés.
 
 ```{python}
-compteurs = compteurs.loc[
-  ~compteurs["nom_compteur"].str.contains(r"(Bike IN|Bike OUT)")
-]
-```
+#| fig-cap: "Couvert forestier des Landes"
+#| label: fig-landes
+# Version plotnine
+from plotnine import *
 
-
-
-```{python}
-#| output: false
-
-from cartiflette import carti_download
-
-#3. Chargement de "arrondissements"
-arrondissements = carti_download(
-  values = ["75"],
-  borders = "COMMUNE_ARRONDISSEMENT",
-  filter_by = "DEPARTEMENT",
-  crs = 4326,
-  vectorfile_format="geojson",
-  source="EXPRESS-COG-CARTO-TERRITOIRE",
-  year=2022
+map = (
+  ggplot(foret) +
+  geom_map(fill = "forestgreen", size = 0) +
+  geom_map(data = landes, color = "black", size = 1, fill = None) +
+  theme_void()
 )
 
-# arrondissements.head()
-```
-
-```{python}
-# 4. Localisation des compteurs
-compteurs.plot()
-```
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-danger" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left: .2rem solid #ff0039;">
-<h3 class="alert-heading"><i class="fa fa-exclamation-triangle"></i> Warning</h3>
-```
-On serait tenté de faire un *merge* de la base compteurs et comptages.
-En l'occurrence, il s'agirait d'un produit cartésien puisqu'il s'agit de faire exploser la base spatiale.
-Avec des données spatiales, c'est souvent une très mauvaise idée. Cela duplique les points, créant des difficultés à représenter les données mais aussi ralentit les calculs.
-Sauf à utiliser la méthode `dissolve` (qui va agréger *k* fois la même géométrie...), les géométries sont perdues lorsqu'on effectue des `groupby`.  
-```{=html}
-</div>
-```
-:::
-
-
-Maintenant, tout est prêt pour une première carte. `matplotlib` fonctionne selon
-le principe des couches. On va de la couche la plus lointaine à celle le plus
-en surface. L'exception est lorsqu'on ajoute un fond de carte `contextily` via
-`ctx.add_basemap`: on met cet appel en dernier. 
-
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #3fb618;">
-<h3 class="alert-heading"><i class="fa fa-pencil"></i> Exercice 2: Première carte</h3>
-```
-
-Représenter une carte des `compteurs` avec le fonds de carte des `arrondissements`
-
-  * Faire attention à avoir des arrondissements dont l'intérieur est transparent (argument à utiliser: `facecolor`).
-  * Faire des bordures d'arrondissements noires et affichez les compteurs en rouge.
-  * Pour obtenir un graphique plus grand, vous pouvez utiliser l'argument `figsize = (10,10)`.
-  * Pour les localisations, les points doivent être rouges en étant plus transparent au centre (argument à utiliser: `alpha`) 
-
-```{=html}
-</div>
-```
-:::
-
-```{python}
-#| output: false
-
-# Carte des compteurs par arrondissement
-ax = arrondissements.plot(edgecolor = 'black', facecolor="none", figsize = (10,10))
-compteurs.plot(ax = ax, alpha = 0.3, color = 'red')
-ax
-```
-
-Vous devriez obtenir cette carte:
-
-```{python}
-#| echo: false
-ax.get_figure()
-```
-
-
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #3fb618;">
-<h3 class="alert-heading"><i class="fa fa-pencil"></i> Exercice 3 : Ajouter un fonds de carte avec contextily</h3>
-```
-
-Repartir de la carte précédente.
-
-1. Utiliser `ctx.add_basemap` pour ajouter un fonds de carte. Pour ne pas afficher les axes, vous pouvez utiliser `ax.set_axis_off()`.
-
-:warning: *Par défaut, `contextily` désire un système de projection (crs) qui est le Web Mercator (epsg: 3857). Il faut changer la valeur de l'argument `crs`.*
-
-:warning: *Avec les versions anciennes des packages, il faut utiliser `.to_string` sur un objet CRS pour qu'il soit reconnu par `contextily`. Sur des versions récentes, la valeur numérique du code EPSG est suffisante.*
-
-2. Trouver un fonds de carte plus esthétique, qui permette de visualiser les grands axes, parmi ceux possibles. Pour tester l'esthétique, vous pouvez utiliser [cet url](http://leaflet-extras.github.io/leaflet-providers/preview/index.html). La documentation de référence sur les tuiles disponibles est [ici](https://contextily.readthedocs.io/en/latest/providers_deepdive.html) 
-
-```{=html}
-</div>
-```
-:::
-
-
-```{python}
-#| output: false
-
-# 1. Ajout d'un fond de carte sur la précédente carte
-ax = arrondissements.to_crs("EPSG:3857").plot(edgecolor = 'black', facecolor="none", figsize = (10,10))
-compteurs.to_crs("EPSG:3857").plot(ax = ax, alpha = 0.3, color = 'red')
-#ctx.add_basemap(ax, source = ctx.providers.Stamen.Watercolor)
-ax.set_axis_off()
-ax
-#plt.savefig("map_arr2.png", bbox_inches='tight')
-```
-
-
-```{python}
-ax.get_figure()
+map
 ```
 
 ```{python}
 #| output: false
-
-# 2. Choix d'un fond de carte plus approprié (visualisation des grands axes)
-ax = arrondissements.to_crs("EPSG:3857").plot(edgecolor = 'black', facecolor="none", figsize = (10,10))
-compteurs.to_crs("EPSG:3857").plot(ax = ax, alpha = 0.3, color = 'red')
-#ctx.add_basemap(ax, source="https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png")
-ax.set_axis_off()
-ax
-```
-
-```{python}
-ax.get_figure()
-```
-
-
-```{python}
-#| output: hide
-ax.get_figure().savefig("featured_maps.png")
-```
-
-Le principe de la *heatmap* est de construire, à partir d'un nuage de point bidimensionnel, une distribution 2D lissée. La méthode repose sur les estimateurs à noyaux qui sont des méthodes de lissage local. 
-
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-info" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #007bff80;">
-<h3 class="alert-heading"><i class="fa fa-comment"></i> Exercice 3 : Ajouter un fonds de carte avec contextily</h3>
-```
-
-Pour le moment, la fonction  `geoplot.kdeplot` n'incorpore pas toutes les fonctionalités de `seaborn.kdeplot`. Pour être en mesure de construire une `heatmap` avec des données pondérées (cf. [cette issue dans le dépôt seaborn](https://github.com/mwaskom/seaborn/issues/1364)), il y a une astuce. Il faut simuler *k* points de valeur 1 autour de la localisation observée. La fonction ci-dessous, qui m'a été bien utile, est pratique et est donnée pour vous aider. 
-
-```{=html}
-</div>
-```
-:::
-
-
-```{python}
-#| echo: true
-
-import numpy as np
-def expand_points(shapefile,
-                  index_var = "grid_id",
-                  weight_var = 'prop',
-                  radius_sd = 100,
-                  crs = 2154):
-    """
-    Multiply number of points to be able to have a weighted heatmap
-    :param shapefile: Shapefile to consider
-    :param index_var: Variable name to set index
-    :param weight_var: Variable that should be used
-    :param radius_sd: Standard deviation for the radius of the jitter
-    :param crs: Projection system that should be used. Recommended option
-      is Lambert 93 because points will be jitterized using meters
-    :return:
-      A geopandas point object with as many points by index as weight
-    """
-
-    shpcopy = shapefile
-    shpcopy = shpcopy.set_index(index_var)
-    shpcopy['npoints'] = np.ceil(shpcopy[weight_var])
-    shpcopy['geometry'] = shpcopy['geometry'].centroid
-    shpcopy['x'] = shpcopy.geometry.x
-    shpcopy['y'] = shpcopy.geometry.y
-    shpcopy = shpcopy.to_crs(crs)
-    shpcopy = shpcopy.loc[np.repeat(shpcopy.index.values, shpcopy.npoints)]
-    shpcopy['x'] = shpcopy['x'] + np.random.normal(0, radius_sd, shpcopy.shape[0])
-    shpcopy['y'] = shpcopy['y'] + np.random.normal(0, radius_sd, shpcopy.shape[0])
-
-    gdf = gpd.GeoDataFrame(
-        shpcopy,
-        geometry = gpd.points_from_xy(shpcopy.x, shpcopy.y),
-        crs = crs)
-
-    return gdf
-```
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #3fb618;">
-<h3 class="alert-heading"><i class="fa fa-pencil"></i> Exercice 4 : Data cleaning avant de pouvoir faire une heatmap</h3>
-```
-
-1. Calculer le trafic moyen, pour chaque station, entre 7 heures et 10 heures (bornes incluses) et nommer cet objet `df1`. Faire la même chose, en nommant `df2`, pour le trafic entre 17 et 20 heures (bornes incluses)
-
-2. Nous allons désormais préparer les données de manière à faire une heatmap. Après avoir compris ce que permet de faire la fonction `expand_points` ci-dessus, créer une fonction `explode_data` qui suive les étapes suivantes. 
-  + Convertir un DataFrame dans le système de projection Lambert 93 (epsg: 2154)
-  + Appliquer `expand_points` aux noms de variable adéquats. Vous pouvez fixer la valeur de `radius_sd` à `100`. 
-  + Reconvertir l'output au format WGS84 (epsg: 4326)
-
-3. Appliquer cette fonction à `df1` et `df2`
-
-
-```{=html}
-</div>
-```
-:::
-
-```{python}
-#| output: false
-
-#1. Calcul du trafic moyen
-comptages['timestamp'] = pd.to_datetime(comptages['Date et heure de comptage'], format='%Y-%m-%dT%H:%M:%SZ', errors='coerce')
-comptages['hour'] = comptages['timestamp'].dt.hour
-
-df1 = comptages[comptages.hour.between(7,10)].groupby('Identifiant du compteur').agg({"Comptage horaire": "mean"}).reset_index()
-df2 = comptages[comptages.hour.between(7,10)].groupby('Identifiant du compteur').agg({"Comptage horaire": "mean"}).reset_index()
-df1 = compteurs.merge(df1, left_on = "id_compteur", right_on = 'Identifiant du compteur')
-df2 = compteurs.merge(df2, left_on = "id_compteur", right_on = 'Identifiant du compteur')
-```
-
-
-
-
-```{python}
-#| output: false
-
-#2. Creation de la fonction explode_data
-# La fonction expand_points multiplie le nombre de points de manière à créer une heatmap
-def explode_data(data, index_var = "id_compteur", weight_var = 'Comptage horaire', crs = 2154):
-  data_exp = expand_points(data.to_crs(crs),
-                  index_var = "id_compteur",
-                  weight_var = 'Comptage horaire',
-                  radius_sd = 100,
-                  crs = crs)
-  data_exp = data_exp.to_crs(4326)
-  return data_exp
-```
-
-
-
-```{python}
-#| output: false
-
-#3. Application de explode_data à df1 et df2
-df1_exploded = explode_data(df1)
-df2_exploded = explode_data(df2)
-
-#print(len(df1))
-#df1[["name","id_compteur"]].head()
-#print(len(df1_exploded))
-#df1_exploded[["name","npoints","x","y"]].head()
-```
-
-
-# Des cartes réactives grâce à `folium`
-
-De plus en plus d'applications de visualisation reposent sur la cartographie réactive. Que ce soit dans l'exploration des données ou dans la représentation finale de résultats, la cartographie réactive est très appréciable. 
-
-`folium` offre une interface très flexible et très facile à prendre à main. Les cartes sont construites grâce à la librairie JavaScript `Leaflet.js` mais, sauf si on désire aller loin dans la customisation du résultat, il n'est pas nécessaire d'avoir des notions dans le domaine. 
-
-
-Un objet folium se construit par couche. La première est l'initialisation de la carte. Les couches suivantes sont les éléments à mettre en valeur. L'initialisation de la carte nécessite la définition d'un point central (paramètre `location`) et d'un zoom de départ (`zoom_start`). Plutôt que de fournir manuellement le point central et le zoom on peut :
-
-1. Déterminer le point central en construisant des colonnes longitudes et latitudes et en prenant la moyenne de celles-ci ;
-2. Utiliser la méthode `fit_bounds` qui cale la carte sur les coins sud-ouest et nord-est. En supposant que la carte s'appelle `m`, on fera `m.fit_bounds([sw, ne])`
-
-Le bout de code suivant permet de calculer le centre de la carte
-
-```{python}
-#| echo: true
-compteurs = gpd.read_file("https://parisdata.opendatasoft.com/api/explore/v2.1/catalog/datasets/comptage-velo-compteurs/exports/geojson?lang=fr&timezone=Europe%2FBerlin")
-compteurs['lon'] = compteurs.geometry.x
-compteurs['lat'] = compteurs.geometry.y
-center = compteurs[['lat', 'lon']].mean().values.tolist()
-print(center)
-```
-
-Alors que le code suivant permet de calculer les coins:
-
-```{python}
-#| echo: true
-sw = compteurs[['lat', 'lon']].min().values.tolist()
-ne = compteurs[['lat', 'lon']].max().values.tolist()
-print(sw, ne)
-```
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-warning" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #ffc10780;">
-<h3 class="alert-heading"><i class="fa fa-lightbulb-o"></i> Hint</h3>
-```
-
-Si un fond gris s'affiche, c'est qu'il y a un problème de localisation ou d'accès à internet. Pour le premier cas, cela provient généralement d'un problème de projection ou d'une inversion des longitudes et latitudes. 
-
-Les longitudes représentent les *x* (axe ouest-est) et les latitudes *y* (axe sud-nord). De manière contrintuitive, `folium` attend qu'on lui fournisse les données sous la forme `[latitude, longitude]` donc `[y,x]`
-
-```{=html}
-</div>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #3fb618;">
-<h3 class="alert-heading"><i class="fa fa-pencil"></i> Exercice 6 : Visualiser la localisation des stations</h3>
-```
-
-1. Calculer le centre `center`de la carte des données `compteurs`. Il s'obtient en agrègeant l'ensemble des géométries, calculant le centroid et récupèrant la valeur sous forme de liste. Avec une logique similaire, calculez les bornes du sud-ouest `sw` et du nord-est `ne` de la carte. 
-2. Représenter la localisation des stations en utilisant un zoom optimal. 
-
-```{=html}
-</div>
-```
-:::
-
-```{python}
-#| output: false
-
-#1. Calcul du centre de la carte de "compteurs" et des bornes sw et ne
-compteurs['lon'] = compteurs.geometry.x
-compteurs['lat'] = compteurs.geometry.y
-center = compteurs[['lat', 'lon']].mean().values.tolist()
-sw = compteurs[['lat', 'lon']].min().values.tolist()
-ne = compteurs[['lat', 'lon']].max().values.tolist()
-```
-
-
-
-```{python}
-#| output: false
-
-# 2. Carte interactive
-from pathlib import Path
-m = folium.Map(location = center, tiles='OpenStreetMap')
-
-# Ajout des markers 1 à 1 sur la carte
-for i in range(0,len(compteurs)):
-    folium.Marker([compteurs.iloc[i]['lat'], compteurs.iloc[i]['lon']], popup=compteurs.iloc[i]['nom_compteur']).add_to(m)
-m.fit_bounds([sw, ne])
-```
-
-
-```{python}
-# Afficher la carte
-m
-```
-
-
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #3fb618;">
-<h3 class="alert-heading"><i class="fa fa-pencil"></i> Exercice 7: Représenter les stations</h3>
-```
-
-Faire la même carte, avec des ronds proportionnels au nombre de comptages :
-
-* Pour le rayon de chaque cercle, vous pouvez appliquer la règle `500*x/max(x)` (règle au doigt mouillé)
-* Vous pouvez réduire la taille des bordures de cercle avec l'option `weight = 1` et fixer la couleur avec `color = 'grey'`
-* (Optionnel) Colorer en rouge les 10 plus grosses stations. L'opacité étant, par défaut, un peu faible, le paramètre `fill_opacity = 0.4` améliore le rendu. 
-* (Optionnel) Afficher, en supplément du nom du compteur lorsqu'on clique, la valeur du comptage en revenant à la ligne
-
-```{=html}
-</div>
-```
-:::
-
-```{python}
-#| output: false
-
-# Exercice 7
-df1['color'] = 'green'
-top_10 = df1.sort_values('Comptage horaire', ascending = False).head(10).nom_compteur
-df1.loc[df1.nom_compteur.isin(top_10.tolist()), 'color'] = 'red'
-
-df1['lon'] = df1.geometry.x
-df1['lat'] = df1.geometry.y
-center = df1[['lat', 'lon']].mean().values.tolist()
-sw = df1[['lat', 'lon']].min().values.tolist()
-ne = df1[['lat', 'lon']].max().values.tolist()
-
-m = folium.Map(location = center, tiles='OpenStreetMap')
-
-# I can add marker one by one on the map
-for i in range(0,len(df1)):
-   folium.Circle(
-      location=[df1.iloc[i]['lat'], df1.iloc[i]['lon']],
-      popup= df1.iloc[i]['nom_compteur'] + ": <br> " + str(df1.iloc[i]['Comptage horaire'].round()),
-      radius=500*df1.iloc[i]['Comptage horaire']/df1.iloc[i]['Comptage horaire'].max(),
-      color='grey',
-      weight = 1,
-      fill=True,
-      fill_color=df1.iloc[i]['color'],
-      fill_opacity=0.4
-   ).add_to(m)
-
-m.fit_bounds([sw, ne])
-```
-
-La carte obtenue doit ressembler à la suivante :
-
-```{python}
-# Afficher la carte
-m
-```
-
-# Exercices supplémentaires
-
-## Densité de population dans la petite couronne parisienne
-
-Pour cet exercice, le package [`cartiflette`](https://github.com/InseeFrLab/cartogether)
-va être pratique pour récupérer un fonds de carte mélangeant arrondissements
-parisiens et communes dans les autres villes.
-
-Nous allons privilégier une carte à ronds proportionnels (_bubble map_)
-aux cartes chorolèpthes qui trompent
-l'oeil.
-
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert" style="color: rgba(0,0,0,.8); background-color: white; margin-top: 1em; margin-bottom: 1em; margin:1.5625emauto; padding:0 .6rem .8rem!important;overflow:hidden; page-break-inside:avoid; border-radius:.25rem; box-shadow:0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1); transition:color .25s,background-color .25s,border-color .25s ; border-right: 1px solid #dee2e6 ; border-top: 1px solid #dee2e6 ; border-bottom: 1px solid #dee2e6 ; border-left:.2rem solid #3fb618;">
-<h3 class="alert-heading"><i class="fa fa-pencil"></i> Exercice: bubble map de densité des populations</h3>
-```
-
-1. Récupérer le fond de carte des départements 75, 92, 93 et 94
-avec `cartiflette`. Pour cela, utiliser `carti_download`
-depuis `cartiflette` en fixant l'option `borders` à `COMMUNE_ARRONDISSEMENT`.
-Nommer cet objet `df`.
-2. Afin que les calculs ultérieurs de surface ne soient pas faussés,
-assurez-vous que les données sont en Lambert 93 en reprojetant
-nos contours (code EPSG: 2154).
-2. Créer un objet `departements` avec `dissolve` pour également disposer
-d'un fond de carte des départements
-3. Créer une variable `surface` et utilisant la méthode `area`. L'unité
-doit être le km², il faut donc diviser par $10^6$
-4. Créer une variable `densite`
-5. Utiliser `pd.cut` avec les seuils 5000, 15000 et 30000 personnes
-par km². Vous pouvez utiliser l'option `label` pour dénommer les tranches
-6. Créer un `GeoDataFrame` de points en utilisant la méthode centroid. Celui-ci
-nous servira à localiser le centre de nos ronds. 
-7. Représenter la densité communale sous forme de carte avec ronds proportionnels.
-Vous pouvez utiliser la variable créée à la question 5 pour les couleurs.
-
-```{=html}
-</div>
-```
-:::
-
-```{python}
-#| output: false
-import pandas as pd
+# Version matplotlib
 import matplotlib.pyplot as plt
+fig, ax = plt.subplots(figsize=(10, 10))
+foret.plot(ax=ax, color="forestgreen", edgecolor=None)
+landes.plot(ax=ax, edgecolor="black", linewidth=1, facecolor="none")
+ax.set_axis_off()
+plt.show()
+```
+
+Ici la carte est assez claire et donne un message relativement lisible. Bien sûr on ne dispose pas de détails qui pourraient intéresser les curieux (par exemple quelles localités sont particulièrement couvertes) mais on dispose d'une vision synthétique du phénomène étudié. 
+
+# Découverte des cartes choroplèthes
+
+L'exercice précédent nous a permis de créer une carte par aplat de couleur. Ceci nous amène naturellement vers la carte choroplèthe, où l'aplat de couleur vise à représenter une information socioéconomique. 
+
+Nous allons utiliser les données de population présentes dans les données récupérées par le biais de `cartiflette`[^poplegales]. Nous allons nous amuser à créer la carte choroplèthe en lui donnant le style _vintage_ des premières cartes de Dupin (1826). 
+
+
+[^poplegales]: _Stricto sensu_, il faudrait vérifier que ces colonnes correspondent bien aux populations légales définies par l'Insee. Cette variable est fournie nativement par l'IGN dans ses fonds de carte. Nous laissons les lecteurs intéressés faire ce travail, qui permet de réviser les compétences `Pandas`.  
+
+
+::: {.exercise}
+## Exercice 4: une première carte de population
+
+L'objectif de cet exercice va être d'enrichir
+les informations présentées sur la carte
+des départements.
+
+1. Représenter rapidement la carte des départements en colorant en fonction de la variable `POPULATION`. 
+
+Cette carte présente plusieurs problèmes: 
+
+* Si vous connaissez la géographie française, vous devriez noter une forme anormale, comme si l'axe est-ouest avait été agrandi par excès. C'est parce qu'il faut reprojeter la carte en Lambert 93.
+* Elle est peu lisible à cause de plusieurs facteurs: gradient continu, distribution non normale de la variable, légende perfectible, etc.
+
+Les prochaines questions visent à améliorer ceci progressivement.
+
+2. Refaire cette carte dans la projection Lambert 93.
+3. Discrétiser la variable `POPULATION` en utilisant 4 classes par le biais d'une discrétisation par quantile. Refaire la carte.
+4. Diviser votre population par la taille de chaque département (en km2) en créant une variable à partir de `.area.div(1e6)`[^note-mesure]. 
+5. Choisir une palette de couleur _vintage_ type échelle de gris.
+
+
+[^note-mesure]: Le Lambert 93 donne une aire en mètres carrés. Pour la transformer en km², il faut faire `div(1e6)`.
+
+:::
+
+La première question donne une carte ayant cet aspect:
+
+```{python}
+from plotnine import *
+
+# Question 1
+map1 = (
+  ggplot(departements) +
+  geom_map(aes(fill = "POPULATION")) +
+  theme_void()
+)
+
+map1
+```
+
+Elle est déjà améliorée par l'utilisation d'une projection adaptée pour le territoire, le Lambert 93 (question 2):
+
+```{python}
+# Question 2
+departements_l93 = departements.to_crs(2154)
+map2 = (
+  ggplot(departements_l93) +
+  geom_map(aes(fill = "POPULATION")) +
+  theme_void()
+)
+
+map2
+```
+
+La carte ci-dessous, après discrétisation (question 3), donne déjà une représentation plus véridique des inégalités de population. On remarque que la diagonale du vide commence à se dessiner ce qui est logique pour une carte de population.
+
+```{python}
+# Question 3
+departements_l93['POPULATION_discrete'] = pd.Categorical(
+  pd.qcut(departements['POPULATION'].div(1000).round(), q=4)
+)
+
+(
+  ggplot(departements_l93) +
+  geom_map(aes(fill = "POPULATION_discrete")) +
+  theme_void()
+)
+```
+
+Cependant, l'un des problèmes des choroplèthes est qu'elles donnent un poids exagéré aux grands espaces. Ceci avait été particulièrement mis en avant dans le cas des cartes électorales avec le visuel ["Land doesn't vote, people do"](https://x.com/karim_douieb/status/1181934417650040832) (version [élections européennes de 2024](https://x.com/karim_douieb/status/1800777148871188766)). Sans pouvoir totalement s'abstraire de ce problème, pour cela il faudrait changer de type de représentation graphique, par exemple avec des ronds proportionnels, on peut déjà réduire l'effet de la surface sur notre variable d'intérêt en représentant la densité (population au km² plutôt que la population).  
+
+```{python}
+import pandas as pd
+
+departements_l93['surface_km2'] = departements_l93.area.div(1e6)
+departements_l93['densite_discrete'] = pd.qcut(
+    departements_l93['POPULATION'].div(departements_l93['surface_km2']).round(),
+    q=4
+  )
+```
+
+On obtient donc la carte suivante lorsqu'on représente la densité plutôt que la population totale:
+
+```{python}
+(
+  ggplot(departements_l93) +
+  geom_map(aes(fill = "densite_discrete")) +
+  theme_void() +
+  scale_fill_discrete()
+)
+```
+
+Cela nous donne déjà une image plus véridique de la distribution de la population sur le territoire français. Néanmoins, la palette de couleur _desigual_ utilisée par défaut n'aide pas trop à saisir les nuances. Avec une palette de couleur en nuancier, qui tient compte de l'aspect ordinal de nos données, on obtient une carte plus lisible (question 5):
+
+```{python}
+# Question 5
+(
+  ggplot(departements_l93) +
+  geom_map(aes(fill = "densite_discrete")) +
+  theme_void() +
+  scale_fill_grey(start=0.2, end=0.8) +
+  labs(fill = "Densité (pop/km²)")
+)
+```
+
+C'est déjà mieux. Néanmoins, pour avoir une meilleure carte, il faudrait choisir une discrétisation plus adéquate. C'est un travail itératif important, qui mobilise plusieurs domaines de compétences: statistique, sociologie ou économie selon le type d'information représentée, informatique, etc. Bref, la palette normale de compétences d'un _data scientist_. 
+
+
+# Représenter des données infracommunales
+
+Jusqu'à présent, nous avons travaillé sur des données où, en soi, représenter des frontières administratives suffisait pour contextualiser. Penchons maintenant sur le cas où avoir un fonds de carte contextuel va devenir crucial: les cartes infracommunales.
+
+Pour cela nous allons représenter la localisation des stations Velib. Celles-ci sont disponibles en _open data_ sur le site de la Mairie de Paris. 
+
+```{python}
+#| echo: true
+import geopandas as gpd
+
+velib_data = "https://opendata.paris.fr/explore/dataset/velib-emplacement-des-stations/download/?format=geojson&timezone=Europe/Berlin&lang=fr"
+stations = gpd.read_file(velib_data)
+```
+
+Si on représente directement celles-ci avec la méthode `plot`, on manque de contexte:
+
+```{python}
+#| echo: true
+stations.plot()
+```
+
+Il est même impossible de savoir si on se trouve réellement dans Paris. On peut essayer d'associer à nos découpages administratifs pour vérifier qu'on se situe bien dans la région parisienne.
+
+La première étape est de récupérer les découpages des arrondissements parisiens et des communes limitrophes, ce qui se fait facilement avec `cartiflette`: 
+
+```{python}
+#| echo: true
 from cartiflette import carti_download
 
-# 1/ Fonds communaux
-df = carti_download(
+# 1. Fonds communaux
+contours_villes_arrt = carti_download(
     values = ["75", "92", "93", "94"],
     crs = 4326,
     borders="COMMUNE_ARRONDISSEMENT",
-    vectorfile_format="geojson",
     filter_by="DEPARTEMENT",
     source="EXPRESS-COG-CARTO-TERRITOIRE",
     year=2022)
 
-# 2/ Lambert 93
-df = df.to_crs(2154)
-# 3/ Départements
-departements = df.dissolve("INSEE_DEP")
+# 2. Départements 
+departements = contours_villes_arrt.dissolve("INSEE_DEP")
 ```
+
+Si maintenant on utilise ce masque pour contextualiser les données, on est rasurré sur la nature des données
 
 ```{python}
-# 4/ et 5/
-df['surface'] = df.area.div(10**6)
-df['densite'] = (df['POPULATION']/df['surface'])
-#6/ 
-df['markersize'] = 8*df['densite'].div(df.area.div(10**6).sum())
-df['markercolor'] = pd.cut(
-    df['densite'],
-    [0, 5000, 15000, 30000, 50000], labels=["Moins de 5", "Entre 5 et 15", "Entre 15 et 30","Plus de 30"])
+#| echo: true
+ax = stations.sample(200).plot(color = "red")
+contours_villes_arrt.boundary.plot(ax=ax, edgecolor="k", linewidth=.5)
+departements.boundary.plot(ax=ax, edgecolor="blue", linewidth=1)
+ax.set_axis_off()
 ```
+
+Les Parisiens reconnaîtront facilement leur bourgade car ils connaissent bien l'organisation de l'espace de cette agglomération. Cependant pour des lecteurs ne connaissant pas celle-ci, cette carte sera de peu de secours. L'idéal est plutôt d'utiliser le fonds de carte contextuel de `Folium` pour cela. 
+
+Afin de ne pas surcharger la carte, il est utile d'utiliser la dimension réactive de Folium en laissant l'utilisateur.trice naviguer dans la carte et afficher un volume d'information adapté à la fenêtre visible. Pour cela, `Folium` embarque une fonctionnalité `MarkerCluster` très pratique.
+
+On peut ainsi produire la carte désirée de cette manière:
 
 ```{python}
-# 7/
-df_points = df.copy()
-df_points["geometry"] = df_points["geometry"].centroid
+#| code-fold: true
+import folium
+from folium.plugins import MarkerCluster
+
+# 1. Calcul du centre de la carte et des bornes sw et ne
+stations['lon'] = stations.geometry.x
+stations['lat'] = stations.geometry.y
+center = stations[['lat', 'lon']].mean().values.tolist()
+sw = stations[['lat', 'lon']].min().values.tolist()
+ne = stations[['lat', 'lon']].max().values.tolist()
+
+m = folium.Map(location=center, tiles='OpenStreetMap')
+marker_cluster = MarkerCluster().add_to(m)
+
+# Add the markers to the MarkerCluster
+for i in range(len(stations)):
+    folium.Marker(
+        location=[stations.iloc[i]['lat'], stations.iloc[i]['lon']],
+        popup=stations.iloc[i]['name']
+    ).add_to(marker_cluster)
+
+# Fit the map bounds to the markers
+m.fit_bounds([sw, ne])
+m
 ```
 
-La carte obtenue devrait ressembler à celle-ci :
-
-```{python}
-# 8/ 
-ax = df.plot(
-    color="lightgray", edgecolor="grey",
-    figsize=(7,7), 
-    linewidth=0.4, alpha = 0.3)
-df_points.plot(
-    ax=ax,
-    column="markercolor", markersize="markersize",
-    alpha=0.7, #categorical=False,
-    legend = True,
-    legend_kwds={'loc': 'upper center', "ncol": 2, "bbox_to_anchor": (0.5, 0.05)},
-    cmap='viridis')
-departements.boundary.plot(
-    ax = ax, edgecolor = "black", alpha = 0.3)
-ax.axis("off")
-ax.set(title='Densité de population dans la petite couronne')
-ax.get_legend().set_title("Densité de population, en milliers d'habitants par km²")
-plt.figtext(0.3, 0.15,
-            "Source: IGN - AdminExpress",
-            wrap=True, horizontalalignment='center',
-            fontsize=8, style = "italic")
-```
 
 # Références supplémentaires {.unnumbered}
 
