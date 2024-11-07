@@ -485,7 +485,6 @@ Avant standardisation, notre variable a cette distribution:
 (
   ggplot(df2, aes(x = "Median_Household_Income_2019")) +
   geom_histogram() +
-  theme_minimal() +
   labs(
     x = "2019 Median household income (standardized)",
     y = "Density (number observations)"
@@ -507,7 +506,6 @@ df2['y_standard'] = preprocessing.scale(
 (
   ggplot(df2, aes(x = "y_standard")) +
   geom_histogram() +
-  theme_minimal() +
   labs(
     x = "2019 Median household income (standardized)",
     y = "Density (number observations)"
@@ -531,11 +529,10 @@ A la question 2, si on essaie de représenter les statistiques obtenues dans un 
 ```{python}
 # 2. Créer un scaler
 
-df2 = df2.drop("winner", axis=1)
+df_exo3 = df2.drop("winner", axis=1)
 
-first_rows = df2.head(1000)
+first_rows = df_exo3.head(1000)
 
-# Calculate mean and standard deviation before scaling
 mean_before = np.array(first_rows.mean(axis=0))
 std_before = np.array(first_rows.std(axis=0))
 
@@ -543,13 +540,12 @@ std_before = np.array(first_rows.std(axis=0))
 scaler = preprocessing.StandardScaler().fit(first_rows)
 scaled_data = scaler.transform(first_rows)
 
-# Calculate mean and standard deviation after scaling
 mean_after = scaled_data.mean(axis=0)
 std_after = scaled_data.std(axis=0)
 
 # Create DataFrame to store results
 result_df = pd.DataFrame({
-    "Variable": df2.columns,
+    "Variable": df_exo3.columns,
     "Mean before Scaling": mean_before,
     "Std before Scaling": std_before,
     "Mean after Scaling": mean_after,
@@ -570,40 +566,46 @@ from great_tables import *
 
 On voit très clairement dans ce tableau que la standardisation a bien fonctionné. 
 
-Maintenant, si on construit un _transformer_ formel pour nos variables
+Maintenant, si on construit un _transformer_ formel pour nos variables (question 3)
 
 ```{python}
 # 3. Appliquer le scaler à toutes les autres lignes
-standarisation = scaler.fit(df2.head(1000))
+standarisation = scaler.fit(df_exo3.head(1000))
 standarisation
 ```
 
-On peut extrapoler notre standardiseur à un ensemble plus large de données. Si on regarde la distribution obtenue sur les 1000 premières lignes, on retrouve une échelle cohérente avec une loi $\mathcal{N(0,1)}$
+
+On peut extrapoler notre standardiseur à un ensemble plus large de données. Si on regarde la distribution obtenue sur les 1000 premières lignes (question 3), on retrouve une échelle cohérente avec une loi $\mathcal{N(0,1)}$ pour la variable de chômage:
 
 ```{python}
-X1 = pd.DataFrame(scaler.fit_transform(df2[1000:]))
-X1.columns = df2.columns
+#| fig-cap: "Taux de chômage standardisé sur des observations qui ont servi à l'entraînement"
+#| label: "fig-exo3-q3"
+X1 = pd.DataFrame(scaler.fit_transform(df_exo3[1000:]))
+X1.columns = df_exo3.columns
 
-X2 = pd.DataFrame(scaler.transform(df2[:1000]))
-X2.columns = df2.columns
+X2 = pd.DataFrame(scaler.transform(df_exo3[:1000]))
+X2.columns = df_exo3.columns
 
 (
   ggplot(X1, aes(x = "Unemployment_rate_2019")) +
   geom_histogram() +
-  labs(x = "Unemployment rate (standardized), 1000 first rows")
+  labs(x = "Unemployment rate (standardized using first 1000 rows)")
 )
 ```
 
-En revanche on voit que cette distribution ne correspond pas à celle qui permettrait de normaliser vraiment le reste des données. C'est un problème classique en _machine learning_, le _data drift_ lorsqu'on essaie d'extrapoler à des données dont la distribution ne correspond plus à celle des données d'apprentissage, typiquement des données non stationnaires en série temporelle. 
-
+En revanche on voit que cette distribution ne correspond pas à celle qui permettrait de normaliser vraiment le reste des données. 
 ```{python}
+#| fig-cap: "Taux de chômage standardisé sur des observations qui n'ont pas servi à l'entraînement"
+#| label: "fig-exo3-q3bis"
 (
   ggplot(X2, aes(x = "Unemployment_rate_2019")) +
   geom_histogram() +
-  labs(x = "Unemployment rate (standardized), other rows")
+  labs(x = "Unemployment rate (standardized using other rows)")
 )
-
 ```
+
+C'est une illustration d'un problème classique en _machine learning_, le _data drift_, qui arrive lorsqu'on essaie d'extrapoler à des données dont la distribution ne correspond plus à celle des données d'apprentissage. Ce type de situation arrive typiquement lorsqu'on a entraîné un algorithme sur un échantillon biaisé de la population ou lorsqu'on a des séries temporelles non stationnaires. Il est donc important de bien réfléchir à la constitution de l'échantillon d'apprentissage et aux possibilités d'extrapolation sur une population plus large : la validité externe du modèle - préparation des données ou algorithme d'apprentissage - peut être nulle si cette étape a été réalisée de manière hative. 
+
 
 ::: {.important}
 Le data drift désigne un changement dans la distribution des données au fil du temps, entraînant une dégradation des performances d’un modèle de _machine learning_ qui, par construction, a été entraîné sur des données passées. 
@@ -613,33 +615,36 @@ Ce phénomène peut survenir à cause de variations dans la population cible, de
 Il est crucial de détecter le data drift pour ajuster ou réentraîner le modèle, afin de maintenir sa pertinence et sa précision. Les techniques de détection incluent des tests statistiques et le suivi de métriques spécifiques.
 :::
 
-## Normalisation
+### Normalisation
 
 La **normalisation** est l'action de transformer les données de manière
 à obtenir une norme ($\mathcal{l}_1$ ou $\mathcal{l}_2$) unitaire.
 Autrement dit, avec la norme adéquate, la somme des éléments est égale à 1.
-Par défaut, la norme est dans $\mathcal{l}_2$.
+Par défaut, la norme utilisée par `Scikit` est une norme  $\mathcal{l}_2$.
 Cette transformation est particulièrement utilisée en classification de texte ou pour effectuer du *clustering*.
 
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 4 : Normalisation</h3>
-```
+::: {.exercise}
+## Exercice 4 : Normalisation
 
+1. A l'aide de la fonction [`train_test_split`](https://scikit-learn.org/dev/modules/generated/sklearn.model_selection.train_test_split.html) de `Scikit`
 1. Normaliser la variable `Median_Household_Income_2019` (ne pas écraser les valeurs !) et regarder l'histogramme avant/après normalisation.
 2. Vérifier que la norme $\mathcal{l}_2$ est bien égale à 1.
 
-```{=html}
-</div>
-```
 :::
+
+
+```{python}
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    df2.drop(columns = "winner"), df2['winner'], test_size=0.3)
+```
 
 ```{python}
 #| eval: false
 # 1. Normalisation de Median_Household_Income_2019 et histogrammes
-scaler = preprocessing.Normalizer().fit(df2.head(1000))
-X1 = scaler.transform(df2.dropna(how = "any").head(1000))
+scaler = preprocessing.Normalizer().fit(df2)
+X1 = scaler.transform(df2.dropna(how = "any"))
 
 f, axes = plt.subplots(2, figsize=(10, 10))
 sns.histplot(df2["Median_Household_Income_2019"] , color="skyblue", ax=axes[0])
@@ -780,15 +785,6 @@ onehot_enc = preprocessing.OneHotEncoder().fit(df)
 onehot_enc.transform(df)
 ```
 
-# Pour aller plus loin : un exemple pratique
-
-Pour faire vos premiers pas en modélisation, notamment sur le preprocessing de données, vous pouvez également consulter le sujet 3 d'un hackathon organisé par l'Insee en 2023, *Explorer les habitudes alimentaires de nos compatriotes*, sur le [SSP Cloud](https://www.sspcloud.fr/formation?search=funath&path=%5B%22Funathon%202023%22%5D) ou sur [Github](https://github.com/InseeFrLab/funathon2023_sujet3/).
-
-Le but du sujet est de travailler sur les données de consommations et habitudes alimentaires de l'étude INCA 3. Vous y travaillerez plusieurs thèmes :
-
-- Analyse exploratoire de données et visualisations
-- Clustering d'individus : du preprocessing jusqu'aux méthodes classiques d'apprentissage non supervisé (ACP, K-moyennes, Clustering Ascendant Hiérarchique)
-- Prédiction de l'IMC : Premiers pas vers les méthodes d'apprentissage supervisé et les _preprocessings_ associés
 
 # Références
 
