@@ -8,6 +8,7 @@ import requests
 import zipfile
 import io
 import os
+from pathlib import Path
 import pandas as pd
 import geopandas as gpd
 
@@ -23,7 +24,7 @@ list_useful_columns = [
 # GENERIC FUNCTION TO RETRIEVE DATA -------------------------
 
 
-def download_unzip_and_read(url, extract_to='.'):
+def download_unzip_and_read(url, extract_to='.', list_useful_columns=list_useful_columns):
     """
     Downloads a zip file from the specified URL, extracts its contents, and reads the CSV file based on the filename pattern in the URL.
     
@@ -48,37 +49,47 @@ def download_unzip_and_read(url, extract_to='.'):
             # Extract all the contents to the specified directory
             z.extractall(path=extract_to)
             print(f"Extracted all files to {os.path.abspath(extract_to)}")
+
+        dir_extract_to = Path(extract_to)
+        #dir_extract_to = Path(f"./{file_pattern}/")
+    
+        # Look for the file matching the pattern
+        csv_filename = [
+            f.name for f in dir_extract_to.iterdir() if f.suffix == '.csv'
+        ]
             
-            # Look for the file matching the pattern
-            extracted_files = os.listdir(extract_to)
-            csv_filename = [f for f in extracted_files if file_pattern in f and f.endswith('.csv')]
+        if not csv_filename:
+            print(f"No file matching pattern '{file_pattern}' found.")
+            return None
             
-            if not csv_filename:
-                print(f"No file matching pattern '{file_pattern}' found.")
-                return None
+        # Read the first matching CSV file into a pandas DataFrame
+        csv_path = os.path.join(dir_extract_to.name, csv_filename[0])
+        print(f"Reading file: {csv_path}")
+        df = pd.read_csv(csv_path, sep=";")
             
-            # Read the first matching CSV file into a pandas DataFrame
-            csv_path = os.path.join(extract_to, csv_filename[0])
-            print(f"Reading file: {csv_path}")
-            df = pd.read_csv(csv_path, sep=";")
-            
-            # CONVERT TO GEOPANDAS
-            df[['latitude', 'longitude']] = df['Coordonnées géographiques'].str.split(',', expand=True)
-            df['latitude'] = pd.to_numeric(df['latitude'])
-            df['longitude'] = pd.to_numeric(df['longitude'])
-            gdf = gpd.GeoDataFrame(
-                df, geometry=gpd.points_from_xy(df.longitude, df.latitude)
-            )
-            # CONVERT TO TIMESTAMP     
-            df["Date et heure de comptage"] = pd.to_datetime(
-                df["Date et heure de comptage"],
-                format="%Y-%m-%dT%H:%M:%S",
-                errors="coerce"
-            )            
-            gdf = df.loc[
-                :, list_useful_columns
-            ]
-            return gdf
+        # CONVERT TO GEOPANDAS
+        df[['latitude', 'longitude']] = df['Coordonnées géographiques'].str.split(',', expand=True)
+        df['latitude'] = pd.to_numeric(df['latitude'])
+        df['longitude'] = pd.to_numeric(df['longitude'])
+        gdf = gpd.GeoDataFrame(
+            df, geometry=gpd.points_from_xy(df.longitude, df.latitude)
+        )
+        
+        # CONVERT TO TIMESTAMP
+        df["Date et heure de comptage"] = (
+            df["Date et heure de comptage"]
+            .astype(str)
+            .str.replace(r'\+.*', '', regex=True)      
+        )
+        df["Date et heure de comptage"] = pd.to_datetime(
+            df["Date et heure de comptage"],
+            format="%Y-%m-%dT%H:%M:%S",
+            errors="coerce"
+        )            
+        gdf = df.loc[
+            :, list_useful_columns
+        ]
+        return gdf
     
     except requests.exceptions.RequestException as e:
         print(f"Error: The downloaded file has not been found: {e}")
@@ -182,6 +193,13 @@ df.head(3)
 
 
 # PUT THEM TOGETHER ----------------------------
+
+historical_bike_data['date'] = (
+    historical_bike_data['date']
+    .dt.tz_localize(None)
+)
+
+df["date"] = df["date"].dt.tz_localize(None)
 
 historical_bike_data = (
     historical_bike_data

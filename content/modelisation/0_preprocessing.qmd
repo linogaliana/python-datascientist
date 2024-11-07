@@ -354,14 +354,13 @@ fig = plt.figure()
 cmap = sns.diverging_palette(220, 10, as_cmap=True)
 
 # Draw the heatmap with the mask and correct aspect ratio
-# More details at https://seaborn.pydata.org/generated/seaborn.heatmap.html
 sns.heatmap(
-    corr,          # The data to plot
-    mask=mask,     # Mask some cells
-    cmap=cmap,     # What colors to plot the heatmap as
-    annot=True,    # Should the values be plotted in the cells?
-    vmax=.3,       # The maximum value of the legend. All higher vals will be same color
-    vmin=-.3,      # The minimum value of the legend. All lower vals will be same color
+    corr,
+    mask=mask,     # Mask upper triangular matrix
+    cmap=cmap,
+    annot=True
+    vmax=.3,
+    vmin=-.3,
     center=0,      # The center value of the legend. With divergent cmap, where white is
     square=True,   # Force cells to be square
     linewidths=.5, # Width of lines that divide cells
@@ -608,12 +607,15 @@ C'est une illustration d'un problème classique en _machine learning_, le _data 
 
 
 ::: {.important}
-Le data drift désigne un changement dans la distribution des données au fil du temps, entraînant une dégradation des performances d’un modèle de _machine learning_ qui, par construction, a été entraîné sur des données passées. 
+## Le _data drift_
+
+Le _data drift_ désigne un changement dans la distribution des données au fil du temps, entraînant une dégradation des performances d’un modèle de _machine learning_ qui, par construction, a été entraîné sur des données passées. 
 
 Ce phénomène peut survenir à cause de variations dans la population cible, de changements dans les caractéristiques des données ou de facteurs externes. 
 
-Il est crucial de détecter le data drift pour ajuster ou réentraîner le modèle, afin de maintenir sa pertinence et sa précision. Les techniques de détection incluent des tests statistiques et le suivi de métriques spécifiques.
+Il est crucial de détecter le _data drift_ pour ajuster ou réentraîner le modèle, afin de maintenir sa pertinence et sa précision. Les techniques de détection incluent des tests statistiques et le suivi de métriques spécifiques.
 :::
+
 
 ### Normalisation
 
@@ -631,7 +633,7 @@ Au passage, ceci est l'occasion de découvrir comment découper ses données en 
 
 1. A l'aide de la documentation de la fonction [`train_test_split`](https://scikit-learn.org/dev/modules/generated/sklearn.model_selection.train_test_split.html) de `Scikit`, créer deux échantillons (respectivement 70% et 30% des données).
 1. Normaliser la variable `Median_Household_Income_2019` (ne pas écraser les valeurs !) et regarder l'histogramme avant/après normalisation.
-2. Vérifier que la norme $\mathcal{l}_2$ est bien égale à 1 (grâce à la fonction `np.linalg.norm` et l'argument `axis=1` pour les 10 premières observations, sur l'ensemble d'entraînement puis sur les autres observations.
+3. Vérifier que la norme $\mathcal{l}_2$ est bien égale à 1 (grâce à la fonction `np.linalg.norm` et l'argument `axis=1` pour les 10 premières observations, sur l'ensemble d'entraînement puis sur les autres observations.
 
 :::
 
@@ -676,27 +678,22 @@ p3 = (
 ```
 
 
-::: {layout: [[-25, 50, -25], [45,-10, 45]] #fig-normalisation}
-
 ```{python}
-#| fig-cap: "Avant normalisation"
+#| fig-cap: "Question 2, avant normalisation"
 p1
 ```
 
 ```{python}
-#| fig-cap: "Variable transformée, sur l'échantillon de normalisation"
+#| fig-cap: "Question 2, variable transformée, sur l'échantillon de normalisation"
 p2
 ```
 
 ```{python}
-#| fig-cap: "Variable transformée, à partir des paramètres entraînés"
+#| fig-cap: "Question 2, variable transformée, à partir des paramètres entraînés"
 p3
 ```
 
-Comparaison de la normalisation sur plusieurs échantillons
-
-:::
-
+Enfin, si on calcule la norme, on obtient bien le résultat attendu à la fois sur l'échantillon _train_ et sur l'échantillon extrapolé.
 
 ```{python}
 # 3. Vérification de la norme L2
@@ -708,24 +705,19 @@ pd.DataFrame(
 ).head(5)
 ```
 
-```{python}
-df2.drop(columns = "winner").pow(2).sum(axis = 1).pow(1/2).round()
-X1.pow(2).sum().pow(1/2).round()
-X2.pow(2).sum().pow(1/2).round()
-```
 
 
 ## Encodage des valeurs catégorielles
 
-Les données catégorielles doivent être recodées
-sous forme de valeurs numériques pour être intégrés aux modèles de *machine learning*.
-Cela peut être fait de plusieurs manières :
+Les données catégorielles doivent être recodées sous forme de valeurs numériques pour être intégrés aux modèles de *machine learning*.
 
-* `LabelEncoder`: transforme un vecteur `["a","b","c"]` en vecteur numérique `[0,1,2]`.
-Cette approche a l'inconvénient d'introduire un ordre dans les modalités, ce qui n'est pas toujours souhaitable
+Cela peut être fait de plusieurs manières avec `Scikit` :
 
+* `LabelEncoder`: transforme un vecteur `["a","b","c"]` en vecteur numérique `[0,1,2]`. Cette approche a l'inconvénient d'introduire un ordre dans les modalités, ce qui n'est pas toujours souhaitable.
 * `OrdinalEncoder`: une version généralisée du `LabelEncoder` qui a vocation à s'appliquer sur des matrices ($X$),
-alors que `LabelEncoder` s'applique plutôt à un vecteur ($y$)
+alors que `LabelEncoder` s'applique plutôt à un vecteur ($y$).
+
+En ce qui concerne le _one hot encoding_, il est possible d'utiliser plusieurs méthodes :
 
 * `pandas.get_dummies` effectue une opération de *dummy expansion*.
 Un vecteur de taille *n* avec *K* catégories sera transformé en matrice de taille $n \times K$
@@ -734,30 +726,27 @@ Il y a ici $K$ modalités et il y a donc multicolinéarité.
 Avec une régression linéaire avec constante,
 il convient de retirer une modalité avant l'estimation.
 
-* `OneHotEncoder` est une version généralisée (et optimisée) de la *dummy expansion*.
-Il a plutôt vocation à s'appliquer sur les *features* ($X$) du modèle
+* `OneHotEncoder` est une version généralisée (et optimisée) de la *dummy expansion*. C'est la méthode recommandée.
+
 
 ## Imputation
 
-Les données peuvent souvent contenir des valeurs manquantes, autrement dit des cases de notre _DataFrame_ contenant un `NaN`.
-Ces trous dans les données peuvent être à l'origine de _bugs_ ou de mauvaises interprétations lorsque l'on passe à la modélisation.
-Pour y remédier, une première approche peut être de retirer toutes les observations présentant un `NaN` dans au moins l'une des colonnes.
+Les données peuvent souvent contenir des valeurs manquantes, autrement dit des observations de notre _DataFrame_ contenant un `NaN`. Ces trous dans les données peuvent être à l'origine de _bugs_ ou de mauvaises interprétations lorsque l'on passe à la modélisation.
+Pour y remédier, une première approche peut être de retirer toutes les observations présentant un `NaN` dans au moins une des ses colonnes.
 Cependant, si notre table contient beaucoup de `NaN`, ou bien que ces derniers sont répartis sur de nombreuses colonnes,
 c'est aussi prendre le risque de retirer un nombre important de lignes, et avec cela de l'information importante pour un modèle car les valeurs manquantes sont rarement [réparties de manière aléatoire](https://stefvanbuuren.name/fimd/sec-MCAR.html).
 
-Même si dans plusieurs situations, cette solution reste tout à fait viable, il existe une autre approche plus robuste appelée *imputation*.
-Cette méthode consiste à remplacer les valeurs vides par une valeur donnée. Par exemple :
+Même si dans plusieurs situations, cette solution reste tout à fait viable, il existe une autre approche plus robuste appelée *imputation*. Cette méthode consiste à remplacer les valeurs manquantes par une valeur donnée. Par exemple :
 
 - Imputation par la moyenne : remplacer tous les `NaN` dans une colonne par la valeur moyenne de la colonne ;
 - Imputation par la médiane sur le même principe, ou par la valeur de la colonne la plus fréquente pour les variables catégorielles ;
 - Imputation par régression : se servir d'autres variables pour essayer d'interpoler une valeur de remplacement adaptée.
 
-Des méthodes plus complexes existent, mais dans de nombreux cas,
-les approches ci-dessus peuvent suffire pour donner des résultats beaucoup plus satisfaisants.
+Des méthodes plus complexes existent mais dans de nombreux cas, les approches ci-dessus peuvent suffire pour donner des résultats beaucoup plus satisfaisants.
 Le package `Scikit` permet de faire de l'imputation de manière très simple ([documentation ici](https://scikit-learn.org/stable/modules/impute.html)).
 
-## Gestion des outliers
 
+## Gestion des valeurs aberrantes (_outliers_)
 
 Les valeurs aberrantes (_outliers_ en anglais) sont des observations qui se situent significativement à l'extérieur de la tendance générale des autres observations dans un ensemble de données. En d'autres termes, ce sont des points de données qui se démarquent de manière inhabituelle par rapport à la distribution globale des données.
 Cela peut être dû à des erreurs de remplissage, des personnes ayant mal répondu à un questionnaire, ou
@@ -768,7 +757,7 @@ ou bien des revenus de ménage dépassant les 10M d'euros par mois sur l'échell
 
 Une bonne pratique peut donc être de systématiquement regarder la distribution des variables à disposition,
 pour se rendre compte si certaines valeurs s'éloignent de façon trop importante des autres.
-Ces valeurs vont parfois nous intéresser, si par exemple on se concentre uniquement sur les très hauts revenus (top 0.1%)
+Ces valeurs vont parfois nous intéresser, si, par exemple, on se concentre uniquement sur les très hauts revenus (top 0.1%)
 en France. Cependant, ces données vont souvent nous gêner plus qu'autre chose, surtout si elles n'ont pas de sens dans le monde réel.
 
 Si l'on estime que la présence de ces données extrêmes, ou *outliers*, dans notre base de données vont être problématiques plus qu'autre chose,
@@ -779,15 +768,21 @@ puis retirer dans les deux queues de la distribution les valeurs extrêmes corre
 Plusieurs packages permettent de faire ce type d'opérations, qui sont parfois plus complexes si on s'intéresse aux outlier sur plusieurs variables.
 On pourra notamment citer la fonction `IsolationForest()` du package `sklearn.ensemble`.
 
-<br>
+## Exercice d'application
 
-Pour plus de détails sur ces deux derniers points, il est recommandé d'aller voir l'exemple *Pour aller plus loin* en bas de la page.
+::: {.caution}
+## Attention aux nouvelles modalités !
 
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-success" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-pencil"></i> Exercice 5 : Encoder des variables catégorielles</h3>
-```
+Les _transformers_ créent un _mapping_ entre des modélités textuelles et des valeurs numériques. Cela présuppose que les données sur lesquelles a été construit ce _mapping_ intègrent l'ensemble des valeurs possibles pour les modalités textuelles. 
+
+Néanmoins, si de nouvelles modalités apparaissent, le classifieur ne saura pas comment celles-ci doivent être transformées en valeurs numériques. Cela provoquera une erreur pour `Scikit`. Cette erreur technique est logique puisqu'il faudrait mettre à jour non seulement le _mapping_ mais aussi l'estimation des paramètres sous-jacents. 
+
+:::
+
+
+
+::: {.exercise}
+## Exercice 5 : Encoder des variables catégorielles
 
 1. Créer `df` qui conserve uniquement les variables `state_name` et `county_name` dans `votes`.
 2. Appliquer à `state_name` un `LabelEncoder`
@@ -801,17 +796,16 @@ Pour plus de détails sur ces deux derniers points, il est recommandé d'aller v
 
 *Note : `scikit` optimise l'objet nécessaire pour stocker le résultat d'un modèle de transformation. Par exemple, le résultat de l'encoding One Hot est un objet très volumineux. Dans ce cas, `scikit` utilise une matrice Sparse.*
 
-
-```{=html}
-</div>
-```
 :::
 
 ```{python}
 #1. Création de df
-df = votes[["state_name",'county_name']]
+df = votes.loc[
+  :,["state_name",'county_name']
+]
 ```
 
+Si on regarde les _labels_ et leurs transpositions numériques via `LabelEncoder`
 
 ```{python}
 #2. Appliquer un LabelEncoder à stat_name
@@ -825,7 +819,7 @@ np.column_stack((label_enc.transform(df['state_name']),df['state_name']))
 pd.get_dummies(df['state_name'])
 ```
 
-
+Si on regarde l'`OrdinalEncoder`:
 
 ```{python}
 # 4. OrdinalEncoder
