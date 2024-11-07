@@ -623,12 +623,15 @@ Autrement dit, avec la norme adéquate, la somme des éléments est égale à 1.
 Par défaut, la norme utilisée par `Scikit` est une norme  $\mathcal{l}_2$.
 Cette transformation est particulièrement utilisée en classification de texte ou pour effectuer du *clustering*.
 
+Au passage, ceci est l'occasion de découvrir comment découper ses données en plusieurs échantillons grâce à la fonction [`train_test_split`](https://scikit-learn.org/dev/modules/generated/sklearn.model_selection.train_test_split.html) de `Scikit`. Nous allons faire un échantillon de 70% des données pour estimer les paramètres de normalisation (phase d'apprentissage) et extrapoler aux 30% de données restantes. Cette répartition est assez classique mais est bien-sûr adaptable selon les projets. L'avantage d'utiliser [`train_test_split`](https://scikit-learn.org/dev/modules/generated/sklearn.model_selection.train_test_split.html) plutôt que de faire soi-même les échantillonnages avec la méthode `sample` de `Pandas` est que la fonction de `Scikit` permettra d'aller beaucoup plus loin dans le paramétrage de l'échantillonnage, notamment si on désire de la stratification, tout en étant fiable. Faire ceci de manière manuelle est fastidieux et risqué car potentiellement complexe à mettre en oeuvre sans erreur. 
+
+
 ::: {.exercise}
 ## Exercice 4 : Normalisation
 
-1. A l'aide de la fonction [`train_test_split`](https://scikit-learn.org/dev/modules/generated/sklearn.model_selection.train_test_split.html) de `Scikit`
+1. A l'aide de la documentation de la fonction [`train_test_split`](https://scikit-learn.org/dev/modules/generated/sklearn.model_selection.train_test_split.html) de `Scikit`, créer deux échantillons (respectivement 70% et 30% des données).
 1. Normaliser la variable `Median_Household_Income_2019` (ne pas écraser les valeurs !) et regarder l'histogramme avant/après normalisation.
-2. Vérifier que la norme $\mathcal{l}_2$ est bien égale à 1.
+2. Vérifier que la norme $\mathcal{l}_2$ est bien égale à 1 (grâce à la fonction `np.linalg.norm` et l'argument `axis=1` pour les 10 premières observations, sur l'ensemble d'entraînement puis sur les autres observations.
 
 :::
 
@@ -642,21 +645,74 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 ```{python}
 #| eval: false
-# 1. Normalisation de Median_Household_Income_2019 et histogrammes
-scaler = preprocessing.Normalizer().fit(df2)
-X1 = scaler.transform(df2.dropna(how = "any"))
-
-f, axes = plt.subplots(2, figsize=(10, 10))
-sns.histplot(df2["Median_Household_Income_2019"] , color="skyblue", ax=axes[0])
-sns.histplot(X1[:,col_pos] , color="olive", ax=axes[1])
+# 1. Normalisation des variables et vérification sur Median_Household_Income_2019
+scaler = preprocessing.Normalizer().fit(X_train)
+X1 = pd.DataFrame(
+  scaler.transform(X_train),
+  columns = X_train.columns
+)
+X2 = pd.DataFrame(
+  scaler.transform(X_test),
+  columns = X_test.columns
+)
 ```
 
 ```{python}
-#| eval: false
-# 2. Vérification de la norme L2
-np.sqrt(np.sum(X1**2, axis=1))[:10] # L2-norm
+p1 = (
+  ggplot(X_train, aes(x = "Median_Household_Income_2019")) +
+  geom_histogram() +
+  labs(x = "2019 Median household income ($)")
+)
+p2 = (
+  ggplot(X1, aes(x = "Median_Household_Income_2019")) +
+  geom_histogram() +
+  labs(x = "2019 Median household income (normalized, training sample)")
+)
+p3 = (
+  ggplot(X2, aes(x = "Median_Household_Income_2019")) +
+  geom_histogram() +
+  labs(x = "2019 Median household income (normalized, extrapolated sample)")
+)
 ```
 
+
+::: {layout: [[-25, 50, -25], [45,-10, 45]] #fig-normalisation}
+
+```{python}
+#| fig-cap: "Avant normalisation"
+p1
+```
+
+```{python}
+#| fig-cap: "Variable transformée, sur l'échantillon de normalisation"
+p2
+```
+
+```{python}
+#| fig-cap: "Variable transformée, à partir des paramètres entraînés"
+p3
+```
+
+Comparaison de la normalisation sur plusieurs échantillons
+
+:::
+
+
+```{python}
+# 3. Vérification de la norme L2
+pd.DataFrame(
+  {
+    "X_train_norm2": np.linalg.norm(X1.head(10), axis=1),
+    "X_test_norm2": np.linalg.norm(X2.head(10), axis=1)
+  }
+).head(5)
+```
+
+```{python}
+df2.drop(columns = "winner").pow(2).sum(axis = 1).pow(1/2).round()
+X1.pow(2).sum().pow(1/2).round()
+X2.pow(2).sum().pow(1/2).round()
+```
 
 
 ## Encodage des valeurs catégorielles
