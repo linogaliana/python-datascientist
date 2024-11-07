@@ -1,0 +1,224 @@
+:::: {.content-visible when-profile="fr"}
+
+::: {.exercise}
+## Exercice 3: Standardisation
+
+1. Standardiser la variable `Median_Household_Income_2019` (ne pas écraser les valeurs !) et regarder l'histogramme avant/après normalisation. Cette transformation est à appliquer à toute la colonne ; les prochaines questions se préoccuperont du sujet de découpage d'échantillon et d'extrapolation. 
+
+*Note : On obtient bien une distribution centrée à zéro et on pourrait vérifier que la variance empirique soit bien égale à 1. On pourrait aussi vérifier que ceci est vrai également quand on transforme plusieurs colonnes à la fois.*
+
+2. Créer `scaler`, un `Transformer` que vous construisez sur les 1000 premières lignes de votre DataFrame `df2`  à  l'exception de la variable à expliquer `winner`. Vérifier la moyenne et l'écart-type de chaque colonne sur ces mêmes observations.
+
+*Note : Les paramètres qui seront utilisés pour une standardisation ultérieure sont stockés dans les attributs `.mean_` et `.scale_`*
+
+On peut voir ces attributs comme des paramètres entraînés sur un certain jeu de
+données et qu'on peut réutiliser sur un autre, à condition que les
+dimensions coïncident.
+
+3. Appliquer `scaler` sur les autres lignes du DataFrame et comparer les distributions obtenues de la variable `Median_Household_Income_2019`.
+
+*Note : Une fois appliqués à un autre `DataFrame`, on peut remarquer que la distribution n'est pas exactement centrée-réduite dans le `DataFrame` sur lequel les paramètres n'ont pas été estimés. C'est normal, l'échantillon initial n'était pas aléatoire, les moyennes et variances de cet échantillon n'ont pas de raison de coïncider avec les moments de l'échantillon complet.*
+
+:::
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.exercise}
+## Exercise 3: Standardization
+
+1. Standardize the `Median_Household_Income_2019` variable (do not overwrite the values!) and examine the histogram before and after normalization. This transformation should be applied to the entire column; the next questions will address sample splitting and extrapolation.
+
+*Note: This should yield a distribution centered at zero, and we could verify that the empirical variance is indeed 1. We could also check that this is true when transforming multiple columns at once.*
+
+2. Create `scaler`, a `Transformer` built on the first 1000 rows of your `df2` DataFrame, excluding the target variable `winner`. Check the mean and standard deviation of each column for these same observations.
+
+*Note: The parameters used for subsequent standardization are stored in the `.mean_` and `.scale_` attributes.*
+
+These attributes can be seen as parameters trained on a specific dataset that can be reused on another, as long as the dimensions match.
+
+3. Apply `scaler` to the remaining rows of the DataFrame and compare the distributions obtained for the `Median_Household_Income_2019` variable.
+
+*Note: Once applied to another `DataFrame`, you may notice that the distribution is not exactly standardized in the DataFrame on which the parameters were not estimated. This is normal; the initial sample was not random, so the means and variances of this sample do not necessarily match those of the complete sample.*
+
+:::
+
+::::
+
+
+
+::: {.content-visible when-profile="fr"}
+Avant standardisation, notre variable a cette distribution:
+:::
+::: {.content-visible when-profile="en"}
+
+Before standardization, our variable has this distribution:
+:::
+
+
+```{python}
+(
+  ggplot(df2, aes(x = "Median_Household_Income_2019")) +
+  geom_histogram() +
+  labs(
+    x = "2019 Median household income (standardized)",
+    y = "Density (number observations)"
+    )
+)
+```
+
+::: {.content-visible when-profile="fr"}
+Après standardisation, l'échelle de la variable a changé. 
+:::
+::: {.content-visible when-profile="en"}
+
+After standardization, the scale of the variable has changed.
+:::
+
+```{python}
+# 1. Standardisation de Median_Household_Income_2019 et histogramme
+import matplotlib.pyplot as plt
+from sklearn import preprocessing
+
+df2['y_standard'] = preprocessing.scale(
+  df2['Median_Household_Income_2019']
+)
+
+(
+  ggplot(df2, aes(x = "y_standard")) +
+  geom_histogram() +
+  labs(
+    x = "2019 Median household income (standardized)",
+    y = "Density (number observations)"
+    )
+)
+```
+
+::: {.content-visible when-profile="fr"}
+On obtient bien une moyenne égale à 0 et une variance égale à 1, aux approximations numériques prêt :
+:::
+::: {.content-visible when-profile="en"}
+
+We indeed obtain a mean equal to 0 and a variance equal to 1, within numerical approximations:
+:::
+
+
+```{python}
+pd.DataFrame(
+  {
+    "Statistique": ["Mean", "Variance"],
+    "Valeur": [df2['y_standard'].mean().round(), df2['y_standard'].var()]
+  }
+)
+```
+
+::: {.content-visible when-profile="fr"}
+À la question 2, si on essaie de représenter les statistiques obtenues dans un tableau lisible, on obtient
+:::
+::: {.content-visible when-profile="en"}
+
+For question 2, if we attempt to present the obtained statistics in a readable table, we get
+:::
+
+
+```{python}
+# 2. Créer un scaler
+
+df_exo3 = df2.drop("winner", axis=1)
+
+first_rows = df_exo3.head(1000)
+
+mean_before = np.array(first_rows.mean(axis=0))
+std_before = np.array(first_rows.std(axis=0))
+
+# Initialize and apply the scaler
+scaler = preprocessing.StandardScaler().fit(first_rows)
+scaled_data = scaler.transform(first_rows)
+
+mean_after = scaled_data.mean(axis=0)
+std_after = scaled_data.std(axis=0)
+
+# Create DataFrame to store results
+result_df = pd.DataFrame({
+    "Variable": df_exo3.columns,
+    "Mean before Scaling": mean_before,
+    "Std before Scaling": std_before,
+    "Mean after Scaling": mean_after,
+    "Std after Scaling": std_after
+})
+```
+
+```{python}
+from great_tables import *
+(
+  GT(result_df)
+  .fmt_nanoplot("Mean before Scaling", options = {"interactive_data_values": False})
+  .fmt_nanoplot("Std before Scaling")
+  .fmt_nanoplot("Mean after Scaling")
+  .fmt_nanoplot("Std after Scaling")
+)
+```
+
+::: {.content-visible when-profile="fr"}
+On voit très clairement dans ce tableau que la standardisation a bien fonctionné. 
+
+Maintenant, si on construit un _transformer_ formel pour nos variables (question 3)
+:::
+
+::: {.content-visible when-profile="en"}
+It is very clear from this table that the standardization worked well.
+
+Now, if we create a formal transformer for our variables (question 3)
+:::
+
+
+```{python}
+# 3. Appliquer le scaler à toutes les autres lignes
+standarisation = scaler.fit(df_exo3.head(1000))
+standarisation
+```
+
+
+::: {.content-visible when-profile="fr"}
+On peut extrapoler notre standardiseur à un ensemble plus large de données. Si on regarde la distribution obtenue sur les 1000 premières lignes (question 3), on retrouve une échelle cohérente avec une loi $\mathcal{N(0,1)}$ pour la variable de chômage:
+:::
+::: {.content-visible when-profile="en"}
+
+We can extrapolate our standardizer to a larger dataset. If we look at the distribution obtained on the first 1000 rows (question 3), we find a scale consistent with a $\mathcal{N(0,1)}$ distribution for the unemployment variable:
+:::
+
+
+```{python}
+#| fig-cap: "Taux de chômage standardisé sur des observations qui ont servi à l'entraînement"
+#| label: "fig-exo3-q3"
+X1 = pd.DataFrame(scaler.fit_transform(df_exo3[1000:]))
+X1.columns = df_exo3.columns
+
+X2 = pd.DataFrame(scaler.transform(df_exo3[:1000]))
+X2.columns = df_exo3.columns
+
+(
+  ggplot(X1, aes(x = "Unemployment_rate_2019")) +
+  geom_histogram() +
+  labs(x = "Unemployment rate (standardized using first 1000 rows)")
+)
+```
+
+::: {.content-visible when-profile="fr"}
+En revanche on voit que cette distribution ne correspond pas à celle qui permettrait de normaliser vraiment le reste des données. 
+:::
+::: {.content-visible when-profile="en"}
+
+However, we see that this distribution does not correspond to the one that would truly normalize the rest of the data.
+:::
+
+
+```{python}
+#| fig-cap: "Taux de chômage standardisé sur des observations qui n'ont pas servi à l'entraînement"
+#| label: "fig-exo3-q3bis"
+(
+  ggplot(X2, aes(x = "Unemployment_rate_2019")) +
+  geom_histogram() +
+  labs(x = "Unemployment rate (standardized using other rows)")
+)
+```
