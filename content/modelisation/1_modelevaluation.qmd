@@ -1,5 +1,6 @@
 ---
 title: "Evaluer la qualité d'un modèle"
+title-en: "Evaluating model quality"
 tags:
   - scikit
   - machine learning
@@ -11,41 +12,139 @@ categories:
   - Modélisation
   - Exercice
 description: |
-  Faire preuve de méthode pour évaluer la qualité d'un modèle permet de proposer des prédictions plus robustes, ayant de meilleures performances sur un nouveau jeu de données (prédictions _out-of-sample_). Décomposer l'échantillon initial en sous-échantillons d'entraînement
-  et de tests, faire de la validation croisée, utiliser les bonnes mesures de performances 
-  peut se faire, grâce à scikit, de manière relativement standardisée.
-  Cette démarche scientifique est essentielle pour assurer la confiance
-  dans la qualité d'un modèle, ce qu'a illustré récemment
-  un [cycle de séminaire de Princeton](https://reproducible.cs.princeton.edu/).
+  La raison d'être du _machine learning_ est de chercher à créer des règles de décision qui ont de bonnes performances prédictives sur un nouvel échantillon. Pour éviter le surapprentissage, c'est-à-dire pour avoir un modèle ayant une bonne validité externe, outre la préparation des données vue dans le chapitre précédent, il sera nécessaire d'évaluer les modèles. Ce chapitre se plonge sur le sujet de l'évaluation des modèles et des enjeux de ceci. Cela permettra d'évoquer les enjeux de l'évaluation dans un cadre d'apprentissage supervisé comme non supervisé, de présenter la méthode de la validation croisée mais aussi d'ouvrir à des concepts comme le _data drift_ ou l'évaluation des modèles type LLM à l'état de l'art.
+description-en: |
+  The purpose of machine learning is to create decision rules with good predictive performance on a new sample. To avoid overlearning, i.e. to have a model with good external validity, in addition to the data preparation seen in the previous chapter, it will be necessary to evaluate the models. This chapter delves into the subject of model evaluation and the issues involved. It will discuss the challenges of evaluation in both supervised and unsupervised learning environments, introduce the cross-validation method and open up to concepts such as _data drift_ and state-of-the-art LLM-type model evaluation.
 image: https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Overfitting.svg/300px-Overfitting.svg.png
 ---
 
-::: {.content-visible when-format="html"}
-{{< include "../../build/_printBadges.qmd" >}}
-:::
+{{< badges
+    printMessage="true"
+>}}
+
+Le _machine learning_ a l'ambition de proposer des méthodes prédictives simples à mettre en oeuvre sur le plan opérationnel. Cette promesse séduit forcément des acteurs ayant un volume de données conséquent et désirant utiliser celles-ci pour anticiper le comportement de clients ou d'utilisateurs de services. Nous avons vu lors du chapitre précédent la manière de structurer un problème en échantillons d'apprentissage et de validation (@fig-ml-pipeline) mais sans en expliquer la raison d'être.
+
+![Illustraton de la méthodologie du _machine learning_](/content/modelisation/img/pipeline1.png){#fig-ml-pipeline}
+
+# Une méthodologie pour éviter le sur-apprentissage
+
+Puisque l'objectif du _machine learning_ est de mettre en oeuvre un modèle sur une population cible qui n'est pas celle sur laquelle le modèle a appris - par exemple un modèle de _scoring_ ne sert pas à changer les prêts des clients existants mais à prendre une décision pour de nouveaux clients - il est logique de privilégier la validité externe d'un modèle. Pour que les anticipations de performance d'un modèle soient réalistes, il est donc nécessaire d'évaluer les modèles dans un cadre similaire à celui dans lequel il sera mis en oeuvre ultérieurement. Autrement dit, une évaluation honnête d'un modèle se doit d'être une évaluation de la validité externe d'un modèle, c'est-à-dire de la capacité à être bon sur une population qu'il n'a pas rencontré lors de son entraînement. 
+
+Pourquoi s'embarasser de cette considération ? Parce que construire un modèle sur un échantillon et l'évaluer sur celui-ci amène à une validité interne forte, au détriment de la validité externe. Autrement dit, si vous avez un contrôle sur les questions de cours, et strictement sur celles-ci, la meilleure stratégie à mettre en oeuvre est d'apprendre par coeur votre cours et le restituer comme tel. Un test de ce type ne cherche pas à savoir si vous comprenez votre cours, seulement si vous avez appris votre cours. Il s'agit de tester la validité interne de vos connaissances. Plus les questions s'éloigneront de ce que vous avez appris par coeur, plus vous serez en difficulté. 
+
+L'idée est la même pour un algorithme: plus son apprentissage est adhérant à un échantillon initial, plus ses performances prédictives, et donc sa valeur en pratique, seront limités. C'est pour cette raison qu'on évalue la qualité d'un modèle sur un échantillon qu'il n'a pas vu dans son apprentissage: pour privilégier la validité externe à la validité interne.
+
+On parle de __sur-apprentissage__ lorsqu'un modèle a une bonne validité interne mais une mauvaise validité externe, c'est-à-dire de mauvaises qualités prédictives sur un autre échantillon que celui sur lequel il a appris. La structuration d'un problème d'apprentissage sous la forme d'échantillons _train_/_test_ est une réponse à ce défi puisqu'elle permet de sélectionner le meilleur modèle en extrapolation. Ce sujet peut apparaître trivial mais, dans les faits, de nombreux champs scientifiques empiriques n'adoptent pas cette méthodologie pour émettre des conclusions au-delà de la population sur laquelle ils ont travaillé.
+
+Par exemple, en économie, il est assez commun d'évaluer une politique publique _toutes choses égales par ailleurs_, d'en déduire un effet marginal et de préconiser des recommandations politiques au-delà de celle-ci. Cependant, il est rare que la politique suivante s'applique à la même population cible ou dans les mêmes conditions institutionnelles, de sorte qu'elle produit généralement des effets différents. Les biais d'échantillonnage, du point de vue des caractéristiques individuelles ou de la période d'étude, sont souvent relégués au second plan et l'estimation des effets marginaux se fait généralement indépendamment de toute notion de validité externe. 
+
+Pour en revenir à l'objet de ce chapitre, formellement, ce problème vient de l'__arbitrage biais-variance__ dans la qualité d'estimation[^1]. Soit $h(X,\theta)$ un modèle statistique. On 
+peut décomposer l'erreur d'estimation en deux parties :
+
+$$
+\mathbb{E}\bigg[(y - h(\theta,X))^2 \bigg] = \underbrace{ \bigg( y - \mathbb{E}(h_\theta(X)) \bigg)^2}_{\text{biais}^2} + \underbrace{\mathbb{V}\big(h(\theta,X)\big)}_{\text{variance}}
+$$
 
 
-Nous allons ici voir des méthodes générales permettant de s'assurer que le modèle
-de _Machine Learning_ mobilisé est de qualité. Ce chapitre ne présente pas
-d'exercice ou de code, il est là pour présenter certains concepts
-que nous appliquerons dans les prochains chapitres. 
+Il y a ainsi un compromis à faire entre biais et variance. Un modèle peu parcimonieux, c'est-à-dire proposant un grand nombre de paramètres, va, en général, avoir un faible biais mais une grande variance. En effet, le modèle va tendre à se souvenir d'une combinaison de paramètres à partir d'un grand nombre d'exemples sans être capable d'apprendre la règle qui permette de structurer les données. 
 
-# Découper l'échantillon
+Par exemple, la ligne verte ci-dessous est trop dépendante des données et risque de produire une erreur plus importante que la ligne noire (qui moyennise plus) sur de nouvelles données. 
 
-Le chapitre précédent présentait le _pipeline_ simple ci-dessous
-pour introduire à la notion d'entraînement d'un modèle :
 
-![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/scikit_predict.png)
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Overfitting.svg/300px-Overfitting.svg.png)
 
+La division entre échantillons d'apprentissage et de validation est une première réponse au défi du surapprentissage. Néanmoins, ce n'est pas le seul geste méthodologique pour avoir un bon modèle prédictif. 
+
+De manière générale, il sera préférable d'adopter des modèles parcimonieux, c'est-à-dire les modèles faisant le moins d'hypothèses possibles sur la structure des données tout en offrant une performance satisfaisante. Ceci est généralement vu comme une illustration du principe du [rasoir d'Ockham](https://fr.wikipedia.org/wiki/Rasoir_d'Ockham): en l'absence d'arguments théoriques, le meilleur modèle est celui qui permet d'expliquer au mieux les données avec les hypothèses les plus minimalistes. Cette approche, très opérationnelle, guidera de nombreux choix méthodologiques que nous mettrons en oeuvre
+
+# Comment évaluer un modèle ? 
+
+L'[introduction de cette partie](/content/modelisation/index.qmd) présentait les principaux concepts pour se repérer dans la terminologie du _machine learning_. Si les concepts d'apprentissage supervisé, non supervisé, classification, régression, etc. ne sont pas clairs, il est recommandé de retourner voir ce chapitre. Pour rappel, le _machine learning_ intervient dans les domaines où on ne dispose pas de modèles théoriques, en contrôlant tous les paramètres, faisant consensus et où on va chercher des règles statistiques, selon une démarche inductive. Ce n'est donc pas une approche scientifique justifiée dans tous les domaines. Par exemple, il vaut mieux privilégier le réglage des satelittes par le biais des équations de gravitation que par le biais d'un algorithme de _machine learning_ qui risque d'introduire du bruit là où ce n'est pas nécessaire.  
+
+La principale ligne de partage entre les méthodes d'évaluation sera la nature du phénomène étudié (la variable $y$). Selon qu'on dispose ou non d'une mesure directe de notre variable d'intérêt, une sorte de _gold standard_, on mettra en oeuvre des métriques prédictives directes (cas de l'apprentissage supervisé) ou des métriques de stabilité statistique (apprentissage non supervisé).
+
+Néanmoins, le succès des [modèles de fondations](https://fr.wikipedia.org/wiki/Mod%C3%A8le_de_fondation), c'est-à-dire de modèles généralistes pouvant être utilisés pour des tâches auxquels ils n'ont pas été entraînés, amène à élargir la question de l'évaluation. Il n'est pas toujours évident de pouvoir définir l'objectif précis d'un modèle généraliste ni de pouvoir évaluer de manière consensuelle sa qualité. `ChatGPT` ou `Claude` nous apparaîssent bon, mais comment peut-on avoir une idée de leur pertinence dans différents cas d'usage ? Outre le sujet des annotations, ceci amène à réfléchir, plus globalement, sur le rôle de l'humain dans l'évaluation et le contrôle de décisions prises par des algorithmes.
+
+
+## Apprentissage supervisé
+
+En apprentissage supervisé, on distingue en général les problèmes de:
+
+* Classification : la variable $y$ est discrète
+* Régression : la variable $y$ est continue
+
+Les métriques mises en oeuvre peuvent être objectives dans ces deux cas car on dispose d'une valeur réelle, une valeur cible faisant office de _gold standard_, auquel comparer la valeur prédite. 
+
+### Classification
+
+Le cas le plus simple à comprendre est celui de la classification binaire. Dans ce cas, soit on a juste, soit on se trompe, sans nuance. 
+
+La plupart des critères de performance consistent ainsi à explorer les différentes cases de la **matrice de confusion** :
+
+![Image empruntée à https://www.lebigdata.fr/confusion-matrix-definition](https://www.lebigdata.fr/wp-content/uploads/2018/12/confusion-matrix-exemple-768x432.jpg?ezimgfmt=ng:webp/ngcb1)
+
+A partir des 4 coins de cette matrice, il existe plusieurs mesure de performance:
+
+| Critère     | Mesure       |  Calcul |
+|-------------|--------------|------------------|
+| *Accuracy*  | Taux de classification correcte | Diagonale du tableau : $\frac{TP+TN}{TP+FP+FN+FP}$ |
+| *Precision* | Taux de vrais positifs  |Ligne des prédictions positives : $\frac{TP}{TP+FP}$ |
+| *Recall* (rappel)   | Capacité à identifier les labels positifs | Colonne des prédictions positives : $\frac{TP}{TP+FN}$ |
+| *F1 Score*  | Mesure synthétique (moyenne harmonique) de la précision et du rappel | $2 \frac{precision \times recall}{precision + recall}$  |
+
+
+Néanmoins, certaines métriques préfèrent plutôt prendre en compte les probabilités de prédiction. Si un modèle fait une prédiction mais avec une confiance très modérée et qu'on l'accepte, peut-on lui en tenir rigeur ? Pour cela, on fixe un seuil de probabilité $c$ à partir duquel on prédit qu'une observation donnée appartient à une certaine classe prédite:
+
+$$
+\mathbb{P}(y_i=1|X_i) > c \Rightarrow \widehat{y}_i = 1 
+$$
+
+Plus on augmente $c$, plus on est sélectif sur le critère d'appartenance à la classe.
+La précision, i.e. le taux de vrais positifs parmi les prédictions positives, augmente. Mais on augmente le nombre de positifs manqués (ce sont des faux négatifs). Autrement dit, quand on est pointilleux, on diminue le rappel. Pour chaque valeur de $c$ correspond une matrice de confusion et donc des mesures de performances. La **courbe ROC** consiste à faire varier $c$ de 0 à 1 et vérifier l'effet sur les performances :
+
+![](https://glassboxmedicine.files.wordpress.com/2019/02/roc-curve-v2.png?w=576)
+
+L'aire sous la courbe (**AUC**) permet d'évaluer quantitativement le meilleur modèle au sens de ce critère. L'AUC représente la probabilité que le modèle soit capable de distinguer entre la classe positive et négative. 
+
+### Régression
+
+Lorsqu'on travaille sur une variable quantitative, l'objectif est d'avoir une prédiction la plus proche de celle-ci. Les indicateurs de performance en régression consistent donc à mesurer l'écart entre la valeur prédite et la valeur observée :
+
+| Nom | Formule |
+|-----|---------|
+| _Mean squared error_ | $MSE = \mathbb{E}\left[(y - h_\theta(X))^2\right]$ |
+| _Root Mean squared error_ | $RMSE = \sqrt{\mathbb{E}\left[(y - h_\theta(X))^2\right]}$ |
+| _Mean Absolute Error_ | $MAE = \mathbb{E} \bigg[ \lvert y - h_\theta(X) \rvert \bigg]$ |
+| _Mean Absolute Percentage Error_ | $MAE = \mathbb{E}\left[ \left\lvert \frac{y - h_\theta(X)}{y} \right\rvert \right]$ |
+
+Ces métriques devraient rappeler des souvenirs si vous êtes familiers de la méthode des moindres carrés, ou plus généralement de la régression linéaire. Cette méthode vise justement à trouver des paramètres qui minimisent ces métriques, dans un cadre statistique formel. 
+
+
+## Apprentissage non supervisé
+
+## Comment sont évalués les grands modèles de langage ?
+
+## Evaluer sans être tourné vers le passé: les enjeux de la supervision des modèles
+
+Il convient de garder en mémoire qu'un modèle de _machine learning_ est entraîné sur des données passées. Un usage opérationnel de celui-ci, dans la phase suivante de son cycle de vie, implique donc de faire des hypothèses fortes sur la stabilité des nouvelles données reçues. Si le contexte évolue, un modèle risque de ne plus apporter des performances satisfaisantes. Si dans certains cas cela peut être rapidement mesuré à partir d'indicateurs clés (ventes, nombre de nouveaux clients, etc.) il est tout de même important de conserver un contrôle sur les modèles. 
+
+Ceci ouvre à la notion d'__observabilité__ d'un modèle de _machine learning_. En informatique, l'observabilité est le principe qui consiste à surveille, mesurer et comprendre l'état d'une application pour s'assurer que celle-ci soit toujours en mesure de répondre à ses utilisateurs. L'idée de l'observabilité en _machine learning_ est similaire: il s'agit de contrôler qu'un modèle permet toujours d'avoir des performances satisfaisantes au cours du temps. Le principal risque dans le cycle de vie d'un modèle est celui du _data drift_, changement dans la distribution des données au fil du temps qui entraîne une dégradation des performances d’un modèle de _machine learning_. Bien sûr, avoir construit un modèle à bonne validité externe va réduire l'effet de ce risque mais il sera inévitable qu'il ait des effets si la structure des données change trop par rapport au contexte d'entraînement. 
+
+Pour garder un modèle pertinent dans le temps, il sera nécessaire de régulièrement collecter de nouvelles données (principe des annotations) et adopter une stratégie de ré-entraînement. Ceci ouvre la voie aux problématiques de la mise en production et du MLOps qui sont le point de départ d'un [cours que Romain Avouac et moi donnons](https://ensae-reproductibilite.github.io/website/).
+
+
+# Les hyperparamètres et la validation croisée
+
+La @fig-ml-pipeline présentait le _pipeline_ simple
+pour introduire à la notion d'entraînement d'un modèle.
 Ce *pipeline* fait abstraction d'hypothèses exogènes à l'estimation 
 mais qui sont à faire sur des paramètres
 car elles affectent la performance de la prédiction.
+
 Par exemple, de nombreux modèles proposent une pénalisation des modèles
 non parcimonieux pour éviter le sur-apprentissage. Le choix de la pénalisation
 idéale dépend de la structure des données et n'est jamais connue, *ex-ante*
-par le modélisateur. Faut-il pénaliser fortement ou non le modèle ? En l'absence
-d'argument théorique, on aura tendance à tester plusieurs paramètres de
-pénalisation et choisir celui qui permet la meilleure prédiction.
+par le modélisateur. Faut-il pénaliser fortement ou non le modèle ? 
 
 La notion de __validation croisée__ permettra de généraliser cette approche. Ces paramètres
 qui affectent la prédiction seront pas la suite appelés des
@@ -55,109 +154,14 @@ raffinement de l'approche pour obtenir un *pipeline* ayant plutôt cet aspect :
 ![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/scikit_predict2.png)
 
 
-# Le problème du sur-apprentissage
-
-Le but du *Machine Learning* est de calibrer l’algorithme sur des exemples
-connus (données labellisées) afin de généraliser à des
-exemples nouveaux (éventuellement non labellisés).
-On vise donc de bonnes qualités
-prédictives et non un ajustement parfait
-aux données historiques.
-
-Il existe un __arbitrage biais-variance__ dans la qualité d'estimation[^1]. Soit $h(X,\theta)$ un modèle statistique. On 
-peut décomposer l'erreur d'estimation en deux parties :
-
-$$
-\mathbb{E}\bigg[(y - h(\theta,X))^2 \bigg] = \underbrace{ \bigg( y - \mathbb{E}(h_\theta(X)) \bigg)^2}_{\text{biais}^2} + \underbrace{\mathbb{V}\big(h(\theta,X)\big)}_{\text{variance}}
-$$
-
-Il y a ainsi un compromis à faire entre biais et variance. Un modèle peu parcimonieux, c'est-à-dire proposant un grand nombre de paramètres, va, en général, avoir un faible biais mais une grande variance. En effet, le modèle va tendre à se souvenir d'une combinaison de paramètres à partir d'un grand nombre d'exemples sans être capable d'apprendre la règle qui permette de structurer les données. 
-
-[^1]: Cette formule permet de bien comprendre la théorie statistique asymptotique, notamment le théorème de Cramer-Rao. Dans la classe des estimateurs sans biais, c'est-à-dire dont le premier terme est nul, trouver l'estimateur à variance minimale revient à trouver l'estimateur qui minimise $\mathbb{E}\bigg[(y - h_\theta(X))^2 \bigg]$. C'est la définition même de la régression, ce qui, quand on fait des hypothèses supplémentaires sur le modèle statistique, explique le théorème de Cramer-Rao.
-
-
-Par exemple, la ligne verte ci-dessous est trop dépendante des données et risque de produire une erreur plus importante que la ligne noire (qui moyennise plus) sur de nouvelles données. 
-
-
-![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Overfitting.svg/300px-Overfitting.svg.png)
-
-
-Pour renforcer la validité externe d'un modèle, il est ainsi commun, en *Machine Learning* :
-
-1. d'estimer un modèle sur un jeu de données (__jeu d'apprentissage__ ou *training set*) mais d'évaluer la performance, et donc la pertinence du modèle, sur d'autres données, qui n'ont pas été mobilisées lors de la phase d'estimation (__jeu de validation, de test__ ou *testing set*) ;
-2. d'avoir des mesures de performances qui pénalisent fortement les modèles peu parcimonieux (BIC) ou conduire une première phase de sélection de variable (par des méthodes de LASSO...)
-
-
-Pour décomposer un modèle en jeu d'estimation et de test,
-la meilleure méthode est d'utiliser les fonctionnalités de `scikit` de la manière suivante : 
-
-```python
-from sklearn.model_selection import train_test_split
-xTrain, xTest, yTrain, yTest = train_test_split(
-  x, y,
-  test_size = 0.2,
-  random_state = 0
-  )
-```
-
-La proportion d'observations dans le jeu de test est contrôlée par l'argument `test_size`.
-La proportion optimale n'existe pas.
-La règle du pouce habituelle est d'assigner aléatoirement 20 % des observations
-dans l'échantillon de test pour garder suffisamment d'observations
-dans l'échantillon d'estimation. 
-
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-warning" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-lightbulb"></i> Hint </h3>
-```
-Lorsqu'on travaille avec des séries temporelles, l'échantillonnage aléatoire des observations n'a pas vraiment de sens. Il vaut mieux tester la qualité de l'observation sur des périodes distinguées. 
-
-```{=html}
-</div>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-info" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
-```
-Avec des données multi-niveaux,
-comme c'est le cas de données géographiques ou de données individuelles avec des variables de classe,
-il peut être intéressant d'utiliser un __échantillonnage stratifié__.
-Cela permet de garder une proportion équivalente de chaque groupe dans les deux jeux de données de test ou d'apprentissage.
-Ce type d'échantillonnage stratifié est également possible avec `scikit`.
-```{=html}
-</div>
-```
-:::
-
-
-L'[exercice sur les SVM](2_SVM.qmd) illustre cette construction et la manière
-dont elle facilite l'évaluation de la qualité d'un modèle.
-
-# Validation croisée
-
-Certains algorithmes font intervenir des __hyperparamètres__,
-c'est-à-dire des paramètres exogènes qui déterminent la prédiction mais ne sont pas estimés.
 La __validation croisée__ est une méthode permettant de choisir la valeur du paramètre
 qui optimise la qualité de la prédiction en agrégeant
 des scores de performance sur des découpages différents de l'échantillon d'apprentissage.
 
 La validation croisée permet d'évaluer les performances de modèles différents (SVM, random forest, etc.) ou, couplé à une stratégie de *grid search*, de trouver les valeurs des hyperparamètres qui aboutissent à la meilleure prédiction.
 
-::: {.cell .markdown}
-```{=html}
-<div class="alert alert-info" role="alert">
-<h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
-```
+::: {.note}
 L'étape de découpage de l'échantillon de validation croisée est à distinguer de l'étape `split_sample_test`. A ce stade, on a déjà partitionné les données en échantillon d'apprentissage et test. C'est l'échantillon d'apprentissage qu'on découpe en sous-morceaux. 
-```{=html}
-</div>
-```
 :::
 
 La méthode la plus commune est la validation croisée _k-fold_.
@@ -170,69 +174,3 @@ comparés pour plusieurs valeurs des hyperparamètres.
 Il existe d'autres types de validation croisée, notamment la *leave one out* qui consiste à considérer une fois
 exactement chaque observation comme l’échantillon de test (une *n-fold cross validation*).
 
-# Mesurer la performance
-
-Jusqu'à présent, nous avons passé sous silence la question du support de $y$, c'est-à-dire 
-de l'étendue des valeurs de notre variable d'intérêt.
-En pratique, la distribution des $y$
-va néanmoins déterminer deux questions cruciales : la méthode et l'indicateur de performance.
-
-En apprentissage supervisé, on distingue en général les problèmes de:
-
-* Classification : la variable $y$ est discrète
-* Régression : la variable $y$ est continue
-
-Les deux approches ne sont pas sans lien. On peut par exemple voir le modèle économétrique de choix d'offre de travail comme un problème de classification (participation ou non au marché du travail) ou de régression (régression sur un modèle à variable latente)
-
-## Classification
-
-La plupart des critères de performance sont construits à partir de la **matrice de confusion** :
-
-![Image empruntée à https://www.lebigdata.fr/confusion-matrix-definition](https://www.lebigdata.fr/wp-content/uploads/2018/12/confusion-matrix-exemple-768x432.jpg?ezimgfmt=ng:webp/ngcb1)
-
-A partir des 4 coins de cette matrice, il existe plusieurs mesure de performance
-
-| Critère     | Mesure       |  Calcul |
-|-------------|--------------|------------------|
-| *Accuracy*  | Taux de classification correcte | Diagonale du tableau : $\frac{TP+TN}{TP+FP+FN+FP}$ |
-| *Precision* | Taux de vrais positifs  |Ligne des prédictions positives : $\frac{TP}{TP+FP}$ |
-| *Recall* (rappel)   | Capacité à identifier les labels positifs | Colonne des prédictions positives : $\frac{TP}{TP+FN}$ |
-| *F1 Score*  | Mesure synthétique (moyenne harmonique) de la précision et du rappel | $2 \frac{precision \times recall}{precision + recall}$  |
-
-En présence de classes désequilibrées, la
-_F-mesure_ est plus pertinente pour évaluer les
-performances mais l’apprentissage restera
-mauvais si l’algorithme est sensible à ce
-problème. Notamment, si on désire avoir une performance équivalente sur les classes minoritaires, il faut généralement les sur-pondérer (ou faire un échantillonnage stratifié) lors de la constitution de l'échantillon d'observation.
-
-Il est possible de construire des modèles à partir des probabilités prédites d'appartenir à la classe d'intérêt. Pour cela, on fixe un seuil $c$ tel que
-
-$$
-\mathbb{P}(y_i=1|X_i) > c \Rightarrow \widehat{y}_i = 1 
-$$
-
-Plus on augmente $c$, plus on est sélectif sur le critère d'appartenance à la classe.
-La précision, i.e. le taux de vrais positifs parmi les prédictions positives, augmente. Mais on augmente le nombre de positifs manqués (autrement dit on diminue le rappel). Pour chaque valeur de $c$ correspond une matrice de confusion et donc des mesures de performances.
-La **courbe ROC** est un outil classique pour représenter en un graphique l’ensemble de ces
-informations en faisant varier $c$ de 0 à 1:
-
-![](https://glassboxmedicine.files.wordpress.com/2019/02/roc-curve-v2.png?w=576)
-
-L'aire sous la courbe (**AUC**) permet d'évaluer quantitativement le meilleur modèle au
-sens de ce critère. L'AUC représente la probabilité que le modèle soit capable de distinguer entre la classe positive et négative. 
-
-## Régression
-
-En Machine Learning, les indicateurs de performance en régression sont les suivants :
-
-| Nom | Formule |
-|-----|---------|
-| Mean squared error | $MSE = \mathbb{E}\left[(y - h_\theta(X))^2\right]$ |
-| Root Mean squared error | $RMSE = \sqrt{\mathbb{E}\left[(y - h_\theta(X))^2\right]}$ |
-| Mean Absolute Error | $MAE = \mathbb{E} \bigg[ \lvert y - h_\theta(X) \rvert \bigg]$ |
-| Mean Absolute Percentage Error | $MAE = \mathbb{E}\left[ \left\lvert \frac{y - h_\theta(X)}{y} \right\rvert \right]$ |
-
-L'économètre se focalise moins sur la qualité de la prédiction et utilisera 
-d'autres critères pour évaluer la qualité d'un modèle (certains, comme le BIC, sont
-à regarder aussi dans une optique *Machine Learning*) : $R^2$, $BIC$,
-$AIC$, *log-likelihood*, etc. 
