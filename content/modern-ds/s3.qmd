@@ -1368,6 +1368,55 @@ Dans toutes ces situations, il est nécessaire de pouvoir stocker des données (
 Quelle que soit la solution de stockage retenue pour vos données/modèles, **le code ayant servir à produire ces objets doit impérativement figurer dans votre dépôt de projet**.
 :::
 
+::: {.callout-note}
+Le stockage *cloud* favorise également le travail collaboratif ! Plutôt que chaque membre du projet travaille avec ses propres fichiers sur son ordinateur, ce qui implique une synchronisation fréquente entre membres du groupe et limite la reproductibilité du fait des risques d'erreur, les fichiers sont mis sur un dépôt central, que chaque membre du groupe peut ensuite requêter. Pour cela, il faut simplement s'accorder au sein du groupe pour utiliser le bucket d'un des membres du projet, et s'assurer que les autres membres du groupe peuvent accéder aux données (voir section suivante pour gérer les permissions d'accès).
+:::
+
+### Partager des fichiers sur le SSP Cloud
+
+Comme expliqué plus haut, on stocke les fichiers sur `S3` dans un bucket. Sur le SSP Cloud, un bucket est créé automatiquement lors de votre création de compte, avec le même nom que votre compte SSP Cloud. L'interface [Mes Fichiers](https://datalab.sspcloud.fr/my-files) vous permet d'y accéder de manière visuelle, d'y importer des fichiers, de les télécharger, etc. 
+
+Dans ce tutoriel, nous allons plutôt y accéder de manière programmatique, via du code `Python`. Le package `s3fs` permet de requêter votre bucket à la manière d'un filesystem classique. Par exemple, vous pouvez lister les fichiers disponibles sur votre *bucket* avec la commande suivante : 
+
+```{python}
+#| eval: false
+import s3fs
+
+fs = s3fs.S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
+
+MY_BUCKET = "mon_nom_utilisateur_sspcloud"
+fs.ls(MY_BUCKET)
+```
+
+Si vous n'avez jamais ajouté de fichier sur MinIO, votre *bucket* est vide, cette commande devrait donc renvoyer une liste vide. On va donc ajouter un premier dossier pour voir la différence.
+
+Par défaut, un bucket vous est personnel, c'est à dire que les données qui s'y trouvent ne peuvent être lues ou modifiées que par vous. Dans le cadre de votre projet, vous aurez envie de partager ces fichiers avec les membres de votre groupe pour développer de manière collaborative. Mais pas seulement ! Il faudra également que vos correcteurs puissent accéder à ces fichiers pour reproduire vos analyses. 
+
+Il existe différentes possibilités de rendre des fichiers plus ou moins publics sur `MinIO`. La plus simple, et celle que nous vous recommandons, est de créer un dossier `diffusion` à la racine de votre bucket. Sur le SSP Cloud, tous les fichiers qui se situent dans un dossier `diffusion` sont accessibles **en lecture** à l'ensemble des utilisateurs authentifiés. Utilisez l'interface [Mes Fichiers](https://datalab.sspcloud.fr/my-files) pour créer un dossier `diffusion` à la racine de votre *bucket*. Si tout a bien fonctionné, la commande `Python` ci-dessus devrait désormais afficher le chemin `mon_nom_utilisateur_sspcloud/diffusion`.
+
+### Récupération et stockage de données
+
+#### Cas d'un dataframe
+
+Reprenons un exemple issu du cours sur les [API](/content/manipulation/04c_API_TP.qmd#illustration-avec-une-api-de-lademe-pour-obtenir-des-diagnostics-énergétiques) pour simuler une étape de récupération de données coûteuse en temps. 
+
+```{python}
+import requests
+import pandas as pd
+
+api_query <- "https://koumoul.com/data-fair/api/v1/datasets/dpe-france/lines?format=json&q_mode=simple&qs=code_insee_commune_actualise%3A%2201450%22&size=100&select=%2A&sampling=neighbors"
+response_json = requests.get(url_api).json()
+df = pd.json_normalize(response_json["results"])
+
+df.head(2)
+```
+
+Cette requête nous permet de récupérer un dataframe `Pandas`, dont les deux premières lignes sont imprimées ci-dessus. Dans notre cas le processus est volontairement simpliste, mais on peut imaginer que de nombreuses étapes de requêtage / préparation de la données sont nécessaires pour aboutir à un dataframe exploitable dans la suite du projet, et que ce processus est coûteux en temps. On va donc stocker ces données "intermédiaires" sur `MinIO` afin de pouvoir exécuter la suite du projet sans devoir refaire tourner tout le code qui les a produites.
+
+#### Cas de fichiers
+
+### Utilisation des données
+
 ## Pour aller plus loin
 
 - [La documentation sur MinIO du SSPCloud](https://docs.sspcloud.fr/content/storage.html)
