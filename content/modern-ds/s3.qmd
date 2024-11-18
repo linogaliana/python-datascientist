@@ -1368,10 +1368,6 @@ Dans toutes ces situations, il est nécessaire de pouvoir stocker des données (
 Quelle que soit la solution de stockage retenue pour vos données/modèles, **le code ayant servir à produire ces objets doit impérativement figurer dans votre dépôt de projet**.
 :::
 
-::: {.callout-note}
-Le stockage *cloud* favorise également le travail collaboratif ! Plutôt que chaque membre du projet travaille avec ses propres fichiers sur son ordinateur, ce qui implique une synchronisation fréquente entre membres du groupe et limite la reproductibilité du fait des risques d'erreur, les fichiers sont mis sur un dépôt central, que chaque membre du groupe peut ensuite requêter. Pour cela, il faut simplement s'accorder au sein du groupe pour utiliser le bucket d'un des membres du projet, et s'assurer que les autres membres du groupe peuvent accéder aux données (voir section suivante pour gérer les permissions d'accès).
-:::
-
 ### Partager des fichiers sur le SSP Cloud
 
 Comme expliqué plus haut, on stocke les fichiers sur `S3` dans un bucket. Sur le SSP Cloud, un bucket est créé automatiquement lors de votre création de compte, avec le même nom que votre compte SSP Cloud. L'interface [Mes Fichiers](https://datalab.sspcloud.fr/my-files) vous permet d'y accéder de manière visuelle, d'y importer des fichiers, de les télécharger, etc. 
@@ -1394,7 +1390,13 @@ Par défaut, un bucket vous est personnel, c'est à dire que les données qui s'
 
 Il existe différentes possibilités de rendre des fichiers plus ou moins publics sur `MinIO`. La plus simple, et celle que nous vous recommandons, est de créer un dossier `diffusion` à la racine de votre bucket. Sur le SSP Cloud, tous les fichiers qui se situent dans un dossier `diffusion` sont accessibles **en lecture** à l'ensemble des utilisateurs authentifiés. Utilisez l'interface [Mes Fichiers](https://datalab.sspcloud.fr/my-files) pour créer un dossier `diffusion` à la racine de votre *bucket*. Si tout a bien fonctionné, la commande `Python` ci-dessus devrait désormais afficher le chemin `mon_nom_utilisateur_sspcloud/diffusion`.
 
+::: {.callout-note}
+Le stockage *cloud* favorise le travail collaboratif ! Plutôt que chaque membre du projet travaille avec ses propres fichiers sur son ordinateur, ce qui implique une synchronisation fréquente entre membres du groupe et limite la reproductibilité du fait des risques d'erreur, les fichiers sont mis sur un dépôt central, que chaque membre du groupe peut ensuite requêter. Pour cela, il faut simplement s'accorder au sein du groupe pour utiliser le bucket d'un des membres du projet, et s'assurer que les autres membres du groupe peuvent accéder aux données, en les mettant dans le dossier `diffusion` du bucket choisi.
+:::
+
 ### Récupération et stockage de données
+
+Maintenant que nous savons où mettre nos données sur `MinIO`, regardons comment le faire en pratique depuis `Python`.
 
 #### Cas d'un dataframe
 
@@ -1406,14 +1408,34 @@ import pandas as pd
 
 api_query <- "https://koumoul.com/data-fair/api/v1/datasets/dpe-france/lines?format=json&q_mode=simple&qs=code_insee_commune_actualise%3A%2201450%22&size=100&select=%2A&sampling=neighbors"
 response_json = requests.get(url_api).json()
-df = pd.json_normalize(response_json["results"])
+df_dpe = pd.json_normalize(response_json["results"])
 
-df.head(2)
+df_dpe.head(2)
 ```
 
 Cette requête nous permet de récupérer un dataframe `Pandas`, dont les deux premières lignes sont imprimées ci-dessus. Dans notre cas le processus est volontairement simpliste, mais on peut imaginer que de nombreuses étapes de requêtage / préparation de la données sont nécessaires pour aboutir à un dataframe exploitable dans la suite du projet, et que ce processus est coûteux en temps. On va donc stocker ces données "intermédiaires" sur `MinIO` afin de pouvoir exécuter la suite du projet sans devoir refaire tourner tout le code qui les a produites.
 
+On peut utiliser les fonctions d'export de `Pandas`, qui permettent d'exporter dans différents formats de données. Vu qu'on est dans le cloud, une étape supplémentaire est nécessaire : on ouvre une connexion vers `MinIO`, puis on exporte notre dataframe.
+
+```{python}
+#| eval: false
+MY_BUCKET = "mon_nom_utilisateur_sspcloud"
+FILE_PATH_OUT_S3 = f"{MY_BUCKET}/diffusion/df_dpe.csv"
+
+with fs.open(FILE_PATH_OUT_S3, 'w') as file_out:
+    df_dpe.to_csv(file_out)
+```
+
+On peut vérifier que notre fichier a bien été uploadé via l'interface [Mes Fichiers](https://datalab.sspcloud.fr/my-files) ou bien directement en `Python` en interrogeant le contenu du dossier `diffusion` de notre *bucket* :
+
+```{python}
+#| eval: false
+fs.ls(f"{MY_BUCKET}/diffusion")
+```
+
 #### Cas de fichiers
+
+
 
 ### Utilisation des données
 
