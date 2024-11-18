@@ -1,5 +1,5 @@
 ---
-title: "Les nouveaux modes d'accès aux données : le format parquet et les données sur le cloud"
+title: "Les nouveaux modes d'accès aux données : le format Parquet et les données sur le cloud"
 draft: false
 weight: 20
 slug: readS3
@@ -571,7 +571,9 @@ afin de ne pas essayer de lire les lignes inutiles.
 
 
 
-# Le système de stockage `S3`
+
+
+# Les données sur le _cloud_
 
 Si les fichiers `parquet` sont une 
 solution avantageuse pour 
@@ -587,8 +589,6 @@ données de l'utilisateur `A`, il est nécessaire
 qu'ils travaillent sur deux fichiers
 différents, dont l'un peut être une copie
 de l'autre. 
-
-# Les données sur le _cloud_
 
 La mise à disposition de données dans
 les systèmes de stockage _cloud_ est
@@ -679,6 +679,7 @@ from utils import print_badges
 
 print_badges("content/NLP/05a_s3.qmd", onyxia_only=True)
 ```
+:::
 
 Ils peuvent également l'être pour des utilisateurs ayant un 
 accès à AWS, il suffit de changer l'URL du `endpoint` 
@@ -733,7 +734,7 @@ en mode _cheatsheet_.
 
 
 
-## Connexion à un bucket
+### Connexion à un bucket
 
 Par la suite, on va utiliser des alias pour les trois valeurs suivantes, qui servent
 à s'authentifier. 
@@ -938,21 +939,14 @@ S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'), access_k
 <h3 class="alert-heading"><i class="fa-solid fa-comment"></i> Note</h3>
 ```
 
-Dans le SSP Cloud, 
-lorsque l'initialisation du service `Jupyter` du SSP Cloud est récente
-(moins de 12 heures), il est possible d'utiliser
-automatiquement les jetons stockés automatiquement à la création du dépôt. 
-
-Si on désire accéder aux données du SSP Cloud depuis une session Python du
-datalab (service VSCode, Jupyter...),
-il faut remplacer l'url par `http://minio.lab.sspcloud.fr`
+Sur le SSP Cloud, les jetons d'accès au stockage S3 sont injectés automatiquement dans les services lors de leur création. Ils sont ensuite valides pour une durée de 7 jours. Si l'icône du service passe du vert au rouge, cela signifie que ces jetons sont périmés, il faut donc sauvegarder son code / ses données et reprendre depuis un nouveau service.
 ```{=html}
 </div>
 ```
 :::
 
 
-## Lister les fichiers
+### Lister les fichiers
 
 S'il n'y a pas d'erreur à ce stade, c'est que la connexion est bien effective.
 Pour le vérifier, on peut essayer de faire la liste des fichiers disponibles
@@ -1042,7 +1036,7 @@ mc ls -r
 
 
 
-## Télécharger un fichier depuis `S3` pour l'enregistrer en local
+### Télécharger un fichier depuis `S3` pour l'enregistrer en local
 
 Cette méthode n'est en général pas recommandée car, comme on va le voir
 par la suite, il est possible de lire à la volée des fichiers. Cependant,
@@ -1131,7 +1125,7 @@ mc cp "donnees-insee/FILOSOFI/2014/FILOSOFI_COM.csv" 'data.csv'
 
 
 
-## Lire un fichier directement
+### Lire un fichier directement
 
 La méthode précédente n'est pas optimale. En effet, l'un des intérêts des API
 est qu'on peut traiter un fichier sur `S3` comme s'il s'agissait d'un fichier
@@ -1257,7 +1251,7 @@ df = pq.ParquetDataset(f'{bucket}/{parquet_file}', filesystem=s3).read_pandas().
 
 
 
-## Uploader un fichier
+### Uploader un fichier
 
 ::: {.cell .markdown}
 ```{=html}
@@ -1362,8 +1356,188 @@ mc cp 'data.csv' "MONBUCKET/monoutput.csv"
 
 
 
+## Cas pratique : stocker les données de son projet sur le SSP Cloud
 
+Une composante essentielle de l'évaluation des projets Python est la reproductibilité, i.e. la possibilité de retrouver les mêmes résultats à partir des mêmes données d'entrée et du même code. Dans la mesure du possible, il faut donc que votre rendu final parte des données brutes utilisées comme source dans votre projet. Si les fichiers de données source sont accessibles via une URL publique par exemple, il est idéal de les importer directement à partir de cette URL au début de votre projet (voir le [TP Pandas](/content/manipulation/02_pandas_suite.qmd) pour un exemple d'un tel import via `Pandas`).
+
+En pratique, cela n'est pas toujours possible. Peut-être que vos données ne sont pas directement publiquement accessibles, ou bien sont disponibles sous des formats complexes qui demandent des pré-traitements avant d'être exploitables dans un format de donnée standard. Peut-être que vos données résultent d'une phase de récupération automatisée via une [API](/content/manipulation/04c_API_TP.qmd) ou du [webscraping](/content/manipulation/04a_webscraping_TP.qmd), auquel cas l'étape de récupération peut prendre du temps à reproduire. Par ailleurs, les sites internet évoluent fréquemment dans le temps, il est donc préférable de "figer" les données une fois l'étape de récupération effectuée. De la même façon, même s'il ne s'agit pas de données source, vous pouvez vouloir entraîner des modèles et stockés leur version entraînée, car cette étape peut également être chronophage.
+
+Dans toutes ces situations, il est nécessaire de pouvoir stocker des données (ou des modèles). **Votre dépôt `Git` n'est pas le lieu adapté pour le stockage de fichiers volumineux**. Là où `Git` est fait pour stocker du code, on utilise des solutions adaptées pour le stockage de fichiers. De nombreuses solutions existent pour ce faire. Sur le SSP Cloud, on propose `MinIO`, une implémentation open-source du stockage `S3` présenté plus haut. Ce court tutoriel vise à présenter une utilisation standard dans le cadre de vos projets.
+
+::: {.callout-warning}
+Quelle que soit la solution de stockage retenue pour vos données/modèles, **le code ayant servir à produire ces objets doit impérativement figurer dans votre dépôt de projet**.
+:::
+
+### Partager des fichiers sur le SSP Cloud
+
+Comme expliqué plus haut, on stocke les fichiers sur `S3` dans un bucket. Sur le SSP Cloud, un bucket est créé automatiquement lors de votre création de compte, avec le même nom que votre compte SSP Cloud. L'interface [Mes Fichiers](https://datalab.sspcloud.fr/my-files) vous permet d'y accéder de manière visuelle, d'y importer des fichiers, de les télécharger, etc. 
+
+Dans ce tutoriel, nous allons plutôt y accéder de manière programmatique, via du code `Python`. Le package `s3fs` permet de requêter votre bucket à la manière d'un filesystem classique. Par exemple, vous pouvez lister les fichiers disponibles sur votre *bucket* avec la commande suivante : 
+
+```{python}
+#| eval: false
+import s3fs
+
+fs = s3fs.S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
+
+MY_BUCKET = "mon_nom_utilisateur_sspcloud"
+fs.ls(MY_BUCKET)
+```
+
+Si vous n'avez jamais ajouté de fichier sur MinIO, votre *bucket* est vide, cette commande devrait donc renvoyer une liste vide. On va donc ajouter un premier dossier pour voir la différence.
+
+Par défaut, un bucket vous est personnel, c'est à dire que les données qui s'y trouvent ne peuvent être lues ou modifiées que par vous. Dans le cadre de votre projet, vous aurez envie de partager ces fichiers avec les membres de votre groupe pour développer de manière collaborative. Mais pas seulement ! Il faudra également que vos correcteurs puissent accéder à ces fichiers pour reproduire vos analyses. 
+
+Il existe différentes possibilités de rendre des fichiers plus ou moins publics sur `MinIO`. La plus simple, et celle que nous vous recommandons, est de créer un dossier `diffusion` à la racine de votre bucket. Sur le SSP Cloud, tous les fichiers qui se situent dans un dossier `diffusion` sont accessibles **en lecture** à l'ensemble des utilisateurs authentifiés. Utilisez l'interface [Mes Fichiers](https://datalab.sspcloud.fr/my-files) pour créer un dossier `diffusion` à la racine de votre *bucket*. Si tout a bien fonctionné, la commande `Python` ci-dessus devrait désormais afficher le chemin `mon_nom_utilisateur_sspcloud/diffusion`.
+
+::: {.callout-note}
+Le stockage *cloud* favorise le travail collaboratif ! Plutôt que chaque membre du projet travaille avec ses propres fichiers sur son ordinateur, ce qui implique une synchronisation fréquente entre membres du groupe et limite la reproductibilité du fait des risques d'erreur, les fichiers sont mis sur un dépôt central, que chaque membre du groupe peut ensuite requêter. Pour cela, il faut simplement s'accorder au sein du groupe pour utiliser le bucket d'un des membres du projet, et s'assurer que les autres membres du groupe peuvent accéder aux données, en les mettant dans le dossier `diffusion` du bucket choisi.
+:::
+
+### Récupération et stockage de données
+
+Maintenant que nous savons où mettre nos données sur `MinIO`, regardons comment le faire en pratique depuis `Python`.
+
+#### Cas d'un dataframe
+
+Reprenons un exemple issu du cours sur les [API](/content/manipulation/04c_API_TP.qmd#illustration-avec-une-api-de-lademe-pour-obtenir-des-diagnostics-énergétiques) pour simuler une étape de récupération de données coûteuse en temps. 
+
+```{python}
+import requests
+import pandas as pd
+
+api_query <- "https://koumoul.com/data-fair/api/v1/datasets/dpe-france/lines?format=json&q_mode=simple&qs=code_insee_commune_actualise%3A%2201450%22&size=100&select=%2A&sampling=neighbors"
+response_json = requests.get(url_api).json()
+df_dpe = pd.json_normalize(response_json["results"])
+
+df_dpe.head(2)
+```
+
+Cette requête nous permet de récupérer un dataframe `Pandas`, dont les deux premières lignes sont imprimées ci-dessus. Dans notre cas le processus est volontairement simpliste, mais on peut imaginer que de nombreuses étapes de requêtage / préparation de la données sont nécessaires pour aboutir à un dataframe exploitable dans la suite du projet, et que ce processus est coûteux en temps. On va donc stocker ces données "intermédiaires" sur `MinIO` afin de pouvoir exécuter la suite du projet sans devoir refaire tourner tout le code qui les a produites.
+
+On peut utiliser les fonctions d'export de `Pandas`, qui permettent d'exporter dans différents formats de données. Vu qu'on est dans le cloud, une étape supplémentaire est nécessaire : on ouvre une connexion vers `MinIO`, puis on exporte notre dataframe.
+
+```{python}
+#| eval: false
+MY_BUCKET = "mon_nom_utilisateur_sspcloud"
+FILE_PATH_OUT_S3 = f"{MY_BUCKET}/diffusion/df_dpe.csv"
+
+with fs.open(FILE_PATH_OUT_S3, 'w') as file_out:
+    df_dpe.to_csv(file_out)
+```
+
+On peut vérifier que notre fichier a bien été uploadé via l'interface [Mes Fichiers](https://datalab.sspcloud.fr/my-files) ou bien directement en `Python` en interrogeant le contenu du dossier `diffusion` de notre *bucket* :
+
+```{python}
+#| eval: false
+fs.ls(f"{MY_BUCKET}/diffusion")
+```
+
+On pourrait tout aussi simplement exporter notre dataset en `Parquet`, pour limiter l'espace de stockage et maximiser les performances à la lecture. Attention : vu que `Parquet` est un format compressé, il faut préciser qu'on écrit un fichier binaire : le mode d'ouverture du fichier passé à la fonction `fs.open` passe de `w` (`write`) à `wb` (`write binary`).
+
+```{python}
+#| eval: false
+FILE_PATH_OUT_S3 = f"{MY_BUCKET}/diffusion/df_dpe.parquet"
+
+with fs.open(FILE_PATH_OUT_S3, 'wb') as file_out:
+    df_dpe.to_parquet(file_out)
+```
+
+#### Cas de fichiers
+
+Dans la partie précédente, on était dans le cas "simple" d'un dataframe, ce qui nous permettait d'utiliser directement les fonctions d'export de `Pandas`. Maintenant, imaginons qu'on ait plusieurs fichiers d'entrée, pouvant chacun avoir des formats différents. Un cas typique de tels fichiers sont les fichiers `ShapeFile`, qui sont des fichiers de données géographiques, et se présentent sous forme d'une combinaison de fichiers (cf. [chapitre sur GeoPandas](/content/manipulation/03_geopandas_intro.qmd#le-format-shapefile-.shp-et-le-geopackage-.gpkg)). Commençons par récupérer un fichier `.shp` pour voir sa structure.
+
+On récupère ci-dessous les [contours des départements français](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/), sous la forme d'une archive `.zip` qu'on va décompresser en local dans un dossier `departements_fr`.
+
+```{python}
+import io
+import os
+import requests
+import zipfile
+
+# Import et décompression
+contours_url = "https://www.data.gouv.fr/fr/datasets/r/eb36371a-761d-44a8-93ec-3d728bec17ce"
+response = requests.get(contours_url, stream=True)
+zipfile = zipfile.ZipFile(io.BytesIO(response.content))
+zipfile.extractall("departements_fr")
+
+# Vérification du dossier (local, pas sur S3)
+os.listdir("departements_fr")
+```
+
+Vu qu'il s'agit cette fois de fichiers locaux et non d'un *dataframe* `Pandas`, on doit utiliser le package `s3fs` pour transférer les fichiers du filesystem local au filesystem distant (`MinIO`). Grâce à la commande `put`, on peut copier en une seule commande le dossier sur `MinIO`. Attention à bien spécifier le paramètre `recursive=True`, qui permet de copier à la fois un dossier et son contenu.
+
+```{python}
+#| eval: false
+fs.put("departements_fr/", f"{MY_BUCKET}/diffusion/departements_fr/", recursive=True)
+```
+
+Vérifions que le dossier a bien été copié :
+
+```{python}
+#| eval: false
+fs.ls(f"{MY_BUCKET}/diffusion/departements_fr")
+```
+
+Si tout a bien fonctionné, la commande ci-dessus devrait renvoyer une liste contenant les chemins sur `MinIO` des différents fichiers (`.shp`, `.shx`, `.prj`, etc.) constitutifs du `ShapeFile` des départements.
+
+### Utilisation des données
+
+En sens inverse, pour récupérer les fichiers depuis `MinIO` dans une session `Python`, les commandes sont symétriques.
+
+#### Cas d'un dataframe
+
+Attention à bien passer cette fois le paramètre `r` (`read`, pour lecture) et non plus `w` (`write`, pour écriture) à la fonction `fs.open` afin de ne pas écraser le fichier !
+
+```{python}
+#| eval: false
+MY_BUCKET = "mon_nom_utilisateur_sspcloud"
+FILE_PATH_S3 = f"{MY_BUCKET}/diffusion/df_dpe.csv"
+
+# Import
+with fs.open(FILE_PATH_S3, 'r') as file_in:
+    df_dpe = pd.read_csv(file_in)
+
+# Vérification
+df_dpe.head(2)
+```
+
+De même, si le fichier est en `Parquet` (en n'oubliant pas de passer de `r` à `rb` pour tenir compte de la compression) : 
+
+```{python}
+#| eval: false
+MY_BUCKET = "mon_nom_utilisateur_sspcloud"
+FILE_PATH_S3 = f"{MY_BUCKET}/diffusion/df_dpe.parquet"
+
+# Import
+with fs.open(FILE_PATH_S3, 'rb') as file_in:
+    df_dpe = pd.read_parquet(file_in)
+
+# Vérification
+df_dpe.head(2)
+```
+
+#### Cas de fichiers
+
+Dans le cas de fichiers, on va devoir dans un premier temps rappatrier les fichiers de `MinIO` vers la machine local (en l'occurence, le service ouvert sur le SSP Cloud).
+
+```{python}
+#| eval: false
+
+# Récupération des fichiers depuis MinIO vers la machine locale
+fs.get(f"{MY_BUCKET}/diffusion/departements_fr/", "departements_fr/", recursive=True)
+```
+
+Puis on les importe classiquement depuis `Python` avec le *package* approprié. Dans le cas des `ShapeFile`, où les différents fichiers sont en fait des parties d'un seul et même fichier, une seule commande permet de les importer après les avoir rappatriés.
+
+```{python}
+#| eval: false
+import geopandas as gpd
+
+df_dep = gpd.read_file("departements_fr")
+df_dep.head(2)
+```
 
 ## Pour aller plus loin
 
-- [La documentation sur MinIO du SSPCloud](https://docs.sspcloud.fr/onyxia-guide/stockage-de-donnees)
+- [La documentation sur MinIO du SSPCloud](https://docs.sspcloud.fr/content/storage.html)
