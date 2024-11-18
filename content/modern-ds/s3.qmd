@@ -1435,9 +1435,62 @@ fs.ls(f"{MY_BUCKET}/diffusion")
 
 #### Cas de fichiers
 
+Dans la partie précédente, on était dans le cas "simple" d'un dataframe, ce qui nous permettait d'utiliser directement les fonctions d'export de `Pandas`. Maintenant, imaginons qu'on ait plusieurs fichiers d'entrée, pouvant chacun avoir des formats différents. Un cas typique de tels fichiers sont les fichiers `ShapeFile`, qui sont des fichiers de données géographiques, et se présentent sous forme d'une combinaison de fichiers (cf. [chapitre sur GeoPandas](/content/manipulation/03_geopandas_intro.qmd#le-format-shapefile-.shp-et-le-geopackage-.gpkg)). Commençons par récupérer un fichier `.shp` pour voir sa structure.
 
+On récupère ci-dessous les [contours des départements français](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/), sous la forme d'une archive `.zip` qu'on va décompresser en local dans un dossier `departements_fr`.
+
+```{python}
+import io
+import os
+import requests
+import zipfile
+
+# Import et décompression
+contours_url = "https://www.data.gouv.fr/fr/datasets/r/eb36371a-761d-44a8-93ec-3d728bec17ce"
+response = requests.get(contours_url, stream=True)
+zipfile = zipfile.ZipFile(io.BytesIO(response.content))
+zipfile.extractall("departements_fr")
+
+# Vérification du dossier (local, pas sur S3)
+os.listdir("departements_fr")
+```
+
+Vu qu'il s'agit cette fois de fichiers locaux et non d'un *dataframe* `Pandas`, on doit utiliser le package `s3fs` pour transférer les fichiers du filesystem local au filesystem distant (`MinIO`). Grâce à la commande `put`, on peut copier en une seule commande le dossier sur `MinIO`. Attention à bien spécifier le paramètre `recursive=True`, qui permet de copier à la fois un dossier et son contenu.
+
+```{python}
+#| eval: false
+fs.put("departements_fr/", f"{MY_BUCKET}/diffusion/departements_fr/", recursive=True)
+```
+
+Vérifions que le dossier a bien été copié :
+
+```{python}
+#| eval: false
+fs.ls(f"{MY_BUCKET}/diffusion/departements_fr")
+```
+
+Si tout a bien fonctionné, la commande ci-dessus devrait renvoyer une liste contenant les chemins sur `MinIO` des différents fichiers (`.shp`, `.shx`, `.prj`, etc.) constitutifs du `ShapeFile` des départements.
 
 ### Utilisation des données
+
+Pour récupérer les fichiers depuis `MinIO` dans une session `Python`, les commandes sont symétriques.
+
+#### Cas d'un dataframe
+
+```{python}
+#| eval: false
+MY_BUCKET = "mon_nom_utilisateur_sspcloud"
+FILE_PATH_S3 = f"{MY_BUCKET}/diffusion/df_dpe.csv"
+
+# Import
+with fs.open(FILE_PATH_S3, 'rb') as file_in:
+    df_dpe = pd.read_csv(file_in)
+
+# Vérification
+df_dpe.head(2)
+```
+
+#### Cas de fichiers
 
 ## Pour aller plus loin
 
