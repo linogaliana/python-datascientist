@@ -153,34 +153,23 @@ Pour garder un modèle pertinent dans le temps, il sera nécessaire de réguliè
 
 # Les hyperparamètres et la validation croisée
 
-La @fig-ml-pipeline présentait le _pipeline_ simple
-pour introduire à la notion d'entraînement d'un modèle.
-Ce *pipeline* fait abstraction d'hypothèses exogènes à l'estimation 
-mais qui sont à faire sur des paramètres
-car elles affectent la performance de la prédiction.
+La @fig-ml-pipeline présentait le _pipeline_ classique pour introduire à la notion d'entraînement d'un modèle. Ce *pipeline* fait néanmoins abstraction d'hypothèses qui affectent la performance d'un modèle mais correspondent à des paramètres exogènes à l'entraînement. Par exemple, si on définit l'entraînement comme une fonction objective très générique visant à trouver un ensemble de paramètres $\beta$ qui minimisent une fonction de perte $l$ entre les valeurs observées ($y$) et prédites ($\widehat{y}$) :
 
-Par exemple, de nombreux modèles proposent une pénalisation des modèles
-non parcimonieux pour éviter le sur-apprentissage. Le choix de la pénalisation
-idéale dépend de la structure des données et n'est jamais connue, *ex-ante*
-par le modélisateur. Faut-il pénaliser fortement ou non le modèle ? 
+$$
+\text{argmin}_{\beta} \mathbb{E}\bigg[l\big(y,g({X})\big)\bigg]
+$$
 
-La notion de __validation croisée__ permettra de généraliser cette approche. Ces paramètres
-qui affectent la prédiction seront pas la suite appelés des
-**hyperparamètres**. Comme nous allons le voir, nous allons aboutir à un 
-raffinement de l'approche pour obtenir un *pipeline* ayant plutôt cet aspect :
+il existe une infinité de modèles qui peuvent répondre à cet objectif. Dans une approche empirique, où on ne dispose pas vraiment d'arguments pour choisir une fonction $g$ ou $l$ plutôt qu'une autre (à part le type de données $y$, discrètes ou continues), on va naturellement vouloir tester plusieurs configurations et choisir celle qui répond le mieux à notre objectif. 
 
-![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/scikit_predict2.png)
+Cette approche de comparaison de modèles est au coeur de la validation croisée. L'idée est de comparer l'effet que peuvent avoir les hypothèses de modélisation sur la performance. Par exemple, imaginons une fonction de perte quadratique et un modèle de prédiction linéaire avec un paramètre de pénalisation pour limiter le surapprentissage:
 
+$$
+\text{argmin}_{\beta} \sum_{i=1}^{n} \bigg(y - \beta_0 - \sum_{j=1}^p \beta_j x_{ij} + \lambda \sum_{j=1}^p |\beta_j| \bigg)
+$$
 
-La __validation croisée__ est une méthode permettant de choisir la valeur du paramètre
-qui optimise la qualité de la prédiction en agrégeant
-des scores de performance sur des découpages différents de l'échantillon d'apprentissage.
+avec $p$ le nombre de variables de notre modèle et $\lambda$ le facteur de pénalisation. Le choix de la pénalisation
+idéale dépend de la structure des données et n'est jamais connue, *ex-ante* par le modélisateur. Faut-il pénaliser fortement ou non le modèle ? Selon les valeurs de ce paramètre $\lambda$, les $\beta$ qui sont eux estimés par apprentissage, seront différents.
 
-La validation croisée permet d'évaluer les performances de modèles différents (SVM, random forest, etc.) ou, couplé à une stratégie de *grid search*, de trouver les valeurs des hyperparamètres qui aboutissent à la meilleure prédiction.
-
-::: {.note}
-L'étape de découpage de l'échantillon de validation croisée est à distinguer de l'étape `split_sample_test`. A ce stade, on a déjà partitionné les données en échantillon d'apprentissage et test. C'est l'échantillon d'apprentissage qu'on découpe en sous-morceaux. 
-:::
 
 La méthode la plus commune est la validation croisée _k-fold_.
 On partitionne les données en $K$ morceaux et on considère chaque pli, tour à tour, comme un échantillon
@@ -189,6 +178,9 @@ comparés pour plusieurs valeurs des hyperparamètres.
 
 ![](https://scikit-learn.org/stable/_images/grid_search_cross_validation.png)
 
+::: {.note}
+L'étape de découpage de l'échantillon de validation croisée est à distinguer de l'étape `split_sample_test`. A ce stade, on a déjà partitionné les données en échantillon d'apprentissage et test. C'est l'échantillon d'apprentissage qu'on découpe en sous-morceaux. 
+:::
+
 Il existe d'autres types de validation croisée, notamment la *leave one out* qui consiste à considérer une fois
 exactement chaque observation comme l’échantillon de test (une *n-fold cross validation*).
-
