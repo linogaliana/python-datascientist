@@ -1,7 +1,5 @@
 ---
 title: "Classification: premier modèle avec les SVM"
-weight: 30
-slug: SVM
 tags:
   - scikit
   - Machine Learning
@@ -22,7 +20,6 @@ description: |
   les plus fréquemment rencontrés sont les _SVM_ (*Support Vector Machine*).
   Ce chapitre illustre les enjeux de la classification à partir de
   ce modèle sur les données de vote aux élections présidentielles US de 2020.
-image: featured_svm.png
 echo: false
 ---
 
@@ -51,7 +48,7 @@ Bien-sûr, dans la vraie vie, il est rare d'avoir des nuages de points bien ordo
 ![](https://scikit-learn.org/stable/_images/sphx_glr_plot_iris_svc_001.png)
 
 
-::: {.tip collapse="true"}
+::: {.tip}
 ## Formalisation mathématique
 
 Les SVM sont l'une des méthodes de _machine learning_ les plus intuitives
@@ -100,7 +97,7 @@ La généralisation au cas non linéaire implique d'introduire des noyaux transf
 :::
 
 
-## Application
+# Application
 
 Pour appliquer un modèle de classification, il nous faut
 trouver une variable dichotomique. Le choix naturel est
@@ -113,7 +110,6 @@ que la victoire des Républicains est notre _label_ 1 et la défaite _0_.
 
 ```{python}
 #| echo: true
-# packages utiles
 from sklearn import svm
 import sklearn.metrics
 from sklearn.model_selection import train_test_split
@@ -121,7 +117,6 @@ from sklearn.model_selection import cross_val_score
 import matplotlib.pyplot as plt
 ```
 
-::: {.exercise}
 ## Exercice 1 : Premier algorithme de classification
 
 1. Créer une variable *dummy* appelée `y` dont la valeur vaut 1 quand les républicains l'emportent. 
@@ -144,7 +139,6 @@ créer des échantillons de test (20 % des observations) et d'estimation (80 %) 
 
 7. [OPTIONNEL] Faire une 5-fold validation croisée pour déterminer le paramètre *C* idéal. 
 
-:::
 
 
 ```{python}
@@ -163,12 +157,19 @@ X_train, X_test, y_train, y_test = train_test_split(
     df[xvars],
     df[['y']].values.ravel(), test_size=0.2, random_state=123
 )
-#X_train.head()
-#y_test
-     
 ```
 
+On obtient donc un ensemble de _features_ d'entraînement ayant cette forme:
 
+```{python}
+X_train.head()
+```
+
+Et les _labels_ associés sont les suivants:
+
+```{python}
+y_test
+```
 
 
 ```{python}
@@ -180,27 +181,19 @@ sc_accuracy = sklearn.metrics.accuracy_score(y_pred, y_test)
 sc_f1 = sklearn.metrics.f1_score(y_pred, y_test)
 sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
 sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
-
-#print(sc_accuracy)
-#print(sc_f1)
-#print(sc_recall)
-#print(sc_precision)
 ```
 
-A l'issue de la question 3,
-le classifieur avec `C = 1`
-devrait avoir les performances suivantes :
-
 ```{python}
-#| output: asis
-out = pd.DataFrame.from_dict({"Accuracy": [sc_accuracy], "Recall": [sc_recall],
+stats_perf = pd.DataFrame.from_dict({"Accuracy": [sc_accuracy], "Recall": [sc_recall],
                         "Precision": [sc_precision], "F1": [sc_f1]}, orient = "index", columns = ["Score"])
-print(out.to_markdown())
 ```
+
+A l'issue de la question 3, notre classifieur manque totalement les labels 0, qui sont minoritaires. Parmi les raisons possibles: l'échelle des variables. Le revenu, notamment, a une distribution qui peut écraser celle des autres variables, dans un modèle linéaire. Il faut donc, a minima, standardiser les variables, ce qui est l'objet de la question 4
+
 
 
 ```{python}
-#| output: false
+import matplotlib.pyplot as plt
 
 # 4. Matrice de confusion
 predictions = clf.predict(X_test)
@@ -210,31 +203,17 @@ disp = sklearn.metrics.ConfusionMatrixDisplay(
             display_labels=clf.classes_
        )
 disp.plot()
-
-#Réponse : Notre classifieur manque totalement les labels 0, qui sont minoritaires.
-#Une raison possible ? L'échelle des variables : le revenu a une
-#distribution qui peut écraser celle des autres variables,
-#dans un modèle linéaire. Il faut donc, a minima, 
-#standardiser les variables.
-
-plt.savefig("confusion_matrix.png")
+plt.show()
 ```
 
-La matrice de confusion associée
-prend cette forme:
-
-![](confusion_matrix.png)
-
+Standardiser les variables n'apporte finalement pas de gain:
 
 ```{python}
-#| output: false
-
-# 5. Refaire les questions précédentes avec des variables normalisées.
 import sklearn.preprocessing as preprocessing
 
-X = df[xvars]
+X = df.loc[:, xvars]
 y = df[['y']]
-scaler = preprocessing.StandardScaler().fit(X) #Ici on standardise
+scaler = preprocessing.StandardScaler().fit(X) #Ici on estime
 X = scaler.transform(X) #Ici on standardise
 
 X_train, X_test, y_train, y_test = train_test_split(
@@ -250,16 +229,10 @@ disp = sklearn.metrics.ConfusionMatrixDisplay(
             display_labels=clf.classes_
        )
 disp.plot()
-
-#Réponse : Non, standardiser les variables n'apporte pas de gain
-# Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables. 
-# C'est pour cette raison que l'étape de sélection de variable est cruciale.
-
-plt.savefig("confusion_matrix2.png")
+plt.show()
 ```
 
-![](confusion_matrix2.png)
-
+Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables. C'est pour cette raison que l'étape de sélection de variable est cruciale et qu'un chapitre y est consacré.
 
 A l'issue de la question 6,
 le nouveau classifieur avec devrait avoir les performances suivantes :
@@ -269,15 +242,12 @@ le nouveau classifieur avec devrait avoir les performances suivantes :
 
 out = pd.DataFrame.from_dict({"Accuracy": [sc_accuracy], "Recall": [sc_recall],
                         "Precision": [sc_precision], "F1": [sc_f1]}, orient = "index", columns = ["Score"])
-print(out.to_markdown())
 ```
 
 
 
 
 ```{python}
-#| include: false
-
 # 6. Refaire les questions en changeant la variable X.
 votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
 df = votes[["y", "share_2016_republican", 'Median_Household_Income_2019']]
@@ -318,9 +288,6 @@ disp.plot()
 plt.savefig("confusion_matrix3.png")
 ```
 
-Et la matrice de confusion associée :
-
-![](confusion_matrix3.png)
 
 
 
