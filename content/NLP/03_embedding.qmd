@@ -25,33 +25,31 @@ eval: false
 image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/word_embedding.png
 ---
 
-::: {.cell .markdown}
-```{python}
-#| echo: false
-#| output: 'asis'
-#| include: true
-#| eval: true
-
-import sys
-sys.path.insert(1, '../../') #insert the utils module
-from utils import print_badges
-
-#print_badges(__file__)
-print_badges("content/NLP/04_word2vec.qmd", ssp_cloud_service="pytorch")
-```
-:::
-
-
 ::: {.warning}
 Ce chapitre va évoluer prochainement.
 :::
 
+{{< badges
+    printMessage="true"
+>}}
 
+# Introduction
 
 Cette page approfondit certains aspects présentés dans la
-[partie introductive](/content/NLP/02_exoclean.qmd). Après avoir travaillé sur le
-*Comte de Monte Cristo*, on va continuer notre exploration de la littérature
-avec cette fois des auteurs anglophones :
+[partie introductive](/content/NLP/02_exoclean.qmd). 
+Nous allons avancer dans notre compréhension des enjeux du NLP grâce à la
+modélisation du langage. 
+
+Nous partirons de la conclusion, évoquée à la fin du précédent chapitre, que les approches fréquentistes présentent plusieurs
+inconvénients : représentation du langage sur des régularités statistiques indépendantes des proximités entre des mots ou phrases, difficulté à prendre en compte le contexte.
+
+L'objectif de ce chapitre est d'évoquer le premier point. Il s'agira d'une introduction au sujet des _embeddings_, ces représentations du langage qui sont au fondement des modèles de langage actuels utilisés par des outils entrés dans notre quotidien (`DeepL`, `ChatGPT`...). 
+
+
+## Données utilisées
+
+Nous allons continuer notre exploration de la littérature
+avec, à nouveau, les trois auteurs anglophones :
 
 * Edgar Allan Poe, (EAP) ;
 * HP Lovecraft (HPL) ;
@@ -60,17 +58,19 @@ avec cette fois des auteurs anglophones :
 Les données sont disponibles sur un CSV mis à disposition sur [`Github`](https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/blob/master/data/spooky.csv). L'URL pour les récupérer directement est 
 <https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv>.
 
-Le but va être dans un premier temps de regarder dans le détail les termes les plus fréquents utilisés par les auteurs et de les représenter graphiquement, puis on va ensuite essayer de prédire quel texte correspond à quel auteur à partir de différents modèles de vectorisation, notamment les *word embeddings*.
+Pour rentrer dans le sujet des _embeddings_, nous allons faire de la modélisation du langage en essayant de prédire les auteurs ayant écrit tel ou tel texte. On parle de modèle de langage pour désigner la représentation d'un texte ou d'une langue sous la forme d'une distribution de probabilités de termes (généralement les mots). 
 
-
+::: {.note}
+## Sources d'inspiration
 Ce chapitre s'inspire de plusieurs ressources disponibles en ligne:
 
 * Un [premier _notebook_ sur `Kaggle`](https://www.kaggle.com/enerrio/scary-nlp-with-spacy-and-keras)
 et un [deuxième](https://www.kaggle.com/meiyizi/spooky-nlp-and-topic-modelling-tutorial/notebook
 ) ;
 * Un [dépôt `Github`](https://github.com/GU4243-ADS/spring2018-project1-ginnyqg) ;
+:::
 
-# Packages à installer
+## Packages à installer
 
 Comme dans la [partie précédente](/content/NLP/02_exoclean.qmd), il faut télécharger des librairies 
 spécialiséees pour le NLP, ainsi que certaines de leurs dépendances.
@@ -87,10 +87,12 @@ extrêmement bien faite.
 
 ```{python}
 #| eval: false
+#| echo: true
 !python -m spacy download en_core_web_sm
 ```
 
 ```{python}
+#| eval: false
 from collections import Counter
 
 import numpy as np
@@ -112,11 +114,15 @@ import gensim.downloader
 from sentence_transformers import SentenceTransformer
 ```
 
-# Nettoyage des données
+
+# Préparation des données
 
 Nous allons ainsi à nouveau utiliser le jeu de données `spooky` :
 
 ```{python}
+#| echo: true
+import pandas as pd
+
 data_url = 'https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv'
 spooky_df = pd.read_csv(data_url)
 ```
@@ -124,25 +130,20 @@ spooky_df = pd.read_csv(data_url)
 Le jeu de données met ainsi en regard un auteur avec une phrase qu'il a écrite :
 
 ```{python}
+#| echo: true
 spooky_df.head()
 ```
 
+Comme nous l'avons évoqué dans le chapitre précédent, la première étape de tout travail sur données textuelles est souvent celle du *preprocessing*, qui inclut notamment les étapes de tokenization et de nettoyage du texte. 
 
-## Preprocessing
-
-En NLP, la première étape est souvent celle du *preprocessing*, qui inclut notamment les étapes de tokenization et de nettoyage du texte. Comme celles-ci ont été vues en détail dans le précédent chapitre, on se contentera ici d'un *preprocessing* minimaliste : suppression de la ponctuation et des *stop words* (pour la visualisation et les méthodes de vectorisation basées sur des comptages).
-
-Jusqu'à présent, nous avons utilisé principalement `nltk` pour le 
-*preprocessing* de données textuelles. Cette fois, nous proposons
-d'utiliser la librairie `spaCy` qui permet de mieux automatiser sous forme de
-*pipelines* de *preprocessing*. 
+On se contentera ici d'un *preprocessing* minimaliste : suppression de la ponctuation et des *stop words* (pour la visualisation et les méthodes de vectorisation basées sur des comptages).
 
 Pour initialiser le processus de nettoyage,
-on va utiliser le corpus `en_core_web_sm` (voir plus
-haut pour l'installation de ce corpus):
+on va utiliser le corpus `en_core_web_sm` de `Spacy`
 
 
 ```{python}
+#| echo: true
 import spacy
 nlp = spacy.load('en_core_web_sm')
 ```
@@ -154,23 +155,50 @@ très approprié pour industrialiser un certain nombre d'opérations de
 *preprocessing* :
 
 ```{python}
-def clean_docs(texts, remove_stopwords=False, n_process = 4):
-    
-    docs = nlp.pipe(texts, 
-                    n_process=n_process,
-                    disable=['parser', 'ner',
-                             'lemmatizer', 'textcat'])
-    stopwords = nlp.Defaults.stop_words
+#| echo: true
+from typing import List
+import spacy
 
-    docs_cleaned = []
-    for doc in docs:
-        tokens = [tok.text.lower().strip() for tok in doc if not tok.is_punct]
-        if remove_stopwords:
-            tokens = [tok for tok in tokens if tok not in stopwords]
-        doc_clean = ' '.join(tokens)
-        docs_cleaned.append(doc_clean)
-        
-    return docs_cleaned
+def clean_docs(
+    texts: List[str], 
+    remove_stopwords: bool = False, 
+    n_process: int = 4, 
+    remove_punctuation: bool = True
+) -> List[str]:
+    """
+    Cleans a list of text documents by tokenizing, optionally removing stopwords, and optionally removing punctuation.
+
+    Parameters:
+        texts (List[str]): List of text documents to clean.
+        remove_stopwords (bool): Whether to remove stopwords. Default is False.
+        n_process (int): Number of processes to use for processing. Default is 4.
+        remove_punctuation (bool): Whether to remove punctuation. Default is True.
+
+    Returns:
+        List[str]: List of cleaned text documents.
+    """
+    # Load spacy's nlp model
+    docs = nlp.pipe(
+        texts, 
+        n_process=n_process, 
+        disable=['parser', 'ner', 'lemmatizer', 'textcat']
+    )
+    
+    # Pre-load stopwords for faster checking
+    stopwords = set(nlp.Defaults.stop_words)
+
+    # Process documents
+    docs_cleaned = (
+        ' '.join(
+            tok.text.lower().strip()
+            for tok in doc
+            if (not remove_punctuation or not tok.is_punct) and 
+               (not remove_stopwords or tok.text.lower() not in stopwords)
+        )
+        for doc in docs
+    )
+    
+    return list(docs_cleaned)
 ```
 
 On applique la fonction `clean_docs` à notre colonne `pandas`.
@@ -178,10 +206,12 @@ Les `pandas.Series` étant itérables, elles se comportent comme des listes et
 fonctionnent ainsi très bien avec notre `pipe` `spacy`.
 
 ```{python}
+#| echo: true
 spooky_df['text_clean'] = clean_docs(spooky_df['text'])
 ```
 
 ```{python}
+#| echo: true
 spooky_df.head()
 ```
 
@@ -191,13 +221,15 @@ spooky_df.head()
 On réalise un simple encodage de la variable à prédire :
 il y a trois catégories (auteurs), représentées par des entiers 0, 1 et 2.
 
-Pour cela, on utilise le `LabelEncoder` de `scikit` déjà présenté 
-dans la [partie modélisation](#preprocessing). On va utiliser la méthode
+Pour cela, on utilise le `LabelEncoder` de `Scikit` déjà présenté 
+dans la [partie modélisation](/content/modelisation/0_preprocessing.qmd). On va utiliser la méthode
 `fit_transform` qui permet, en un tour de main, d'appliquer à la fois
 l'entraînement (`fit`), à savoir la création d'une correspondance entre valeurs
 numériques et _labels_, et l'appliquer (`transform`) à la même colonne.
 
 ```{python}
+from sklearn.preprocessing import LabelEncoder
+
 le = LabelEncoder()
 spooky_df['author_encoded'] = le.fit_transform(spooky_df['author'])
 ```
@@ -215,9 +247,13 @@ Cela permettra d'évaluer nos différents modèles toute à la fin de manière t
 puisque ces données n'auront jamais utilisées pendant l'entraînement.
 
 ```{python}
+from sklearn.model_selection import train_test_split
+
 y = spooky_df["author_encoded"]
 X = spooky_df['text_clean']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42
+)
 ```
 
 Notre échantillon initial n'est pas équilibré (*balanced*) : on retrouve plus d'oeuvres de
@@ -238,105 +274,118 @@ la méthode `inverse_transform` :
 print(y_train[0], le.inverse_transform([y_train[0]])[0])
 ```
 
-# Statistiques exploratoires
-
-## Répartition des labels
-
-Refaisons un graphique que nous avons déjà produit précédemment pour voir
-la répartition de notre corpus entre auteurs :
-
-```{python}
-#| output: hide
-fig = pd.Series(le.inverse_transform(y_train)).value_counts().plot(kind='bar')
-fig
-```
-
-
-```{python}
-#| echo: false
-fig.get_figure()
-```
-
-On observe une petite asymétrie : les passages des livres d'Edgar Allen Poe sont plus nombreux que ceux des autres auteurs dans notre corpus d'entraînement, ce qui peut être problématique dans le cadre d'une tâche de classification.
-L'écart n'est pas dramatique, mais on essaiera d'en tenir compte dans l'analyse en choisissant une métrique d'évaluation pertinente. 
-
-## Mots les plus fréquemment utilisés par chaque auteur
-
-On va supprimer les *stop words* pour réduire le bruit dans notre jeu
-de données.
-
-```{python}
-# Suppression des stop words
-X_train_no_sw = clean_docs(X_train, remove_stopwords=True)
-X_train_no_sw = np.array(X_train_no_sw)
-```
-
-Pour visualiser rapidement nos corpus, on peut utiliser la technique des
-nuages de mots déjà vue à plusieurs reprises. 
-
-Vous pouvez essayer de faire vous-même les nuages ci-dessous
-ou cliquer sur la ligne ci-dessous pour afficher le code ayant
-généré les figures :
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>Cliquer pour afficher le code</code> 👇</summary>
-```
-
-```{python}
-def plot_top_words(initials, ax, n_words=20):
-    # Calcul des mots les plus fréquemment utilisés par l'auteur
-    texts = X_train_no_sw[le.inverse_transform(y_train) == initials]
-    all_tokens = ' '.join(texts).split()
-    counts = Counter(all_tokens)
-    top_words = [word[0] for word in counts.most_common(n_words)]
-    top_words_counts = [word[1] for word in counts.most_common(n_words)]
-    
-    # Représentation sous forme de barplot
-    ax = sns.barplot(ax = ax, x=top_words, y=top_words_counts)
-    ax.set_title(f'Most Common Words used by {initials_to_author[initials]}')
-```
-
-```{python}
-#| output: hide
-
-initials_to_author = {
-    'EAP': 'Edgar Allen Poe',
-    'HPL': 'H.P. Lovecraft',
-    'MWS': 'Mary Wollstonecraft Shelley'
-}
-
-fig, axs = plt.subplots(3, 1, figsize = (12,12))
-
-plot_top_words('EAP', ax = axs[0])
-plot_top_words('HPL', ax = axs[1])
-plot_top_words('MWS', ax = axs[2])
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-```{python}
-#| eval: false
-#| echo: false
-axs[0].get_figure()
-axs[1].get_figure()
-axs[2].get_figure()
-```
-
-Beaucoup de mots se retrouvent très utilisés par les trois auteurs.
-Il y a cependant des différences notables : le mot _"life"_
-est le plus employé par MWS, alors qu'il n'apparaît pas dans les deux autres tops.
-De même, le mot _"old"_ est le plus utilisé par HPL
-là où les deux autres ne l'utilisent pas de manière surreprésentée.
-
+Nous avons vu précédemment que notre corpus n'est pas vraiment équilibré et qu'il existe des différences notables entre les auteurs. 
 Il semble donc qu'il y ait des particularités propres à chacun des auteurs
 en termes de vocabulaire,
 ce qui laisse penser qu'il est envisageable de prédire les auteurs à partir
 de leurs textes dans une certaine mesure.
+
+# Vectorisation par l'approche _bag of words_
+
+La représentation de nos textes sous forme de sac de mot permet de vectoriser notre corpus et ainsi d'avoir une représentation numérique de chaque texte. On peut à partir de là effectuer plusieurs types de tâches de modélisation.
+
+Définissons notre représentation vectorielle par TF-IDF grâce à `Scikit`:
+
+```{python}
+#| echo: true
+from sklearn.feature_extraction.text import TfidfVectorizer
+pipeline_tfidf = Pipeline([
+    ('tfidf', TfidfVectorizer(max_features=10000)),
+])
+pipeline_tfidf.fit(X_train)
+```
+
+## Trouver le texte le plus similaire
+
+En premier lieu, on peut chercher le texte le plus proche, au sens de TF-IDF, d'une phrase donnée
+
+```{python}
+text = "He was afraid by Frankenstein monster"
+```
+
+Comment retrouver le texte le plus proche de celui-ci ? Il faudrait transformer notre texte dans cette même représentation vectorielle et rapprocher ensuite celui-ci des autres textes représentés sous cette même forme.  
+
+Cela revient à effectuer une tâche de recherche d'information du type moteur de recherche. 
+
+DETAILS
+
+```{python}
+X_train_tfidf = (
+    pipeline_tfidf.transform(X_train)
+)
+X_train_tfidf=pd.DataFrame(
+    X_train_tfidf.todense(),columns=pipeline_tfidf.get_feature_names_out()
+)
+```
+
+```{python}
+cosine_similarities = cosine_similarity(
+    X_train_tfidf,
+    pipeline_tfidf.transform([text])
+).flatten()
+
+# Get the top 4 similarities and their indices
+top_4_indices = np.argsort(cosine_similarities)[-4:][::-1]  # Sort and reverse for descending order
+top_4_similarities = cosine_similarities[top_4_indices]
+```
+
+```{python}
+documents_plus_proches = spooky_df.iloc[top_4_indices].loc[:, ["text", "author"]]
+documents_plus_proches['score'] = top_4_similarities
+
+documents_plus_proches
+```
+
+details sur langchain
+
+```{python}
+from langchain_community.retrievers import TFIDFRetriever
+
+# Convert to desired metadata structure
+index_numbers = [
+    {"id": i, "author": spooky_df["author"].iloc[i] } for i, _ in enumerate(X_train.index)
+]
+
+retriever = TFIDFRetriever.from_texts(
+    X_train,
+    metadatas = index_numbers
+)
+```
+
+
+```{python}
+documents = []
+for best_echoes in retriever.invoke(text):
+    documents += [{**best_echoes.metadata, **{"doc": best_echoes.page_content}}]
+
+documents = pd.DataFrame(documents)
+```
+
+```{python}
+from sklearn.metrics.pairwise import cosine_similarity
+
+documents['score'] = cosine_similarity(
+    pipeline_tfidf.transform(documents['doc']),
+    pipeline_tfidf.transform([text])
+)
+```
+
+```{python}
+cosine_similarity(
+    X_train_tfidf,
+    pipeline_tfidf.transform([text])
+)
+```
+
+
+```{python}
+documents
+```
+
+
+## Trouver l'auteur le plus proche: une introduction au classifieur Bayes
+
+
 
 # Prédiction sur le set d'entraînement
 
