@@ -1,8 +1,5 @@
 ---
 title: "Méthodes de vectorisation : comptages et word embeddings"
-draft: false
-weight: 40
-slug: word2vec
 type: book
 tags:
   - NLP
@@ -21,7 +18,6 @@ description: |
   Parmi ces méthodes, on va notamment explorer le modèle `Word2Vec`, qui
   permet d'exploiter les structures latentes d'un texte en construisant
   des _word embeddings_ (plongements de mots).
-eval: false
 image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/word_embedding.png
 ---
 
@@ -103,7 +99,6 @@ import gensim
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
@@ -289,15 +284,23 @@ Définissons notre représentation vectorielle par TF-IDF grâce à `Scikit`:
 ```{python}
 #| echo: true
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
+
 pipeline_tfidf = Pipeline([
     ('tfidf', TfidfVectorizer(max_features=10000)),
 ])
-pipeline_tfidf.fit(X_train)
+pipeline_tfidf
+```
+
+Entraînons d'ores et déjà notre modèle à vectoriser le texte à partir de la méthode TF-IDF. Pour le moment il n'est pas encore question de faire de l'évaluation, faisons donc un entraînement sur l'ensemble de notre base et pas seulement sur `X_train`. 
+
+```{python}
+pipeline_tfidf.fit(spooky_df['text_clean'])
 ```
 
 ## Trouver le texte le plus similaire
 
-En premier lieu, on peut chercher le texte le plus proche, au sens de TF-IDF, d'une phrase donnée
+En premier lieu, on peut chercher le texte le plus proche, au sens de TF-IDF, d'une phrase donnée. Prenons cet exemple:
 
 ```{python}
 text = "He was afraid by Frankenstein monster"
@@ -305,13 +308,54 @@ text = "He was afraid by Frankenstein monster"
 
 Comment retrouver le texte le plus proche de celui-ci ? Il faudrait transformer notre texte dans cette même représentation vectorielle et rapprocher ensuite celui-ci des autres textes représentés sous cette même forme.  
 
-Cela revient à effectuer une tâche de recherche d'information du type moteur de recherche. 
+Cela revient à effectuer une tâche de recherche d'information, cas d'usage classique du NLP, mis en oeuvre par exemple par les moteurs de recherche. Le terme Frankenstein étant assez discrminant, nous devrions, grâce à TF-IDF, retrouver des similarités entre notre texte et d'autres textes écrits par Mary Shelley. 
 
-DETAILS
+Une métrique régulièrement utilisée pour comparer des vecteurs est la similarité cosinus. Il s'agit d'ailleurs d'une mesure centrale dans l'approche moderne du NLP. Celle-ci a plus de sens avec des vecteurs dense, que nous verrons prochainement, qu'avec des vecteurs comportant beaucoup de 0 comme le sont les vecteurs _sparse_ des mesures _bag-of-words_. Néanmoins c'est déjà un exercice intéressant pour comprendre la similarité entre deux vecteurs. 
+
+Si chaque dimension d'un vecteur correspond à une direction, l'idée derrière la similarité cosinus est de mesurer l'angle entre deux vecteurs. L'angle sera réduit si les vecteurs sont proches.
+
+![](https://miro.medium.com/v2/resize:fit:824/1*GK56xmDIWtNQAD_jnBIt2g.png)
+
+
+### Avec `Scikit-Learn`
+
+
+::: {.exercise}
+## Exercice 1: recherche de similarité avec TF-IDF
+
+1. Utiliser la méthode `transform` pour vectoriser tout notre corpus d'entraînement. 
+
+2. En supposant que votre jeu d'entraînement vectorisé s'appelle `X_train_tfidf`, vous pouvez le transformer en _DataFrame_ avec la commande suivante:
+
+```{.python}
+X_train_tfidf=pd.DataFrame(
+    X_train_tfidf.todense(),columns=pipeline_tfidf.get_feature_names_out()
+)
+```
+
+3. Utiliser la méthode `cosine_similarity` de `Scikit` pour calculer la similarité cosinus entre notre texte vectorisé et l'ensemble du corpus d'entraînement grâce au code suivant:
+
+```{.python}
+from sklearn.metrics.pairwise import cosine_similarity
+
+cosine_similarities = cosine_similarity(
+    X_train_tfidf,
+    pipeline_tfidf.transform([text])
+).flatten()
+
+top_4_indices = np.argsort(cosine_similarities)[-4:][::-1]  # Sort and reverse for descending order
+top_4_similarities = cosine_similarities[top_4_indices]
+```
+
+4. Retrouver les documents concernés. Êtes-vous satisfait du résultat ? Comprenez-vous ce qu'il s'est passé ?
+
+:::
+
 
 ```{python}
+#| label: exo1-q1-q2
 X_train_tfidf = (
-    pipeline_tfidf.transform(X_train)
+    pipeline_tfidf.transform(spooky_df['text_clean'])
 )
 X_train_tfidf=pd.DataFrame(
     X_train_tfidf.todense(),columns=pipeline_tfidf.get_feature_names_out()
@@ -319,15 +363,20 @@ X_train_tfidf=pd.DataFrame(
 ```
 
 ```{python}
+#| label: exo1-q3
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
 cosine_similarities = cosine_similarity(
     X_train_tfidf,
     pipeline_tfidf.transform([text])
 ).flatten()
 
-# Get the top 4 similarities and their indices
 top_4_indices = np.argsort(cosine_similarities)[-4:][::-1]  # Sort and reverse for descending order
 top_4_similarities = cosine_similarities[top_4_indices]
 ```
+
+A l'issue de l'exercice, les 4 textes les plus similaires sont:
 
 ```{python}
 documents_plus_proches = spooky_df.iloc[top_4_indices].loc[:, ["text", "author"]]
@@ -336,55 +385,94 @@ documents_plus_proches['score'] = top_4_similarities
 documents_plus_proches
 ```
 
-details sur langchain
+
+### Avec `Langchain` 
+
+Cette approche de calcul de similarité textuelle est assez laborieuse avec `Scikit`. Avec le développement continu d'applications `Python` utilisant des modèles de langage, un écosystème très complet s'est développé pour pouvoir faire ces tâches en quelques lignes de code avec `Python`.
+
+Parmi les outils les plus précieux, nous trouvons [`Langchain`](https://www.langchain.com/) un écosystème `Python` haut-niveau permettant de construire des chaînes de production utilisant des données textuelles. 
+
+Nous allons ici procéder en 2 étapes: 
+
+- Créer un _retriever_, c'est-à-dire vectoriser avec TF-IDF notre corpus (les textes de nos trois auteurs) et les stocker sous forme de base de données vectorielle. 
+- Vectoriser à la volée notre texte de recherche (l'object `text` créé précédemment) et rechercher sa contrepartie la plus proche dans la base de données vectorielle. 
+
+La vectorisation de notre corpus se fait très simplement grâce à `Langchain` 
+puisque le TFIDFVectoriser de `Scikit` est encapsulé dans un module _ad hoc_ de `Lanchain`
 
 ```{python}
+#| echo: true
 from langchain_community.retrievers import TFIDFRetriever
+from langchain_community.document_loaders import DataFrameLoader
 
-# Convert to desired metadata structure
-index_numbers = [
-    {"id": i, "author": spooky_df["author"].iloc[i] } for i, _ in enumerate(X_train.index)
-]
+loader = DataFrameLoader(spooky_df, page_content_column="text_clean")
 
-retriever = TFIDFRetriever.from_texts(
-    X_train,
-    metadatas = index_numbers
+retriever = TFIDFRetriever.from_documents(
+    loader.load()
 )
 ```
 
+Cet objet `retriever` est un point d'entrée sur notre corpus. `Langchain` présente l'intérêt de fournir plusieurs points d'entrées standardisés, forts utiles dans les projets de NLP puisqu'il suffit de changer les vectoriseurs en entrée sans avoir à changer leur usage en fin de chaîne. 
+
+La méthode `invoke` permet de rechercher les vecteurs les plus similaires à notre texte de recherche:
 
 ```{python}
+#| echo: true
+retriever.invoke(text)
+```
+
+La sortie est un objet `Lanchain`, ce qui n'est pas pratique pour nous dans notre situation. On se ramène à un _DataFrame_:
+
+```{python}
+#| echo: true
 documents = []
 for best_echoes in retriever.invoke(text):
-    documents += [{**best_echoes.metadata, **{"doc": best_echoes.page_content}}]
+    documents += [{**best_echoes.metadata, **{"text_clean": best_echoes.page_content}}]
 
 documents = pd.DataFrame(documents)
 ```
+
+On peut ajouter à ce _DataFrame_ la colonne de score:
 
 ```{python}
 from sklearn.metrics.pairwise import cosine_similarity
 
 documents['score'] = cosine_similarity(
-    pipeline_tfidf.transform(documents['doc']),
+    pipeline_tfidf.transform(documents['text_clean']),
     pipeline_tfidf.transform([text])
 )
 ```
 
-```{python}
-cosine_similarity(
-    X_train_tfidf,
-    pipeline_tfidf.transform([text])
-)
-```
-
+On retrouve bien les mêmes documents:
 
 ```{python}
 documents
 ```
 
+::: {.note}
+## La métrique BM25
+
+BM25 est un modèle de récupération d'informations basé sur la pertinence probabiliste, au même titre que TF-IDF. BM25 est souvent utilisée dans les moteurs de recherche pour classer les documents par rapport à une requête.
+
+BM25 repose sur une combinaison de la fréquence des termes (TF), la fréquence inverse des documents (IDF), et une normalisation basée sur la longueur des documents. Autrement dit, il s'agit de tenir compte d'améliorer TF-IDF tout en normalisant les mesures en fonction de la taille des _strings_ afin de ne pas surpondérer les grands documents. 
+
+BM25 est donc particulièrement performant dans des environnements où les documents varient en longueur et en contenu. C'est pour cette raison que des moteurs de recherche comme `Elasticsearch` en ont fait une pierre angulaire du mécanisme de recherche.
+:::
+
+Pourquoi ne sont-ils pas tous pertinents ? On peut anticiper plusieurs raisons à cela.
+
+La première hypothèse vient du fait qu'on entraîne notre vectoriseur sur un corpus biaisé. Certes Frankestein est un terme rare mais il est beaucoup plus fréquent dans notre corpus que dans la langue anglaise. L'_inverse document frequency_ est donc biaisée en défaveur de ce terme: son apparition devrait être un signe beaucoup plus fort que le texte recherché correspond à Mary Shelley. Si cela peut améliorer un peu la pertinence des résultats renvoyés, ce n'est néanmoins pas là que le bât blesse. 
+
+L'approche fréquentiste suppose que les termes sont aussi dissemblables les uns que les autres. Un terme où apparaît le terme _"créature"_ ne bénéficiera pas d'un score positif si on recherche _"monstre"_. De plus, là encore, nous avons pris notre corpus comme un sac où les mots sont indépendants: on n'a pas plus de chance de tirer _"Frankenstein"_ après _"docteur"_. Ces limites vont nous amener vers le sujet des _embeddings_. Néanmoins, si l'approche fréquentiste est un peu _old school_, elle n'est néanmoins pas inutile et représente souvent une _"tough to beat baseline"_. Dans les domaines de l'extraction d'information avec des textes courts, où chaque terme est porteur d'un signal fort, cette approche est souvent judicieuse.
+
+
 
 ## Trouver l'auteur le plus proche: une introduction au classifieur Bayes
 
+Avant d'explorer les _embeddings_, nous pouvons essayer d'avoir un cas d'usage un petit peu différent dans notre cadre probabiliste. Supposons qu'on désire maintenant faire de la prédiction d'auteur. 
+
+
+OLD -----------------
 
 
 # Prédiction sur le set d'entraînement
@@ -400,6 +488,7 @@ Comme nous nous intéressons plus à l'effet de la vectorisation qu'à la tâche
 nous allons utiliser un algorithme de classification simple (un SVM linéaire), avec des paramètres non fine-tunés (c'est-à-dire des paramètres pas nécessairement choisis pour être les meilleurs de tous).
 
 ```{python}
+#| eval: false
 clf = LinearSVC(max_iter=10000, C=0.1, dual="auto")
 ```
 
@@ -441,6 +530,7 @@ et fait de la validation croisée en cherchant le meilleur modèle
 (en excluant/incluant les *stop words* et avec unigrammes/bigrammes)
 
 ```{python}
+#| eval: false
 def fit_vectorizers(vectorizer):
     pipeline = Pipeline(
     [
@@ -478,6 +568,7 @@ qui compte le nombre d'apparitions de chaque mot du vocabulaire dans le document
 Illustrons d'abord le principe à l'aide d'un exemple simple.
 
 ```{python}
+#| eval: false
 corpus = [
     'Un premier document à propos des chats.',
     'Un second document qui parle des chiens.'
@@ -490,12 +581,14 @@ vectorizer.fit(corpus)
 L'objet `vectorizer` a été "entraîné" (*fit*) sur notre corpus d'exemple contenant deux documents. Il a notamment appris le vocabulaire complet du corpus, dont on peut afficher l'ordre.
 
 ```{python}
+#| eval: false
 vectorizer.get_feature_names_out()
 ```
 
 L'objet `vectorizer` entraîné peut maintenant vectoriser le corpus initial, selon l'ordre du vocabulaire affiché ci-dessus.
 
 ```{python}
+#| eval: false
 X = vectorizer.transform(corpus)
 print(X.toarray())
 ```
@@ -503,6 +596,7 @@ print(X.toarray())
 Quel score `F1` obtient-on finalement avec cette méthode de vectorisation sur notre problème de classification d'auteurs ?
 
 ```{python}
+#| eval: false
 cv_bow = fit_vectorizers(CountVectorizer)
 ```
 
@@ -522,6 +616,7 @@ et donc de donner plus de poids aux mots les plus salients d'un document.
 Illustrons cela à nouveau avec notre corpus d'exemple de deux documents.
 
 ```{python}
+#| eval: false
 corpus = [
     'Un premier document à propos des chats.',
     'Un second document qui parle des chiens.'
@@ -534,12 +629,14 @@ vectorizer.fit(corpus)
 Là encore, le vectoriseur a "appris" le vocabulaire du corpus.
 
 ```{python}
+#| eval: false
 vectorizer.get_feature_names_out()
 ```
 
 Et peut être utilisé pour calculer les scores TF-IDF de chacun des termes des documents.
 
 ```{python}
+#| eval: false
 X = vectorizer.transform(corpus)
 print(X.toarray())
 ```
@@ -549,6 +646,7 @@ On remarque que "chats" et "chiens" possèdent les scores les plus élevés, ce 
 Quel score `F1` obtient-on avec cette méthode de vectorisation sur notre problème de classification d'auteurs ?
 
 ```{python}
+#| eval: false
 cv_tfidf = fit_vectorizers(TfidfVectorizer)
 ```
 
@@ -615,6 +713,7 @@ qui présentent les propriétés discutées précédemment.
 
 
 ```{python}
+#| eval: false
 X_train_tokens = [text.split() for text in X_train]
 w2v_model = Word2Vec(X_train_tokens, vector_size=200, window=5, 
                      min_count=1, workers=4)
@@ -622,6 +721,7 @@ w2v_model = Word2Vec(X_train_tokens, vector_size=200, window=5,
 
 
 ```{python}
+#| eval: false
 w2v_model.wv.most_similar("mother")
 ```
 
@@ -636,6 +736,7 @@ L'*embedding* (la représentation vectorielle) de chaque document correspond à 
 
 
 ```{python}
+#| eval: false
 def get_mean_vector(w2v_vectors, words):
     words = [word for word in words if word in w2v_vectors]
     if words:
@@ -658,6 +759,7 @@ def fit_w2v_avg(w2v_vectors):
 
 
 ```{python}
+#| eval: false
 cv_w2vec = fit_w2v_avg(w2v_model.wv)
 ```
 
@@ -686,6 +788,7 @@ On peut le charger directement grâce à l'instruction suivante :
 
 ```{python}
 #| output: hide
+#| eval: false
 glove_model = gensim.downloader.load('glove-wiki-gigaword-200')
 ```
 
@@ -693,6 +796,7 @@ Par exemple, la représentation vectorielle de roi est l'objet
 multidimensionnel suivant :
 
 ```{python}
+#| eval: false
 glove_model['king']
 ```
 
@@ -700,6 +804,7 @@ Comme elle est peu intelligible, on va plutôt rechercher les termes les
 plus similaires. Par exemple,
 
 ```{python}
+#| eval: false
 glove_model.most_similar('mother')
 ```
 
@@ -709,6 +814,7 @@ $$\text{king} - \text{man} + \text{woman} ≈ \text{queen}$$
 dans ce plongement de mots:
 
 ```{python}
+#| eval: false
 glove_model.most_similar(positive = ['king', 'woman'], negative = ['man'])
 ```
 
@@ -718,6 +824,7 @@ pour en découvrir plus sur `Word2Vec`.
 Faisons notre apprentissage par transfert :
 
 ```{python}
+#| eval: false
 cv_w2vec_transfert = fit_w2v_avg(glove_model)
 ```
 
@@ -728,6 +835,7 @@ on arrive à peine aux performances de la vectorisation par comptage.
 En effet, pour rappel, les performances sont les suivantes :
 
 ```{python}
+#| eval: false
 perfs = pd.DataFrame(
     [np.mean(cv_bow.cv_results_['mean_test_score']),
      np.mean(cv_tfidf.cv_results_['mean_test_score']),
@@ -767,18 +875,21 @@ de type Transformer (`BERT`, etc.).
 _TODO: approfondir le sujet_
 
 ```{python}
+#| eval: false
 #| output: hide
 model = SentenceTransformer('all-mpnet-base-v2')
 ```
 
 
 ```{python}
+#| eval: false
 #| echo: false
 X_train_vectors = model.encode(X_train)
 ```
 
 
 ```{python}
+#| eval: false
 #| echo: false
 scores = cross_val_score(clf, X_train_vectors, y_train, 
                          cv=4, scoring='f1_micro', n_jobs=4)
@@ -789,6 +900,7 @@ print(f"Mean F1 {np.mean(scores)}")
 
 ```{python}
 #| echo: false
+#| eval: false
 perfs = pd.concat(
   [perfs,
   pd.DataFrame(
