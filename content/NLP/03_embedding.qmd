@@ -1,14 +1,5 @@
 ---
-title: "Méthodes de vectorisation : comptages et word embeddings"
-type: book
-tags:
-  - NLP
-  - Littérature
-  - Topics Modelling
-  - Word2Vec
-categories:
-  - Tutoriel
-  - NLP
+title: "Les embeddings, où comment synthétiser l'information textuelle"
 description: |
   Pour pouvoir utiliser des données textuelles dans des algorithmes
   de _machine learning_, il faut les vectoriser, c'est à dire transformer
@@ -19,6 +10,7 @@ description: |
   permet d'exploiter les structures latentes d'un texte en construisant
   des _word embeddings_ (plongements de mots).
 image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/word_embedding.png
+echo: false
 ---
 
 ::: {.warning}
@@ -129,6 +121,8 @@ Le jeu de données met ainsi en regard un auteur avec une phrase qu'il a écrite
 spooky_df.head()
 ```
 
+## Preprocessing
+
 Comme nous l'avons évoqué dans le chapitre précédent, la première étape de tout travail sur données textuelles est souvent celle du *preprocessing*, qui inclut notamment les étapes de tokenization et de nettoyage du texte. 
 
 On se contentera ici d'un *preprocessing* minimaliste : suppression de la ponctuation et des *stop words* (pour la visualisation et les méthodes de vectorisation basées sur des comptages).
@@ -151,6 +145,8 @@ très approprié pour industrialiser un certain nombre d'opérations de
 
 ```{python}
 #| echo: true
+#| code-fold: true
+#| code-summary: "Preprocessing de la base textuelle"
 from typing import List
 import spacy
 
@@ -211,49 +207,28 @@ spooky_df.head()
 ```
 
 
-## Encodage de la variable à prédire
-
-On réalise un simple encodage de la variable à prédire :
-il y a trois catégories (auteurs), représentées par des entiers 0, 1 et 2.
-
-Pour cela, on utilise le `LabelEncoder` de `Scikit` déjà présenté 
-dans la [partie modélisation](/content/modelisation/0_preprocessing.qmd). On va utiliser la méthode
-`fit_transform` qui permet, en un tour de main, d'appliquer à la fois
-l'entraînement (`fit`), à savoir la création d'une correspondance entre valeurs
-numériques et _labels_, et l'appliquer (`transform`) à la même colonne.
-
-```{python}
-from sklearn.preprocessing import LabelEncoder
-
-le = LabelEncoder()
-spooky_df['author_encoded'] = le.fit_transform(spooky_df['author'])
-```
-
-On peut vérifier les classes de notre `LabelEncoder` :
-
-```{python}
-le.classes_
-```
-
 ## Construction des bases d'entraînement et de test
 
 On met de côté un échantillon de test (20 %) avant toute analyse (même descriptive).
 Cela permettra d'évaluer nos différents modèles toute à la fin de manière très rigoureuse,
 puisque ces données n'auront jamais utilisées pendant l'entraînement.
 
+Notre échantillon initial n'est pas équilibré (*balanced*) : on retrouve plus d'oeuvres de
+certains auteurs que d'autres. Afin d'obtenir un modèle qui soit évalué au mieux, nous allons donc stratifier notre échantillon de manière à obtenir une répartition similaire d'auteurs dans nos
+ensembles d'entraînement et de test.
+
+
 ```{python}
+#| echo: true
 from sklearn.model_selection import train_test_split
 
-y = spooky_df["author_encoded"]
+y = spooky_df["author"]
 X = spooky_df['text_clean']
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
 )
 ```
 
-Notre échantillon initial n'est pas équilibré (*balanced*) : on retrouve plus d'oeuvres de
-certains auteurs que d'autres. Afin d'obtenir un modèle qui soit évalué au mieux, nous allons donc stratifier notre échantillon de manière à obtenir une répartition similaire d'auteurs dans nos
-ensembles d'entraînement et de test.
 
 Aperçu du premier élément de `X_train` : 
 
@@ -261,19 +236,6 @@ Aperçu du premier élément de `X_train` :
 X_train[0]
 ```
 
-On peut aussi vérifier qu'on est capable de retrouver
-la correspondance entre nos auteurs initiaux avec
-la méthode `inverse_transform` :
-
-```{python}
-print(y_train[0], le.inverse_transform([y_train[0]])[0])
-```
-
-Nous avons vu précédemment que notre corpus n'est pas vraiment équilibré et qu'il existe des différences notables entre les auteurs. 
-Il semble donc qu'il y ait des particularités propres à chacun des auteurs
-en termes de vocabulaire,
-ce qui laisse penser qu'il est envisageable de prédire les auteurs à partir
-de leurs textes dans une certaine mesure.
 
 # Vectorisation par l'approche _bag of words_
 
@@ -349,7 +311,6 @@ top_4_similarities = cosine_similarities[top_4_indices]
 
 4. Retrouver les documents concernés. Êtes-vous satisfait du résultat ? Comprenez-vous ce qu'il s'est passé ?
 
-:::
 
 
 ```{python}
@@ -472,6 +433,148 @@ L'approche fréquentiste suppose que les termes sont aussi dissemblables les uns
 Avant d'explorer les _embeddings_, nous pouvons essayer d'avoir un cas d'usage un petit peu différent dans notre cadre probabiliste. Supposons qu'on désire maintenant faire de la prédiction d'auteur. Si l'intuition précédente est vraie - certains mots sont plus probables dans les textes de certains auteurs - cela veut dire qu'on peut entraîner un algorithme de classification automatique à prédire un auteur à partir d'un texte.
 
 La méthode la plus naturelle pour se lancer dans cette approche est d'utiliser le classifieur naif de Bayes. Ce dernier est parfaitement adapté à l'approche fréquentiste que nous avons adoptée jusqu'à présent puisqu'il exploite les probabilités d'occurrence de mots par auteur. 
+
+Le classifieur naif de Bayes consiste à appliquer une règle de décision, à savoir sélectionner la classe la plus probable sachant la structure observée du document, c'est-à-dire les mots apparaissant dans celui-ci. 
+
+Autrement dit, on sélectionne la classe $\widehat{c}$ qui est la plus probable, sachant les termes dans le document $d$. 
+
+$$
+\widehat{c} = \arg \max_{c \in \mathcal{C}} \mathbb{P}(c|d) =  \arg \max_{c \in \mathcal{C}} \frac{ \mathbb{P}(d|c)\mathbb{P}(c)}{\mathbb{P}(d)}
+$$ {#eq-definition-bayes}
+
+Comme ceci est classique en estimation bayésienne, on peut se passer de certains termes constants, à savoir $\mathbb{P}(d)$. La définition de la classe estimée peut ainsi être reformulée de cette manière:
+
+$$
+\widehat{c} = \arg \max_{c \in \mathcal{C}} \mathbb{P}(d|c)\mathbb{P}(c)
+$$ {#eq-rewriting-bayes}
+
+L'hypothèse du sac de mot intervient à ce niveau. Un document $d$ est une collection de mots $w_i$ dont l'ordre n'a pas d'intérêt. Autrement dit, on peut se contenter de faire un modèle sur les mots, sans faire intervenir des probabilités conditionnelles sur l'ordre d'occurrence. 
+La seconde hypothèse forte est l'hypothèse naive à laquelle la méthode doit son nom: la probabilité de tirer un mot ne dépend que de la catégorie $c$ d'appartenance du document. Autrement dit, on peut considérer qu'un document est une suite de tirage indépendants de mots dont la probabilité ne dépend que de l'auteur. 
+
+Comme cela est expliqué dans la boite dédiée, en faisant ces hypothèses, on peut réécrire ce classifieur sous la forme
+
+$$
+\widehat{c} = \arg \max_{c \in \mathcal{C}} \mathbb{P}(c)\prod_{w \in \mathcal{W}}{\mathbb{P}(w|c)}
+$$
+
+avec $\mathcal{W}$ l'ensemble des mots dans le corpus (notre vocabulaire). 
+
+Empiriquement, nous sommes dans une tâche d'apprentissage supervisé où le _label_ est la classe du document et les _features_ sont nos mots vectorisés. Empiriquement, les probabilités sont estimées à partir du dénombrement des mots dans le corpus et des types de documents dans le corpus.
+
+Il est bien-sûr possible de calculer toutes ces grandeurs à la main mais `Scikit` permet d'implémenter un estimateur naif de Bayes après avoir vectorisé son corpus comme le montre le prochain exercice. Cela peut néanmoins poser un problème pratique: en principe, le corpus de test ne doit pas comporter de nouveaux mots car ces "nouvelles" dimensions n'étaient pas présentes dans le corpus d'entraînement. En pratique, la solution la plus simple est souvent celle choisie: ces mots sont ignorés. 
+
+
+::: {.exercise}
+## Exercice 2: le classifieur naif de Bayes
+
+1. En repartant de l'exemple précédent, définir un _pipeline_ qui vectorise chaque document (utiliser `CountVectorizer` plutôt que `TFIDFVectorizer`) et effectue une prédiction grâce à un modèle naif de Bayes.
+2. Entraîner ce modèle, faire une prédiction sur le jeu de test.
+3. Evaluer la performance de votre modèle
+4. Faire une prédiction sur la phrase que nous avons utilisée tout à l'heure dans la variable `text`. Obtenez-vous ce qui était attendu ?
+5. Regarder les probabilités obtenues (méthode `predict_proba`). 
+:::
+
+```{python}
+#| echo: true
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+
+pipeline = Pipeline([
+    ('vectorizer', CountVectorizer()),
+    ('classifier', MultinomialNB())
+])
+
+# Train the pipeline on the training data
+pipeline.fit(X_train, y_train)
+```
+
+```{python}
+# Predict on the test set
+y_pred = pipeline.predict(X_test)
+```
+
+```{python}
+from sklearn.metrics import accuracy_score, classification_report
+accuracy = accuracy_score(y_test, y_pred)
+```
+
+On obtient une précision satisfaisante:
+
+```{python}
+print(f"Précision: {accuracy}")
+```
+
+Les performances décomposées sont les suivantes:
+
+```{python}
+classification_report(y_test, y_pred)
+```
+
+Sans surprise, on obtient bien la prédiction de Mary Shelley:
+
+```{python}
+pipeline.predict([text])[0]
+```
+
+Finalement, si on regarde les probabilités estimées (question 5), on se rend compte que la prédiction est très certaine:
+
+```{python}
+pd.DataFrame(
+    {
+        "author": pipeline.classes_,
+        "proba": pipeline.predict_proba([text])[0]
+    }
+)
+```
+
+
+::: {.tip}
+## Comprendre la logique du classifieur naif de Bayes
+
+Supposons que nous sommes dans un problème de classification avec des classes $(c_1,...,c_K) (ensemble noté $\mathcal{C}$). Nous plaçant dans le cadre de pensée du sac de mot, nous pouvons ne pas nous préoccuper des positions des mots dans les documents, qui complexifieraient beaucoup l'écriture de nos équations.
+
+L'équation @eq-rewriting-bayes peut être réécrite
+
+$$
+\widehat{c} = \arg \max_{c \in \mathcal{C}} \mathbb{P}(w_1, ..., w_n|c)\mathbb{P}(c)
+$$
+
+Dans le monde bayésien, on nomme $\mathbb{P}(w_1, ..., w_n|c)$ la vraisemblance (_likelihood_) et $\mathbb{P}(c)$ l'_a priori_ (_prior_).  
+
+L'hypothèse Bayes naive permet de traiter un document comme une suite de tirages aléatoires dont les probabilités ne dépendent que de la catégorie. Dans ce cas, le tirage d'une phrase est une suite de tirages de mots et la probabilité composée est donc
+
+
+$$
+\mathbb{P}(w_1, ..., w_n|c) = \prod_{i=1}^n \mathbb{P}(w_i|c)
+$$
+
+Par exemple, en simplifiant en deux classes, si les probabilités sont celles du @tbl-fake-proba, la phrase _"afraid by Doctor Frankenstein"_ aura un peu moins de 1% de chance (0.8%) d'être écrite si l'autrice est Mary Shelley mais sera encore moins vraisemblable chez Lovecraft (0.006%) car si _"afraid"_ est très probable chez lui, Frankenstein est un événement rare qui rend peu vraisemblable cette composition de mots. 
+
+| Mot ($w_i$) | Probabilité chez Mary Shelley| Probabilité chez Lovecraft |
+|-----------|--------|--------|
+| Afraid | 0.1 | 0.6 |
+| By | 0.2 | 0.2 |
+| Doctor | 0.2 | 0.05 |
+| Frankenstein | 0.2 | 0.01 |
+
+: Exemple fictif de probabilités de tirage {#tbl-fake-proba}
+
+En composant ces différentes équations, on obtient 
+
+$$
+\widehat{c} = \arg \max_{c \in \mathcal{C}} \mathbb{P}(c)\prod_{w \in \mathcal{W}}{\mathbb{P}(w|c)}
+$$
+
+La contrepartie empirique de $\mathbb{P}(c)$ est assez évidente: la fréquence observée de chaque catégorie (les auteurs) dans notre corpus. Autrement dit, 
+
+$$
+\widehat{\mathbb{P}(c)} = \frac{n_c}{n_{doc}}
+$$
+
+Quelle est la contrepartie empirique de $\mathbb{P}(w_i|c)$ ? C'est la fréquence d'apparition du mot en question chez l'auteur. Pour le calculer, il suffit de compter le nombre de fois qu'il apparaît chez l'auteur et de diviser par le nombre de mots de l'auteur. 
+
+:::
+
 
 
 OLD -----------------
