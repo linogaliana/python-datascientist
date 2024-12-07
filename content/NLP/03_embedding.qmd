@@ -9,8 +9,9 @@ description: |
   Parmi ces méthodes, on va notamment explorer le modèle `Word2Vec`, qui
   permet d'exploiter les structures latentes d'un texte en construisant
   des _word embeddings_ (plongements de mots).
-image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/word_embedding.png
+image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/librarian.png
 echo: false
+bibliography: ../../reference.bib
 ---
 
 ::: {.warning}
@@ -311,6 +312,7 @@ top_4_similarities = cosine_similarities[top_4_indices]
 
 4. Retrouver les documents concernés. Êtes-vous satisfait du résultat ? Comprenez-vous ce qu'il s'est passé ?
 
+:::
 
 
 ```{python}
@@ -507,7 +509,9 @@ print(f"Précision: {accuracy}")
 Les performances décomposées sont les suivantes:
 
 ```{python}
-classification_report(y_test, y_pred)
+print(
+    classification_report(y_test, y_pred)
+)
 ```
 
 Sans surprise, on obtient bien la prédiction de Mary Shelley:
@@ -576,300 +580,184 @@ Quelle est la contrepartie empirique de $\mathbb{P}(w_i|c)$ ? C'est la fréquenc
 :::
 
 
+# Le modèle Word2Vec, une représentation plus synthétique
 
-OLD -----------------
+## Vers une représentation plus synthétique du langage
 
+La représentation vectorielle issue de l'approche _bag of words_ n'est pas très synthétique ni stable et surtout est assez frustre. 
 
-# Prédiction sur le set d'entraînement
+Si on a un petit corpus, on va avoir des problèmes à extrapoler puisque de nouveaux textes ont toutes les chances d'apporter de nouveaux mots, qui sont de nouvelles dimensions de _features_ qui n'étaient pas présentes dans le corpus d'entraînement, ce qui conceptuellement est un problème puisque les algorithmes de _machine learning_ n'ont pas vocation à prédire sur des caractéristiques sur lesquelles ils n'ont pas été entraîné[^genAI].
 
-Nous allons à présent vérifier cette conjecture en comparant
-plusieurs modèles de vectorisation,
-_i.e._ de transformation du texte en objets numériques
-pour que l'information contenue soit exploitable dans un modèle de classification.
+A l'inverse, plus on a de texte dans un corpus, plus notre représentation vectorielle sera importante. Par exemple, si votre sac de mot a vu tout le vocabulaire français, soit 60 000 mots selon l'[Académie Française](https://www.dictionnaire-academie.fr/article/QDL056) (les estimations étant de 200 000 pour la langue anglaise), cela fait des vecteurs de taille conséquente. Cependant, la diversité des textes est, en pratique, bien moindre: l'usage courant du Français nécessite plutôt autour de 3000 mots et la plupart des textes, notamment s'ils sont courts, n'utilisent pas un vocabulaire si complet. Ceci implique donc des vecteurs très peu denses, avec beaucoup de 0.
 
-## Démarche
+[^genAI]: Cette remarque peut apparaître étonnante alors que les IA génératives occupent une place importante dans nos usages. Néanmoins, il faut garder à l'esprit que certes vous posez de nouvelles questions à des IA mais vous les posez dans des termes qu'elles connaissent: du langage naturel dans une langue présente dans leur corpus d'entraînement, des images numériques qui sont donc interprétables par une machine, etc. Autrement dit, votre _prompt_ n'est pas, en soi, inconnu pour l'IA, elle peut l'interpréter même si son contenu est nouveau et original. 
 
-Comme nous nous intéressons plus à l'effet de la vectorisation qu'à la tâche de classification en elle-même,
-nous allons utiliser un algorithme de classification simple (un SVM linéaire), avec des paramètres non fine-tunés (c'est-à-dire des paramètres pas nécessairement choisis pour être les meilleurs de tous).
+La vectorisation selon cette approche est donc peu efficace; le signal est peu compressé. Des représentations denses, c'est-à-dire de dimension plus faible mais portant toutes une information, semblent plus adéquate pour pouvoir généraliser notre modélisation du langage.
+L'algorithme qui a rendu célèbre cette approche est le modèle `Word2Vec`, en quelques sortes le premier ancêtre commun des LLM modernes. La représentation vectorielle de `Word2Vec` est assez synthétique: la dimension de ces _embeddings_ est entre 100 et 300.
 
-```{python}
-#| eval: false
-clf = LinearSVC(max_iter=10000, C=0.1, dual="auto")
-```
+## Des relations sémantique entre les termes
 
-Ce modèle est connu pour être très performant sur les tâches de classification de texte, et nous fournira donc un bon modèle de référence (*baseline*). Cela nous permettra également de comparer de manière objective l'impact des méthodes de vectorisation sur la performance finale.
-
-Pour les deux premières méthodes de vectorisation
-(basées sur des fréquences et fréquences relatives des mots),
-on va simplement normaliser les données d'entrée, ce qui va permettre au SVM de converger plus rapidement, ces modèles étant sensibles aux différences d'échelle dans les données.
-
-On va également _fine-tuner_ via _grid-search_
-certains hyperparamètres liés à ces méthodes de vectorisation : 
-
-- on teste différents _ranges_ de `n-grams` (unigrammes et unigrammes + bigrammes)
-- on teste avec et sans _stop-words_
-
-Afin d'éviter le surapprentissage,
-on va évaluer les différents modèles via validation croisée, calculée sur 4 blocs.
-
-On récupère à la fin le meilleur modèle selon une métrique spécifiée.
-On choisit le `score F1`,
-moyenne harmonique de la précision et du rappel,
-qui donne un poids équilibré aux deux métriques, tout en pénalisant fortement le cas où l'une des deux est faible.
-Précisément, on retient le `score F1 *micro-averaged*` :
-les contributions des différentes classes à prédire sont agrégées,
-puis on calcule le `score F1` sur ces données agrégées.
-L'avantage de ce choix est qu'il permet de tenir compte des différences
-de fréquences des différentes classes.
-
-## Pipeline de prédiction
-
-On va utiliser un *pipeline* `scikit` ce qui va nous permettre d'avoir
-un code très concis pour effectuer cet ensemble de tâches cohérentes. 
-De plus, cela va nous assurer de gérer de manière cohérente nos différentes
-transformations (cf. [partie sur les pipelines](#pipelines))
-
-Pour se faciliter la vie, on définit une fonction `fit_vectorizers` qui
-intègre dans un *pipeline* générique une méthode d'estimation `scikit`
-et fait de la validation croisée en cherchant le meilleur modèle
-(en excluant/incluant les *stop words* et avec unigrammes/bigrammes)
-
-```{python}
-#| eval: false
-def fit_vectorizers(vectorizer):
-    pipeline = Pipeline(
-    [
-        ("vect", vectorizer()),
-        ("scaling", StandardScaler(with_mean=False)),
-        ("clf", clf),
-    ]
-    )
-
-    parameters = {
-        "vect__ngram_range": ((1, 1), (1, 2)),  # unigrams or bigrams
-        "vect__stop_words": ("english", None)
-    }
-
-    grid_search = GridSearchCV(pipeline, parameters, scoring='f1_micro',
-                               cv=4, n_jobs=4, verbose=1)
-    grid_search.fit(X_train, y_train)
-
-    best_parameters = grid_search.best_estimator_.get_params()
-    for param_name in sorted(parameters.keys()):
-        print("\t%s: %r" % (param_name, best_parameters[param_name]))
-
-    print(f"CV scores {grid_search.cv_results_['mean_test_score']}")
-    print(f"Mean F1 {np.mean(grid_search.cv_results_['mean_test_score'])}")
-    
-    return grid_search
-```
-
-# Approche _bag-of-words_
-
-On commence par une approche __"bag-of-words"__, 
-i.e. qui revient simplement à représenter chaque document par un vecteur
-qui compte le nombre d'apparitions de chaque mot du vocabulaire dans le document.
-
-Illustrons d'abord le principe à l'aide d'un exemple simple.
-
-```{python}
-#| eval: false
-corpus = [
-    'Un premier document à propos des chats.',
-    'Un second document qui parle des chiens.'
-]
-
-vectorizer = CountVectorizer()
-vectorizer.fit(corpus)
-```
-
-L'objet `vectorizer` a été "entraîné" (*fit*) sur notre corpus d'exemple contenant deux documents. Il a notamment appris le vocabulaire complet du corpus, dont on peut afficher l'ordre.
-
-```{python}
-#| eval: false
-vectorizer.get_feature_names_out()
-```
-
-L'objet `vectorizer` entraîné peut maintenant vectoriser le corpus initial, selon l'ordre du vocabulaire affiché ci-dessus.
-
-```{python}
-#| eval: false
-X = vectorizer.transform(corpus)
-print(X.toarray())
-```
-
-Quel score `F1` obtient-on finalement avec cette méthode de vectorisation sur notre problème de classification d'auteurs ?
-
-```{python}
-#| eval: false
-cv_bow = fit_vectorizers(CountVectorizer)
-```
-
-# TF-IDF
-
-On s'intéresse ensuite à l'approche __TF-IDF__,
-qui permet de tenir compte des fréquences *relatives* des mots.
-
-Ainsi, pour un mot donné, on va multiplier la fréquence d'apparition du mot dans le document (calculé comme dans la méthode précédente) par un terme qui pénalise une fréquence élevée du mot dans le corpus. L'image ci-dessous, empruntée à Chris Albon, illustre cette mesure:
-
-![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/tfidf.png)
-
-*Source: [Towards Data Science](https://towardsdatascience.com/tf-term-frequency-idf-inverse-document-frequency-from-scratch-in-python-6c2b61b78558)*
-
-La vectorisation `TF-IDF` permet donc de limiter l'influence des *stop-words*
-et donc de donner plus de poids aux mots les plus salients d'un document.
-Illustrons cela à nouveau avec notre corpus d'exemple de deux documents.
-
-```{python}
-#| eval: false
-corpus = [
-    'Un premier document à propos des chats.',
-    'Un second document qui parle des chiens.'
-]
-
-vectorizer = TfidfVectorizer()
-vectorizer.fit(corpus)
-```
-
-Là encore, le vectoriseur a "appris" le vocabulaire du corpus.
-
-```{python}
-#| eval: false
-vectorizer.get_feature_names_out()
-```
-
-Et peut être utilisé pour calculer les scores TF-IDF de chacun des termes des documents.
-
-```{python}
-#| eval: false
-X = vectorizer.transform(corpus)
-print(X.toarray())
-```
-
-On remarque que "chats" et "chiens" possèdent les scores les plus élevés, ce sont bien les termes les plus distinctifs. A l'inverse, les termes qui reviennent dans les deux documents ("un", "document", "des") ont un score inférieur, car ils sont beaucoup présents dans le corpus relativement.
-
-Quel score `F1` obtient-on avec cette méthode de vectorisation sur notre problème de classification d'auteurs ?
-
-```{python}
-#| eval: false
-cv_tfidf = fit_vectorizers(TfidfVectorizer)
-```
-
-On observe clairement que la performance de classification est bien supérieure,
-ce qui montre la pertinence de cette technique.
-
-# Word2vec avec averaging
-
-On va maintenant explorer les techniques de vectorisation basées sur les
-*embeddings* de mots, et notamment la plus populaire : `Word2Vec`.
-
-L'idée derrière est simple, mais a révolutionné le NLP :
-au lieu de représenter les documents par des
-vecteurs *sparse* de très grande dimension (la taille du vocabulaire)
-comme on l'a fait jusqu'à présent,
-on va les représenter par des vecteurs *dense* (continus)
-de dimension réduite (en général, autour de 100-300).
-
-Chacune de ces dimensions va représenter un facteur latent,
+Cette représentation dense va représenter une solution à une limite de l'approche _bag of words_ que nous avons évoquée à de multiples reprises. Chacune de ces dimensions va représenter un facteur latent,
 c'est à dire une variable inobservée,
-de la même manière que les composantes principales produites par une ACP.
+de la même manière que les composantes principales produites par une ACP. Ces dimensions latentes peuvent être interprétées comme des dimensions "fondamentales" du langage
 
-![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/w2v_vecto.png)
+![Illustration du principe de la représentation de Word2Vec (source: [Jay Alammar](https://jalammar.github.io/illustrated-word2vec/))](https://jalammar.github.io/images/word2vec/word2vec.png)
 
-*Source: [Medium](https://medium.com/@zafaralibagh6/simple-tutorial-on-word-embedding-and-word2vec-43d477624b6d)*
-
-
-__Pourquoi est-ce intéressant ?__
-Pour de nombreuses raisons, mais pour résumer :
-cela permet de beaucoup mieux capturer la similarité sémantique entre les documents.
 
 Par exemple, un humain sait qu'un document contenant le mot _"Roi"_
 et un autre document contenant le mot _"Reine"_ ont beaucoup de chance
-d'aborder des sujets semblables.
-
-Pourtant, une vectorisation de type comptage ou TF-IDF
-ne permet pas de saisir cette similarité :
-le calcul d'une mesure de similarité (norme euclidienne ou similarité cosinus)
-entre les deux vecteurs ne prendra en compte la similarité des deux concepts, puisque les mots utilisés sont différents.
-
-A l'inverse, un modèle `word2vec` bien entraîné va capter
-qu'il existe un facteur latent de type _"royauté"_,
+d'aborder des sujets semblables. Un modèle `Word2Vec` bien entraîné va capter
+qu'il existe un facteur latent de type _"royauté"_
 et la similarité entre les vecteurs associés aux deux mots sera forte.
 
 La magie va même plus loin : le modèle captera aussi qu'il existe un
 facteur latent de type _"genre"_,
 et va permettre de construire un espace sémantique dans lequel les
-relations arithmétiques entre vecteurs ont du sens ;
-par exemple :
-$$\text{king} - \text{man} + \text{woman} ≈ \text{queen}$$
+relations arithmétiques entre vecteurs ont du sens. Par exemple, 
 
-__Comment ces modèles sont-ils entraînés ?__
-Via une tâche de prédiction résolue par un réseau de neurones simple.
+$$
+\text{king} - \text{man} + \text{woman} ≈ \text{queen}
+$$
 
-L'idée fondamentale est que la signification d'un mot se comprend
-en regardant les mots qui apparaissent fréquemment dans son voisinage.
+ou, pour reprendre, l'exemple issu du papier originel `Word2Vec` [@mikolov2013efficient],
 
-Pour un mot donné, on va donc essayer de prédire les mots
-qui apparaissent dans une fenêtre autour du mot cible.
+$$
+\text{Paris} - \text{France} + \text{Italy} ≈ \text{Rome}
+$$
+
+![Illustration du plongement lexical. Source : Post de blog [Word Embedding : Basics](https://medium.com/@hari4om/word-embedding-d816f643140)](https://ssphub.netlify.app/post/embedding/word_embedding.png)
+
+Un autre "miracle" de cette approche est qu'on obtient une forme de transfert entre les langues. Les relations sémantiques pouvant être similaires entre les langues, pour de nombreux mots usuels, on peut voir translater certaines langues les unes avec les autres si elles ont un socle commun (par exemple les langues occidentales). Ce concept est le point de départ des traducteurs automatiques et des IA multilingues
+
+![Exemple de translation entre deux représentations vectorielles. Source: [Meta](https://engineering.fb.com/2018/01/24/ml-applications/under-the-hood-multilingual-embeddings/)](https://engineering.fb.com/wp-content/uploads/2018/01/GJ_9lgFMnVaR0ZYAAAAAAABV9MkQbj0JAAAC.gif)
+
+
+## Comment ces modèles sont-ils entraînés ?
+
+Ces modèles sont entraînés à partir d'une tâche de prédiction résolue par un réseau de neurones simple, généralement avec une approche par renforcement. 
+
+L'idée fondamentale est que la signification d'un mot se comprend en regardant les mots qui apparaissent fréquemment dans son voisinage. Pour un mot donné, on va donc essayer de prédire les mots qui apparaissent dans une fenêtre autour du mot cible.
 
 En répétant cette tâche de nombreuses fois et sur un corpus suffisamment varié,
 on obtient finalement des *embeddings* pour chaque mot du vocabulaire,
-qui présentent les propriétés discutées précédemment.
+qui présentent les propriétés discutées précédemment. L'ensemble des articles `Wikipedia` est un des corpus de prédilection des personnes ayant construit des plongements
+lexicaux. Il comporte en effet des phrases complètes, contrairement à des informations issues de commentaires de réseaux sociaux, 
+et propose des rapprochements intéressants entre des personnes, des lieux, etc.
+
+Le contexte d’un mot est défini par une fenêtre de taille fixe autour de ce mot. La taille de la fenêtre est un paramètre de la construction de l’_embedding_. Le corpus fournit un grand ensemble d’exemples mots-contexte, qui peuvent servir à entraîner un réseau de neurones.
+
+Plus précisément, il existe deux approches, dont nous ne développerons pas les détails :
+
+*   _Continuous bag of words_ (CBOW), où le modèle est entraîné à prédire un mot à partir de son contexte ;
+*   _Skip-gram_, où le modèle tente de prédire le contexte à partir d’un seul mot.
+
+![Illustration de la différence entre les approches CBOW et Skip-gram](https://ssphub.netlify.app/post/embedding/CBOW_Skipgram_training.png)
 
 
-```{python}
-#| eval: false
-X_train_tokens = [text.split() for text in X_train]
-w2v_model = Word2Vec(X_train_tokens, vector_size=200, window=5, 
-                     min_count=1, workers=4)
+## Modèles liés
+
+Plusieurs modèles ont une filiation directe avec le modèle `Word2Vec` quoiqu'ils s'en distinguent par la nature de l'architecture utilisée. 
+
+C'est le cas, par exemple, du modèle modèle [`GloVe`](https://nlp.stanford.edu/projects/glove/), développé en 2014 à Stanford,
+qui ne repose pas sur des réseaux de neurones mais sur la construction d’une grande matrice de co-occurrences de mots. Pour chaque mot, il s’agit de calculer les fréquences d’apparition des autres mots dans une fenêtre de taille fixe autour de lui. La matrice de co-occurrences obtenue est ensuite factorisée par une décomposition en valeurs singulières.
+
+Le modèle [`FastText`](https://fasttext.cc/), développé en 2016 par une équipe de `Facebook`, fonctionne de façon similaire à `Word2Vec` mais se distingue particulièrement sur deux points :
+
+*   En plus des mots eux-mêmes, le modèle apprend des représentations pour les n-grams de caractères (sous-séquences de caractères de taille $n$, par exemple _« tar »_, _« art »_ et _« rte »_ sont les trigrammes du mot _« tarte »_), ce qui le rend notamment robuste aux variations d’orthographe ;
+*   Le modèle a été optimisé pour que son entraînement soit particulièrement rapide.
+
+Le modèle [`FastText`](https://fasttext.cc/) est particulièrement performant pour les problématiques de classification automatique. L'Insee l'utilise par exemple pour plusieurs modèles de classification de libellés textuels dans des nomenclatures. 
+
+![Illustration du modèle fastText](https://ssphub.netlify.app/post/embedding/fasttext.png)
+
+Voici un exemple sur un projet de classification automatisée des professions dans la typologie
+des nomenclatures d'activités (les PCS) à partir d'un modèle entraîné par la librairie `Fasttext` :
+
+::: {.content-visible when-format="html"}
+
+```{ojs}
+//| echo: false
+viewof activite = Inputs.text( 
+  {label: '', value: 'data scientist', width: 800}
+)
 ```
 
 
-```{python}
-#| eval: false
-w2v_model.wv.most_similar("mother")
+```{ojs}
+//| echo: false
+d3.json(urlApe).then(res => {
+  var IC, results;
+
+  ({ IC, ...results } = res);
+
+  IC = parseFloat(IC);
+
+  const rows = Object.values(results).map(obj => {
+    return `
+    <tr>
+      <td>${obj.code} | ${obj.libelle}</td>
+      <td>${obj.probabilite.toFixed(3)}</td>
+    </tr>
+  `;
+  }).join('');
+
+  const confidenceRow = `<tr>
+    <td colspan="2" style="text-align:left; "><em>Indice de confiance : ${IC.toFixed(3)}</em></td>
+  </tr>`;
+
+  const tableHTML = html`
+  <table>
+    <caption>
+      Prédiction de l'activité
+    </caption>
+    <tr>
+      <th style="text-align:center;">Libellé (NA2008)</th>
+      <th>Probabilité</th>
+    </tr>
+      ${rows}
+      ${confidenceRow}
+  </table>`;
+
+  // Now you can use the tableHTML as needed, for example, inserting it into the DOM.
+  // For example, assuming you have a container with the id "tableContainer":
+  return tableHTML;
+});
 ```
 
-On voit que les mots les plus similaires à _"mother"_
-sont souvent des mots liés à la famille, mais pas toujours.
-
-C'est lié à la taille très restreinte du corpus sur lequel on entraîne le modèle,
-qui ne permet pas de réaliser des associations toujours pertinentes.
-
-
-L'*embedding* (la représentation vectorielle) de chaque document correspond à la moyenne des *word-embeddings* des mots qui le composent : 
-
-
-```{python}
-#| eval: false
-def get_mean_vector(w2v_vectors, words):
-    words = [word for word in words if word in w2v_vectors]
-    if words:
-        avg_vector = np.mean(w2v_vectors[words], axis=0)
-    else:
-        avg_vector = np.zeros_like(w2v_vectors['hi'])
-    return avg_vector
-
-def fit_w2v_avg(w2v_vectors):
-    X_train_vectors = np.array([get_mean_vector(w2v_vectors, words)
-                                for words in X_train_tokens])
-    
-    scores = cross_val_score(clf, X_train_vectors, y_train, 
-                         cv=4, scoring='f1_micro', n_jobs=4)
-
-    print(f"CV scores {scores}")
-    print(f"Mean F1 {np.mean(scores)}")
-    return scores
+```{ojs}
+//| echo: false
+activite_debounce = debounce(viewof activite, 2000)
+urlApe = `https://codification-ape-test.lab.sspcloud.fr/predict?nb_echos_max=3&prob_min=0&text_feature=${activite_debounce}`
 ```
 
-
-```{python}
-#| eval: false
-cv_w2vec = fit_w2v_avg(w2v_model.wv)
+```{ojs}
+//| echo: false
+import {debounce} from "@mbostock/debouncing-input"
 ```
 
-La performance chute fortement ;
-la faute à la taille très restreinte du corpus, comme annoncé précédemment.
+:::
+
+::: {.content-hidden when-format="html"}
+
+```{python}
+import requests
+import pandas as pd
+
+activite = "data scientist"
+urlApe = f"https://codification-ape-test.lab.sspcloud.fr/predict?nb_echos_max=3&prob_min=0&text_feature=${activite}"
+import requests
+data = requests.get(urlApe).json()
+
+# Extract 'IC' value
+IC = data['IC']
+data.pop('IC', None)
+
+df = pd.DataFrame(data.values())
+df['indice_confiance'] = IC
+df
+```
+
+:::
 
 # Word2vec pré-entraîné + averaging
 
