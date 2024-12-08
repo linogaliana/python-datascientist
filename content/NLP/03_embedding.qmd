@@ -20,6 +20,7 @@ Ce chapitre va évoluer prochainement.
 
 {{< badges
     printMessage="true"
+    sspCloudService="pytorch"
 >}}
 
 # Introduction
@@ -62,11 +63,23 @@ et un [deuxième](https://www.kaggle.com/meiyizi/spooky-nlp-and-topic-modelling-
 ## Packages à installer
 
 Comme dans la [partie précédente](/content/NLP/02_exoclean.qmd), il faut télécharger des librairies 
-spécialiséees pour le NLP, ainsi que certaines de leurs dépendances.
+spécialiséees pour le NLP, ainsi que certaines de leurs dépendances. Ce TD utilisera plusieurs librairies dont certaines dépendent de `PyTorch` qui est une librairie volumineuse. 
+
+::: {.important}
+## `PyTorch` sur le `SSPCloud`
+
+__La prochaine remarque ne concerne que les utilisateurs.trices du `SSPCloud`.__
+
+Les services `Python` standards sur le  `SSPCloud` (les services `vscode-python` et `jupyter-python`) ne proposent pas `PyTorch` préinstallé. Cette librairie est en effet assez volumineuse (de l'ordre de 600Mo) et nécessite un certain nombre de configurations _ad hoc_ pour fonctionner de manière transparente quelle que soit la configuration logicielle derrière. Pour des raisons de frugalité écologique, cet environnement _boosté_ n'est pas proposé par défaut. Néanmoins, si besoin, un tel environnement où `Pytorch` est pré à l'emploi est disponible. 
+
+Pour cela, il suffit de démarrer un service `vscode-pytorch` ou `jupyter-pytorch`. Si vous avez utilisé l'un des boutons disponibles ci-dessus, c'est ce service standardisé qui a automatiquement été mis à disposition pour vous.  
+
+:::
 
 ```{python}
 #| eval: false
-!pip install scipy==1.12 gensim sentence_transformers pandas matplotlib seaborn
+#| echo: true
+!pip install numpy pandas spacy transformers scikit-learn langchain_community
 ```
 
 Ensuite, comme nous allons utiliser la librairie `SpaCy` avec un corpus de textes
@@ -75,8 +88,8 @@ on peut se référer à [la documentation de `SpaCy`](https://spacy.io/usage/mod
 extrêmement bien faite.
 
 ```{python}
-#| eval: false
 #| echo: true
+#| output: false
 !python -m spacy download en_core_web_sm
 ```
 
@@ -105,7 +118,7 @@ from sentence_transformers import SentenceTransformer
 
 # Préparation des données
 
-Nous allons ainsi à nouveau utiliser le jeu de données `spooky` :
+Nous allons à nouveau utiliser le jeu de données `spooky` :
 
 ```{python}
 #| echo: true
@@ -258,6 +271,7 @@ pipeline_tfidf
 Entraînons d'ores et déjà notre modèle à vectoriser le texte à partir de la méthode TF-IDF. Pour le moment il n'est pas encore question de faire de l'évaluation, faisons donc un entraînement sur l'ensemble de notre base et pas seulement sur `X_train`. 
 
 ```{python}
+#| echo: true
 pipeline_tfidf.fit(spooky_df['text_clean'])
 ```
 
@@ -266,6 +280,7 @@ pipeline_tfidf.fit(spooky_df['text_clean'])
 En premier lieu, on peut chercher le texte le plus proche, au sens de TF-IDF, d'une phrase donnée. Prenons cet exemple:
 
 ```{python}
+#| echo: true
 text = "He was afraid by Frankenstein monster"
 ```
 
@@ -299,6 +314,7 @@ X_train_tfidf=pd.DataFrame(
 3. Utiliser la méthode `cosine_similarity` de `Scikit` pour calculer la similarité cosinus entre notre texte vectorisé et l'ensemble du corpus d'entraînement grâce au code suivant:
 
 ```{.python}
+import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 cosine_similarities = cosine_similarity(
@@ -769,17 +785,22 @@ Si le modèle `Word2Vec` est entraîné de manière contextuelle, sa vocation es
 
 L'objectif des architectures _transformers_ est de permettre des représentations vectorielles contextuelles. Autrement dit, un mot aura plusieurs représentations vectorielles, selon son contexte d'occurrence. Ces modèles s'appuient sur le mécanisme d'attention [@vaswani2017attention]. Avant cette approche, lorsqu'un modèle apprenait à vectoriser un texte et qu'il arrivait au énième mot, la seule mémoire qu'il gardait était celle du mot précédent. Par récurrence, cela signifiait qu'il gardait une mémoire des mots précédents mais celle-ci tendait à se dissiper. Par conséquent, pour un mot arrivant loin dans la phrase, il était probable que le contexte de début de phrase était oublié. Autrement dit, dans la phrase _"à la plage, il allait explorer le banc"_, il était fort probable qu'arrivé au mot _"banc"_, le modèle ait oublié le début de phrase qui avait pourtant de l'importance pour l'interprétation. 
 
-L'objectif du mécanisme d'attention est de créer une mémoire interne au modèle permettant, pour tout mot d'un texte, de pouvoir garder trace des autres mots. Bien-sûr tous ne sont pas pertinents pour interpréter le texte mais cela évite d'oublier ceux qui sont importants.
+L'objectif du mécanisme d'attention est de créer une mémoire interne au modèle permettant, pour tout mot d'un texte, de pouvoir garder trace des autres mots. Bien-sûr tous ne sont pas pertinents pour interpréter le texte mais cela évite d'oublier ceux qui sont importants. L'innovation principale des dernières années en NLP a été de parvenir à créer des mécanismes d'attention à grande échelle sans pour autant rendre intractables les modèles. Les fenêtres de contexte des modèles les plus performants deviennent immenses. Par exemple le modèle Llama 3.1 (rendu public par Meta en Juillet 2024) propose une fenêtre de contexte de 128 000 _tokens_, soit environ 96 000 mots, l'équivalent du _Hobbit_ de Tolkien. Autrement dit, pour déduire la subtilité du sens d'un mot, ce modèle peut parcourir un contexte aussi long qu'un roman d'environ 300 pages. 
 
-<!--------
-https://fr.wikipedia.org/wiki/Transformeur
--------->
+Les deux modèles qui ont marqué leur époque dans le domaine sont les modèles `BERT` développé en 2018 par _Google_ (qui était déjà à l'origine de `Word2Vec`) et la première version du bien-connu `GPT` d'`OpenAI`, qui, en 2017, était le premier modèle préentrainé basé sur l'architecture _transformer_. Ces deux familles de _transformer_ diffèrent dans la manière dont ils intègrent le contexte pour faire une prédiction. `GPT` est un modèle autorégressif, donc ne considère que les _tokens_ avant celui dont on désire faire une prédiction. `BERT` utilise les _tokens_ à gauche et à droite pour inférer le contexte. Ces deux grands modèles de langage entraînés sont entraînés par auto-renforcement, principalement sur des tâches de prédiction du prochain _token_ [@huggingfacecourse]. Depuis le succès de `ChatGPT`, les nouveaux modèles GPT (à partir de la version 3) ne sont plus _open source_. Pour les utiliser, il faut donc passer par les API d'OpenAI. Il existe néanmoins de nombreuses alternatives dont les poids sont ouverts, à défaut d'être _open source_[^diff-open], qui permettent d'utiliser ces LLM par le biais de `Python`, par le biais, notamment, de la librairie `transformers` développée par _Hugging Face_.
 
-Le modèle qui a marqué son époque dans le domaine est le modèle `BERT` développé en 2018 par _Google_ (qui était déjà à l'origine de `Word2Vec`). 
+[^diff-open]: Certaines organisations, comme Meta pour Llama, mettent à disposition les poids après entraînement de leur modèle sur la plateforme _Hugging Face_, permettant une réutilisation de ces modèles si la licence le permet. Néanmoins, il ne s'agit pas pour autant de modèles _open source_ puisque le code utilisé pour entraîner les modèles et constituer les corpus d'apprentissage, issus de collectes massives de données par _webscraping_, et les éventuelles annotations supplémentaires pour en faire des versions spécialisées, ne sont pas partagés. 
 
 
+```{python}
+from transformers import AutoTokenizer
 
+tokenizer = AutoTokenizer.from_pretrained("distilbert/distilbert-base-uncased")
+```
 
+```{python}
+
+```
 
 
 # Word2vec pré-entraîné + averaging
