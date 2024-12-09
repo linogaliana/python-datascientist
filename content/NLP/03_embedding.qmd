@@ -93,28 +93,6 @@ extrêmement bien faite.
 !python -m spacy download en_core_web_sm
 ```
 
-```{python}
-#| eval: false
-from collections import Counter
-
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import gensim
-
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import LinearSVC
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.model_selection import GridSearchCV, cross_val_score
-
-from gensim.models.word2vec import Word2Vec
-import gensim.downloader
-from sentence_transformers import SentenceTransformer
-```
-
 
 # Préparation des données
 
@@ -218,6 +196,27 @@ spooky_df['text_clean'] = clean_docs(spooky_df['text'])
 ```{python}
 #| echo: true
 spooky_df.head()
+```
+
+## Encodage de la variable à prédire
+On réalise un simple encodage de la variable à prédire :
+il y a trois catégories (auteurs), représentées par des entiers 0, 1 et 2.
+Pour cela, on utilise le `LabelEncoder` de `Scikit` déjà présenté 
+dans la [partie modélisation](/content/modelisation/0_preprocessing.qmd). On va utiliser la méthode
+`fit_transform` qui permet, en un tour de main, d'appliquer à la fois
+l'entraînement (`fit`), à savoir la création d'une correspondance entre valeurs
+numériques et _labels_, et l'appliquer (`transform`) à la même colonne.
+
+```{python}
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+spooky_df['author_encoded'] = le.fit_transform(spooky_df['author'])
+```
+
+On peut vérifier les classes de notre `LabelEncoder` :
+
+```{python}
+le.classes_
 ```
 
 
@@ -446,7 +445,7 @@ L'approche fréquentiste suppose que les termes sont aussi dissemblables les uns
 
 
 
-## Trouver l'auteur le plus proche: une introduction au classifieur Bayes
+## Trouver l'auteur le plus proche: une introduction au classifieur naif Bayes
 
 Avant d'explorer les _embeddings_, nous pouvons essayer d'avoir un cas d'usage un petit peu différent dans notre cadre probabiliste. Supposons qu'on désire maintenant faire de la prédiction d'auteur. Si l'intuition précédente est vraie - certains mots sont plus probables dans les textes de certains auteurs - cela veut dire qu'on peut entraîner un algorithme de classification automatique à prédire un auteur à partir d'un texte.
 
@@ -791,166 +790,62 @@ Les deux modèles qui ont marqué leur époque dans le domaine sont les modèles
 
 [^diff-open]: Certaines organisations, comme Meta pour Llama, mettent à disposition les poids après entraînement de leur modèle sur la plateforme _Hugging Face_, permettant une réutilisation de ces modèles si la licence le permet. Néanmoins, il ne s'agit pas pour autant de modèles _open source_ puisque le code utilisé pour entraîner les modèles et constituer les corpus d'apprentissage, issus de collectes massives de données par _webscraping_, et les éventuelles annotations supplémentaires pour en faire des versions spécialisées, ne sont pas partagés. 
 
-
-```{python}
-from transformers import AutoTokenizer
-
-tokenizer = AutoTokenizer.from_pretrained("distilbert/distilbert-base-uncased")
-```
-
-```{python}
-
-```
-
-
-# Word2vec pré-entraîné + averaging
-
 Quand on travaille avec des corpus de taille restreinte,
-c'est généralement une mauvaise idée d'entraîner son propre modèle `word2vec`.
+c'est généralement une mauvaise idée d'entraîner son propre modèle _from scratch_. Heureusement, des modèles pré-entraînés sur de très gros corpus sont disponibles. Ils permettent de réaliser du *transfer learning*, c'est-à-dire de bénéficier de la performance d'un modèle qui a été entraîné sur une autre tâche ou bien sur un autre corpus.
 
-Heureusement, des modèles pré-entraînés sur de très gros corpus sont disponibles.
-Ils permettent de réaliser du *transfer learning*,
-c'est-à-dire de bénéficier de la performance d'un modèle qui a été entraîné sur une autre tâche ou bien sur un autre corpus.
+::: {.exercise}
+## Exercice 3
 
-L'un des modèles les plus connus pour démarrer est le `glove_model` de
-`Gensim` (Glove pour _Global Vectors for Word Representation_)[^1]:
+1. Refaire un train/test split avec 500 lignes aléatoires
+2. Importer le modèle `all-MiniLM-L6-v2` avec le package `sentence transformers`. Encoder `X_train` et `X_test`
+3. Faire une classification avec une méthode simple, par exemple des SVC, s'appuyant sur les _embeddings_ produits à la question précédente. Comme le jeu d'entraînement est réduit, vous pouvez faire de la validation croisée.
+4. Comprendre pourquoi les performances sont détériorées par rapport au classifieur naif de Bayes.
+::: 
 
-> GloVe is an unsupervised learning algorithm for obtaining vector representations for words. Training is performed on aggregated global word-word co-occurrence statistics from a corpus, and the resulting representations showcase interesting linear substructures of the word vector space. 
->
-> _Source_ : https://nlp.stanford.edu/projects/glove/
-
-[^1]: Jeffrey Pennington, Richard Socher, and Christopher D. Manning. 2014. _GloVe: Global Vectors for Word Representation_. 
-
-On peut le charger directement grâce à l'instruction suivante : 
-
-```{python}
-#| output: hide
-#| eval: false
-glove_model = gensim.downloader.load('glove-wiki-gigaword-200')
-```
-
-Par exemple, la représentation vectorielle de roi est l'objet
-multidimensionnel suivant :
 
 ```{python}
 #| eval: false
-glove_model['king']
-```
-
-Comme elle est peu intelligible, on va plutôt rechercher les termes les
-plus similaires. Par exemple,
-
-```{python}
-#| eval: false
-glove_model.most_similar('mother')
-```
-
-On peut retrouver notre formule précédente
-
-$$\text{king} - \text{man} + \text{woman} ≈ \text{queen}$$
-dans ce plongement de mots:
-
-```{python}
-#| eval: false
-glove_model.most_similar(positive = ['king', 'woman'], negative = ['man'])
-```
-
-Vous pouvez vous référer à [ce tutoriel](https://jalammar.github.io/illustrated-word2vec/)
-pour en découvrir plus sur `Word2Vec`.
-
-Faisons notre apprentissage par transfert :
-
-```{python}
-#| eval: false
-cv_w2vec_transfert = fit_w2v_avg(glove_model)
-```
-
-La performance remonte substantiellement.
-Cela étant, on ne parvient pas à faire mieux que les approches basiques,
-on arrive à peine aux performances de la vectorisation par comptage.
-
-En effet, pour rappel, les performances sont les suivantes :
-
-```{python}
-#| eval: false
-perfs = pd.DataFrame(
-    [np.mean(cv_bow.cv_results_['mean_test_score']),
-     np.mean(cv_tfidf.cv_results_['mean_test_score']),
-    np.mean(cv_w2vec),
-    np.mean(cv_w2vec_transfert)],
-    index = ['Bag-of-Words','TF-IDF', 'Word2Vec non pré-entraîné', 'Word2Vec pré-entraîné'],
-    columns = ["Mean F1 score"]
-).sort_values("Mean F1 score",ascending = False)
-perfs
-```
-
-Les performences limitées du modèle *Word2Vec* sont cette fois certainement dues à la manière dont
-les *word-embeddings* sont exploités : ils sont moyennés pour décrire chaque document. 
-
-Cela a plusieurs limites : 
-
-- on ne tient pas compte de l'ordre et donc du contexte des mots
-- lorsque les documents sont longs, la moyennisation peut créer
-des représentation bruitées.
-
-# Contextual embeddings
-
-Les *embeddings* contextuels visent à pallier les limites des *embeddings*
-traditionnels évoquées précédemment.
-
-Cette fois, les mots n'ont plus de représentation vectorielle fixe,
-celle-ci est calculée dynamiquement en fonction des mots du voisinage, et ainsi de suite.
-Cela permet de tenir compte de la structure des phrases
-et de tenir compte du fait que le sens d'un mot est fortement dépendant des mots
-qui l'entourent. 
-Par exemple, dans les expressions "le président Macron" et "le camembert Président" le mot président n'a pas du tout le même rôle.
-
-Ces *embeddings* sont produits par des architectures très complexes,
-de type Transformer (`BERT`, etc.).
-
-
-_TODO: approfondir le sujet_
-
-```{python}
-#| eval: false
-#| output: hide
-model = SentenceTransformer('all-mpnet-base-v2')
+#| code-fold: true
+#| code-summary: "Réponse question 1"
+random_rows = spooky_df.sample(500)
+y = random_rows["author"]
+X = random_rows['text']
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42
+)
 ```
 
 
 ```{python}
 #| eval: false
-#| echo: false
-X_train_vectors = model.encode(X_train)
+#| code-fold: true
+#| code-summary: "Réponse question 2"
+from sentence_transformers import SentenceTransformer
+from sklearn.svm import LinearSVC
+
+model = SentenceTransformer(
+    "all-MiniLM-L6-v2", model_kwargs={"torch_dtype": "float16"}
+)
+
+X_train_vectors = model.encode(X_train.values)
+X_test_vectors = model.encode(X_test.values)
 ```
 
 
 ```{python}
-#| eval: false
-#| echo: false
-scores = cross_val_score(clf, X_train_vectors, y_train, 
-                         cv=4, scoring='f1_micro', n_jobs=4)
+from sklearn.model_selection import cross_val_score
+
+clf = LinearSVC(max_iter=10000, C=0.1, dual="auto")
+
+scores = cross_val_score(
+    clf, X_train_vectors, y_train, 
+    cv=4, scoring='f1_micro', n_jobs=4
+)
 
 print(f"CV scores {scores}")
 print(f"Mean F1 {np.mean(scores)}")
 ```
 
-```{python}
-#| echo: false
-#| eval: false
-perfs = pd.concat(
-  [perfs,
-  pd.DataFrame(
-    [np.mean(scores)],
-    index = ['Contextual Embedding'],
-    columns = ["Mean F1 score"])]
-).sort_values("Mean F1 score",ascending = False)
-perfs
-```
-
-
-Verdict : on fait très légèrement mieux que la vectorisation TF-IDF.
-On voit donc l'importance de tenir compte du contexte.
 
 __Mais pourquoi, avec une méthode très compliquée, ne parvenons-nous pas à battre une méthode toute simple ?__
 
@@ -965,9 +860,4 @@ Dans le cas de notre tâche de classification, il est probable que
 certains mots (noms de personnage, noms de lieux) soient suffisants pour classifier de manière pertinente,
 ce que ne permettent pas de capter les *embeddings* qui accordent à tous les mots la même importance.
 
-# Aller plus loin
 
-- Nous avons entraîné différents modèles sur l'échantillon d'entraînement par validation croisée, mais nous n'avons toujours pas utilisé l'échantillon test que nous avons mis de côté au début. Réaliser la prédiction sur les données de test, et vérifier si l'on obtient le même classement des méthodes de vectorisation.
-- Faire un *vrai* split train/test : faire l'entraînement avec des textes de certains auteurs, et faire la prédiction avec des textes d'auteurs différents. Cela permettrait de neutraliser la présence de noms de lieux, de personnages, etc.
-- Comparer avec d'autres algorithmes de classification qu'un SVM
-- (Avancé) : fine-tuner le modèle d'embeddings contextuels sur la tâche de classification
