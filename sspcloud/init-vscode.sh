@@ -22,3 +22,5 @@ DOWNLOAD_URL="${BASE_URL}/${NOTEBOOK_PATH}"
 # Download the notebook directly using curl
 echo $DOWNLOAD_URL
 curl -L $DOWNLOAD_URL -o "${WORK_DIR}/${CHAPTER}.ipynb"
+
+code-server --install-extension quarto.quarto
