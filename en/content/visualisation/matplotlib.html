@@ -761,62 +761,62 @@ disponible dans <a href="https://rgeo.linogaliana.fr/exercises/ggplot.html">ce c
 <h1 data-number="1"><span class="header-section-number">1</span> Données</h1>
 <p>Ce chapitre s’appuie sur les données de comptage des passages de vélo dans les points de mesure parisiens diffusés sur le site de l’<em>open data</em> de la ville de Paris.</p>
 <p>L’exploitation de l’historique récent a été grandement facilité par la diffusion des données au format <code>Parquet</code>, un format moderne plus pratique que le CSV. Pour en savoir plus sur ce format, vous pouvez consulter les ressources évoquées dans le paragraphe consacré à ce format dans le <a href="../../content/manipulation/02_pandas_suite.html">chapitre d’approfondissement</a>.</p>
-<div id="0cf0f688" class="cell" data-execution_count="1">
+<div id="ad73ed95" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code pour importer les données à partir du format Parquet</summary>
-<div class="sourceCode cell-code" id="0cf0f688"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="0cf0f688-1"><a href="#0cf0f688-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
-<span id="0cf0f688-2"><a href="#0cf0f688-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
-<span id="0cf0f688-3"><a href="#0cf0f688-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tqdm <span class="im">import</span> tqdm</span>
-<span id="0cf0f688-4"><a href="#0cf0f688-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="0cf0f688-5"><a href="#0cf0f688-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> duckdb</span>
-<span id="0cf0f688-6"><a href="#0cf0f688-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="0cf0f688-7"><a href="#0cf0f688-7" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/comptage-velo-donnees-compteurs/exports/parquet?lang=fr&amp;timezone=Europe</span><span class="sc">%2F</span><span class="st">Paris"</span></span>
-<span id="0cf0f688-8"><a href="#0cf0f688-8" aria-hidden="true" tabindex="-1"></a>filename <span class="op">=</span> <span class="st">"comptage_velo_donnees_compteurs.parquet"</span></span>
-<span id="0cf0f688-9"><a href="#0cf0f688-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="0cf0f688-10"><a href="#0cf0f688-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="0cf0f688-11"><a href="#0cf0f688-11" aria-hidden="true" tabindex="-1"></a><span class="co"># DOWNLOAD FILE --------------------------------</span></span>
-<span id="0cf0f688-12"><a href="#0cf0f688-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="0cf0f688-13"><a href="#0cf0f688-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform the HTTP request and stream the download</span></span>
-<span id="0cf0f688-14"><a href="#0cf0f688-14" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> requests.get(url, stream<span class="op">=</span><span class="va">True</span>)</span>
-<span id="0cf0f688-15"><a href="#0cf0f688-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="0cf0f688-16"><a href="#0cf0f688-16" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> os.path.exists(filename):</span>
-<span id="0cf0f688-17"><a href="#0cf0f688-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Perform the HTTP request and stream the download</span></span>
-<span id="0cf0f688-18"><a href="#0cf0f688-18" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> requests.get(url, stream<span class="op">=</span><span class="va">True</span>)</span>
-<span id="0cf0f688-19"><a href="#0cf0f688-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="0cf0f688-20"><a href="#0cf0f688-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check if the request was successful</span></span>
-<span id="0cf0f688-21"><a href="#0cf0f688-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> response.status_code <span class="op">==</span> <span class="dv">200</span>:</span>
-<span id="0cf0f688-22"><a href="#0cf0f688-22" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Get the total size of the file from the headers</span></span>
-<span id="0cf0f688-23"><a href="#0cf0f688-23" aria-hidden="true" tabindex="-1"></a>        total_size <span class="op">=</span> <span class="bu">int</span>(response.headers.get(<span class="st">"content-length"</span>, <span class="dv">0</span>))</span>
-<span id="0cf0f688-24"><a href="#0cf0f688-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="0cf0f688-25"><a href="#0cf0f688-25" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Open the file in write-binary mode and use tqdm to show progress</span></span>
-<span id="0cf0f688-26"><a href="#0cf0f688-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> <span class="bu">open</span>(filename, <span class="st">"wb"</span>) <span class="im">as</span> <span class="bu">file</span>, tqdm(</span>
-<span id="0cf0f688-27"><a href="#0cf0f688-27" aria-hidden="true" tabindex="-1"></a>            desc<span class="op">=</span>filename,</span>
-<span id="0cf0f688-28"><a href="#0cf0f688-28" aria-hidden="true" tabindex="-1"></a>            total<span class="op">=</span>total_size,</span>
-<span id="0cf0f688-29"><a href="#0cf0f688-29" aria-hidden="true" tabindex="-1"></a>            unit<span class="op">=</span><span class="st">"B"</span>,</span>
-<span id="0cf0f688-30"><a href="#0cf0f688-30" aria-hidden="true" tabindex="-1"></a>            unit_scale<span class="op">=</span><span class="va">True</span>,</span>
-<span id="0cf0f688-31"><a href="#0cf0f688-31" aria-hidden="true" tabindex="-1"></a>            unit_divisor<span class="op">=</span><span class="dv">1024</span>,</span>
-<span id="0cf0f688-32"><a href="#0cf0f688-32" aria-hidden="true" tabindex="-1"></a>        ) <span class="im">as</span> bar:</span>
-<span id="0cf0f688-33"><a href="#0cf0f688-33" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Write the file in chunks</span></span>
-<span id="0cf0f688-34"><a href="#0cf0f688-34" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> chunk <span class="kw">in</span> response.iter_content(chunk_size<span class="op">=</span><span class="dv">1024</span>):</span>
-<span id="0cf0f688-35"><a href="#0cf0f688-35" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> chunk:  <span class="co"># filter out keep-alive chunks</span></span>
-<span id="0cf0f688-36"><a href="#0cf0f688-36" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">file</span>.write(chunk)</span>
-<span id="0cf0f688-37"><a href="#0cf0f688-37" aria-hidden="true" tabindex="-1"></a>                    bar.update(<span class="bu">len</span>(chunk))</span>
-<span id="0cf0f688-38"><a href="#0cf0f688-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
-<span id="0cf0f688-39"><a href="#0cf0f688-39" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Failed to download the file. Status code: </span><span class="sc">{</span>response<span class="sc">.</span>status_code<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="0cf0f688-40"><a href="#0cf0f688-40" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
-<span id="0cf0f688-41"><a href="#0cf0f688-41" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"The file '</span><span class="sc">{</span>filename<span class="sc">}</span><span class="ss">' already exists."</span>)</span>
-<span id="0cf0f688-42"><a href="#0cf0f688-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="0cf0f688-43"><a href="#0cf0f688-43" aria-hidden="true" tabindex="-1"></a><span class="co"># READ FILE AND CONVERT TO PANDAS --------------------------</span></span>
-<span id="0cf0f688-44"><a href="#0cf0f688-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="0cf0f688-45"><a href="#0cf0f688-45" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span> <span class="st">"""</span></span>
-<span id="0cf0f688-46"><a href="#0cf0f688-46" aria-hidden="true" tabindex="-1"></a><span class="st">SELECT id_compteur, nom_compteur, id, sum_counts, date </span></span>
-<span id="0cf0f688-47"><a href="#0cf0f688-47" aria-hidden="true" tabindex="-1"></a><span class="st">FROM read_parquet('comptage_velo_donnees_compteurs.parquet')</span></span>
-<span id="0cf0f688-48"><a href="#0cf0f688-48" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
-<span id="0cf0f688-49"><a href="#0cf0f688-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="0cf0f688-50"><a href="#0cf0f688-50" aria-hidden="true" tabindex="-1"></a><span class="co"># READ WITH DUCKDB AND CONVERT TO PANDAS</span></span>
-<span id="0cf0f688-51"><a href="#0cf0f688-51" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> duckdb.sql(query).df()</span>
-<span id="0cf0f688-52"><a href="#0cf0f688-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="0cf0f688-53"><a href="#0cf0f688-53" aria-hidden="true" tabindex="-1"></a>df.head(<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="ad73ed95"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="ad73ed95-1"><a href="#ad73ed95-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="ad73ed95-2"><a href="#ad73ed95-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
+<span id="ad73ed95-3"><a href="#ad73ed95-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tqdm <span class="im">import</span> tqdm</span>
+<span id="ad73ed95-4"><a href="#ad73ed95-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="ad73ed95-5"><a href="#ad73ed95-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> duckdb</span>
+<span id="ad73ed95-6"><a href="#ad73ed95-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="ad73ed95-7"><a href="#ad73ed95-7" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/comptage-velo-donnees-compteurs/exports/parquet?lang=fr&amp;timezone=Europe</span><span class="sc">%2F</span><span class="st">Paris"</span></span>
+<span id="ad73ed95-8"><a href="#ad73ed95-8" aria-hidden="true" tabindex="-1"></a>filename <span class="op">=</span> <span class="st">"comptage_velo_donnees_compteurs.parquet"</span></span>
+<span id="ad73ed95-9"><a href="#ad73ed95-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="ad73ed95-10"><a href="#ad73ed95-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="ad73ed95-11"><a href="#ad73ed95-11" aria-hidden="true" tabindex="-1"></a><span class="co"># DOWNLOAD FILE --------------------------------</span></span>
+<span id="ad73ed95-12"><a href="#ad73ed95-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="ad73ed95-13"><a href="#ad73ed95-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform the HTTP request and stream the download</span></span>
+<span id="ad73ed95-14"><a href="#ad73ed95-14" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> requests.get(url, stream<span class="op">=</span><span class="va">True</span>)</span>
+<span id="ad73ed95-15"><a href="#ad73ed95-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="ad73ed95-16"><a href="#ad73ed95-16" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> os.path.exists(filename):</span>
+<span id="ad73ed95-17"><a href="#ad73ed95-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Perform the HTTP request and stream the download</span></span>
+<span id="ad73ed95-18"><a href="#ad73ed95-18" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> requests.get(url, stream<span class="op">=</span><span class="va">True</span>)</span>
+<span id="ad73ed95-19"><a href="#ad73ed95-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="ad73ed95-20"><a href="#ad73ed95-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check if the request was successful</span></span>
+<span id="ad73ed95-21"><a href="#ad73ed95-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> response.status_code <span class="op">==</span> <span class="dv">200</span>:</span>
+<span id="ad73ed95-22"><a href="#ad73ed95-22" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Get the total size of the file from the headers</span></span>
+<span id="ad73ed95-23"><a href="#ad73ed95-23" aria-hidden="true" tabindex="-1"></a>        total_size <span class="op">=</span> <span class="bu">int</span>(response.headers.get(<span class="st">"content-length"</span>, <span class="dv">0</span>))</span>
+<span id="ad73ed95-24"><a href="#ad73ed95-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="ad73ed95-25"><a href="#ad73ed95-25" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Open the file in write-binary mode and use tqdm to show progress</span></span>
+<span id="ad73ed95-26"><a href="#ad73ed95-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> <span class="bu">open</span>(filename, <span class="st">"wb"</span>) <span class="im">as</span> <span class="bu">file</span>, tqdm(</span>
+<span id="ad73ed95-27"><a href="#ad73ed95-27" aria-hidden="true" tabindex="-1"></a>            desc<span class="op">=</span>filename,</span>
+<span id="ad73ed95-28"><a href="#ad73ed95-28" aria-hidden="true" tabindex="-1"></a>            total<span class="op">=</span>total_size,</span>
+<span id="ad73ed95-29"><a href="#ad73ed95-29" aria-hidden="true" tabindex="-1"></a>            unit<span class="op">=</span><span class="st">"B"</span>,</span>
+<span id="ad73ed95-30"><a href="#ad73ed95-30" aria-hidden="true" tabindex="-1"></a>            unit_scale<span class="op">=</span><span class="va">True</span>,</span>
+<span id="ad73ed95-31"><a href="#ad73ed95-31" aria-hidden="true" tabindex="-1"></a>            unit_divisor<span class="op">=</span><span class="dv">1024</span>,</span>
+<span id="ad73ed95-32"><a href="#ad73ed95-32" aria-hidden="true" tabindex="-1"></a>        ) <span class="im">as</span> bar:</span>
+<span id="ad73ed95-33"><a href="#ad73ed95-33" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Write the file in chunks</span></span>
+<span id="ad73ed95-34"><a href="#ad73ed95-34" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> chunk <span class="kw">in</span> response.iter_content(chunk_size<span class="op">=</span><span class="dv">1024</span>):</span>
+<span id="ad73ed95-35"><a href="#ad73ed95-35" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> chunk:  <span class="co"># filter out keep-alive chunks</span></span>
+<span id="ad73ed95-36"><a href="#ad73ed95-36" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">file</span>.write(chunk)</span>
+<span id="ad73ed95-37"><a href="#ad73ed95-37" aria-hidden="true" tabindex="-1"></a>                    bar.update(<span class="bu">len</span>(chunk))</span>
+<span id="ad73ed95-38"><a href="#ad73ed95-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="ad73ed95-39"><a href="#ad73ed95-39" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Failed to download the file. Status code: </span><span class="sc">{</span>response<span class="sc">.</span>status_code<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="ad73ed95-40"><a href="#ad73ed95-40" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="ad73ed95-41"><a href="#ad73ed95-41" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"The file '</span><span class="sc">{</span>filename<span class="sc">}</span><span class="ss">' already exists."</span>)</span>
+<span id="ad73ed95-42"><a href="#ad73ed95-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="ad73ed95-43"><a href="#ad73ed95-43" aria-hidden="true" tabindex="-1"></a><span class="co"># READ FILE AND CONVERT TO PANDAS --------------------------</span></span>
+<span id="ad73ed95-44"><a href="#ad73ed95-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="ad73ed95-45"><a href="#ad73ed95-45" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span> <span class="st">"""</span></span>
+<span id="ad73ed95-46"><a href="#ad73ed95-46" aria-hidden="true" tabindex="-1"></a><span class="st">SELECT id_compteur, nom_compteur, id, sum_counts, date </span></span>
+<span id="ad73ed95-47"><a href="#ad73ed95-47" aria-hidden="true" tabindex="-1"></a><span class="st">FROM read_parquet('comptage_velo_donnees_compteurs.parquet')</span></span>
+<span id="ad73ed95-48"><a href="#ad73ed95-48" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="ad73ed95-49"><a href="#ad73ed95-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="ad73ed95-50"><a href="#ad73ed95-50" aria-hidden="true" tabindex="-1"></a><span class="co"># READ WITH DUCKDB AND CONVERT TO PANDAS</span></span>
+<span id="ad73ed95-51"><a href="#ad73ed95-51" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> duckdb.sql(query).df()</span>
+<span id="ad73ed95-52"><a href="#ad73ed95-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="ad73ed95-53"><a href="#ad73ed95-53" aria-hidden="true" tabindex="-1"></a>df.head(<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>The file 'comptage_velo_donnees_compteurs.parquet' already exists.</code></pre>
@@ -883,15 +883,15 @@ reproduire les deux premiers graphiques de la
 <a href="https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/dataviz/?disjunctive.id_compteur&amp;disjunctive.nom_compteur&amp;disjunctive.id&amp;disjunctive.name">page d’analyse des données</a> :
 <em>Les 10 compteurs avec la moyenne horaire la plus élevée</em> et <em>Les 10 compteurs ayant comptabilisé le plus de vélos</em>. Les valeurs chiffrées des graphiques peuvent être différentes de celles de la page en ligne, c’est normal, car nous ne travaillons pas systématiquement sur les données ayant la même fraicheur que celles en ligne.</p>
 <p>Pour importer les librairies graphiques que nous utiliserons dans ce chapitre, il faut faire</p>
-<div id="cd37b782" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cd37b782"><pre class="sourceCode python code-annotation-code code-with-copy code-annotated"><code class="sourceCode python"><span id="cd37b782-1"><a href="#cd37b782-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cd37b782-2"><a href="#cd37b782-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
-<a class="code-annotation-anchor" data-target-cell="cd37b782" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="cd37b782-3" class="code-annotation-target"><a href="#cd37b782-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> plotnine <span class="im">import</span> <span class="op">*</span></span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="ca365251" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="ca365251"><pre class="sourceCode python code-annotation-code code-with-copy code-annotated"><code class="sourceCode python"><span id="ca365251-1"><a href="#ca365251-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="ca365251-2"><a href="#ca365251-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<a class="code-annotation-anchor" data-target-cell="ca365251" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="ca365251-3" class="code-annotation-target"><a href="#ca365251-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> plotnine <span class="im">import</span> <span class="op">*</span></span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-annotation">
 <dl class="code-annotation-container-grid">
-<dt data-target-cell="cd37b782" data-target-annotation="1">1</dt>
+<dt data-target-cell="ca365251" data-target-annotation="1">1</dt>
 <dd>
-<span data-code-cell="cd37b782" data-code-lines="3" data-code-annotation="1">Importer des librairies sous la forme <code>from package import *</code> n’est pas une très bonne pratique. Néanmoins, pour un <em>package</em> comme <code>plotnine</code>, dont nous allons utiliser de nombreuses fonctions, ce serait un peu fastidieux d’importer les fonctions au cas par cas. De plus, cela permet de réutiliser presque tels quels les exemples de code de la librairie <code>R</code> <code>ggplot</code>, nombreux sur internet avec démonstrations visuelles. <code>from package import *</code> est l’équivalent <code>Python</code> de la pratique <code>library(package)</code> en <code>R</code>.</span>
+<span data-code-cell="ca365251" data-code-lines="3" data-code-annotation="1">Importer des librairies sous la forme <code>from package import *</code> n’est pas une très bonne pratique. Néanmoins, pour un <em>package</em> comme <code>plotnine</code>, dont nous allons utiliser de nombreuses fonctions, ce serait un peu fastidieux d’importer les fonctions au cas par cas. De plus, cela permet de réutiliser presque tels quels les exemples de code de la librairie <code>R</code> <code>ggplot</code>, nombreux sur internet avec démonstrations visuelles. <code>from package import *</code> est l’équivalent <code>Python</code> de la pratique <code>library(package)</code> en <code>R</code>.</span>
 </dd>
 </dl>
 </div>
@@ -919,21 +919,21 @@ Figure&nbsp;2.1: Comprendre l’architecture d’une figure <code>matplotlib</co
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">Approche explicite (approche orientée POO)</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Approche implicite</a></li></ul>
 <div class="tab-content" data-group="matplotlib-abstraction">
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
-<div id="5450dcbf" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="5450dcbf"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="5450dcbf-1"><a href="#5450dcbf-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="5450dcbf-2"><a href="#5450dcbf-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="5450dcbf-3"><a href="#5450dcbf-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="5450dcbf-4"><a href="#5450dcbf-4" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">100</span>)  <span class="co"># Sample data.</span></span>
-<span id="5450dcbf-5"><a href="#5450dcbf-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="5450dcbf-6"><a href="#5450dcbf-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Note that even in the OO-style, we use `.pyplot.figure` to create the Figure.</span></span>
-<span id="5450dcbf-7"><a href="#5450dcbf-7" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.7</span>), layout<span class="op">=</span><span class="st">"constrained"</span>)</span>
-<span id="5450dcbf-8"><a href="#5450dcbf-8" aria-hidden="true" tabindex="-1"></a>ax.plot(x, x, label<span class="op">=</span><span class="st">"linear"</span>)  <span class="co"># Plot some data on the Axes.</span></span>
-<span id="5450dcbf-9"><a href="#5450dcbf-9" aria-hidden="true" tabindex="-1"></a>ax.plot(x, x<span class="op">**</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"quadratic"</span>)  <span class="co"># Plot more data on the Axes...</span></span>
-<span id="5450dcbf-10"><a href="#5450dcbf-10" aria-hidden="true" tabindex="-1"></a>ax.plot(x, x<span class="op">**</span><span class="dv">3</span>, label<span class="op">=</span><span class="st">"cubic"</span>)  <span class="co"># ... and some more.</span></span>
-<span id="5450dcbf-11"><a href="#5450dcbf-11" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"x label"</span>)  <span class="co"># Add an x-label to the Axes.</span></span>
-<span id="5450dcbf-12"><a href="#5450dcbf-12" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"y label"</span>)  <span class="co"># Add a y-label to the Axes.</span></span>
-<span id="5450dcbf-13"><a href="#5450dcbf-13" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Simple Plot"</span>)  <span class="co"># Add a title to the Axes.</span></span>
-<span id="5450dcbf-14"><a href="#5450dcbf-14" aria-hidden="true" tabindex="-1"></a>ax.legend()  <span class="co"># Add a legend.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="7bb05f34" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="7bb05f34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="7bb05f34-1"><a href="#7bb05f34-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="7bb05f34-2"><a href="#7bb05f34-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="7bb05f34-3"><a href="#7bb05f34-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="7bb05f34-4"><a href="#7bb05f34-4" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">100</span>)  <span class="co"># Sample data.</span></span>
+<span id="7bb05f34-5"><a href="#7bb05f34-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="7bb05f34-6"><a href="#7bb05f34-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Note that even in the OO-style, we use `.pyplot.figure` to create the Figure.</span></span>
+<span id="7bb05f34-7"><a href="#7bb05f34-7" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.7</span>), layout<span class="op">=</span><span class="st">"constrained"</span>)</span>
+<span id="7bb05f34-8"><a href="#7bb05f34-8" aria-hidden="true" tabindex="-1"></a>ax.plot(x, x, label<span class="op">=</span><span class="st">"linear"</span>)  <span class="co"># Plot some data on the Axes.</span></span>
+<span id="7bb05f34-9"><a href="#7bb05f34-9" aria-hidden="true" tabindex="-1"></a>ax.plot(x, x<span class="op">**</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"quadratic"</span>)  <span class="co"># Plot more data on the Axes...</span></span>
+<span id="7bb05f34-10"><a href="#7bb05f34-10" aria-hidden="true" tabindex="-1"></a>ax.plot(x, x<span class="op">**</span><span class="dv">3</span>, label<span class="op">=</span><span class="st">"cubic"</span>)  <span class="co"># ... and some more.</span></span>
+<span id="7bb05f34-11"><a href="#7bb05f34-11" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"x label"</span>)  <span class="co"># Add an x-label to the Axes.</span></span>
+<span id="7bb05f34-12"><a href="#7bb05f34-12" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"y label"</span>)  <span class="co"># Add a y-label to the Axes.</span></span>
+<span id="7bb05f34-13"><a href="#7bb05f34-13" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Simple Plot"</span>)  <span class="co"># Add a title to the Axes.</span></span>
+<span id="7bb05f34-14"><a href="#7bb05f34-14" aria-hidden="true" tabindex="-1"></a>ax.legend()  <span class="co"># Add a legend.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -945,20 +945,20 @@ Figure&nbsp;2.1: Comprendre l’architecture d’une figure <code>matplotlib</co
 <p>Source: <a href="https://matplotlib.org/stable/users/explain/quick_start.html">Documentation officielle de <code>matplotlib</code></a></p>
 </div>
 <div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
-<div id="d118c7cc" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="d118c7cc"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="d118c7cc-1"><a href="#d118c7cc-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="d118c7cc-2"><a href="#d118c7cc-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="d118c7cc-3"><a href="#d118c7cc-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="d118c7cc-4"><a href="#d118c7cc-4" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">100</span>)  <span class="co"># Sample data.</span></span>
-<span id="d118c7cc-5"><a href="#d118c7cc-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="d118c7cc-6"><a href="#d118c7cc-6" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.7</span>), layout<span class="op">=</span><span class="st">"constrained"</span>)</span>
-<span id="d118c7cc-7"><a href="#d118c7cc-7" aria-hidden="true" tabindex="-1"></a>plt.plot(x, x, label<span class="op">=</span><span class="st">"linear"</span>)  <span class="co"># Plot some data on the (implicit) Axes.</span></span>
-<span id="d118c7cc-8"><a href="#d118c7cc-8" aria-hidden="true" tabindex="-1"></a>plt.plot(x, x<span class="op">**</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"quadratic"</span>)  <span class="co"># etc.</span></span>
-<span id="d118c7cc-9"><a href="#d118c7cc-9" aria-hidden="true" tabindex="-1"></a>plt.plot(x, x<span class="op">**</span><span class="dv">3</span>, label<span class="op">=</span><span class="st">"cubic"</span>)</span>
-<span id="d118c7cc-10"><a href="#d118c7cc-10" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"x label"</span>)</span>
-<span id="d118c7cc-11"><a href="#d118c7cc-11" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"y label"</span>)</span>
-<span id="d118c7cc-12"><a href="#d118c7cc-12" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Simple Plot"</span>)</span>
-<span id="d118c7cc-13"><a href="#d118c7cc-13" aria-hidden="true" tabindex="-1"></a>plt.legend()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="3c947805" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="3c947805"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="3c947805-1"><a href="#3c947805-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="3c947805-2"><a href="#3c947805-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="3c947805-3"><a href="#3c947805-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="3c947805-4"><a href="#3c947805-4" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">100</span>)  <span class="co"># Sample data.</span></span>
+<span id="3c947805-5"><a href="#3c947805-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="3c947805-6"><a href="#3c947805-6" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.7</span>), layout<span class="op">=</span><span class="st">"constrained"</span>)</span>
+<span id="3c947805-7"><a href="#3c947805-7" aria-hidden="true" tabindex="-1"></a>plt.plot(x, x, label<span class="op">=</span><span class="st">"linear"</span>)  <span class="co"># Plot some data on the (implicit) Axes.</span></span>
+<span id="3c947805-8"><a href="#3c947805-8" aria-hidden="true" tabindex="-1"></a>plt.plot(x, x<span class="op">**</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"quadratic"</span>)  <span class="co"># etc.</span></span>
+<span id="3c947805-9"><a href="#3c947805-9" aria-hidden="true" tabindex="-1"></a>plt.plot(x, x<span class="op">**</span><span class="dv">3</span>, label<span class="op">=</span><span class="st">"cubic"</span>)</span>
+<span id="3c947805-10"><a href="#3c947805-10" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"x label"</span>)</span>
+<span id="3c947805-11"><a href="#3c947805-11" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"y label"</span>)</span>
+<span id="3c947805-12"><a href="#3c947805-12" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Simple Plot"</span>)</span>
+<span id="3c947805-13"><a href="#3c947805-13" aria-hidden="true" tabindex="-1"></a>plt.legend()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1004,7 +1004,7 @@ pour reproduire la figure 2 de l’<em>open data</em> parisien</p></li>
 </div>
 </div>
 <p>Les 10 principales stations à l’issue de la question 1</p>
-<div id="d69d2028" class="cell" data-execution_count="6">
+<div id="2e3f796e" class="cell" data-execution_count="6">
 <div class="cell-output cell-output-display" data-execution_count="6">
 <div>
 
@@ -1051,7 +1051,7 @@ pour reproduire la figure 2 de l’<em>open data</em> parisien</p></li>
 <summary>
 <p>Figure 1 sans travail sur le style:</p>
 </summary>
-<div id="ca16bf55" class="cell" data-execution_count="8">
+<div id="d52a3f34" class="cell" data-execution_count="8">
 <div class="cell-output cell-output-display" data-execution_count="8">
 <div>
 <figure class="figure">
@@ -1066,7 +1066,7 @@ pour reproduire la figure 2 de l’<em>open data</em> parisien</p></li>
 <summary>
 Figure 2 sans travail sur le style:
 </summary>
-<div id="b42538c7" class="cell" data-execution_count="11">
+<div id="74c46ff7" class="cell" data-execution_count="11">
 <div class="cell-output cell-output-display" data-execution_count="11">
 <div>
 <figure class="figure">
@@ -1188,7 +1188,7 @@ refaire le graphique <em>Les 10 compteurs ayant comptabilisé le plus de vélos<
 </div>
 </div>
 </div>
-<div id="1178e0a3" class="cell" data-execution_count="18">
+<div id="a0d2eb95" class="cell" data-execution_count="18">
 <div class="cell-output cell-output-display" data-execution_count="18">
 <pre><code>Text(0, 0.5, 'La somme des vélos comptabilisés sur la période sélectionnée')</code></pre>
 </div>
@@ -1246,7 +1246,7 @@ Exercice 4: reproduire la première figure avec plotnine
 </div>
 </div>
 </div>
-<div id="73cd0237" class="cell" data-execution_count="19">
+<div id="237001b2" class="cell" data-execution_count="19">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1266,206 +1266,206 @@ de manière mensuelle ;</li>
 <li>Des séries instructives sur la dynamique temporelle. Cela sera l’objet de la prochaine partie.</li>
 </ul>
 <p>Avant cela, nous allons enrichir ces données pour bénéficier d’un historique plus long, permettant notamment d’avoir la période Covid dans nos données, ce qui présente un intérêt du fait de la dynamique particulière du trafic dans cette période (arrêt brutal, reprise très forte…).</p>
-<div id="52f01a21" class="cell" data-execution_count="20">
+<div id="dffeef18" class="cell" data-execution_count="20">
 <details class="code-fold">
 <summary>Voir le code pour bénéficier d’un historique plus long de données</summary>
-<div class="sourceCode cell-code" id="52f01a21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="52f01a21-1"><a href="#52f01a21-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
-<span id="52f01a21-2"><a href="#52f01a21-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> zipfile</span>
-<span id="52f01a21-3"><a href="#52f01a21-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> io</span>
-<span id="52f01a21-4"><a href="#52f01a21-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
-<span id="52f01a21-5"><a href="#52f01a21-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
-<span id="52f01a21-6"><a href="#52f01a21-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="52f01a21-7"><a href="#52f01a21-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> geopandas <span class="im">as</span> gpd</span>
-<span id="52f01a21-8"><a href="#52f01a21-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-9"><a href="#52f01a21-9" aria-hidden="true" tabindex="-1"></a>list_useful_columns <span class="op">=</span> [</span>
-<span id="52f01a21-10"><a href="#52f01a21-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Identifiant du compteur"</span>,</span>
-<span id="52f01a21-11"><a href="#52f01a21-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Nom du compteur"</span>,</span>
-<span id="52f01a21-12"><a href="#52f01a21-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Identifiant du site de comptage"</span>,</span>
-<span id="52f01a21-13"><a href="#52f01a21-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Nom du site de comptage"</span>,</span>
-<span id="52f01a21-14"><a href="#52f01a21-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Comptage horaire"</span>,</span>
-<span id="52f01a21-15"><a href="#52f01a21-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Date et heure de comptage"</span>,</span>
-<span id="52f01a21-16"><a href="#52f01a21-16" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="52f01a21-17"><a href="#52f01a21-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-18"><a href="#52f01a21-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-19"><a href="#52f01a21-19" aria-hidden="true" tabindex="-1"></a><span class="co"># GENERIC FUNCTION TO RETRIEVE DATA -------------------------</span></span>
-<span id="52f01a21-20"><a href="#52f01a21-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-21"><a href="#52f01a21-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-22"><a href="#52f01a21-22" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> download_unzip_and_read(</span>
-<span id="52f01a21-23"><a href="#52f01a21-23" aria-hidden="true" tabindex="-1"></a>    url, extract_to<span class="op">=</span><span class="st">"."</span>, list_useful_columns<span class="op">=</span>list_useful_columns</span>
-<span id="52f01a21-24"><a href="#52f01a21-24" aria-hidden="true" tabindex="-1"></a>):</span>
-<span id="52f01a21-25"><a href="#52f01a21-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
-<span id="52f01a21-26"><a href="#52f01a21-26" aria-hidden="true" tabindex="-1"></a><span class="co">    Downloads a zip file from the specified URL, extracts its contents, and reads the CSV file based on the filename pattern in the URL.</span></span>
-<span id="52f01a21-27"><a href="#52f01a21-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-28"><a href="#52f01a21-28" aria-hidden="true" tabindex="-1"></a><span class="co">    Parameters:</span></span>
-<span id="52f01a21-29"><a href="#52f01a21-29" aria-hidden="true" tabindex="-1"></a><span class="co">    - url (str): The URL of the zip file to download.</span></span>
-<span id="52f01a21-30"><a href="#52f01a21-30" aria-hidden="true" tabindex="-1"></a><span class="co">    - extract_to (str): The directory where the contents of the zip file should be extracted.</span></span>
-<span id="52f01a21-31"><a href="#52f01a21-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-32"><a href="#52f01a21-32" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns:</span></span>
-<span id="52f01a21-33"><a href="#52f01a21-33" aria-hidden="true" tabindex="-1"></a><span class="co">    - df (DataFrame): The loaded pandas DataFrame from the extracted CSV file.</span></span>
-<span id="52f01a21-34"><a href="#52f01a21-34" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
-<span id="52f01a21-35"><a href="#52f01a21-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
-<span id="52f01a21-36"><a href="#52f01a21-36" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Extract the file pattern from the URL (filename without the extension)</span></span>
-<span id="52f01a21-37"><a href="#52f01a21-37" aria-hidden="true" tabindex="-1"></a>        file_pattern <span class="op">=</span> url.split(<span class="st">"/"</span>)[<span class="op">-</span><span class="dv">1</span>].replace(<span class="st">"_zip/"</span>, <span class="st">""</span>)</span>
-<span id="52f01a21-38"><a href="#52f01a21-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-39"><a href="#52f01a21-39" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Send a GET request to the specified URL to download the file</span></span>
-<span id="52f01a21-40"><a href="#52f01a21-40" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> requests.get(url)</span>
-<span id="52f01a21-41"><a href="#52f01a21-41" aria-hidden="true" tabindex="-1"></a>        response.raise_for_status()  <span class="co"># Ensure we get a successful response</span></span>
-<span id="52f01a21-42"><a href="#52f01a21-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-43"><a href="#52f01a21-43" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create a ZipFile object from the downloaded bytes</span></span>
-<span id="52f01a21-44"><a href="#52f01a21-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> zipfile.ZipFile(io.BytesIO(response.content)) <span class="im">as</span> z:</span>
-<span id="52f01a21-45"><a href="#52f01a21-45" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Extract all the contents to the specified directory</span></span>
-<span id="52f01a21-46"><a href="#52f01a21-46" aria-hidden="true" tabindex="-1"></a>            z.extractall(path<span class="op">=</span>extract_to)</span>
-<span id="52f01a21-47"><a href="#52f01a21-47" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"Extracted all files to </span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(extract_to)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="52f01a21-48"><a href="#52f01a21-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-49"><a href="#52f01a21-49" aria-hidden="true" tabindex="-1"></a>        dir_extract_to <span class="op">=</span> Path(extract_to)</span>
-<span id="52f01a21-50"><a href="#52f01a21-50" aria-hidden="true" tabindex="-1"></a>        <span class="co"># dir_extract_to = Path(f"./{file_pattern}/")</span></span>
-<span id="52f01a21-51"><a href="#52f01a21-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-52"><a href="#52f01a21-52" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Look for the file matching the pattern</span></span>
-<span id="52f01a21-53"><a href="#52f01a21-53" aria-hidden="true" tabindex="-1"></a>        csv_filename <span class="op">=</span> [f.name <span class="cf">for</span> f <span class="kw">in</span> dir_extract_to.iterdir() <span class="cf">if</span> f.suffix <span class="op">==</span> <span class="st">".csv"</span>]</span>
-<span id="52f01a21-54"><a href="#52f01a21-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-55"><a href="#52f01a21-55" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> csv_filename:</span>
-<span id="52f01a21-56"><a href="#52f01a21-56" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"No file matching pattern '</span><span class="sc">{</span>file_pattern<span class="sc">}</span><span class="ss">' found."</span>)</span>
-<span id="52f01a21-57"><a href="#52f01a21-57" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
-<span id="52f01a21-58"><a href="#52f01a21-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-59"><a href="#52f01a21-59" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Read the first matching CSV file into a pandas DataFrame</span></span>
-<span id="52f01a21-60"><a href="#52f01a21-60" aria-hidden="true" tabindex="-1"></a>        csv_path <span class="op">=</span> os.path.join(dir_extract_to.name, csv_filename[<span class="dv">0</span>])</span>
-<span id="52f01a21-61"><a href="#52f01a21-61" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Reading file: </span><span class="sc">{</span>csv_path<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="52f01a21-62"><a href="#52f01a21-62" aria-hidden="true" tabindex="-1"></a>        df <span class="op">=</span> pd.read_csv(csv_path, sep<span class="op">=</span><span class="st">";"</span>)</span>
-<span id="52f01a21-63"><a href="#52f01a21-63" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-64"><a href="#52f01a21-64" aria-hidden="true" tabindex="-1"></a>        <span class="co"># CONVERT TO GEOPANDAS</span></span>
-<span id="52f01a21-65"><a href="#52f01a21-65" aria-hidden="true" tabindex="-1"></a>        df[[<span class="st">"latitude"</span>, <span class="st">"longitude"</span>]] <span class="op">=</span> df[<span class="st">"Coordonnées géographiques"</span>].<span class="bu">str</span>.split(</span>
-<span id="52f01a21-66"><a href="#52f01a21-66" aria-hidden="true" tabindex="-1"></a>            <span class="st">","</span>, expand<span class="op">=</span><span class="va">True</span></span>
-<span id="52f01a21-67"><a href="#52f01a21-67" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="52f01a21-68"><a href="#52f01a21-68" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"latitude"</span>] <span class="op">=</span> pd.to_numeric(df[<span class="st">"latitude"</span>])</span>
-<span id="52f01a21-69"><a href="#52f01a21-69" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"longitude"</span>] <span class="op">=</span> pd.to_numeric(df[<span class="st">"longitude"</span>])</span>
-<span id="52f01a21-70"><a href="#52f01a21-70" aria-hidden="true" tabindex="-1"></a>        gdf <span class="op">=</span> gpd.GeoDataFrame(</span>
-<span id="52f01a21-71"><a href="#52f01a21-71" aria-hidden="true" tabindex="-1"></a>            df, geometry<span class="op">=</span>gpd.points_from_xy(df.longitude, df.latitude)</span>
-<span id="52f01a21-72"><a href="#52f01a21-72" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="52f01a21-73"><a href="#52f01a21-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-74"><a href="#52f01a21-74" aria-hidden="true" tabindex="-1"></a>        <span class="co"># CONVERT TO TIMESTAMP</span></span>
-<span id="52f01a21-75"><a href="#52f01a21-75" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"Date et heure de comptage"</span>] <span class="op">=</span> (</span>
-<span id="52f01a21-76"><a href="#52f01a21-76" aria-hidden="true" tabindex="-1"></a>            df[<span class="st">"Date et heure de comptage"</span>]</span>
-<span id="52f01a21-77"><a href="#52f01a21-77" aria-hidden="true" tabindex="-1"></a>            .astype(<span class="bu">str</span>)</span>
-<span id="52f01a21-78"><a href="#52f01a21-78" aria-hidden="true" tabindex="-1"></a>            .<span class="bu">str</span>.replace(<span class="vs">r"\+.*"</span>, <span class="st">""</span>, regex<span class="op">=</span><span class="va">True</span>)</span>
-<span id="52f01a21-79"><a href="#52f01a21-79" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="52f01a21-80"><a href="#52f01a21-80" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"Date et heure de comptage"</span>] <span class="op">=</span> pd.to_datetime(</span>
-<span id="52f01a21-81"><a href="#52f01a21-81" aria-hidden="true" tabindex="-1"></a>            df[<span class="st">"Date et heure de comptage"</span>], <span class="bu">format</span><span class="op">=</span><span class="st">"%Y-%m-</span><span class="sc">%d</span><span class="st">T%H:%M:%S"</span>, errors<span class="op">=</span><span class="st">"coerce"</span></span>
-<span id="52f01a21-82"><a href="#52f01a21-82" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="52f01a21-83"><a href="#52f01a21-83" aria-hidden="true" tabindex="-1"></a>        gdf <span class="op">=</span> df.loc[:, list_useful_columns]</span>
-<span id="52f01a21-84"><a href="#52f01a21-84" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> gdf</span>
-<span id="52f01a21-85"><a href="#52f01a21-85" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-86"><a href="#52f01a21-86" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> requests.exceptions.RequestException <span class="im">as</span> e:</span>
-<span id="52f01a21-87"><a href="#52f01a21-87" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Error: The downloaded file has not been found: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="52f01a21-88"><a href="#52f01a21-88" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
-<span id="52f01a21-89"><a href="#52f01a21-89" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> zipfile.BadZipFile <span class="im">as</span> e:</span>
-<span id="52f01a21-90"><a href="#52f01a21-90" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Error: The downloaded file is not a valid zip file: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="52f01a21-91"><a href="#52f01a21-91" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
-<span id="52f01a21-92"><a href="#52f01a21-92" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> e:</span>
-<span id="52f01a21-93"><a href="#52f01a21-93" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"An error occurred: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="52f01a21-94"><a href="#52f01a21-94" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
-<span id="52f01a21-95"><a href="#52f01a21-95" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-96"><a href="#52f01a21-96" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-97"><a href="#52f01a21-97" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> read_historical_bike_data(year):</span>
-<span id="52f01a21-98"><a href="#52f01a21-98" aria-hidden="true" tabindex="-1"></a>    dataset <span class="op">=</span> <span class="st">"comptage_velo_donnees_compteurs"</span></span>
-<span id="52f01a21-99"><a href="#52f01a21-99" aria-hidden="true" tabindex="-1"></a>    url_comptage <span class="op">=</span> <span class="ss">f"https://opendata.paris.fr/api/datasets/1.0/comptage-velo-historique-donnees-compteurs/attachments/</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>dataset<span class="sc">}</span><span class="ss">_csv_zip/"</span></span>
-<span id="52f01a21-100"><a href="#52f01a21-100" aria-hidden="true" tabindex="-1"></a>    df_comptage <span class="op">=</span> download_unzip_and_read(</span>
-<span id="52f01a21-101"><a href="#52f01a21-101" aria-hidden="true" tabindex="-1"></a>        url_comptage, extract_to<span class="op">=</span><span class="ss">f"./extracted_files_</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">"</span></span>
-<span id="52f01a21-102"><a href="#52f01a21-102" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="52f01a21-103"><a href="#52f01a21-103" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> df_comptage <span class="kw">is</span> <span class="va">None</span>:</span>
-<span id="52f01a21-104"><a href="#52f01a21-104" aria-hidden="true" tabindex="-1"></a>        url_comptage_alternative <span class="op">=</span> url_comptage.replace(<span class="st">"_csv_zip"</span>, <span class="st">"_zip"</span>)</span>
-<span id="52f01a21-105"><a href="#52f01a21-105" aria-hidden="true" tabindex="-1"></a>        df_comptage <span class="op">=</span> download_unzip_and_read(</span>
-<span id="52f01a21-106"><a href="#52f01a21-106" aria-hidden="true" tabindex="-1"></a>            url_comptage_alternative, extract_to<span class="op">=</span><span class="ss">f"./extracted_files_</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">"</span></span>
-<span id="52f01a21-107"><a href="#52f01a21-107" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="52f01a21-108"><a href="#52f01a21-108" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> df_comptage</span>
-<span id="52f01a21-109"><a href="#52f01a21-109" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-110"><a href="#52f01a21-110" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-111"><a href="#52f01a21-111" aria-hidden="true" tabindex="-1"></a><span class="co"># IMPORT HISTORICAL DATA -----------------------------</span></span>
-<span id="52f01a21-112"><a href="#52f01a21-112" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-113"><a href="#52f01a21-113" aria-hidden="true" tabindex="-1"></a>historical_bike_data <span class="op">=</span> pd.concat(</span>
-<span id="52f01a21-114"><a href="#52f01a21-114" aria-hidden="true" tabindex="-1"></a>    [read_historical_bike_data(year) <span class="cf">for</span> year <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2018</span>, <span class="dv">2024</span>)]</span>
-<span id="52f01a21-115"><a href="#52f01a21-115" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="52f01a21-116"><a href="#52f01a21-116" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-117"><a href="#52f01a21-117" aria-hidden="true" tabindex="-1"></a>rename_columns_dict <span class="op">=</span> {</span>
-<span id="52f01a21-118"><a href="#52f01a21-118" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Identifiant du compteur"</span>: <span class="st">"id_compteur"</span>,</span>
-<span id="52f01a21-119"><a href="#52f01a21-119" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Nom du compteur"</span>: <span class="st">"nom_compteur"</span>,</span>
-<span id="52f01a21-120"><a href="#52f01a21-120" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Identifiant du site de comptage"</span>: <span class="st">"id"</span>,</span>
-<span id="52f01a21-121"><a href="#52f01a21-121" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Nom du site de comptage"</span>: <span class="st">"nom_site"</span>,</span>
-<span id="52f01a21-122"><a href="#52f01a21-122" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Comptage horaire"</span>: <span class="st">"sum_counts"</span>,</span>
-<span id="52f01a21-123"><a href="#52f01a21-123" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Date et heure de comptage"</span>: <span class="st">"date"</span>,</span>
-<span id="52f01a21-124"><a href="#52f01a21-124" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="52f01a21-125"><a href="#52f01a21-125" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-126"><a href="#52f01a21-126" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-127"><a href="#52f01a21-127" aria-hidden="true" tabindex="-1"></a>historical_bike_data <span class="op">=</span> historical_bike_data.rename(columns<span class="op">=</span>rename_columns_dict)</span>
-<span id="52f01a21-128"><a href="#52f01a21-128" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-129"><a href="#52f01a21-129" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-130"><a href="#52f01a21-130" aria-hidden="true" tabindex="-1"></a><span class="co"># IMPORT LATEST MONTHS ----------------</span></span>
-<span id="52f01a21-131"><a href="#52f01a21-131" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-132"><a href="#52f01a21-132" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
-<span id="52f01a21-133"><a href="#52f01a21-133" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
-<span id="52f01a21-134"><a href="#52f01a21-134" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tqdm <span class="im">import</span> tqdm</span>
-<span id="52f01a21-135"><a href="#52f01a21-135" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="52f01a21-136"><a href="#52f01a21-136" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> duckdb</span>
-<span id="52f01a21-137"><a href="#52f01a21-137" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-138"><a href="#52f01a21-138" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/comptage-velo-donnees-compteurs/exports/parquet?lang=fr&amp;timezone=Europe</span><span class="sc">%2F</span><span class="st">Paris"</span></span>
-<span id="52f01a21-139"><a href="#52f01a21-139" aria-hidden="true" tabindex="-1"></a>filename <span class="op">=</span> <span class="st">"comptage_velo_donnees_compteurs.parquet"</span></span>
-<span id="52f01a21-140"><a href="#52f01a21-140" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-141"><a href="#52f01a21-141" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-142"><a href="#52f01a21-142" aria-hidden="true" tabindex="-1"></a><span class="co"># DOWNLOAD FILE --------------------------------</span></span>
-<span id="52f01a21-143"><a href="#52f01a21-143" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-144"><a href="#52f01a21-144" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform the HTTP request and stream the download</span></span>
-<span id="52f01a21-145"><a href="#52f01a21-145" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> requests.get(url, stream<span class="op">=</span><span class="va">True</span>)</span>
-<span id="52f01a21-146"><a href="#52f01a21-146" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-147"><a href="#52f01a21-147" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> os.path.exists(filename):</span>
-<span id="52f01a21-148"><a href="#52f01a21-148" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Perform the HTTP request and stream the download</span></span>
-<span id="52f01a21-149"><a href="#52f01a21-149" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> requests.get(url, stream<span class="op">=</span><span class="va">True</span>)</span>
-<span id="52f01a21-150"><a href="#52f01a21-150" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-151"><a href="#52f01a21-151" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check if the request was successful</span></span>
-<span id="52f01a21-152"><a href="#52f01a21-152" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> response.status_code <span class="op">==</span> <span class="dv">200</span>:</span>
-<span id="52f01a21-153"><a href="#52f01a21-153" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Get the total size of the file from the headers</span></span>
-<span id="52f01a21-154"><a href="#52f01a21-154" aria-hidden="true" tabindex="-1"></a>        total_size <span class="op">=</span> <span class="bu">int</span>(response.headers.get(<span class="st">"content-length"</span>, <span class="dv">0</span>))</span>
-<span id="52f01a21-155"><a href="#52f01a21-155" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-156"><a href="#52f01a21-156" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Open the file in write-binary mode and use tqdm to show progress</span></span>
-<span id="52f01a21-157"><a href="#52f01a21-157" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> <span class="bu">open</span>(filename, <span class="st">"wb"</span>) <span class="im">as</span> <span class="bu">file</span>, tqdm(</span>
-<span id="52f01a21-158"><a href="#52f01a21-158" aria-hidden="true" tabindex="-1"></a>            desc<span class="op">=</span>filename,</span>
-<span id="52f01a21-159"><a href="#52f01a21-159" aria-hidden="true" tabindex="-1"></a>            total<span class="op">=</span>total_size,</span>
-<span id="52f01a21-160"><a href="#52f01a21-160" aria-hidden="true" tabindex="-1"></a>            unit<span class="op">=</span><span class="st">"B"</span>,</span>
-<span id="52f01a21-161"><a href="#52f01a21-161" aria-hidden="true" tabindex="-1"></a>            unit_scale<span class="op">=</span><span class="va">True</span>,</span>
-<span id="52f01a21-162"><a href="#52f01a21-162" aria-hidden="true" tabindex="-1"></a>            unit_divisor<span class="op">=</span><span class="dv">1024</span>,</span>
-<span id="52f01a21-163"><a href="#52f01a21-163" aria-hidden="true" tabindex="-1"></a>        ) <span class="im">as</span> bar:</span>
-<span id="52f01a21-164"><a href="#52f01a21-164" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Write the file in chunks</span></span>
-<span id="52f01a21-165"><a href="#52f01a21-165" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> chunk <span class="kw">in</span> response.iter_content(chunk_size<span class="op">=</span><span class="dv">1024</span>):</span>
-<span id="52f01a21-166"><a href="#52f01a21-166" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> chunk:  <span class="co"># filter out keep-alive chunks</span></span>
-<span id="52f01a21-167"><a href="#52f01a21-167" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">file</span>.write(chunk)</span>
-<span id="52f01a21-168"><a href="#52f01a21-168" aria-hidden="true" tabindex="-1"></a>                    bar.update(<span class="bu">len</span>(chunk))</span>
-<span id="52f01a21-169"><a href="#52f01a21-169" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
-<span id="52f01a21-170"><a href="#52f01a21-170" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Failed to download the file. Status code: </span><span class="sc">{</span>response<span class="sc">.</span>status_code<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="52f01a21-171"><a href="#52f01a21-171" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
-<span id="52f01a21-172"><a href="#52f01a21-172" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"The file '</span><span class="sc">{</span>filename<span class="sc">}</span><span class="ss">' already exists."</span>)</span>
-<span id="52f01a21-173"><a href="#52f01a21-173" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-174"><a href="#52f01a21-174" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-175"><a href="#52f01a21-175" aria-hidden="true" tabindex="-1"></a><span class="co"># READ FILE AND CONVERT TO PANDAS</span></span>
-<span id="52f01a21-176"><a href="#52f01a21-176" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span> <span class="st">"""</span></span>
-<span id="52f01a21-177"><a href="#52f01a21-177" aria-hidden="true" tabindex="-1"></a><span class="st">SELECT id_compteur, nom_compteur, id, sum_counts, date </span></span>
-<span id="52f01a21-178"><a href="#52f01a21-178" aria-hidden="true" tabindex="-1"></a><span class="st">FROM read_parquet('comptage_velo_donnees_compteurs.parquet')</span></span>
-<span id="52f01a21-179"><a href="#52f01a21-179" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
-<span id="52f01a21-180"><a href="#52f01a21-180" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-181"><a href="#52f01a21-181" aria-hidden="true" tabindex="-1"></a><span class="co"># READ WITH DUCKDB AND CONVERT TO PANDAS</span></span>
-<span id="52f01a21-182"><a href="#52f01a21-182" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> duckdb.sql(query).df()</span>
-<span id="52f01a21-183"><a href="#52f01a21-183" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-184"><a href="#52f01a21-184" aria-hidden="true" tabindex="-1"></a>df.head(<span class="dv">3</span>)</span>
-<span id="52f01a21-185"><a href="#52f01a21-185" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-186"><a href="#52f01a21-186" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-187"><a href="#52f01a21-187" aria-hidden="true" tabindex="-1"></a><span class="co"># PUT THEM TOGETHER ----------------------------</span></span>
-<span id="52f01a21-188"><a href="#52f01a21-188" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-189"><a href="#52f01a21-189" aria-hidden="true" tabindex="-1"></a>historical_bike_data[<span class="st">"date"</span>] <span class="op">=</span> historical_bike_data[<span class="st">"date"</span>].dt.tz_localize(<span class="va">None</span>)</span>
-<span id="52f01a21-190"><a href="#52f01a21-190" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-191"><a href="#52f01a21-191" aria-hidden="true" tabindex="-1"></a>df[<span class="st">"date"</span>] <span class="op">=</span> df[<span class="st">"date"</span>].dt.tz_localize(<span class="va">None</span>)</span>
-<span id="52f01a21-192"><a href="#52f01a21-192" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-193"><a href="#52f01a21-193" aria-hidden="true" tabindex="-1"></a>historical_bike_data <span class="op">=</span> historical_bike_data.loc[</span>
-<span id="52f01a21-194"><a href="#52f01a21-194" aria-hidden="true" tabindex="-1"></a>    historical_bike_data[<span class="st">"date"</span>] <span class="op">&lt;</span> df[<span class="st">"date"</span>].<span class="bu">min</span>()</span>
-<span id="52f01a21-195"><a href="#52f01a21-195" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="52f01a21-196"><a href="#52f01a21-196" aria-hidden="true" tabindex="-1"></a></span>
-<span id="52f01a21-197"><a href="#52f01a21-197" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.concat([historical_bike_data, df])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="dffeef18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="dffeef18-1"><a href="#dffeef18-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
+<span id="dffeef18-2"><a href="#dffeef18-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> zipfile</span>
+<span id="dffeef18-3"><a href="#dffeef18-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> io</span>
+<span id="dffeef18-4"><a href="#dffeef18-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="dffeef18-5"><a href="#dffeef18-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="dffeef18-6"><a href="#dffeef18-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="dffeef18-7"><a href="#dffeef18-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> geopandas <span class="im">as</span> gpd</span>
+<span id="dffeef18-8"><a href="#dffeef18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-9"><a href="#dffeef18-9" aria-hidden="true" tabindex="-1"></a>list_useful_columns <span class="op">=</span> [</span>
+<span id="dffeef18-10"><a href="#dffeef18-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Identifiant du compteur"</span>,</span>
+<span id="dffeef18-11"><a href="#dffeef18-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Nom du compteur"</span>,</span>
+<span id="dffeef18-12"><a href="#dffeef18-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Identifiant du site de comptage"</span>,</span>
+<span id="dffeef18-13"><a href="#dffeef18-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Nom du site de comptage"</span>,</span>
+<span id="dffeef18-14"><a href="#dffeef18-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Comptage horaire"</span>,</span>
+<span id="dffeef18-15"><a href="#dffeef18-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Date et heure de comptage"</span>,</span>
+<span id="dffeef18-16"><a href="#dffeef18-16" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="dffeef18-17"><a href="#dffeef18-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-18"><a href="#dffeef18-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-19"><a href="#dffeef18-19" aria-hidden="true" tabindex="-1"></a><span class="co"># GENERIC FUNCTION TO RETRIEVE DATA -------------------------</span></span>
+<span id="dffeef18-20"><a href="#dffeef18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-21"><a href="#dffeef18-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-22"><a href="#dffeef18-22" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> download_unzip_and_read(</span>
+<span id="dffeef18-23"><a href="#dffeef18-23" aria-hidden="true" tabindex="-1"></a>    url, extract_to<span class="op">=</span><span class="st">"."</span>, list_useful_columns<span class="op">=</span>list_useful_columns</span>
+<span id="dffeef18-24"><a href="#dffeef18-24" aria-hidden="true" tabindex="-1"></a>):</span>
+<span id="dffeef18-25"><a href="#dffeef18-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="dffeef18-26"><a href="#dffeef18-26" aria-hidden="true" tabindex="-1"></a><span class="co">    Downloads a zip file from the specified URL, extracts its contents, and reads the CSV file based on the filename pattern in the URL.</span></span>
+<span id="dffeef18-27"><a href="#dffeef18-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-28"><a href="#dffeef18-28" aria-hidden="true" tabindex="-1"></a><span class="co">    Parameters:</span></span>
+<span id="dffeef18-29"><a href="#dffeef18-29" aria-hidden="true" tabindex="-1"></a><span class="co">    - url (str): The URL of the zip file to download.</span></span>
+<span id="dffeef18-30"><a href="#dffeef18-30" aria-hidden="true" tabindex="-1"></a><span class="co">    - extract_to (str): The directory where the contents of the zip file should be extracted.</span></span>
+<span id="dffeef18-31"><a href="#dffeef18-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-32"><a href="#dffeef18-32" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns:</span></span>
+<span id="dffeef18-33"><a href="#dffeef18-33" aria-hidden="true" tabindex="-1"></a><span class="co">    - df (DataFrame): The loaded pandas DataFrame from the extracted CSV file.</span></span>
+<span id="dffeef18-34"><a href="#dffeef18-34" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="dffeef18-35"><a href="#dffeef18-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="dffeef18-36"><a href="#dffeef18-36" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Extract the file pattern from the URL (filename without the extension)</span></span>
+<span id="dffeef18-37"><a href="#dffeef18-37" aria-hidden="true" tabindex="-1"></a>        file_pattern <span class="op">=</span> url.split(<span class="st">"/"</span>)[<span class="op">-</span><span class="dv">1</span>].replace(<span class="st">"_zip/"</span>, <span class="st">""</span>)</span>
+<span id="dffeef18-38"><a href="#dffeef18-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-39"><a href="#dffeef18-39" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Send a GET request to the specified URL to download the file</span></span>
+<span id="dffeef18-40"><a href="#dffeef18-40" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> requests.get(url)</span>
+<span id="dffeef18-41"><a href="#dffeef18-41" aria-hidden="true" tabindex="-1"></a>        response.raise_for_status()  <span class="co"># Ensure we get a successful response</span></span>
+<span id="dffeef18-42"><a href="#dffeef18-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-43"><a href="#dffeef18-43" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create a ZipFile object from the downloaded bytes</span></span>
+<span id="dffeef18-44"><a href="#dffeef18-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> zipfile.ZipFile(io.BytesIO(response.content)) <span class="im">as</span> z:</span>
+<span id="dffeef18-45"><a href="#dffeef18-45" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Extract all the contents to the specified directory</span></span>
+<span id="dffeef18-46"><a href="#dffeef18-46" aria-hidden="true" tabindex="-1"></a>            z.extractall(path<span class="op">=</span>extract_to)</span>
+<span id="dffeef18-47"><a href="#dffeef18-47" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"Extracted all files to </span><span class="sc">{</span>os<span class="sc">.</span>path<span class="sc">.</span>abspath(extract_to)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="dffeef18-48"><a href="#dffeef18-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-49"><a href="#dffeef18-49" aria-hidden="true" tabindex="-1"></a>        dir_extract_to <span class="op">=</span> Path(extract_to)</span>
+<span id="dffeef18-50"><a href="#dffeef18-50" aria-hidden="true" tabindex="-1"></a>        <span class="co"># dir_extract_to = Path(f"./{file_pattern}/")</span></span>
+<span id="dffeef18-51"><a href="#dffeef18-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-52"><a href="#dffeef18-52" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Look for the file matching the pattern</span></span>
+<span id="dffeef18-53"><a href="#dffeef18-53" aria-hidden="true" tabindex="-1"></a>        csv_filename <span class="op">=</span> [f.name <span class="cf">for</span> f <span class="kw">in</span> dir_extract_to.iterdir() <span class="cf">if</span> f.suffix <span class="op">==</span> <span class="st">".csv"</span>]</span>
+<span id="dffeef18-54"><a href="#dffeef18-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-55"><a href="#dffeef18-55" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> csv_filename:</span>
+<span id="dffeef18-56"><a href="#dffeef18-56" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"No file matching pattern '</span><span class="sc">{</span>file_pattern<span class="sc">}</span><span class="ss">' found."</span>)</span>
+<span id="dffeef18-57"><a href="#dffeef18-57" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="dffeef18-58"><a href="#dffeef18-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-59"><a href="#dffeef18-59" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Read the first matching CSV file into a pandas DataFrame</span></span>
+<span id="dffeef18-60"><a href="#dffeef18-60" aria-hidden="true" tabindex="-1"></a>        csv_path <span class="op">=</span> os.path.join(dir_extract_to.name, csv_filename[<span class="dv">0</span>])</span>
+<span id="dffeef18-61"><a href="#dffeef18-61" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Reading file: </span><span class="sc">{</span>csv_path<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="dffeef18-62"><a href="#dffeef18-62" aria-hidden="true" tabindex="-1"></a>        df <span class="op">=</span> pd.read_csv(csv_path, sep<span class="op">=</span><span class="st">";"</span>)</span>
+<span id="dffeef18-63"><a href="#dffeef18-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-64"><a href="#dffeef18-64" aria-hidden="true" tabindex="-1"></a>        <span class="co"># CONVERT TO GEOPANDAS</span></span>
+<span id="dffeef18-65"><a href="#dffeef18-65" aria-hidden="true" tabindex="-1"></a>        df[[<span class="st">"latitude"</span>, <span class="st">"longitude"</span>]] <span class="op">=</span> df[<span class="st">"Coordonnées géographiques"</span>].<span class="bu">str</span>.split(</span>
+<span id="dffeef18-66"><a href="#dffeef18-66" aria-hidden="true" tabindex="-1"></a>            <span class="st">","</span>, expand<span class="op">=</span><span class="va">True</span></span>
+<span id="dffeef18-67"><a href="#dffeef18-67" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="dffeef18-68"><a href="#dffeef18-68" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"latitude"</span>] <span class="op">=</span> pd.to_numeric(df[<span class="st">"latitude"</span>])</span>
+<span id="dffeef18-69"><a href="#dffeef18-69" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"longitude"</span>] <span class="op">=</span> pd.to_numeric(df[<span class="st">"longitude"</span>])</span>
+<span id="dffeef18-70"><a href="#dffeef18-70" aria-hidden="true" tabindex="-1"></a>        gdf <span class="op">=</span> gpd.GeoDataFrame(</span>
+<span id="dffeef18-71"><a href="#dffeef18-71" aria-hidden="true" tabindex="-1"></a>            df, geometry<span class="op">=</span>gpd.points_from_xy(df.longitude, df.latitude)</span>
+<span id="dffeef18-72"><a href="#dffeef18-72" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="dffeef18-73"><a href="#dffeef18-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-74"><a href="#dffeef18-74" aria-hidden="true" tabindex="-1"></a>        <span class="co"># CONVERT TO TIMESTAMP</span></span>
+<span id="dffeef18-75"><a href="#dffeef18-75" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"Date et heure de comptage"</span>] <span class="op">=</span> (</span>
+<span id="dffeef18-76"><a href="#dffeef18-76" aria-hidden="true" tabindex="-1"></a>            df[<span class="st">"Date et heure de comptage"</span>]</span>
+<span id="dffeef18-77"><a href="#dffeef18-77" aria-hidden="true" tabindex="-1"></a>            .astype(<span class="bu">str</span>)</span>
+<span id="dffeef18-78"><a href="#dffeef18-78" aria-hidden="true" tabindex="-1"></a>            .<span class="bu">str</span>.replace(<span class="vs">r"\+.*"</span>, <span class="st">""</span>, regex<span class="op">=</span><span class="va">True</span>)</span>
+<span id="dffeef18-79"><a href="#dffeef18-79" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="dffeef18-80"><a href="#dffeef18-80" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"Date et heure de comptage"</span>] <span class="op">=</span> pd.to_datetime(</span>
+<span id="dffeef18-81"><a href="#dffeef18-81" aria-hidden="true" tabindex="-1"></a>            df[<span class="st">"Date et heure de comptage"</span>], <span class="bu">format</span><span class="op">=</span><span class="st">"%Y-%m-</span><span class="sc">%d</span><span class="st">T%H:%M:%S"</span>, errors<span class="op">=</span><span class="st">"coerce"</span></span>
+<span id="dffeef18-82"><a href="#dffeef18-82" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="dffeef18-83"><a href="#dffeef18-83" aria-hidden="true" tabindex="-1"></a>        gdf <span class="op">=</span> df.loc[:, list_useful_columns]</span>
+<span id="dffeef18-84"><a href="#dffeef18-84" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> gdf</span>
+<span id="dffeef18-85"><a href="#dffeef18-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-86"><a href="#dffeef18-86" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> requests.exceptions.RequestException <span class="im">as</span> e:</span>
+<span id="dffeef18-87"><a href="#dffeef18-87" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Error: The downloaded file has not been found: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="dffeef18-88"><a href="#dffeef18-88" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="dffeef18-89"><a href="#dffeef18-89" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> zipfile.BadZipFile <span class="im">as</span> e:</span>
+<span id="dffeef18-90"><a href="#dffeef18-90" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Error: The downloaded file is not a valid zip file: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="dffeef18-91"><a href="#dffeef18-91" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="dffeef18-92"><a href="#dffeef18-92" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> e:</span>
+<span id="dffeef18-93"><a href="#dffeef18-93" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"An error occurred: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="dffeef18-94"><a href="#dffeef18-94" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="dffeef18-95"><a href="#dffeef18-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-96"><a href="#dffeef18-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-97"><a href="#dffeef18-97" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> read_historical_bike_data(year):</span>
+<span id="dffeef18-98"><a href="#dffeef18-98" aria-hidden="true" tabindex="-1"></a>    dataset <span class="op">=</span> <span class="st">"comptage_velo_donnees_compteurs"</span></span>
+<span id="dffeef18-99"><a href="#dffeef18-99" aria-hidden="true" tabindex="-1"></a>    url_comptage <span class="op">=</span> <span class="ss">f"https://opendata.paris.fr/api/datasets/1.0/comptage-velo-historique-donnees-compteurs/attachments/</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>dataset<span class="sc">}</span><span class="ss">_csv_zip/"</span></span>
+<span id="dffeef18-100"><a href="#dffeef18-100" aria-hidden="true" tabindex="-1"></a>    df_comptage <span class="op">=</span> download_unzip_and_read(</span>
+<span id="dffeef18-101"><a href="#dffeef18-101" aria-hidden="true" tabindex="-1"></a>        url_comptage, extract_to<span class="op">=</span><span class="ss">f"./extracted_files_</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">"</span></span>
+<span id="dffeef18-102"><a href="#dffeef18-102" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="dffeef18-103"><a href="#dffeef18-103" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> df_comptage <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="dffeef18-104"><a href="#dffeef18-104" aria-hidden="true" tabindex="-1"></a>        url_comptage_alternative <span class="op">=</span> url_comptage.replace(<span class="st">"_csv_zip"</span>, <span class="st">"_zip"</span>)</span>
+<span id="dffeef18-105"><a href="#dffeef18-105" aria-hidden="true" tabindex="-1"></a>        df_comptage <span class="op">=</span> download_unzip_and_read(</span>
+<span id="dffeef18-106"><a href="#dffeef18-106" aria-hidden="true" tabindex="-1"></a>            url_comptage_alternative, extract_to<span class="op">=</span><span class="ss">f"./extracted_files_</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">"</span></span>
+<span id="dffeef18-107"><a href="#dffeef18-107" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="dffeef18-108"><a href="#dffeef18-108" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> df_comptage</span>
+<span id="dffeef18-109"><a href="#dffeef18-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-110"><a href="#dffeef18-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-111"><a href="#dffeef18-111" aria-hidden="true" tabindex="-1"></a><span class="co"># IMPORT HISTORICAL DATA -----------------------------</span></span>
+<span id="dffeef18-112"><a href="#dffeef18-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-113"><a href="#dffeef18-113" aria-hidden="true" tabindex="-1"></a>historical_bike_data <span class="op">=</span> pd.concat(</span>
+<span id="dffeef18-114"><a href="#dffeef18-114" aria-hidden="true" tabindex="-1"></a>    [read_historical_bike_data(year) <span class="cf">for</span> year <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2018</span>, <span class="dv">2024</span>)]</span>
+<span id="dffeef18-115"><a href="#dffeef18-115" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="dffeef18-116"><a href="#dffeef18-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-117"><a href="#dffeef18-117" aria-hidden="true" tabindex="-1"></a>rename_columns_dict <span class="op">=</span> {</span>
+<span id="dffeef18-118"><a href="#dffeef18-118" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Identifiant du compteur"</span>: <span class="st">"id_compteur"</span>,</span>
+<span id="dffeef18-119"><a href="#dffeef18-119" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Nom du compteur"</span>: <span class="st">"nom_compteur"</span>,</span>
+<span id="dffeef18-120"><a href="#dffeef18-120" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Identifiant du site de comptage"</span>: <span class="st">"id"</span>,</span>
+<span id="dffeef18-121"><a href="#dffeef18-121" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Nom du site de comptage"</span>: <span class="st">"nom_site"</span>,</span>
+<span id="dffeef18-122"><a href="#dffeef18-122" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Comptage horaire"</span>: <span class="st">"sum_counts"</span>,</span>
+<span id="dffeef18-123"><a href="#dffeef18-123" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Date et heure de comptage"</span>: <span class="st">"date"</span>,</span>
+<span id="dffeef18-124"><a href="#dffeef18-124" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="dffeef18-125"><a href="#dffeef18-125" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-126"><a href="#dffeef18-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-127"><a href="#dffeef18-127" aria-hidden="true" tabindex="-1"></a>historical_bike_data <span class="op">=</span> historical_bike_data.rename(columns<span class="op">=</span>rename_columns_dict)</span>
+<span id="dffeef18-128"><a href="#dffeef18-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-129"><a href="#dffeef18-129" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-130"><a href="#dffeef18-130" aria-hidden="true" tabindex="-1"></a><span class="co"># IMPORT LATEST MONTHS ----------------</span></span>
+<span id="dffeef18-131"><a href="#dffeef18-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-132"><a href="#dffeef18-132" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="dffeef18-133"><a href="#dffeef18-133" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
+<span id="dffeef18-134"><a href="#dffeef18-134" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tqdm <span class="im">import</span> tqdm</span>
+<span id="dffeef18-135"><a href="#dffeef18-135" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="dffeef18-136"><a href="#dffeef18-136" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> duckdb</span>
+<span id="dffeef18-137"><a href="#dffeef18-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-138"><a href="#dffeef18-138" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/comptage-velo-donnees-compteurs/exports/parquet?lang=fr&amp;timezone=Europe</span><span class="sc">%2F</span><span class="st">Paris"</span></span>
+<span id="dffeef18-139"><a href="#dffeef18-139" aria-hidden="true" tabindex="-1"></a>filename <span class="op">=</span> <span class="st">"comptage_velo_donnees_compteurs.parquet"</span></span>
+<span id="dffeef18-140"><a href="#dffeef18-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-141"><a href="#dffeef18-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-142"><a href="#dffeef18-142" aria-hidden="true" tabindex="-1"></a><span class="co"># DOWNLOAD FILE --------------------------------</span></span>
+<span id="dffeef18-143"><a href="#dffeef18-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-144"><a href="#dffeef18-144" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform the HTTP request and stream the download</span></span>
+<span id="dffeef18-145"><a href="#dffeef18-145" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> requests.get(url, stream<span class="op">=</span><span class="va">True</span>)</span>
+<span id="dffeef18-146"><a href="#dffeef18-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-147"><a href="#dffeef18-147" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> os.path.exists(filename):</span>
+<span id="dffeef18-148"><a href="#dffeef18-148" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Perform the HTTP request and stream the download</span></span>
+<span id="dffeef18-149"><a href="#dffeef18-149" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> requests.get(url, stream<span class="op">=</span><span class="va">True</span>)</span>
+<span id="dffeef18-150"><a href="#dffeef18-150" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-151"><a href="#dffeef18-151" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check if the request was successful</span></span>
+<span id="dffeef18-152"><a href="#dffeef18-152" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> response.status_code <span class="op">==</span> <span class="dv">200</span>:</span>
+<span id="dffeef18-153"><a href="#dffeef18-153" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Get the total size of the file from the headers</span></span>
+<span id="dffeef18-154"><a href="#dffeef18-154" aria-hidden="true" tabindex="-1"></a>        total_size <span class="op">=</span> <span class="bu">int</span>(response.headers.get(<span class="st">"content-length"</span>, <span class="dv">0</span>))</span>
+<span id="dffeef18-155"><a href="#dffeef18-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-156"><a href="#dffeef18-156" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Open the file in write-binary mode and use tqdm to show progress</span></span>
+<span id="dffeef18-157"><a href="#dffeef18-157" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> <span class="bu">open</span>(filename, <span class="st">"wb"</span>) <span class="im">as</span> <span class="bu">file</span>, tqdm(</span>
+<span id="dffeef18-158"><a href="#dffeef18-158" aria-hidden="true" tabindex="-1"></a>            desc<span class="op">=</span>filename,</span>
+<span id="dffeef18-159"><a href="#dffeef18-159" aria-hidden="true" tabindex="-1"></a>            total<span class="op">=</span>total_size,</span>
+<span id="dffeef18-160"><a href="#dffeef18-160" aria-hidden="true" tabindex="-1"></a>            unit<span class="op">=</span><span class="st">"B"</span>,</span>
+<span id="dffeef18-161"><a href="#dffeef18-161" aria-hidden="true" tabindex="-1"></a>            unit_scale<span class="op">=</span><span class="va">True</span>,</span>
+<span id="dffeef18-162"><a href="#dffeef18-162" aria-hidden="true" tabindex="-1"></a>            unit_divisor<span class="op">=</span><span class="dv">1024</span>,</span>
+<span id="dffeef18-163"><a href="#dffeef18-163" aria-hidden="true" tabindex="-1"></a>        ) <span class="im">as</span> bar:</span>
+<span id="dffeef18-164"><a href="#dffeef18-164" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Write the file in chunks</span></span>
+<span id="dffeef18-165"><a href="#dffeef18-165" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> chunk <span class="kw">in</span> response.iter_content(chunk_size<span class="op">=</span><span class="dv">1024</span>):</span>
+<span id="dffeef18-166"><a href="#dffeef18-166" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> chunk:  <span class="co"># filter out keep-alive chunks</span></span>
+<span id="dffeef18-167"><a href="#dffeef18-167" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">file</span>.write(chunk)</span>
+<span id="dffeef18-168"><a href="#dffeef18-168" aria-hidden="true" tabindex="-1"></a>                    bar.update(<span class="bu">len</span>(chunk))</span>
+<span id="dffeef18-169"><a href="#dffeef18-169" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="dffeef18-170"><a href="#dffeef18-170" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Failed to download the file. Status code: </span><span class="sc">{</span>response<span class="sc">.</span>status_code<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="dffeef18-171"><a href="#dffeef18-171" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="dffeef18-172"><a href="#dffeef18-172" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"The file '</span><span class="sc">{</span>filename<span class="sc">}</span><span class="ss">' already exists."</span>)</span>
+<span id="dffeef18-173"><a href="#dffeef18-173" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-174"><a href="#dffeef18-174" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-175"><a href="#dffeef18-175" aria-hidden="true" tabindex="-1"></a><span class="co"># READ FILE AND CONVERT TO PANDAS</span></span>
+<span id="dffeef18-176"><a href="#dffeef18-176" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span> <span class="st">"""</span></span>
+<span id="dffeef18-177"><a href="#dffeef18-177" aria-hidden="true" tabindex="-1"></a><span class="st">SELECT id_compteur, nom_compteur, id, sum_counts, date </span></span>
+<span id="dffeef18-178"><a href="#dffeef18-178" aria-hidden="true" tabindex="-1"></a><span class="st">FROM read_parquet('comptage_velo_donnees_compteurs.parquet')</span></span>
+<span id="dffeef18-179"><a href="#dffeef18-179" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="dffeef18-180"><a href="#dffeef18-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-181"><a href="#dffeef18-181" aria-hidden="true" tabindex="-1"></a><span class="co"># READ WITH DUCKDB AND CONVERT TO PANDAS</span></span>
+<span id="dffeef18-182"><a href="#dffeef18-182" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> duckdb.sql(query).df()</span>
+<span id="dffeef18-183"><a href="#dffeef18-183" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-184"><a href="#dffeef18-184" aria-hidden="true" tabindex="-1"></a>df.head(<span class="dv">3</span>)</span>
+<span id="dffeef18-185"><a href="#dffeef18-185" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-186"><a href="#dffeef18-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-187"><a href="#dffeef18-187" aria-hidden="true" tabindex="-1"></a><span class="co"># PUT THEM TOGETHER ----------------------------</span></span>
+<span id="dffeef18-188"><a href="#dffeef18-188" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-189"><a href="#dffeef18-189" aria-hidden="true" tabindex="-1"></a>historical_bike_data[<span class="st">"date"</span>] <span class="op">=</span> historical_bike_data[<span class="st">"date"</span>].dt.tz_localize(<span class="va">None</span>)</span>
+<span id="dffeef18-190"><a href="#dffeef18-190" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-191"><a href="#dffeef18-191" aria-hidden="true" tabindex="-1"></a>df[<span class="st">"date"</span>] <span class="op">=</span> df[<span class="st">"date"</span>].dt.tz_localize(<span class="va">None</span>)</span>
+<span id="dffeef18-192"><a href="#dffeef18-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-193"><a href="#dffeef18-193" aria-hidden="true" tabindex="-1"></a>historical_bike_data <span class="op">=</span> historical_bike_data.loc[</span>
+<span id="dffeef18-194"><a href="#dffeef18-194" aria-hidden="true" tabindex="-1"></a>    historical_bike_data[<span class="st">"date"</span>] <span class="op">&lt;</span> df[<span class="st">"date"</span>].<span class="bu">min</span>()</span>
+<span id="dffeef18-195"><a href="#dffeef18-195" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="dffeef18-196"><a href="#dffeef18-196" aria-hidden="true" tabindex="-1"></a></span>
+<span id="dffeef18-197"><a href="#dffeef18-197" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.concat([historical_bike_data, df])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>Pour commencer, reproduisons la troisième figure qui est, encore une fois,
@@ -1497,7 +1497,7 @@ graduellement un graphique afin d’obtenir une figure similaire
 </div>
 </div>
 </div>
-<div id="009dcff8" class="cell" data-execution_count="22">
+<div id="addff039" class="cell" data-execution_count="22">
 <div class="cell-output cell-output-display" data-execution_count="22">
 <div>
 
@@ -1528,7 +1528,7 @@ graduellement un graphique afin d’obtenir une figure similaire
 </div>
 </div>
 <p>La figure avec les données depuis début 2022 aura cet aspect si elle a été construite avec <code>plotnine</code>:</p>
-<div id="474d8e06" class="cell" data-execution_count="24">
+<div id="900ab040" class="cell" data-execution_count="24">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1538,7 +1538,7 @@ graduellement un graphique afin d’obtenir une figure similaire
 </div>
 </div>
 <p>Avec <code>seaborn</code>, elle ressemblera plutôt à ceci:</p>
-<div id="3308c332" class="cell" data-execution_count="25">
+<div id="093ed16d" class="cell" data-execution_count="25">
 <div class="cell-output cell-output-display" data-execution_count="25">
 <pre><code>Text(0.5, 1.0, 'Moyenne mensuelle des comptages vélos')</code></pre>
 </div>
@@ -1551,7 +1551,7 @@ graduellement un graphique afin d’obtenir une figure similaire
 </div>
 </div>
 <p>Si vous préférez représenter cela sous forme de <em>lollipop</em><a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>:</p>
-<div id="c949c956" class="cell" data-execution_count="26">
+<div id="26e51d47" class="cell" data-execution_count="26">
 <div class="cell-output cell-output-error">
 <div class="ansi-escaped-output">
 <pre><span class="ansi-red-fg">---------------------------------------------------------------------------</span>
@@ -1834,7 +1834,7 @@ File <span class="ansi-green-fg">/opt/conda/lib/python3.12/site-packages/plotnin
 </div>
 </div>
 <p>Enfin, sur l’ensemble de la période, la série prendra plutôt cette forme:</p>
-<div id="dac4ed7a" class="cell" data-execution_count="27">
+<div id="65e57fbf" class="cell" data-execution_count="27">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1869,7 +1869,7 @@ du type <code>2021-05-01</code> avec <code>dt.day</code>.</li>
 </div>
 </div>
 </div>
-<div id="89f68717" class="cell" data-execution_count="29">
+<div id="5b01e6de" class="cell" data-execution_count="29">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1937,9 +1937,9 @@ Visualiser les figures produites par Plotly
 <h2 data-number="7.2" class="anchored" data-anchor-id="réplication-de-lexemple-précédent-avec-plotly"><span class="header-section-number">7.2</span> Réplication de l’exemple précédent avec <code>Plotly</code></h2>
 <p>Les modules suivants seront nécessaires pour construire des graphiques
 avec <code>plotly</code>:</p>
-<div id="bc68362f" class="cell" data-execution_count="32">
-<div class="sourceCode cell-code" id="bc68362f"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="bc68362f-1"><a href="#bc68362f-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly</span>
-<span id="bc68362f-2"><a href="#bc68362f-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly.express <span class="im">as</span> px</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="32f51c3f" class="cell" data-execution_count="32">
+<div class="sourceCode cell-code" id="32f51c3f"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="32f51c3f-1"><a href="#32f51c3f-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly</span>
+<span id="32f51c3f-2"><a href="#32f51c3f-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly.express <span class="im">as</span> px</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="callout callout-style-default callout-exercise callout-titled">
 <div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-12-contents" aria-controls="callout-12" aria-expanded="true" aria-label="Toggle callout">
@@ -1972,11 +1972,11 @@ groupe stockant les trois plus fortes valeurs puis les autres.</li>
 </div>
 </div>
 <p>La première question permet de construire le graphique suivant :</p>
-<div id="0e0652b0" class="cell" data-execution_count="35">
+<div id="873cb90b" class="cell" data-execution_count="35">
 <div class="cell-output cell-output-display">
-<div>                            <div id="c35dda98-e4bc-461b-ad02-922813493254" class="plotly-graph-div" style="height:525px; width:100%;"></div>            <script type="text/javascript">                require(["plotly"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("c35dda98-e4bc-461b-ad02-922813493254")) {                    Plotly.newPlot(                        "c35dda98-e4bc-461b-ad02-922813493254",                        [{"alignmentgroup":"True","hovertemplate":"sum_counts=%{x}\u003cbr\u003enom_compteur=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"","marker":{"color":"red","pattern":{"shape":""}},"name":"","offsetgroup":"","orientation":"h","showlegend":false,"textposition":"auto","x":[160.61649228219207,161.61420536009706,179.21121265016941,180.5767532600883,191.9622326551904,219.9631378991683,221.37909436287094,232.39531968240703,240.5288017250231,331.08745367919533],"xaxis":"x","y":["72 boulevard Voltaire NO-SE","27 quai de la Tournelle SE-NO","Quai d'Orsay E-O","35 boulevard de Ménilmontant NO-SE","Totem 64 Rue de Rivoli Totem 64 Rue de Rivoli Vélos E-O","89 boulevard de Magenta NO-SE","102 boulevard de Magenta SE-NO","Totem 64 Rue de Rivoli Totem 64 Rue de Rivoli Vélos O-E","Totem 73 boulevard de Sébastopol N-S","Totem 73 boulevard de Sébastopol S-N"],"yaxis":"y","type":"bar"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmapgl":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmapgl"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"geo":{"bgcolor":"white","lakecolor":"white","landcolor":"white","showlakes":true,"showland":true,"subunitcolor":"#C8D4E3"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"light"},"margin":{"b":0,"l":0,"r":0,"t":30},"paper_bgcolor":"white","plot_bgcolor":"white","polar":{"angularaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""},"bgcolor":"white","radialaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"yaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"zaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"ternary":{"aaxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"baxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"bgcolor":"white","caxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""}},"title":{"x":0.05},"xaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2}}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":"Moyenne du comptage par heure sur la période sélectionnée","font":{"color":"red"}}},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"nom_compteur"}},"legend":{"tracegroupgap":0},"barmode":"relative","title":{"text":"Les 10 compteurs avec la moyenne horaire la plus élevée"}},                        {"responsive": true}                    ).then(function(){
+<div>                            <div id="4f27daa1-1d94-4823-86c3-5cf98df2ce09" class="plotly-graph-div" style="height:525px; width:100%;"></div>            <script type="text/javascript">                require(["plotly"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("4f27daa1-1d94-4823-86c3-5cf98df2ce09")) {                    Plotly.newPlot(                        "4f27daa1-1d94-4823-86c3-5cf98df2ce09",                        [{"alignmentgroup":"True","hovertemplate":"sum_counts=%{x}\u003cbr\u003enom_compteur=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"","marker":{"color":"red","pattern":{"shape":""}},"name":"","offsetgroup":"","orientation":"h","showlegend":false,"textposition":"auto","x":[160.61649228219207,161.61420536009706,179.21121265016941,180.5767532600883,191.9622326551904,219.9631378991683,221.37909436287094,232.39531968240703,240.5288017250231,331.08745367919533],"xaxis":"x","y":["72 boulevard Voltaire NO-SE","27 quai de la Tournelle SE-NO","Quai d'Orsay E-O","35 boulevard de Ménilmontant NO-SE","Totem 64 Rue de Rivoli Totem 64 Rue de Rivoli Vélos E-O","89 boulevard de Magenta NO-SE","102 boulevard de Magenta SE-NO","Totem 64 Rue de Rivoli Totem 64 Rue de Rivoli Vélos O-E","Totem 73 boulevard de Sébastopol N-S","Totem 73 boulevard de Sébastopol S-N"],"yaxis":"y","type":"bar"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmapgl":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmapgl"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"geo":{"bgcolor":"white","lakecolor":"white","landcolor":"white","showlakes":true,"showland":true,"subunitcolor":"#C8D4E3"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"light"},"margin":{"b":0,"l":0,"r":0,"t":30},"paper_bgcolor":"white","plot_bgcolor":"white","polar":{"angularaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""},"bgcolor":"white","radialaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"yaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"zaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"ternary":{"aaxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"baxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"bgcolor":"white","caxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""}},"title":{"x":0.05},"xaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2}}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":"Moyenne du comptage par heure sur la période sélectionnée","font":{"color":"red"}}},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"nom_compteur"}},"legend":{"tracegroupgap":0},"barmode":"relative","title":{"text":"Les 10 compteurs avec la moyenne horaire la plus élevée"}},                        {"responsive": true}                    ).then(function(){
                             
-var gd = document.getElementById('c35dda98-e4bc-461b-ad02-922813493254');
+var gd = document.getElementById('4f27daa1-1d94-4823-86c3-5cf98df2ce09');
 var x = new MutationObserver(function (mutations, observer) {{
         var display = window.getComputedStyle(gd).display;
         if (!display || display === 'none') {{
@@ -2002,11 +2002,11 @@ if (outputEl) {{
 </div>
 </div>
 <p>Alors qu’avec le thème sombre (question 2), on obtient :</p>
-<div id="ef872791" class="cell" data-execution_count="36">
+<div id="9f564d06" class="cell" data-execution_count="36">
 <div class="cell-output cell-output-display">
-<div>                            <div id="61b654db-1d33-48f1-83e0-16953a069043" class="plotly-graph-div" style="height:525px; width:100%;"></div>            <script type="text/javascript">                require(["plotly"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("61b654db-1d33-48f1-83e0-16953a069043")) {                    Plotly.newPlot(                        "61b654db-1d33-48f1-83e0-16953a069043",                        [{"alignmentgroup":"True","hovertemplate":"top=False\u003cbr\u003esum_counts=%{x}\u003cbr\u003enom_compteur=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"False","marker":{"color":"red","pattern":{"shape":""}},"name":"False","offsetgroup":"False","orientation":"h","showlegend":true,"textposition":"auto","x":[160.61649228219207,161.61420536009706,179.21121265016941,180.5767532600883],"xaxis":"x","y":["72 boulevard Voltaire NO-SE","27 quai de la Tournelle SE-NO","Quai d'Orsay E-O","35 boulevard de Ménilmontant NO-SE"],"yaxis":"y","type":"bar"},{"alignmentgroup":"True","hovertemplate":"top=True\u003cbr\u003esum_counts=%{x}\u003cbr\u003enom_compteur=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"True","marker":{"color":"green","pattern":{"shape":""}},"name":"True","offsetgroup":"True","orientation":"h","showlegend":true,"textposition":"auto","x":[191.9622326551904,219.9631378991683,221.37909436287094,232.39531968240703,240.5288017250231,331.08745367919533],"xaxis":"x","y":["Totem 64 Rue de Rivoli Totem 64 Rue de Rivoli Vélos E-O","89 boulevard de Magenta NO-SE","102 boulevard de Magenta SE-NO","Totem 64 Rue de Rivoli Totem 64 Rue de Rivoli Vélos O-E","Totem 73 boulevard de Sébastopol N-S","Totem 73 boulevard de Sébastopol S-N"],"yaxis":"y","type":"bar"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#f2f5fa"},"error_y":{"color":"#f2f5fa"},"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"baxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmapgl":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmapgl"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"line":{"color":"#283442"}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"marker":{"line":{"color":"#283442"}},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#506784"},"line":{"color":"rgb(17,17,17)"}},"header":{"fill":{"color":"#2a3f5f"},"line":{"color":"rgb(17,17,17)"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#f2f5fa","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#f2f5fa"},"geo":{"bgcolor":"rgb(17,17,17)","lakecolor":"rgb(17,17,17)","landcolor":"rgb(17,17,17)","showlakes":true,"showland":true,"subunitcolor":"#506784"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"dark"},"margin":{"b":0,"l":0,"r":0,"t":30},"paper_bgcolor":"rgb(17,17,17)","plot_bgcolor":"rgb(17,17,17)","polar":{"angularaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","radialaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"yaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"zaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"}},"shapedefaults":{"line":{"color":"#f2f5fa"}},"sliderdefaults":{"bgcolor":"#C8D4E3","bordercolor":"rgb(17,17,17)","borderwidth":1,"tickwidth":0},"ternary":{"aaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"baxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","caxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"title":{"x":0.05},"updatemenudefaults":{"bgcolor":"#506784","borderwidth":0},"xaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2}}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":"Moyenne du comptage par heure sur la période sélectionnée"}},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"nom_compteur"}},"legend":{"title":{"text":"top"},"tracegroupgap":0},"barmode":"relative","title":{"text":"Les 10 compteurs avec la moyenne horaire la plus élevée"}},                        {"responsive": true}                    ).then(function(){
+<div>                            <div id="b27b6cec-71ea-4899-9bc1-23d1e8ee579d" class="plotly-graph-div" style="height:525px; width:100%;"></div>            <script type="text/javascript">                require(["plotly"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("b27b6cec-71ea-4899-9bc1-23d1e8ee579d")) {                    Plotly.newPlot(                        "b27b6cec-71ea-4899-9bc1-23d1e8ee579d",                        [{"alignmentgroup":"True","hovertemplate":"top=False\u003cbr\u003esum_counts=%{x}\u003cbr\u003enom_compteur=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"False","marker":{"color":"red","pattern":{"shape":""}},"name":"False","offsetgroup":"False","orientation":"h","showlegend":true,"textposition":"auto","x":[160.61649228219207,161.61420536009706,179.21121265016941,180.5767532600883],"xaxis":"x","y":["72 boulevard Voltaire NO-SE","27 quai de la Tournelle SE-NO","Quai d'Orsay E-O","35 boulevard de Ménilmontant NO-SE"],"yaxis":"y","type":"bar"},{"alignmentgroup":"True","hovertemplate":"top=True\u003cbr\u003esum_counts=%{x}\u003cbr\u003enom_compteur=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"True","marker":{"color":"green","pattern":{"shape":""}},"name":"True","offsetgroup":"True","orientation":"h","showlegend":true,"textposition":"auto","x":[191.9622326551904,219.9631378991683,221.37909436287094,232.39531968240703,240.5288017250231,331.08745367919533],"xaxis":"x","y":["Totem 64 Rue de Rivoli Totem 64 Rue de Rivoli Vélos E-O","89 boulevard de Magenta NO-SE","102 boulevard de Magenta SE-NO","Totem 64 Rue de Rivoli Totem 64 Rue de Rivoli Vélos O-E","Totem 73 boulevard de Sébastopol N-S","Totem 73 boulevard de Sébastopol S-N"],"yaxis":"y","type":"bar"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#f2f5fa"},"error_y":{"color":"#f2f5fa"},"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"baxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmapgl":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmapgl"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"line":{"color":"#283442"}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"marker":{"line":{"color":"#283442"}},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#506784"},"line":{"color":"rgb(17,17,17)"}},"header":{"fill":{"color":"#2a3f5f"},"line":{"color":"rgb(17,17,17)"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#f2f5fa","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#f2f5fa"},"geo":{"bgcolor":"rgb(17,17,17)","lakecolor":"rgb(17,17,17)","landcolor":"rgb(17,17,17)","showlakes":true,"showland":true,"subunitcolor":"#506784"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"dark"},"margin":{"b":0,"l":0,"r":0,"t":30},"paper_bgcolor":"rgb(17,17,17)","plot_bgcolor":"rgb(17,17,17)","polar":{"angularaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","radialaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"yaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"zaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"}},"shapedefaults":{"line":{"color":"#f2f5fa"}},"sliderdefaults":{"bgcolor":"#C8D4E3","bordercolor":"rgb(17,17,17)","borderwidth":1,"tickwidth":0},"ternary":{"aaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"baxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","caxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"title":{"x":0.05},"updatemenudefaults":{"bgcolor":"#506784","borderwidth":0},"xaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2}}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":"Moyenne du comptage par heure sur la période sélectionnée"}},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"nom_compteur"}},"legend":{"title":{"text":"top"},"tracegroupgap":0},"barmode":"relative","title":{"text":"Les 10 compteurs avec la moyenne horaire la plus élevée"}},                        {"responsive": true}                    ).then(function(){
                             
-var gd = document.getElementById('61b654db-1d33-48f1-83e0-16953a069043');
+var gd = document.getElementById('b27b6cec-71ea-4899-9bc1-23d1e8ee579d');
 var x = new MutationObserver(function (mutations, observer) {{
         var display = window.getComputedStyle(gd).display;
         if (!display || display === 'none') {{
@@ -2036,78 +2036,78 @@ if (outputEl) {{
 <h2 data-number="7.3" class="anchored" data-anchor-id="la-librairie-altair"><span class="header-section-number">7.3</span> La librairie <code>altair</code></h2>
 <p>Comme <code>ggplot</code>/<code>plotnine</code>, <code>Vega</code> est un écosystème graphique visant à proposer une implémentation de la grammaire des graphiques de <span class="citation" data-cites="wilkinson2012grammar">Wilkinson (<a href="#ref-wilkinson2012grammar" role="doc-biblioref">2012</a>)</span>. La syntaxe de <code>Vega</code> est donc basée sur un principe déclaratif: on déclare une construction par couches et transformations de données progressives.</p>
 <p>A l’origine, <code>Vega</code> est basée sur une syntaxe JSON, d’où son lien fort avec <code>Javascript</code>. Néanmoins, il existe une API Python qui permet de faire ce type de figures interactives nativement en Python. Pour comprendre la logique de construction d’un code <code>altair</code>, voici comment répliquer la figure précédente avec:</p>
-<div id="662ef546" class="cell" data-execution_count="37">
+<div id="5f595b49" class="cell" data-execution_count="37">
 <details class="code-fold">
 <summary>Voir l’architecture d’une figure altair</summary>
-<div class="sourceCode cell-code" id="662ef546"><pre class="sourceCode python code-annotation-code code-with-copy code-annotated"><code class="sourceCode python"><span id="662ef546-1"><a href="#662ef546-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> altair <span class="im">as</span> alt</span>
-<span id="662ef546-2"><a href="#662ef546-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="662ef546-3"><a href="#662ef546-3" aria-hidden="true" tabindex="-1"></a>color_scale <span class="op">=</span> alt.Scale(domain<span class="op">=</span>[<span class="va">True</span>, <span class="va">False</span>], <span class="bu">range</span><span class="op">=</span>[<span class="st">"green"</span>, <span class="st">"red"</span>])</span>
-<span id="662ef546-4"><a href="#662ef546-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="662ef546-5"><a href="#662ef546-5" aria-hidden="true" tabindex="-1"></a>fig2 <span class="op">=</span> (</span>
-<span id="662ef546-6"><a href="#662ef546-6" aria-hidden="true" tabindex="-1"></a>    alt.Chart(df1)</span>
-<a class="code-annotation-anchor" data-target-cell="662ef546" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="662ef546-7" class="code-annotation-target"><a href="#662ef546-7" aria-hidden="true" tabindex="-1"></a>    .mark_bar()</span>
-<a class="code-annotation-anchor" data-target-cell="662ef546" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="662ef546-8" class="code-annotation-target"><a href="#662ef546-8" aria-hidden="true" tabindex="-1"></a>    .encode(</span>
-<span id="662ef546-9"><a href="#662ef546-9" aria-hidden="true" tabindex="-1"></a>        x<span class="op">=</span>alt.X(</span>
-<span id="662ef546-10"><a href="#662ef546-10" aria-hidden="true" tabindex="-1"></a>            <span class="st">"average(sum_counts):Q"</span>,</span>
-<span id="662ef546-11"><a href="#662ef546-11" aria-hidden="true" tabindex="-1"></a>            title<span class="op">=</span><span class="st">"Moyenne du comptage par heure sur la période sélectionnée"</span>,</span>
-<a class="code-annotation-anchor" data-target-cell="662ef546" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="662ef546-12" class="code-annotation-target"><a href="#662ef546-12" aria-hidden="true" tabindex="-1"></a>        ),</span>
-<span id="662ef546-13"><a href="#662ef546-13" aria-hidden="true" tabindex="-1"></a>        y<span class="op">=</span>alt.Y(<span class="st">"nom_compteur:N"</span>, sort<span class="op">=</span><span class="st">"-x"</span>, title<span class="op">=</span><span class="st">""</span>),</span>
-<span id="662ef546-14"><a href="#662ef546-14" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span>alt.Color(<span class="st">"top:N"</span>, scale<span class="op">=</span>color_scale, legend<span class="op">=</span>alt.Legend(title<span class="op">=</span><span class="st">"Top"</span>)),</span>
-<span id="662ef546-15"><a href="#662ef546-15" aria-hidden="true" tabindex="-1"></a>        tooltip<span class="op">=</span>[</span>
-<span id="662ef546-16"><a href="#662ef546-16" aria-hidden="true" tabindex="-1"></a>            alt.Tooltip(<span class="st">"nom_compteur:N"</span>, title<span class="op">=</span><span class="st">"Nom du compteur"</span>),</span>
-<span id="662ef546-17"><a href="#662ef546-17" aria-hidden="true" tabindex="-1"></a>            alt.Tooltip(<span class="st">"sum_counts:Q"</span>, title<span class="op">=</span><span class="st">"Moyenne horaire"</span>),</span>
-<a class="code-annotation-anchor" data-target-cell="662ef546" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="662ef546-18" class="code-annotation-target"><a href="#662ef546-18" aria-hidden="true" tabindex="-1"></a>        ],</span>
-<span id="662ef546-19"><a href="#662ef546-19" aria-hidden="true" tabindex="-1"></a>    )</span>
-<a class="code-annotation-anchor" data-target-cell="662ef546" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="662ef546-20" class="code-annotation-target"><a href="#662ef546-20" aria-hidden="true" tabindex="-1"></a>    .properties(title<span class="op">=</span><span class="st">"Les 10 compteurs avec la moyenne horaire la plus élevée"</span>)</span>
-<span id="662ef546-21"><a href="#662ef546-21" aria-hidden="true" tabindex="-1"></a>    .configure_view(strokeOpacity<span class="op">=</span><span class="dv">0</span>)</span>
-<span id="662ef546-22"><a href="#662ef546-22" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="662ef546-23"><a href="#662ef546-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="662ef546-24"><a href="#662ef546-24" aria-hidden="true" tabindex="-1"></a>fig2.interactive()</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="5f595b49"><pre class="sourceCode python code-annotation-code code-with-copy code-annotated"><code class="sourceCode python"><span id="5f595b49-1"><a href="#5f595b49-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> altair <span class="im">as</span> alt</span>
+<span id="5f595b49-2"><a href="#5f595b49-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="5f595b49-3"><a href="#5f595b49-3" aria-hidden="true" tabindex="-1"></a>color_scale <span class="op">=</span> alt.Scale(domain<span class="op">=</span>[<span class="va">True</span>, <span class="va">False</span>], <span class="bu">range</span><span class="op">=</span>[<span class="st">"green"</span>, <span class="st">"red"</span>])</span>
+<span id="5f595b49-4"><a href="#5f595b49-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="5f595b49-5"><a href="#5f595b49-5" aria-hidden="true" tabindex="-1"></a>fig2 <span class="op">=</span> (</span>
+<span id="5f595b49-6"><a href="#5f595b49-6" aria-hidden="true" tabindex="-1"></a>    alt.Chart(df1)</span>
+<a class="code-annotation-anchor" data-target-cell="5f595b49" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="5f595b49-7" class="code-annotation-target"><a href="#5f595b49-7" aria-hidden="true" tabindex="-1"></a>    .mark_bar()</span>
+<a class="code-annotation-anchor" data-target-cell="5f595b49" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="5f595b49-8" class="code-annotation-target"><a href="#5f595b49-8" aria-hidden="true" tabindex="-1"></a>    .encode(</span>
+<span id="5f595b49-9"><a href="#5f595b49-9" aria-hidden="true" tabindex="-1"></a>        x<span class="op">=</span>alt.X(</span>
+<span id="5f595b49-10"><a href="#5f595b49-10" aria-hidden="true" tabindex="-1"></a>            <span class="st">"average(sum_counts):Q"</span>,</span>
+<span id="5f595b49-11"><a href="#5f595b49-11" aria-hidden="true" tabindex="-1"></a>            title<span class="op">=</span><span class="st">"Moyenne du comptage par heure sur la période sélectionnée"</span>,</span>
+<a class="code-annotation-anchor" data-target-cell="5f595b49" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="5f595b49-12" class="code-annotation-target"><a href="#5f595b49-12" aria-hidden="true" tabindex="-1"></a>        ),</span>
+<span id="5f595b49-13"><a href="#5f595b49-13" aria-hidden="true" tabindex="-1"></a>        y<span class="op">=</span>alt.Y(<span class="st">"nom_compteur:N"</span>, sort<span class="op">=</span><span class="st">"-x"</span>, title<span class="op">=</span><span class="st">""</span>),</span>
+<span id="5f595b49-14"><a href="#5f595b49-14" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span>alt.Color(<span class="st">"top:N"</span>, scale<span class="op">=</span>color_scale, legend<span class="op">=</span>alt.Legend(title<span class="op">=</span><span class="st">"Top"</span>)),</span>
+<span id="5f595b49-15"><a href="#5f595b49-15" aria-hidden="true" tabindex="-1"></a>        tooltip<span class="op">=</span>[</span>
+<span id="5f595b49-16"><a href="#5f595b49-16" aria-hidden="true" tabindex="-1"></a>            alt.Tooltip(<span class="st">"nom_compteur:N"</span>, title<span class="op">=</span><span class="st">"Nom du compteur"</span>),</span>
+<span id="5f595b49-17"><a href="#5f595b49-17" aria-hidden="true" tabindex="-1"></a>            alt.Tooltip(<span class="st">"sum_counts:Q"</span>, title<span class="op">=</span><span class="st">"Moyenne horaire"</span>),</span>
+<a class="code-annotation-anchor" data-target-cell="5f595b49" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="5f595b49-18" class="code-annotation-target"><a href="#5f595b49-18" aria-hidden="true" tabindex="-1"></a>        ],</span>
+<span id="5f595b49-19"><a href="#5f595b49-19" aria-hidden="true" tabindex="-1"></a>    )</span>
+<a class="code-annotation-anchor" data-target-cell="5f595b49" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="5f595b49-20" class="code-annotation-target"><a href="#5f595b49-20" aria-hidden="true" tabindex="-1"></a>    .properties(title<span class="op">=</span><span class="st">"Les 10 compteurs avec la moyenne horaire la plus élevée"</span>)</span>
+<span id="5f595b49-21"><a href="#5f595b49-21" aria-hidden="true" tabindex="-1"></a>    .configure_view(strokeOpacity<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="5f595b49-22"><a href="#5f595b49-22" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="5f595b49-23"><a href="#5f595b49-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="5f595b49-24"><a href="#5f595b49-24" aria-hidden="true" tabindex="-1"></a>fig2.interactive()</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-annotation">
 <dl class="code-annotation-container-grid">
-<dt data-target-cell="662ef546" data-target-annotation="1">1</dt>
+<dt data-target-cell="5f595b49" data-target-annotation="1">1</dt>
 <dd>
-<span data-code-cell="662ef546" data-code-lines="7" data-code-annotation="1">On déclare d’abord le <em>dataframe</em> qui sera utilisé, comme nous le faisions avec <code>ggplot(df)</code> avec <code>plotnine</code>. Puis le type de figure désirée (ici un diagramme en barre, <code>mark_bar</code> dans la grammaire d’<code>altair</code>)</span>
+<span data-code-cell="5f595b49" data-code-lines="7" data-code-annotation="1">On déclare d’abord le <em>dataframe</em> qui sera utilisé, comme nous le faisions avec <code>ggplot(df)</code> avec <code>plotnine</code>. Puis le type de figure désirée (ici un diagramme en barre, <code>mark_bar</code> dans la grammaire d’<code>altair</code>)</span>
 </dd>
-<dt data-target-cell="662ef546" data-target-annotation="2">2</dt>
+<dt data-target-cell="5f595b49" data-target-annotation="2">2</dt>
 <dd>
-<span data-code-cell="662ef546" data-code-lines="8" data-code-annotation="2">On définit notre couche principale avec <code>encode</code>. Celle-ci peut accepter simplement des noms de colonnes ou des constructeurs plus complexes, comme ici</span>
+<span data-code-cell="5f595b49" data-code-lines="8" data-code-annotation="2">On définit notre couche principale avec <code>encode</code>. Celle-ci peut accepter simplement des noms de colonnes ou des constructeurs plus complexes, comme ici</span>
 </dd>
-<dt data-target-cell="662ef546" data-target-annotation="3">3</dt>
+<dt data-target-cell="5f595b49" data-target-annotation="3">3</dt>
 <dd>
-<span data-code-cell="662ef546" data-code-lines="12" data-code-annotation="3">On définit un constructeur pour notre axe des <em>x</em>, à la fois pour gérer l’échelle des valeurs mais aussi les paramètres de celle-ci (labels, etc.). Ici, on définit l’axe des <em>x</em> comme une valeur continue (<code>:Q</code>), moyenne de <code>sum_counts</code> pour chaque valeur de <span class="math inline">\(y\)</span>. Cette moyenne n’est pas indispensable, on aurait pu se contenter d’écrire <code>sum_counts:Q</code> voire même <code>sum_counts</code> mais c’est pour illustrer la gestion des transformations de données dans <code>altair</code></span>
+<span data-code-cell="5f595b49" data-code-lines="12" data-code-annotation="3">On définit un constructeur pour notre axe des <em>x</em>, à la fois pour gérer l’échelle des valeurs mais aussi les paramètres de celle-ci (labels, etc.). Ici, on définit l’axe des <em>x</em> comme une valeur continue (<code>:Q</code>), moyenne de <code>sum_counts</code> pour chaque valeur de <span class="math inline">\(y\)</span>. Cette moyenne n’est pas indispensable, on aurait pu se contenter d’écrire <code>sum_counts:Q</code> voire même <code>sum_counts</code> mais c’est pour illustrer la gestion des transformations de données dans <code>altair</code></span>
 </dd>
-<dt data-target-cell="662ef546" data-target-annotation="4">4</dt>
+<dt data-target-cell="5f595b49" data-target-annotation="4">4</dt>
 <dd>
-<span data-code-cell="662ef546" data-code-lines="18" data-code-annotation="4">Le <em>tooltip</em> nous permet de gérer l’interactivité de notre figure.</span>
+<span data-code-cell="5f595b49" data-code-lines="18" data-code-annotation="4">Le <em>tooltip</em> nous permet de gérer l’interactivité de notre figure.</span>
 </dd>
-<dt data-target-cell="662ef546" data-target-annotation="5">5</dt>
+<dt data-target-cell="5f595b49" data-target-annotation="5">5</dt>
 <dd>
-<span data-code-cell="662ef546" data-code-lines="20" data-code-annotation="5">Les propriétés viennent à la fin de notre déclaration pour finaliser la figure</span>
+<span data-code-cell="5f595b49" data-code-lines="20" data-code-annotation="5">Les propriétés viennent à la fin de notre déclaration pour finaliser la figure</span>
 </dd>
 </dl>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="36">
 
 <style>
-  #altair-viz-091e9e1f401049b7836c7fbefa14cc87.vega-embed {
+  #altair-viz-f9692d6bb4dd4fe3a80789cc87b657f6.vega-embed {
     width: 100%;
     display: flex;
   }
 
-  #altair-viz-091e9e1f401049b7836c7fbefa14cc87.vega-embed details,
-  #altair-viz-091e9e1f401049b7836c7fbefa14cc87.vega-embed details summary {
+  #altair-viz-f9692d6bb4dd4fe3a80789cc87b657f6.vega-embed details,
+  #altair-viz-f9692d6bb4dd4fe3a80789cc87b657f6.vega-embed details summary {
     position: relative;
   }
 </style>
-<div id="altair-viz-091e9e1f401049b7836c7fbefa14cc87"></div>
+<div id="altair-viz-f9692d6bb4dd4fe3a80789cc87b657f6"></div>
 <script type="text/javascript">
   var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
   (function(spec, embedOpt){
     let outputDiv = document.currentScript.previousElementSibling;
-    if (outputDiv.id !== "altair-viz-091e9e1f401049b7836c7fbefa14cc87") {
-      outputDiv = document.getElementById("altair-viz-091e9e1f401049b7836c7fbefa14cc87");
+    if (outputDiv.id !== "altair-viz-f9692d6bb4dd4fe3a80789cc87b657f6") {
+      outputDiv = document.getElementById("altair-viz-f9692d6bb4dd4fe3a80789cc87b657f6");
     }
     const paths = {
       "vega": "https://cdn.jsdelivr.net/npm/vega@5?noext",
@@ -2166,7 +2166,7 @@ if (outputEl) {{
 </summary>
 <p>Latest built version: 2024-12-11</p>
 <p>Python version used:</p>
-<div id="279514f9" class="cell" data-execution_count="39">
+<div id="34e7b492" class="cell" data-execution_count="39">
 <div class="cell-output cell-output-display" data-execution_count="38">
 <pre><code>'3.12.6 | packaged by conda-forge | (main, Sep 30 2024, 18:08:52) [GCC 13.3.0]'</code></pre>
 </div>
@@ -5021,7 +5021,7 @@ Inspiration pour la mise en forme du site <a href="https://www.andreashandel.com
 </div>
   </div>
 </footer>
-<script>var lightboxQuarto = GLightbox({"descPosition":"bottom","closeEffect":"zoom","openEffect":"zoom","loop":false,"selector":".lightbox"});
+<script>var lightboxQuarto = GLightbox({"descPosition":"bottom","openEffect":"zoom","selector":".lightbox","loop":false,"closeEffect":"zoom"});
 (function() {
   let previousOnload = window.onload;
   window.onload = () => {
