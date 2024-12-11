@@ -541,5 +541,128 @@ Pour mettre en pratique les méthodes de création de clusters, de la base brute
 L'ACP est également très utile dans le champ de la réduction du nombre de variables pour de nombreux types de modélisations, comme par exemple les régressions linéaires.
 Il est ainsi possible de projeter l'espace des variables explicatives dans un espace de dimension donnée plus faible, pour notamment limiter les risques d'_overfitting_.
 
+L'inconvénient de cette approche est quelle rend les données utilisées en entrée du modèle moins interprétables qu'avec un LASSO puisque cette dernière technique sélectionne des variables là où la PCA sélectionne des combinaisons linéaires de nos variables. 
+
+## Exemple
+
+Reprenons nos données précédentes. Avant de faire une analyse en composante principale, dont l'objectif est de synthétiser des sources de variabilité dans nos données, il est conseillé de standardiser les variables lorsque celles-ci ont des échelles différentes (ce qui est le cas dans notre cas). 
+
+```{python}
+from sklearn.preprocessing import StandardScaler
+
+X = df2.drop(['per_gop'], axis=1)
+y = votes['winner']
+
+print('Dimensions des données avant PCA : {}'.format(X.shape))
+```
+
+Faisons déjà un premier test en réduisant nos données à deux composantes, c'est-à-dire à deux combinaisons linéaires de celles-ci. Il s'agit d'une méthode implémentée en `Scikit`, très pratique. Le faire à la main serait pénible
+
+
+```{python}
+#| echo: true
+from sklearn.decomposition import PCA
+
+scaler = StandardScaler()
+X_standardized = scaler.fit_transform(X)
+
+n_components = 2
+pca = PCA(n_components=n_components)
+```
+
+<details>
+
+<summary>
+Faire une PCA à la main (exercice éducatif mais peu utile dans la vraie vie)
+</summary>
+
+```{python}
+#| echo: true
+
+# Step 1: Compute the covariance matrix
+cov_matrix = np.cov(X_standardized.T)
+
+# Step 2: Perform eigen decomposition
+eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
+
+# Step 3: Sort eigenvectors by eigenvalues
+sorted_indices = np.argsort(-eigenvalues)
+eigenvectors_sorted = eigenvectors[:, sorted_indices]
+
+first_component_manual = eigenvectors_sorted[:, 0]
+first_component_manual
+```
+
+</details>
+
+
+On peut utiliser notre méthode `fit_transform` pour calculer les paramètres utiles de notre PCA, à savoir les poids à utiliser pour reprojeter nos variables dans l'espace des composantes:
+
+```{python}
+#| echo: true
+
+x_2d = pca.fit_transform(X_standardized)
+columns=[f'component_{i}' for i in range(1, n_components + 1)]
+df_pca = pd.DataFrame(x_2d, columns=columns)
+df_pca['classe'] = y
+print('Dimensions des données après PCA : {}'.format(x_2d.shape))
+df_pca
+```
+
+Ces composantes ne sont plus interprétables directement. Il s'agit d'une combinaison linéaire de nos variables. Prenons le premier axe pour s'en assurer:
+
+```{python}
+#| echo: true
+np.dot(X_standardized, pca.components_[0])
+```
+
+Pourquoi rendre nos données moins interprétables? Parce qu'avec seulement deux colonnes, on va synthétiser beaucoup plus d'information, c'est-à-dire capturer beaucoup plus de variance de nos données, qu'avec nos données brutes.
+
+La variance expliquée par chaque composante est la suivante:
+
+```{python}
+#| echo: true
+tableau_variance = pd.DataFrame(
+  {"Axe": [f"Composante {i+1}" for i in range(2)],
+  "Variance expliquée (%)": pca.explained_variance_ratio_*100}
+)
+tableau_variance
+```
+
+Avec deux axes, on capture donc une bonne partie de notre variance:
+
+```{python}
+#| echo: true
+tableau_variance["Variance expliquée (%)"].sum()
+```
+
+Le premier axe capture une part importante de la variance, le deuxième axe étant déjà beaucoup moins explicatif. Ceci est attendu puisque les axes des PCA capturent une part décroissante de la variance.
+
+Ici nous avions fixé le nombre d'axes principaux à 2. Comment choisir ce nombre en pratique ? Comme précédemment pour les _k means_, le critère du coude est fréquemment utilisé. Représentons la part de variance expliquée en fonction du nombre d'axes:
+
+```{python}
+#| echo: true
+import plotly.express as px
+pca = PCA()
+pca.fit(X_standardized)
+exp_var_cumul = np.cumsum(pca.explained_variance_ratio_)
+
+px.area(
+    x=range(1, exp_var_cumul.shape[0] + 1),
+    y=exp_var_cumul,
+    labels={"x": "# Components", "y": "Explained Variance"}
+)
+```
+
+Les coudes sont peu francs, on peut donc choisir deux ou trois axes. Si on préfère utiliser un seuil de variance expliquée dans notre analyse, on utilisera plutôt l'option `n_components` de `Scikit`. Par exemple, si on désire conserver les axes permettant d'expliquer 90% de la variabilité de nos données:
+
+```{python}
+#| echo: true
+pca = PCA(n_components=0.9)
+pca.fit(X_standardized)
+
+print(pca.explained_variance_ratio_)
+```
+
 
 # Références {-}
