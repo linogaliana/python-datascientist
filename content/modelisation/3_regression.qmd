@@ -474,14 +474,25 @@ However, `statsmodels` benefits from being more modern compared to `R`'s package
 
 ## La régression logistique
 
-Ce modèle s'applique à une distribution binaire.
-Dans ce cas, $\mathbb{E}_{\theta} (Y|X) = \mathbb{P}_{\theta} (Y = 1|X)$.
+::: {.content-visible when-profile="fr"}
+Nous avons appliqué notre régression linéaire sur une variable d'_outcome_ continue. 
+Comment faire avec une distribution binaire ?  
+Dans ce cas, $\mathbb{E}_{\theta} (Y|X) = \mathbb{P}_{\theta} (Y = 1|X)$.  
 La régression logistique peut être vue comme un modèle linéaire en probabilité :
+:::
+
+::: {.content-visible when-profile="en"}
+We applied our linear regression to a continuous _outcome_ variable. 
+How do we handle a binary distribution?  
+In this case, $\mathbb{E}_{\theta} (Y|X) = \mathbb{P}_{\theta} (Y = 1|X)$.  
+Logistic regression can be seen as a linear probability model:
+:::
 
 $$
 \text{logit}\bigg(\mathbb{E}_{\theta}(Y|X)\bigg) = \text{logit}\bigg(\mathbb{P}_{\theta}(Y = 1|X)\bigg) = X\beta
 $$
 
+::: {.content-visible when-profile="fr"}
 La fonction $\text{logit}$ est $]0,1[ \to \mathbb{R}: p \mapsto \log(\frac{p}{1-p})$.
 
 Elle permet ainsi de transformer une probabilité dans $\mathbb{R}$.
@@ -496,11 +507,35 @@ manières différentes :
 l'outcome. Par exemple, si on observe les choix de participer ou non au marché
 du travail, on va modéliser les facteurs déterminant ce choix ;
 * En *Machine Learning*, le modèle latent n'est nécessaire que pour classifier
-dans la bonne catégorie les observations
+dans la bonne catégorie les observations.
 
 L'estimation des paramètres $\beta$ peut se faire par maximum de vraisemblance
 ou par régression, les deux solutions sont équivalentes sous certaines
-hypothèses. 
+hypothèses.
+:::
+
+::: {.content-visible when-profile="en"}
+The $\text{logit}$ function is $]0,1[ \to \mathbb{R}: p \mapsto \log(\frac{p}{1-p})$.
+
+It allows a probability to be transformed into $\mathbb{R}$.
+Its reciprocal function is the sigmoid ($\frac{1}{1 + e^{-x}}$),
+a central concept in *Deep Learning*.
+
+It should be noted that probabilities are not observed; what is observed is the binary 
+*outcome* (0/1). This leads to two different perspectives on logistic regression:
+
+* In econometrics, interest lies in the latent model that determines the choice of
+the outcome. For example, if observing the choice to participate in the labor market,
+the goal is to model the factors determining this choice;
+* In *Machine Learning*, the latent model is only necessary to classify
+observations into the correct category.
+
+Parameter estimation for $\beta$ can be performed using maximum likelihood
+or regression, both of which are equivalent under certain assumptions.
+:::
+
+
+:::: {.content-visible when-profile="fr"}
 
 ::: {.note}
 
@@ -511,11 +546,26 @@ si l'objectif n'est pas de faire de la prédiction.
 
 :::
 
+::::
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.note}
+
+By default, `scikit` applies regularization to penalize non-parsimonious models (a behavior different from that of `statsmodels`). This default behavior should be kept in mind if the objective is not prediction.
+
+:::
+
+::::
+
+
 ```{python}
 # packages utiles
 from sklearn.linear_model import LogisticRegression
 import sklearn.metrics
 ```
+
+:::: {.content-visible when-profile="fr"}
 
 ::: {.exercise}
 ## Exercice 2a : Régression logistique avec scikit
@@ -530,13 +580,35 @@ une mesure de qualité du modèle.
 
 :::
 
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.exercise}
+## Exercise 2a: Logistic Regression with scikit
+
+Using `scikit` with training and test samples:
+
+1. Evaluate the effect of the already-used variables on the probability of Republicans winning. Display the values of the coefficients.
+2. Derive a confusion matrix and a measure of model quality.
+3. Remove regularization using the `penalty` parameter. What effect does this have on the estimated parameters?
+
+:::
+
+::::
+
+
 ```{python}
 #| output: false
 
 #1. Modèle logit avec les mêmes variables que précédemment
-xvars = ['Unemployment_rate_2019', 'Median_Household_Income_2019', 'Percent of adults with less than a high school diploma, 2015-19', "Percent of adults with a bachelor's degree or higher, 2015-19"]
+xvars = [
+  'Unemployment_rate_2019', 'Median_Household_Income_2019',
+  'Percent of adults with less than a high school diploma, 2015-19',
+  "Percent of adults with a bachelor's degree or higher, 2015-19"
+]
 
-df2 = votes[["per_gop"] + xvars].copy()
+df2 = votes.loc[:, ["per_gop"] + xvars].copy()
 df2['log_income'] = np.log(df2["Median_Household_Income_2019"])
 df2 = df2.dropna().astype(np.float64)
 
@@ -596,6 +668,8 @@ from scipy import stats
 ```
 
 
+:::: {.content-visible when-profile="fr"}
+
 ::: {.exercise}
 ## Exercice 2b : Régression logistique avec statmodels
 
@@ -604,6 +678,22 @@ En utilisant échantillons d'apprentissage et d'estimation :
 1. Evaluer l'effet des variables déjà utilisées sur la probabilité des Républicains
 de gagner.
 2. Faire un test de ratio de vraisemblance concernant l'inclusion de la variable de (log)-revenu.
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.exercise}
+## Exercise 2b: Logistic Regression with statsmodels
+
+Using training and test samples:
+
+1. Evaluate the effect of the already-used variables on the probability of Republicans winning.
+2. Perform a likelihood ratio test regarding the inclusion of the (log)-income variable.
+:::
+
+::::
 
 
 ```{python}
@@ -641,16 +731,21 @@ lr = -2*(mylogit.llf - logit_h0.llf)
 lrdf = (logit_h0.df_resid - mylogit.df_resid)
 
 lr_pvalue = stats.chi2.sf(lr, df=lrdf)
-#print(lr_pvalue)
-
-# La pvalue du test de maximum de ratio
-# de vraisemblance étant proche de  1,
-# cela signifie que la variable log revenu ajoute,
-# presque à coup sûr, de l'information au modèle. 
+lr_pvalue
 ```
 
-:::
 
+:::: {.content-visible when-profile="fr"}
+La p-value du test de maximum de ratio de vraisemblance étant proche de 1, cela signifie que la variable log revenu ajoute,
+presque à coup sûr, de l'information au modèle.
+::::
+
+:::: {.content-visible when-profile="en"}
+The p-value of the likelihood ratio test being close to 1 means that the log-income variable almost certainly adds information to the model.
+::::
+
+
+:::: {.content-visible when-profile="fr"}
 
 ::: {.tip}
 
@@ -661,6 +756,23 @@ $$
 
 :::
 
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.tip}
+
+The test statistic is:
+$$
+LR = -2\log\bigg(\frac{\mathcal{L}_{\theta}}{\mathcal{L}_{\theta_0}}\bigg) = -2(\mathcal{l}_{\theta} - \mathcal{l}_{\theta_0})
+$$
+
+:::
+
+::::
+
+
+:::: {.content-visible when-profile="fr"}
 # Pour aller plus loin
 
 Ce chapitre n'évoque les enjeux de la régression
@@ -671,7 +783,7 @@ Dans le domaine du _machine learning_, les principales voies d'approfondissement
 
 - Les modèles de régression alternatifs comme les forêts
 aléatoires.
-- Les méthodes de _bootsting_ et _bagging_ pour découvrir la manière dont plusieurs modèles peuvent être entraînés de manière conjointe et leur prédiction sélectionnée selon un principe démocratique pour converger vers une meilleur décision qu'un modèle simple. 
+- Les méthodes de _boosting_ et _bagging_ pour découvrir la manière dont plusieurs modèles peuvent être entraînés de manière conjointe et leur prédiction sélectionnée selon un principe démocratique pour converger vers une meilleure décision qu'un modèle simple. 
 - Les enjeux liés à l'explicabilité des modèles, un champ de recherche très actif, pour mieux comprendre les critères de décision des modèles.
 
 Dans le domaine de l'économétrie, les principales voies d'approfondissement sont les suivantes:
@@ -682,5 +794,25 @@ jusqu'à présent ;
 - Les tests d'hypothèses pour aller plus loin sur ces questions que notre
 test de ratio de vraisemblance. 
 
-
 ## Références {.unnumbered}
+::::
+
+:::: {.content-visible when-profile="en"}
+# Going Further
+
+This chapter only introduces the concepts of regression in a very introductory way. To expand on this, it is recommended to explore further based on your interests and needs.
+
+In the field of _machine learning_, the main areas for deeper exploration are:
+
+- Alternative regression models like random forests.
+- _Boosting_ and _bagging_ methods to learn how multiple models can be trained jointly and their predictions combined democratically to converge on better decisions than a single model. 
+- Issues related to model explainability, a very active research area, to better understand the decision criteria of models.
+
+In the field of econometrics, the main areas for deeper exploration are:
+
+- Generalized linear models to explore regression with more general assumptions than those we have made so far;
+- Hypothesis testing to delve deeper into these questions beyond our likelihood ratio test.
+
+## References {.unnumbered}
+
+::::
