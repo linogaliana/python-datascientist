@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Lino Galiana">
-<meta name="dcterms.date" content="2024-12-26">
+<meta name="dcterms.date" content="2024-12-27">
 <meta name="description" content="Les corpus textuels étant des objets de très grande dimension où le ratio signal/bruit est faible, il est nécessaire de mettre en oeuvre une série d’étapes de nettoyage de texte. Ce chapitre va explorer quelques méthodes classiques de nettoyage en s’appuyant sur des corpus littéraires: le Comte de Monte Cristo d’Alexandre Dumas et des auteurs fantastiques anglo-saxons (Lovecraft, Poe, Shelley).">
 
 <title>Nettoyer et structurer l’information dans les données textuelles – Python for data science</title>
@@ -233,7 +233,7 @@ sur des corpus littéraires: le Comte de Monte Cristo d’Alexandre Dumas et des
 <meta name="citation_publication_date" content="2023">
 <meta name="citation_cover_date" content="2023">
 <meta name="citation_year" content="2023">
-<meta name="citation_online_date" content="2024-12-26">
+<meta name="citation_online_date" content="2024-12-27">
 <meta name="citation_fulltext_html_url" content="https://pythonds.linogaliana.fr/">
 <meta name="citation_doi" content="10.5281/zenodo.8229676">
 <meta name="citation_language" content="en">
@@ -500,7 +500,7 @@ sur des corpus littéraires: le Comte de Monte Cristo d’Alexandre Dumas et des
     <ul class="dropdown-menu" aria-labelledby="nav-menu-annexes">    
         <li>
     <a class="dropdown-item" href="../../content/annexes/evaluation.html">
- <span class="dropdown-text">Evaluation</span></a>
+ <span class="dropdown-text">Évaluation</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="../../content/annexes/corrections.html">
@@ -570,7 +570,7 @@ sur des corpus littéraires: le Comte de Monte Cristo d’Alexandre Dumas et des
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">2024-12-26</p>
+        <p class="date">2024-12-27</p>
       </div>
     </div>
     
@@ -727,12 +727,12 @@ classification supervisée) suivant l’objectif poursuivi pour exploiter
 l’information transformée. Mais les étapes de nettoyage de texte sont indispensables.
 Sinon un algorithme sera incapable de détecter une information pertinente dans l’infini des possibles.</p>
 <p>Les <em>packages</em> suivants seront utiles au cours de ce chapitre:</p>
-<div id="de731bc5" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="de731bc5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="de731bc5-1"><a href="#de731bc5-1" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install pywaffle</span>
-<span id="de731bc5-2"><a href="#de731bc5-2" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install spacy</span>
-<span id="de731bc5-3"><a href="#de731bc5-3" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install plotnine</span>
-<span id="de731bc5-4"><a href="#de731bc5-4" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install great_tables</span>
-<span id="de731bc5-5"><a href="#de731bc5-5" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install wordcloud</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="e24363df" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="e24363df"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="e24363df-1"><a href="#e24363df-1" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install pywaffle</span>
+<span id="e24363df-2"><a href="#e24363df-2" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install spacy</span>
+<span id="e24363df-3"><a href="#e24363df-3" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install plotnine</span>
+<span id="e24363df-4"><a href="#e24363df-4" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install great_tables</span>
+<span id="e24363df-5"><a href="#e24363df-5" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install wordcloud</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
@@ -748,38 +748,38 @@ d’autres livres du domaine public.</p>
 <p>La manière la plus simple de le récupérer
 est de télécharger avec le <em>package</em> <code>request</code> le fichier texte et le retravailler
 légèrement pour ne conserver que le corpus du livre :</p>
-<div id="5f3ec65a" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="5f3ec65a"><pre class="sourceCode python code-annotation-code code-with-copy code-annotated"><code class="sourceCode python"><span id="5f3ec65a-1"><a href="#5f3ec65a-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> urllib <span class="im">import</span> request</span>
-<span id="5f3ec65a-2"><a href="#5f3ec65a-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="5f3ec65a-3"><a href="#5f3ec65a-3" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://www.gutenberg.org/files/17989/17989-0.txt"</span></span>
-<span id="5f3ec65a-4"><a href="#5f3ec65a-4" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> request.urlopen(url)</span>
-<span id="5f3ec65a-5"><a href="#5f3ec65a-5" aria-hidden="true" tabindex="-1"></a>raw <span class="op">=</span> response.read().decode(<span class="st">"utf8"</span>)</span>
-<span id="5f3ec65a-6"><a href="#5f3ec65a-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="5f3ec65a-7"><a href="#5f3ec65a-7" aria-hidden="true" tabindex="-1"></a>dumas <span class="op">=</span> raw.split(</span>
-<span id="5f3ec65a-8"><a href="#5f3ec65a-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"*** START OF THE PROJECT GUTENBERG EBOOK LE COMTE DE MONTE-CRISTO, TOME I ***"</span></span>
-<span id="5f3ec65a-9"><a href="#5f3ec65a-9" aria-hidden="true" tabindex="-1"></a>)[<span class="dv">1</span>].split(</span>
-<span id="5f3ec65a-10"><a href="#5f3ec65a-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"*** END OF THE PROJECT GUTENBERG EBOOK LE COMTE DE MONTE-CRISTO, TOME I ***"</span></span>
-<span id="5f3ec65a-11"><a href="#5f3ec65a-11" aria-hidden="true" tabindex="-1"></a>)[</span>
-<span id="5f3ec65a-12"><a href="#5f3ec65a-12" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span></span>
-<a class="code-annotation-anchor" data-target-cell="5f3ec65a" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="5f3ec65a-13" class="code-annotation-target"><a href="#5f3ec65a-13" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="5f3ec65a-14"><a href="#5f3ec65a-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="5f3ec65a-15"><a href="#5f3ec65a-15" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
-<span id="5f3ec65a-16"><a href="#5f3ec65a-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="5f3ec65a-17"><a href="#5f3ec65a-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="5f3ec65a-18"><a href="#5f3ec65a-18" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> clean_text(text):</span>
-<span id="5f3ec65a-19"><a href="#5f3ec65a-19" aria-hidden="true" tabindex="-1"></a>    text <span class="op">=</span> text.lower()  <span class="co"># mettre les mots en minuscule</span></span>
-<span id="5f3ec65a-20"><a href="#5f3ec65a-20" aria-hidden="true" tabindex="-1"></a>    text <span class="op">=</span> <span class="st">" "</span>.join(text.split())</span>
-<span id="5f3ec65a-21"><a href="#5f3ec65a-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> text</span>
-<span id="5f3ec65a-22"><a href="#5f3ec65a-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="5f3ec65a-23"><a href="#5f3ec65a-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="5f3ec65a-24"><a href="#5f3ec65a-24" aria-hidden="true" tabindex="-1"></a>dumas <span class="op">=</span> clean_text(dumas)</span>
-<span id="5f3ec65a-25"><a href="#5f3ec65a-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="5f3ec65a-26"><a href="#5f3ec65a-26" aria-hidden="true" tabindex="-1"></a>dumas[<span class="dv">10000</span>:<span class="dv">10500</span>]</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="2f0f40de" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="2f0f40de"><pre class="sourceCode python code-annotation-code code-with-copy code-annotated"><code class="sourceCode python"><span id="2f0f40de-1"><a href="#2f0f40de-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> urllib <span class="im">import</span> request</span>
+<span id="2f0f40de-2"><a href="#2f0f40de-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="2f0f40de-3"><a href="#2f0f40de-3" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://www.gutenberg.org/files/17989/17989-0.txt"</span></span>
+<span id="2f0f40de-4"><a href="#2f0f40de-4" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> request.urlopen(url)</span>
+<span id="2f0f40de-5"><a href="#2f0f40de-5" aria-hidden="true" tabindex="-1"></a>raw <span class="op">=</span> response.read().decode(<span class="st">"utf8"</span>)</span>
+<span id="2f0f40de-6"><a href="#2f0f40de-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="2f0f40de-7"><a href="#2f0f40de-7" aria-hidden="true" tabindex="-1"></a>dumas <span class="op">=</span> raw.split(</span>
+<span id="2f0f40de-8"><a href="#2f0f40de-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"*** START OF THE PROJECT GUTENBERG EBOOK LE COMTE DE MONTE-CRISTO, TOME I ***"</span></span>
+<span id="2f0f40de-9"><a href="#2f0f40de-9" aria-hidden="true" tabindex="-1"></a>)[<span class="dv">1</span>].split(</span>
+<span id="2f0f40de-10"><a href="#2f0f40de-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"*** END OF THE PROJECT GUTENBERG EBOOK LE COMTE DE MONTE-CRISTO, TOME I ***"</span></span>
+<span id="2f0f40de-11"><a href="#2f0f40de-11" aria-hidden="true" tabindex="-1"></a>)[</span>
+<span id="2f0f40de-12"><a href="#2f0f40de-12" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span></span>
+<a class="code-annotation-anchor" data-target-cell="2f0f40de" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="2f0f40de-13" class="code-annotation-target"><a href="#2f0f40de-13" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="2f0f40de-14"><a href="#2f0f40de-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="2f0f40de-15"><a href="#2f0f40de-15" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
+<span id="2f0f40de-16"><a href="#2f0f40de-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="2f0f40de-17"><a href="#2f0f40de-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="2f0f40de-18"><a href="#2f0f40de-18" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> clean_text(text):</span>
+<span id="2f0f40de-19"><a href="#2f0f40de-19" aria-hidden="true" tabindex="-1"></a>    text <span class="op">=</span> text.lower()  <span class="co"># mettre les mots en minuscule</span></span>
+<span id="2f0f40de-20"><a href="#2f0f40de-20" aria-hidden="true" tabindex="-1"></a>    text <span class="op">=</span> <span class="st">" "</span>.join(text.split())</span>
+<span id="2f0f40de-21"><a href="#2f0f40de-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> text</span>
+<span id="2f0f40de-22"><a href="#2f0f40de-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="2f0f40de-23"><a href="#2f0f40de-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="2f0f40de-24"><a href="#2f0f40de-24" aria-hidden="true" tabindex="-1"></a>dumas <span class="op">=</span> clean_text(dumas)</span>
+<span id="2f0f40de-25"><a href="#2f0f40de-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="2f0f40de-26"><a href="#2f0f40de-26" aria-hidden="true" tabindex="-1"></a>dumas[<span class="dv">10000</span>:<span class="dv">10500</span>]</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-annotation">
 <dl class="code-annotation-container-grid">
-<dt data-target-cell="5f3ec65a" data-target-annotation="1">1</dt>
+<dt data-target-cell="2f0f40de" data-target-annotation="1">1</dt>
 <dd>
-<span data-code-cell="5f3ec65a" data-code-lines="13" data-code-annotation="1">On extrait de manière un petit peu simpliste le contenu de l’ouvrage</span>
+<span data-code-cell="2f0f40de" data-code-lines="13" data-code-annotation="1">On extrait de manière un petit peu simpliste le contenu de l’ouvrage</span>
 </dd>
 </dl>
 </div>
@@ -800,22 +800,22 @@ légèrement pour ne conserver que le corpus du livre :</p>
 <a href="https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv" class="uri">https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv</a>.</p>
 <p>Le fait d’avoir un corpus confrontant plusieurs auteurs nous permettra de comprendre la manière dont les nettoyages de données textuelles favorisent les analyses comparatives.</p>
 <p>Nous pouvons utiliser le code suivant pour lire et préparer ces données:</p>
-<div id="2dfdc86a" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="2dfdc86a"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="2dfdc86a-1"><a href="#2dfdc86a-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="2dfdc86a-2"><a href="#2dfdc86a-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="2dfdc86a-3"><a href="#2dfdc86a-3" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv"</span></span>
-<span id="2dfdc86a-4"><a href="#2dfdc86a-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Import des données</span></span>
-<span id="2dfdc86a-5"><a href="#2dfdc86a-5" aria-hidden="true" tabindex="-1"></a>horror <span class="op">=</span> pd.read_csv(url, encoding<span class="op">=</span><span class="st">"latin-1"</span>)</span>
-<span id="2dfdc86a-6"><a href="#2dfdc86a-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Majuscules aux noms des colonnes</span></span>
-<span id="2dfdc86a-7"><a href="#2dfdc86a-7" aria-hidden="true" tabindex="-1"></a>horror.columns <span class="op">=</span> horror.columns.<span class="bu">str</span>.capitalize()</span>
-<span id="2dfdc86a-8"><a href="#2dfdc86a-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Retirer le prefixe id</span></span>
-<span id="2dfdc86a-9"><a href="#2dfdc86a-9" aria-hidden="true" tabindex="-1"></a>horror[<span class="st">"ID"</span>] <span class="op">=</span> horror[<span class="st">"Id"</span>].<span class="bu">str</span>.replace(<span class="st">"id"</span>, <span class="st">""</span>)</span>
-<span id="2dfdc86a-10"><a href="#2dfdc86a-10" aria-hidden="true" tabindex="-1"></a>horror <span class="op">=</span> horror.set_index(<span class="st">"Id"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="8e744838" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="8e744838"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="8e744838-1"><a href="#8e744838-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="8e744838-2"><a href="#8e744838-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="8e744838-3"><a href="#8e744838-3" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://github.com/GU4243-ADS/spring2018-project1-ginnyqg/raw/master/data/spooky.csv"</span></span>
+<span id="8e744838-4"><a href="#8e744838-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Import des données</span></span>
+<span id="8e744838-5"><a href="#8e744838-5" aria-hidden="true" tabindex="-1"></a>horror <span class="op">=</span> pd.read_csv(url, encoding<span class="op">=</span><span class="st">"latin-1"</span>)</span>
+<span id="8e744838-6"><a href="#8e744838-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Majuscules aux noms des colonnes</span></span>
+<span id="8e744838-7"><a href="#8e744838-7" aria-hidden="true" tabindex="-1"></a>horror.columns <span class="op">=</span> horror.columns.<span class="bu">str</span>.capitalize()</span>
+<span id="8e744838-8"><a href="#8e744838-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Retirer le prefixe id</span></span>
+<span id="8e744838-9"><a href="#8e744838-9" aria-hidden="true" tabindex="-1"></a>horror[<span class="st">"ID"</span>] <span class="op">=</span> horror[<span class="st">"Id"</span>].<span class="bu">str</span>.replace(<span class="st">"id"</span>, <span class="st">""</span>)</span>
+<span id="8e744838-10"><a href="#8e744838-10" aria-hidden="true" tabindex="-1"></a>horror <span class="op">=</span> horror.set_index(<span class="st">"Id"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Le jeu de données met ainsi en regard un auteur avec une phrase qu’il a écrite :</p>
-<div id="69eab4ba" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="69eab4ba"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="69eab4ba-1"><a href="#69eab4ba-1" aria-hidden="true" tabindex="-1"></a>horror.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cab5db36" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cab5db36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cab5db36-1"><a href="#cab5db36-1" aria-hidden="true" tabindex="-1"></a>horror.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
 <div>
 
@@ -875,8 +875,8 @@ légèrement pour ne conserver que le corpus du livre :</p>
 <p>On peut se rendre compte que les extraits des 3 auteurs ne sont
 pas forcément équilibrés dans le jeu de données.
 Si on utilise ultérieurement ce corpus pour de la modélisation, il sera nécessaire de tenir compte de ce déséquilibre.</p>
-<div id="a301cdff" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="a301cdff"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="a301cdff-1"><a href="#a301cdff-1" aria-hidden="true" tabindex="-1"></a>(horror.value_counts(<span class="st">"Author"</span>).plot(kind<span class="op">=</span><span class="st">"barh"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="8eacda16" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="8eacda16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="8eacda16-1"><a href="#8eacda16-1" aria-hidden="true" tabindex="-1"></a>(horror.value_counts(<span class="st">"Author"</span>).plot(kind<span class="op">=</span><span class="st">"barh"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -937,7 +937,7 @@ de manière synthétique le nombre d’occurrences du mot <em>“fear”</em> pa
 </div>
 </div>
 <p>Le comptage obtenu devrait être le suivant</p>
-<div id="0983b13e" class="cell" data-execution_count="8">
+<div id="67baf4e8" class="cell" data-execution_count="8">
 <div class="cell-output cell-output-display" data-execution_count="8">
 <div>
 
@@ -1028,27 +1028,27 @@ Tip
 </div>
 </div>
 <p>Pour récupérer tous nos corpus <code>NLTK</code> prêts à l’emploi, nous faisons</p>
-<div id="a3be190c" class="cell" data-execution_count="13">
-<div class="sourceCode cell-code" id="a3be190c"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="a3be190c-1"><a href="#a3be190c-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nltk</span>
-<span id="a3be190c-2"><a href="#a3be190c-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="a3be190c-3"><a href="#a3be190c-3" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"stopwords"</span>)</span>
-<span id="a3be190c-4"><a href="#a3be190c-4" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"punkt"</span>)</span>
-<span id="a3be190c-5"><a href="#a3be190c-5" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"punkt_tab"</span>)</span>
-<span id="a3be190c-6"><a href="#a3be190c-6" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"genesis"</span>)</span>
-<span id="a3be190c-7"><a href="#a3be190c-7" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"wordnet"</span>)</span>
-<span id="a3be190c-8"><a href="#a3be190c-8" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"omw-1.4"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="2200b125" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="2200b125"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="2200b125-1"><a href="#2200b125-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nltk</span>
+<span id="2200b125-2"><a href="#2200b125-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="2200b125-3"><a href="#2200b125-3" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"stopwords"</span>)</span>
+<span id="2200b125-4"><a href="#2200b125-4" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"punkt"</span>)</span>
+<span id="2200b125-5"><a href="#2200b125-5" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"punkt_tab"</span>)</span>
+<span id="2200b125-6"><a href="#2200b125-6" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"genesis"</span>)</span>
+<span id="2200b125-7"><a href="#2200b125-7" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"wordnet"</span>)</span>
+<span id="2200b125-8"><a href="#2200b125-8" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"omw-1.4"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>En ce qui concerne <code>SpaCy</code>, il est nécessaire d’utiliser
 la ligne de commande:</p>
-<div id="15721bc9" class="cell" data-execution_count="14">
-<div class="sourceCode cell-code" id="15721bc9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="15721bc9-1"><a href="#15721bc9-1" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>python <span class="op">-</span>m spacy download fr_core_news_sm</span>
-<span id="15721bc9-2"><a href="#15721bc9-2" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>python <span class="op">-</span>m spacy download en_core_web_sm</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="bce3b8df" class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="bce3b8df"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="bce3b8df-1"><a href="#bce3b8df-1" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>python <span class="op">-</span>m spacy download fr_core_news_sm</span>
+<span id="bce3b8df-2"><a href="#bce3b8df-2" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>python <span class="op">-</span>m spacy download en_core_web_sm</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Plutôt que d’implémenter soi-même un <em>tokenizer</em> inefficace, il est plus approprié d’en appliquer un issu d’une librairie spécialisée. Historiquement, le plus simple était de prendre le <em>tokenizer</em> de <code>NLTK</code>, la librairie historique de <em>text mining</em> en <code>Python</code>:</p>
-<div id="d36fa9cf" class="cell" data-execution_count="15">
-<div class="sourceCode cell-code" id="d36fa9cf"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="d36fa9cf-1"><a href="#d36fa9cf-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> nltk.tokenize <span class="im">import</span> word_tokenize</span>
-<span id="d36fa9cf-2"><a href="#d36fa9cf-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="d36fa9cf-3"><a href="#d36fa9cf-3" aria-hidden="true" tabindex="-1"></a>word_tokenize(dumas[<span class="dv">10000</span>:<span class="dv">10500</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="6c1d0eff" class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="6c1d0eff"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="6c1d0eff-1"><a href="#6c1d0eff-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> nltk.tokenize <span class="im">import</span> word_tokenize</span>
+<span id="6c1d0eff-2"><a href="#6c1d0eff-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="6c1d0eff-3"><a href="#6c1d0eff-3" aria-hidden="true" tabindex="-1"></a>word_tokenize(dumas[<span class="dv">10000</span>:<span class="dv">10500</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Comme on le voit, cette librairie ne fait pas les choses dans le détail et a quelques incohérences: <code>j'y étais</code> est séparé en 4 sèmes (<code>['j', "'", 'y', 'étais']</code>) là où <code>l'acheter</code> reste un unique sème. <code>NLTK</code> est en effet une librairie anglo-saxonne et l’algorithme de séparation n’est pas toujours adapté aux règles grammaticales françaises. Il vaut mieux dans ce cas privilégier <code>SpaCy</code>, la librairie plus récente pour faire ce type de tâche. En plus d’être très bien documentée, elle est mieux adaptée pour les langues non anglo-saxonnes. En l’occurrence, comme le montre l’<a href="https://spacy.io/usage/linguistic-features#tokenization">exemple de la documentation</a> sur les <em>tokenizers</em>, l’algorithme de séparation présente un certain raffinement</p>
 <div class="quarto-figure quarto-figure-center">
@@ -1081,38 +1081,38 @@ la ligne de commande:</p>
 <p>A ce stade, nous n’avons encore aucune appréhension de la structure de notre corpus : nombre de mots, mots les plus représentés, etc.</p>
 <p>Pour se faire une idée de la structure de notre corpus,
 on peut commencer par compter la distribution des mots dans l’oeuvre de Dumas. Commençons par le début de l’oeuvre, à savoir les 30 000 premiers mots et comptons les mots uniques :</p>
-<div id="31030b41" class="cell" data-execution_count="17">
-<div class="sourceCode cell-code" id="31030b41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="31030b41-1"><a href="#31030b41-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> Counter</span>
-<span id="31030b41-2"><a href="#31030b41-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="31030b41-3"><a href="#31030b41-3" aria-hidden="true" tabindex="-1"></a>doc <span class="op">=</span> nlp(dumas[:<span class="dv">30000</span>])</span>
-<span id="31030b41-4"><a href="#31030b41-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="31030b41-5"><a href="#31030b41-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract tokens, convert to lowercase and filter out punctuation and spaces</span></span>
-<span id="31030b41-6"><a href="#31030b41-6" aria-hidden="true" tabindex="-1"></a>tokens <span class="op">=</span> [</span>
-<span id="31030b41-7"><a href="#31030b41-7" aria-hidden="true" tabindex="-1"></a>    token.text.lower() <span class="cf">for</span> token <span class="kw">in</span> doc <span class="cf">if</span> <span class="kw">not</span> token.is_punct <span class="kw">and</span> <span class="kw">not</span> token.is_space</span>
-<span id="31030b41-8"><a href="#31030b41-8" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="31030b41-9"><a href="#31030b41-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="31030b41-10"><a href="#31030b41-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Count the frequency of each token</span></span>
-<span id="31030b41-11"><a href="#31030b41-11" aria-hidden="true" tabindex="-1"></a>token_counts <span class="op">=</span> Counter(tokens)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="c33171e9" class="cell" data-execution_count="17">
+<div class="sourceCode cell-code" id="c33171e9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="c33171e9-1"><a href="#c33171e9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> Counter</span>
+<span id="c33171e9-2"><a href="#c33171e9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="c33171e9-3"><a href="#c33171e9-3" aria-hidden="true" tabindex="-1"></a>doc <span class="op">=</span> nlp(dumas[:<span class="dv">30000</span>])</span>
+<span id="c33171e9-4"><a href="#c33171e9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="c33171e9-5"><a href="#c33171e9-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract tokens, convert to lowercase and filter out punctuation and spaces</span></span>
+<span id="c33171e9-6"><a href="#c33171e9-6" aria-hidden="true" tabindex="-1"></a>tokens <span class="op">=</span> [</span>
+<span id="c33171e9-7"><a href="#c33171e9-7" aria-hidden="true" tabindex="-1"></a>    token.text.lower() <span class="cf">for</span> token <span class="kw">in</span> doc <span class="cf">if</span> <span class="kw">not</span> token.is_punct <span class="kw">and</span> <span class="kw">not</span> token.is_space</span>
+<span id="c33171e9-8"><a href="#c33171e9-8" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="c33171e9-9"><a href="#c33171e9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="c33171e9-10"><a href="#c33171e9-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Count the frequency of each token</span></span>
+<span id="c33171e9-11"><a href="#c33171e9-11" aria-hidden="true" tabindex="-1"></a>token_counts <span class="op">=</span> Counter(tokens)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Nous avons déjà de nombreux mots différents dans le début de l’oeuvre.</p>
-<div id="b708bbb1" class="cell" data-execution_count="18">
-<div class="sourceCode cell-code" id="b708bbb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="b708bbb1-1"><a href="#b708bbb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(token_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="00ce493c" class="cell" data-execution_count="18">
+<div class="sourceCode cell-code" id="00ce493c"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="00ce493c-1"><a href="#00ce493c-1" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(token_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="18">
 <pre><code>1401</code></pre>
 </div>
 </div>
 <p>Nous voyons la haute dimensionnalité du corpus puisque nous avons près de 1500 mots différents sur les 30 000 premiers mots de l’oeuvre de Dumas.</p>
-<div id="aa869b95" class="cell" data-execution_count="19">
-<div class="sourceCode cell-code" id="aa869b95"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="aa869b95-1"><a href="#aa869b95-1" aria-hidden="true" tabindex="-1"></a>token_count_all <span class="op">=</span> <span class="bu">list</span>(token_counts.items())</span>
-<span id="aa869b95-2"><a href="#aa869b95-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="aa869b95-3"><a href="#aa869b95-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a DataFrame from the list of tuples</span></span>
-<span id="aa869b95-4"><a href="#aa869b95-4" aria-hidden="true" tabindex="-1"></a>token_count_all <span class="op">=</span> pd.DataFrame(token_count_all, columns<span class="op">=</span>[<span class="st">"word"</span>, <span class="st">"count"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="efd737a4" class="cell" data-execution_count="19">
+<div class="sourceCode cell-code" id="efd737a4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="efd737a4-1"><a href="#efd737a4-1" aria-hidden="true" tabindex="-1"></a>token_count_all <span class="op">=</span> <span class="bu">list</span>(token_counts.items())</span>
+<span id="efd737a4-2"><a href="#efd737a4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="efd737a4-3"><a href="#efd737a4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a DataFrame from the list of tuples</span></span>
+<span id="efd737a4-4"><a href="#efd737a4-4" aria-hidden="true" tabindex="-1"></a>token_count_all <span class="op">=</span> pd.DataFrame(token_count_all, columns<span class="op">=</span>[<span class="st">"word"</span>, <span class="st">"count"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Si on regarde la distribution de la fréquence des mots, exercice que nous prolongerons ultérieurement en évoquant la <a href="https://fr.wikipedia.org/wiki/Loi_de_Zipf">loi de Zipf</a>, nous pouvons voir que de nombreux mots sont unique (près de la moitié des mots), que la densité de fréquence descend vite et qu’il faudrait se concentrer un peu plus sur la queue de distribution que ne le permet la figure suivante :</p>
-<div id="56ab0fda" class="cell" data-execution_count="20">
-<div class="sourceCode cell-code" id="56ab0fda"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="56ab0fda-1"><a href="#56ab0fda-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> plotnine <span class="im">import</span> <span class="op">*</span></span>
-<span id="56ab0fda-2"><a href="#56ab0fda-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="56ab0fda-3"><a href="#56ab0fda-3" aria-hidden="true" tabindex="-1"></a>(ggplot(token_count_all) <span class="op">+</span> geom_histogram(aes(x<span class="op">=</span><span class="st">"count"</span>)) <span class="op">+</span> scale_x_log10())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="01ad3a78" class="cell" data-execution_count="20">
+<div class="sourceCode cell-code" id="01ad3a78"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="01ad3a78-1"><a href="#01ad3a78-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> plotnine <span class="im">import</span> <span class="op">*</span></span>
+<span id="01ad3a78-2"><a href="#01ad3a78-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="01ad3a78-3"><a href="#01ad3a78-3" aria-hidden="true" tabindex="-1"></a>(ggplot(token_count_all) <span class="op">+</span> geom_histogram(aes(x<span class="op">=</span><span class="st">"count"</span>)) <span class="op">+</span> scale_x_log10())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>/opt/conda/lib/python3.12/site-packages/plotnine/stats/stat_bin.py:109: PlotnineWarning: 'stat_bin()' using 'bins = 42'. Pick better value with 'binwidth'.</code></pre>
 </div>
@@ -1125,63 +1125,63 @@ on peut commencer par compter la distribution des mots dans l’oeuvre de Dumas.
 </div>
 </div>
 <p>Maintenant, si on regarde les 25 mots les plus fréquents, on peut voir que ceux-ci ne sont pas très intéressants pour analyser le sens de notre document :</p>
-<div id="9f1e7586" class="cell" data-execution_count="21">
-<div class="sourceCode cell-code" id="9f1e7586"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="9f1e7586-1"><a href="#9f1e7586-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort the tokens by frequency in descending order</span></span>
-<span id="9f1e7586-2"><a href="#9f1e7586-2" aria-hidden="true" tabindex="-1"></a>sorted_token_counts <span class="op">=</span> token_counts.most_common(<span class="dv">25</span>)</span>
-<span id="9f1e7586-3"><a href="#9f1e7586-3" aria-hidden="true" tabindex="-1"></a>sorted_token_counts <span class="op">=</span> pd.DataFrame(sorted_token_counts, columns<span class="op">=</span>[<span class="st">"word"</span>, <span class="st">"count"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="49e5de46" class="cell" data-execution_count="21">
+<div class="sourceCode cell-code" id="49e5de46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="49e5de46-1"><a href="#49e5de46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort the tokens by frequency in descending order</span></span>
+<span id="49e5de46-2"><a href="#49e5de46-2" aria-hidden="true" tabindex="-1"></a>sorted_token_counts <span class="op">=</span> token_counts.most_common(<span class="dv">25</span>)</span>
+<span id="49e5de46-3"><a href="#49e5de46-3" aria-hidden="true" tabindex="-1"></a>sorted_token_counts <span class="op">=</span> pd.DataFrame(sorted_token_counts, columns<span class="op">=</span>[<span class="st">"word"</span>, <span class="st">"count"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="96ee65b9" class="cell" data-execution_count="22">
+<div id="e131c96c" class="cell" data-execution_count="22">
 <div class="cell-output cell-output-stderr">
-<pre><code>/tmp/ipykernel_8907/3224890599.py:18: MapWithoutReturnDtypeWarning: Calling `map_elements` without specifying `return_dtype` can lead to unpredictable results. Specify `return_dtype` to silence this warning.
-/tmp/ipykernel_8907/3224890599.py:23: MapWithoutReturnDtypeWarning: Calling `map_elements` without specifying `return_dtype` can lead to unpredictable results. Specify `return_dtype` to silence this warning.</code></pre>
+<pre><code>/tmp/ipykernel_8908/3224890599.py:18: MapWithoutReturnDtypeWarning: Calling `map_elements` without specifying `return_dtype` can lead to unpredictable results. Specify `return_dtype` to silence this warning.
+/tmp/ipykernel_8908/3224890599.py:23: MapWithoutReturnDtypeWarning: Calling `map_elements` without specifying `return_dtype` can lead to unpredictable results. Specify `return_dtype` to silence this warning.</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="22">
-<div id="vbyghesqnr" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="zmlxrjhict" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>
-#vbyghesqnr table {
+#zmlxrjhict table {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
         }
 
-#vbyghesqnr thead, tbody, tfoot, tr, td, th { border-style: none; }
+#zmlxrjhict thead, tbody, tfoot, tr, td, th { border-style: none; }
  tr { background-color: transparent; }
-#vbyghesqnr p { margin: 0; padding: 0; }
- #vbyghesqnr .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
- #vbyghesqnr .gt_caption { padding-top: 4px; padding-bottom: 4px; }
- #vbyghesqnr .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
- #vbyghesqnr .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
- #vbyghesqnr .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #vbyghesqnr .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
- #vbyghesqnr .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
- #vbyghesqnr .gt_col_heading { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
- #vbyghesqnr .gt_column_spanner_outer { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
- #vbyghesqnr .gt_column_spanner_outer:first-child { padding-left: 0; }
- #vbyghesqnr .gt_column_spanner_outer:last-child { padding-right: 0; }
- #vbyghesqnr .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; overflow-x: hidden; display: inline-block; width: 100%; }
- #vbyghesqnr .gt_spanner_row { border-bottom-style: hidden; }
- #vbyghesqnr .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }
- #vbyghesqnr .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }
- #vbyghesqnr .gt_from_md> :first-child { margin-top: 0; }
- #vbyghesqnr .gt_from_md> :last-child { margin-bottom: 0; }
- #vbyghesqnr .gt_row { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }
- #vbyghesqnr .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
- #vbyghesqnr .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
- #vbyghesqnr .gt_row_group_first td { border-top-width: 2px; }
- #vbyghesqnr .gt_row_group_first th { border-top-width: 2px; }
- #vbyghesqnr .gt_striped { background-color: rgba(128,128,128,0.05); }
- #vbyghesqnr .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
- #vbyghesqnr .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
- #vbyghesqnr .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
- #vbyghesqnr .gt_left { text-align: left; }
- #vbyghesqnr .gt_center { text-align: center; }
- #vbyghesqnr .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
- #vbyghesqnr .gt_font_normal { font-weight: normal; }
- #vbyghesqnr .gt_font_bold { font-weight: bold; }
- #vbyghesqnr .gt_font_italic { font-style: italic; }
- #vbyghesqnr .gt_super { font-size: 65%; }
- #vbyghesqnr .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
- #vbyghesqnr .gt_asterisk { font-size: 100%; vertical-align: 0; }
+#zmlxrjhict p { margin: 0; padding: 0; }
+ #zmlxrjhict .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
+ #zmlxrjhict .gt_caption { padding-top: 4px; padding-bottom: 4px; }
+ #zmlxrjhict .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
+ #zmlxrjhict .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
+ #zmlxrjhict .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #zmlxrjhict .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #zmlxrjhict .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #zmlxrjhict .gt_col_heading { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
+ #zmlxrjhict .gt_column_spanner_outer { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
+ #zmlxrjhict .gt_column_spanner_outer:first-child { padding-left: 0; }
+ #zmlxrjhict .gt_column_spanner_outer:last-child { padding-right: 0; }
+ #zmlxrjhict .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; overflow-x: hidden; display: inline-block; width: 100%; }
+ #zmlxrjhict .gt_spanner_row { border-bottom-style: hidden; }
+ #zmlxrjhict .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }
+ #zmlxrjhict .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }
+ #zmlxrjhict .gt_from_md> :first-child { margin-top: 0; }
+ #zmlxrjhict .gt_from_md> :last-child { margin-bottom: 0; }
+ #zmlxrjhict .gt_row { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }
+ #zmlxrjhict .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
+ #zmlxrjhict .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
+ #zmlxrjhict .gt_row_group_first td { border-top-width: 2px; }
+ #zmlxrjhict .gt_row_group_first th { border-top-width: 2px; }
+ #zmlxrjhict .gt_striped { background-color: rgba(128,128,128,0.05); }
+ #zmlxrjhict .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #zmlxrjhict .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
+ #zmlxrjhict .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
+ #zmlxrjhict .gt_left { text-align: left; }
+ #zmlxrjhict .gt_center { text-align: center; }
+ #zmlxrjhict .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
+ #zmlxrjhict .gt_font_normal { font-weight: normal; }
+ #zmlxrjhict .gt_font_bold { font-weight: bold; }
+ #zmlxrjhict .gt_font_italic { font-style: italic; }
+ #zmlxrjhict .gt_super { font-size: 65%; }
+ #zmlxrjhict .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
+ #zmlxrjhict .gt_asterisk { font-size: 100%; vertical-align: 0; }
  
 </style>
 
@@ -1438,15 +1438,15 @@ on peut commencer par compter la distribution des mots dans l’oeuvre de Dumas.
 </div>
 </div>
 <p>Si on représente graphiquement ce classement</p>
-<div id="799a6a97" class="cell" data-execution_count="23">
-<div class="sourceCode cell-code" id="799a6a97"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="799a6a97-1"><a href="#799a6a97-1" aria-hidden="true" tabindex="-1"></a>(</span>
-<span id="799a6a97-2"><a href="#799a6a97-2" aria-hidden="true" tabindex="-1"></a>    ggplot(sorted_token_counts, aes(x<span class="op">=</span><span class="st">"word"</span>, y<span class="op">=</span><span class="st">"count"</span>))</span>
-<span id="799a6a97-3"><a href="#799a6a97-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> geom_point(stat<span class="op">=</span><span class="st">"identity"</span>, size<span class="op">=</span><span class="dv">3</span>, color<span class="op">=</span><span class="st">"red"</span>)</span>
-<span id="799a6a97-4"><a href="#799a6a97-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> scale_x_discrete(limits<span class="op">=</span>sorted_token_counts.sort_values(<span class="st">"count"</span>)[<span class="st">"word"</span>].tolist())</span>
-<span id="799a6a97-5"><a href="#799a6a97-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> coord_flip()</span>
-<span id="799a6a97-6"><a href="#799a6a97-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> theme_minimal()</span>
-<span id="799a6a97-7"><a href="#799a6a97-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> labs(title<span class="op">=</span><span class="st">"Word Frequency"</span>, x<span class="op">=</span><span class="st">"Word"</span>, y<span class="op">=</span><span class="st">"Count"</span>)</span>
-<span id="799a6a97-8"><a href="#799a6a97-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="7735fc3f" class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="7735fc3f"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="7735fc3f-1"><a href="#7735fc3f-1" aria-hidden="true" tabindex="-1"></a>(</span>
+<span id="7735fc3f-2"><a href="#7735fc3f-2" aria-hidden="true" tabindex="-1"></a>    ggplot(sorted_token_counts, aes(x<span class="op">=</span><span class="st">"word"</span>, y<span class="op">=</span><span class="st">"count"</span>))</span>
+<span id="7735fc3f-3"><a href="#7735fc3f-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> geom_point(stat<span class="op">=</span><span class="st">"identity"</span>, size<span class="op">=</span><span class="dv">3</span>, color<span class="op">=</span><span class="st">"red"</span>)</span>
+<span id="7735fc3f-4"><a href="#7735fc3f-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> scale_x_discrete(limits<span class="op">=</span>sorted_token_counts.sort_values(<span class="st">"count"</span>)[<span class="st">"word"</span>].tolist())</span>
+<span id="7735fc3f-5"><a href="#7735fc3f-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> coord_flip()</span>
+<span id="7735fc3f-6"><a href="#7735fc3f-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> theme_minimal()</span>
+<span id="7735fc3f-7"><a href="#7735fc3f-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> labs(title<span class="op">=</span><span class="st">"Word Frequency"</span>, x<span class="op">=</span><span class="st">"Word"</span>, y<span class="op">=</span><span class="st">"Count"</span>)</span>
+<span id="7735fc3f-8"><a href="#7735fc3f-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1576,44 +1576,44 @@ liée à son rang <span class="math inline">\(n_i\)</span> dans l’ordre des fr
 \mathbb{E}\bigg( f(n_i)|n_i \bigg) = \exp(\beta_0 + \beta_1 \log(n_i))
 \]</span></p>
 <p>Les modèles linéaires généralisés (GLM) permettent de faire ce type de régression. En <code>Python</code>, ils sont disponibles par le biais du <em>package</em> <code>statsmodels</code>, dont les sorties sont très inspirées des logiciels payants spécialisés dans l’économétrie comme <code>Stata</code>.</p>
-<div id="d390a4d9" class="cell" data-execution_count="28">
-<div class="sourceCode cell-code" id="d390a4d9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="d390a4d9-1"><a href="#d390a4d9-1" aria-hidden="true" tabindex="-1"></a>count_words <span class="op">=</span> pd.DataFrame(</span>
-<span id="d390a4d9-2"><a href="#d390a4d9-2" aria-hidden="true" tabindex="-1"></a>    {</span>
-<span id="d390a4d9-3"><a href="#d390a4d9-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">"counter"</span>: horror.groupby(<span class="st">"Author"</span>)</span>
-<span id="d390a4d9-4"><a href="#d390a4d9-4" aria-hidden="true" tabindex="-1"></a>        .<span class="bu">apply</span>(<span class="kw">lambda</span> s: <span class="st">" "</span>.join(s[<span class="st">"Text"</span>]).split())</span>
-<span id="d390a4d9-5"><a href="#d390a4d9-5" aria-hidden="true" tabindex="-1"></a>        .<span class="bu">apply</span>(<span class="kw">lambda</span> s: Counter(s))</span>
-<span id="d390a4d9-6"><a href="#d390a4d9-6" aria-hidden="true" tabindex="-1"></a>        .<span class="bu">apply</span>(<span class="kw">lambda</span> s: s.most_common())</span>
-<span id="d390a4d9-7"><a href="#d390a4d9-7" aria-hidden="true" tabindex="-1"></a>        .explode()</span>
-<span id="d390a4d9-8"><a href="#d390a4d9-8" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="d390a4d9-9"><a href="#d390a4d9-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="d390a4d9-10"><a href="#d390a4d9-10" aria-hidden="true" tabindex="-1"></a>count_words[[<span class="st">"word"</span>, <span class="st">"count"</span>]] <span class="op">=</span> pd.DataFrame(</span>
-<span id="d390a4d9-11"><a href="#d390a4d9-11" aria-hidden="true" tabindex="-1"></a>    count_words[<span class="st">"counter"</span>].tolist(), index<span class="op">=</span>count_words.index</span>
-<span id="d390a4d9-12"><a href="#d390a4d9-12" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="d390a4d9-13"><a href="#d390a4d9-13" aria-hidden="true" tabindex="-1"></a>count_words <span class="op">=</span> count_words.reset_index()</span>
-<span id="d390a4d9-14"><a href="#d390a4d9-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="d390a4d9-15"><a href="#d390a4d9-15" aria-hidden="true" tabindex="-1"></a>count_words <span class="op">=</span> count_words.assign(</span>
-<span id="d390a4d9-16"><a href="#d390a4d9-16" aria-hidden="true" tabindex="-1"></a>    tot_mots_auteur<span class="op">=</span><span class="kw">lambda</span> x: (x.groupby(<span class="st">"Author"</span>)[<span class="st">"count"</span>].transform(<span class="st">"sum"</span>)),</span>
-<span id="d390a4d9-17"><a href="#d390a4d9-17" aria-hidden="true" tabindex="-1"></a>    freq<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"count"</span>] <span class="op">/</span> x[<span class="st">"tot_mots_auteur"</span>],</span>
-<span id="d390a4d9-18"><a href="#d390a4d9-18" aria-hidden="true" tabindex="-1"></a>    rank<span class="op">=</span><span class="kw">lambda</span> x: x.groupby(<span class="st">"Author"</span>)[<span class="st">"count"</span>].transform(<span class="st">"rank"</span>, ascending<span class="op">=</span><span class="va">False</span>),</span>
-<span id="d390a4d9-19"><a href="#d390a4d9-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="9de70f12" class="cell" data-execution_count="28">
+<div class="sourceCode cell-code" id="9de70f12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="9de70f12-1"><a href="#9de70f12-1" aria-hidden="true" tabindex="-1"></a>count_words <span class="op">=</span> pd.DataFrame(</span>
+<span id="9de70f12-2"><a href="#9de70f12-2" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="9de70f12-3"><a href="#9de70f12-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">"counter"</span>: horror.groupby(<span class="st">"Author"</span>)</span>
+<span id="9de70f12-4"><a href="#9de70f12-4" aria-hidden="true" tabindex="-1"></a>        .<span class="bu">apply</span>(<span class="kw">lambda</span> s: <span class="st">" "</span>.join(s[<span class="st">"Text"</span>]).split())</span>
+<span id="9de70f12-5"><a href="#9de70f12-5" aria-hidden="true" tabindex="-1"></a>        .<span class="bu">apply</span>(<span class="kw">lambda</span> s: Counter(s))</span>
+<span id="9de70f12-6"><a href="#9de70f12-6" aria-hidden="true" tabindex="-1"></a>        .<span class="bu">apply</span>(<span class="kw">lambda</span> s: s.most_common())</span>
+<span id="9de70f12-7"><a href="#9de70f12-7" aria-hidden="true" tabindex="-1"></a>        .explode()</span>
+<span id="9de70f12-8"><a href="#9de70f12-8" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="9de70f12-9"><a href="#9de70f12-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="9de70f12-10"><a href="#9de70f12-10" aria-hidden="true" tabindex="-1"></a>count_words[[<span class="st">"word"</span>, <span class="st">"count"</span>]] <span class="op">=</span> pd.DataFrame(</span>
+<span id="9de70f12-11"><a href="#9de70f12-11" aria-hidden="true" tabindex="-1"></a>    count_words[<span class="st">"counter"</span>].tolist(), index<span class="op">=</span>count_words.index</span>
+<span id="9de70f12-12"><a href="#9de70f12-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="9de70f12-13"><a href="#9de70f12-13" aria-hidden="true" tabindex="-1"></a>count_words <span class="op">=</span> count_words.reset_index()</span>
+<span id="9de70f12-14"><a href="#9de70f12-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="9de70f12-15"><a href="#9de70f12-15" aria-hidden="true" tabindex="-1"></a>count_words <span class="op">=</span> count_words.assign(</span>
+<span id="9de70f12-16"><a href="#9de70f12-16" aria-hidden="true" tabindex="-1"></a>    tot_mots_auteur<span class="op">=</span><span class="kw">lambda</span> x: (x.groupby(<span class="st">"Author"</span>)[<span class="st">"count"</span>].transform(<span class="st">"sum"</span>)),</span>
+<span id="9de70f12-17"><a href="#9de70f12-17" aria-hidden="true" tabindex="-1"></a>    freq<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"count"</span>] <span class="op">/</span> x[<span class="st">"tot_mots_auteur"</span>],</span>
+<span id="9de70f12-18"><a href="#9de70f12-18" aria-hidden="true" tabindex="-1"></a>    rank<span class="op">=</span><span class="kw">lambda</span> x: x.groupby(<span class="st">"Author"</span>)[<span class="st">"count"</span>].transform(<span class="st">"rank"</span>, ascending<span class="op">=</span><span class="va">False</span>),</span>
+<span id="9de70f12-19"><a href="#9de70f12-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>/tmp/ipykernel_8907/4009929367.py:3: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.</code></pre>
+<pre><code>/tmp/ipykernel_8908/4009929367.py:3: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.</code></pre>
 </div>
 </div>
 <p>Commençons par représenter la relation entre la fréquence et le rang:</p>
-<div id="ede081f5" class="cell" data-execution_count="29">
-<div class="sourceCode cell-code" id="ede081f5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="ede081f5-1"><a href="#ede081f5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> plotnine <span class="im">import</span> <span class="op">*</span></span>
-<span id="ede081f5-2"><a href="#ede081f5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="ede081f5-3"><a href="#ede081f5-3" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> (</span>
-<span id="ede081f5-4"><a href="#ede081f5-4" aria-hidden="true" tabindex="-1"></a>    ggplot(count_words)</span>
-<span id="ede081f5-5"><a href="#ede081f5-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> geom_point(aes(y<span class="op">=</span><span class="st">"freq"</span>, x<span class="op">=</span><span class="st">"rank"</span>, color<span class="op">=</span><span class="st">"Author"</span>), alpha<span class="op">=</span><span class="fl">0.4</span>)</span>
-<span id="ede081f5-6"><a href="#ede081f5-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> scale_x_log10()</span>
-<span id="ede081f5-7"><a href="#ede081f5-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> scale_y_log10()</span>
-<span id="ede081f5-8"><a href="#ede081f5-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> theme_minimal()</span>
-<span id="ede081f5-9"><a href="#ede081f5-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="d6336387" class="cell" data-execution_count="29">
+<div class="sourceCode cell-code" id="d6336387"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="d6336387-1"><a href="#d6336387-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> plotnine <span class="im">import</span> <span class="op">*</span></span>
+<span id="d6336387-2"><a href="#d6336387-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="d6336387-3"><a href="#d6336387-3" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> (</span>
+<span id="d6336387-4"><a href="#d6336387-4" aria-hidden="true" tabindex="-1"></a>    ggplot(count_words)</span>
+<span id="d6336387-5"><a href="#d6336387-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> geom_point(aes(y<span class="op">=</span><span class="st">"freq"</span>, x<span class="op">=</span><span class="st">"rank"</span>, color<span class="op">=</span><span class="st">"Author"</span>), alpha<span class="op">=</span><span class="fl">0.4</span>)</span>
+<span id="d6336387-6"><a href="#d6336387-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> scale_x_log10()</span>
+<span id="d6336387-7"><a href="#d6336387-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> scale_y_log10()</span>
+<span id="d6336387-8"><a href="#d6336387-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> theme_minimal()</span>
+<span id="d6336387-9"><a href="#d6336387-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Nous avons bien, graphiquement, une relation log-linéaire entre les deux :</p>
-<div id="6599026d" class="cell" data-execution_count="30">
+<div id="4aea9698" class="cell" data-execution_count="30">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1623,18 +1623,18 @@ liée à son rang <span class="math inline">\(n_i\)</span> dans l’ordre des fr
 </div>
 </div>
 <p>Avec <code>statsmodels</code>, vérifions plus formellement cette relation:</p>
-<div id="4d1fec74" class="cell" data-execution_count="31">
-<div class="sourceCode cell-code" id="4d1fec74"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="4d1fec74-1"><a href="#4d1fec74-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
-<span id="4d1fec74-2"><a href="#4d1fec74-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="4d1fec74-3"><a href="#4d1fec74-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="4d1fec74-4"><a href="#4d1fec74-4" aria-hidden="true" tabindex="-1"></a>exog <span class="op">=</span> sm.add_constant(np.log(count_words[<span class="st">"rank"</span>].astype(<span class="bu">float</span>)))</span>
-<span id="4d1fec74-5"><a href="#4d1fec74-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="4d1fec74-6"><a href="#4d1fec74-6" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> sm.GLM(</span>
-<span id="4d1fec74-7"><a href="#4d1fec74-7" aria-hidden="true" tabindex="-1"></a>    count_words[<span class="st">"freq"</span>].astype(<span class="bu">float</span>), exog, family<span class="op">=</span>sm.families.Poisson()</span>
-<span id="4d1fec74-8"><a href="#4d1fec74-8" aria-hidden="true" tabindex="-1"></a>).fit()</span>
-<span id="4d1fec74-9"><a href="#4d1fec74-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="4d1fec74-10"><a href="#4d1fec74-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Afficher les résultats du modèle</span></span>
-<span id="4d1fec74-11"><a href="#4d1fec74-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model.summary())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="98a9ab22" class="cell" data-execution_count="31">
+<div class="sourceCode cell-code" id="98a9ab22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="98a9ab22-1"><a href="#98a9ab22-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
+<span id="98a9ab22-2"><a href="#98a9ab22-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="98a9ab22-3"><a href="#98a9ab22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="98a9ab22-4"><a href="#98a9ab22-4" aria-hidden="true" tabindex="-1"></a>exog <span class="op">=</span> sm.add_constant(np.log(count_words[<span class="st">"rank"</span>].astype(<span class="bu">float</span>)))</span>
+<span id="98a9ab22-5"><a href="#98a9ab22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="98a9ab22-6"><a href="#98a9ab22-6" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> sm.GLM(</span>
+<span id="98a9ab22-7"><a href="#98a9ab22-7" aria-hidden="true" tabindex="-1"></a>    count_words[<span class="st">"freq"</span>].astype(<span class="bu">float</span>), exog, family<span class="op">=</span>sm.families.Poisson()</span>
+<span id="98a9ab22-8"><a href="#98a9ab22-8" aria-hidden="true" tabindex="-1"></a>).fit()</span>
+<span id="98a9ab22-9"><a href="#98a9ab22-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="98a9ab22-10"><a href="#98a9ab22-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Afficher les résultats du modèle</span></span>
+<span id="98a9ab22-11"><a href="#98a9ab22-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model.summary())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                 Generalized Linear Model Regression Results                  
 ==============================================================================
@@ -1643,8 +1643,8 @@ Model:                            GLM   Df Residuals:                    69299
 Model Family:                 Poisson   Df Model:                            1
 Link Function:                    Log   Scale:                          1.0000
 Method:                          IRLS   Log-Likelihood:                -23.011
-Date:                Thu, 26 Dec 2024   Deviance:                     0.065676
-Time:                        23:08:14   Pearson chi2:                   0.0656
+Date:                Fri, 27 Dec 2024   Deviance:                     0.065676
+Time:                        16:37:59   Pearson chi2:                   0.0656
 No. Iterations:                     5   Pseudo R-squ. (CS):          0.0002431
 Covariance Type:            nonrobust                                         
 ==============================================================================
@@ -1668,10 +1668,10 @@ Dit autrement, le mot le plus utilisé l’est deux fois plus que le deuxième m
 un certain nombre de mots de liaisons, nécessaires sur le plan grammatical mais peu porteur d’information, nous empêchent de saisir les principaux mots vecteurs d’information dans notre corpus.</p>
 <p>Il est donc nécessaire de nettoyer notre corpus en retirant ces termes. Ce travail de nettoyage va d’ailleurs au-delà d’un simple retrait de mots. C’est également l’occasion de retirer d’autres sèmes gênants, par exemple la ponctuation.</p>
 <p>Commençons par télécharger le corpus de <em>stopwords</em></p>
-<div id="5e841b3c" class="cell" data-execution_count="32">
-<div class="sourceCode cell-code" id="5e841b3c"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="5e841b3c-1"><a href="#5e841b3c-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nltk</span>
-<span id="5e841b3c-2"><a href="#5e841b3c-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="5e841b3c-3"><a href="#5e841b3c-3" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"stopwords"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="59bdb85f" class="cell" data-execution_count="32">
+<div class="sourceCode cell-code" id="59bdb85f"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="59bdb85f-1"><a href="#59bdb85f-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nltk</span>
+<span id="59bdb85f-2"><a href="#59bdb85f-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="59bdb85f-3"><a href="#59bdb85f-3" aria-hidden="true" tabindex="-1"></a>nltk.download(<span class="st">"stopwords"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>[nltk_data] Downloading package stopwords to /github/home/nltk_data...
 [nltk_data]   Package stopwords is already up-to-date!</code></pre>
@@ -1682,36 +1682,36 @@ un certain nombre de mots de liaisons, nécessaires sur le plan grammatical mais
 </div>
 <p>La liste des <em>stopwords</em> anglais dans <code>NLTK</code>
 est la suivante:</p>
-<div id="ddfcaa98" class="cell" data-execution_count="33">
-<div class="sourceCode cell-code" id="ddfcaa98"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="ddfcaa98-1"><a href="#ddfcaa98-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> nltk.corpus <span class="im">import</span> stopwords</span>
-<span id="ddfcaa98-2"><a href="#ddfcaa98-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="ddfcaa98-3"><a href="#ddfcaa98-3" aria-hidden="true" tabindex="-1"></a><span class="co">", "</span>.join(stopwords.words(<span class="st">"english"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="fe14dfae" class="cell" data-execution_count="33">
+<div class="sourceCode cell-code" id="fe14dfae"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="fe14dfae-1"><a href="#fe14dfae-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> nltk.corpus <span class="im">import</span> stopwords</span>
+<span id="fe14dfae-2"><a href="#fe14dfae-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="fe14dfae-3"><a href="#fe14dfae-3" aria-hidden="true" tabindex="-1"></a><span class="co">", "</span>.join(stopwords.words(<span class="st">"english"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="33">
 <pre><code>"i, me, my, myself, we, our, ours, ourselves, you, you're, you've, you'll, you'd, your, yours, yourself, yourselves, he, him, his, himself, she, she's, her, hers, herself, it, it's, its, itself, they, them, their, theirs, themselves, what, which, who, whom, this, that, that'll, these, those, am, is, are, was, were, be, been, being, have, has, had, having, do, does, did, doing, a, an, the, and, but, if, or, because, as, until, while, of, at, by, for, with, about, against, between, into, through, during, before, after, above, below, to, from, up, down, in, out, on, off, over, under, again, further, then, once, here, there, when, where, why, how, all, any, both, each, few, more, most, other, some, such, no, nor, not, only, own, same, so, than, too, very, s, t, can, will, just, don, don't, should, should've, now, d, ll, m, o, re, ve, y, ain, aren, aren't, couldn, couldn't, didn, didn't, doesn, doesn't, hadn, hadn't, hasn, hasn't, haven, haven't, isn, isn't, ma, mightn, mightn't, mustn, mustn't, needn, needn't, shan, shan't, shouldn, shouldn't, wasn, wasn't, weren, weren't, won, won't, wouldn, wouldn't"</code></pre>
 </div>
 </div>
 <p>Celle de <code>SpaCy</code> est plus riche (nous avons déjà téléchargé le corpus <code>en_core_web_sm</code> en question):</p>
-<div id="972d48ac" class="cell" data-execution_count="34">
-<div class="sourceCode cell-code" id="972d48ac"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="972d48ac-1"><a href="#972d48ac-1" aria-hidden="true" tabindex="-1"></a>nlp_english <span class="op">=</span> spacy.load(<span class="st">"en_core_web_sm"</span>)</span>
-<span id="972d48ac-2"><a href="#972d48ac-2" aria-hidden="true" tabindex="-1"></a>stop_words_english <span class="op">=</span> nlp_english.Defaults.stop_words</span>
-<span id="972d48ac-3"><a href="#972d48ac-3" aria-hidden="true" tabindex="-1"></a><span class="co">", "</span>.join(stop_words_english)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="59c85a59" class="cell" data-execution_count="34">
+<div class="sourceCode cell-code" id="59c85a59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="59c85a59-1"><a href="#59c85a59-1" aria-hidden="true" tabindex="-1"></a>nlp_english <span class="op">=</span> spacy.load(<span class="st">"en_core_web_sm"</span>)</span>
+<span id="59c85a59-2"><a href="#59c85a59-2" aria-hidden="true" tabindex="-1"></a>stop_words_english <span class="op">=</span> nlp_english.Defaults.stop_words</span>
+<span id="59c85a59-3"><a href="#59c85a59-3" aria-hidden="true" tabindex="-1"></a><span class="co">", "</span>.join(stop_words_english)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="34">
-<pre><code>"as, many, regarding, whole, 've, could, that, under, when, out, towards, it, whereupon, former, rather, say, ‘s, is, wherein, whose, very, nowhere, whom, an, less, do, please, seeming, put, everything, formerly, unless, yourself, ever, nobody, much, nevertheless, though, twenty, hence, should, not, ‘ve, those, give, by, again, bottom, herself, name, done, his, indeed, somewhere, but, why, yourselves, therein, amongst, call, thus, upon, anywhere, himself, anything, how, ‘ll, n't, otherwise, see, sometimes, three, least, on, ’d, only, after, further, then, hundred, per, get, other, which, hereby, empty, due, hereafter, full, everywhere, at, him, because, have, onto, within, already, about, 'm, into, cannot, whereby, or, your, anyhow, fifteen, however, enough, beside, whether, throughout, perhaps, still, keep, make, seems, either, since, also, what, whither, last, her, had, may, made, were, although, four, ’m, 'd, even, become, below, against, this, serious, would, these, every, without, elsewhere, nine, hers, meanwhile, are, none, there, nothing, anyone, ’ve, alone, during, 'll, along, was, eleven, beyond, own, besides, ’ll, nor, part, n‘t, who, often, amount, sometime, our, around, off, few, same, she, something, down, behind, above, they, becoming, next, ten, back, over, been, someone, yours, ‘m, doing, ’s, another, themselves, herein, where, to, neither, somehow, thence, its, forty, among, can, here, ‘d, me, go, must, thereby, never, top, became, the, for, if, else, myself, becomes, 's, some, 're, their, being, you, and, ourselves, toward, i, seem, will, ‘re, five, whereas, really, anyway, moreover, just, used, six, with, so, than, seemed, afterwards, no, thru, two, hereupon, from, all, namely, through, a, in, beforehand, ’re, whenever, any, might, more, up, them, does, third, has, while, show, he, across, us, together, re, whence, everyone, except, whoever, latterly, eight, ours, be, latter, we, wherever, always, move, itself, fifty, quite, well, such, ca, most, of, thereafter, twelve, each, almost, too, both, thereupon, sixty, did, once, front, before, am, now, using, various, whatever, mine, others, noone, whereafter, mostly, several, between, yet, one, my, until, via, n’t, take, therefore, side, first"</code></pre>
+<pre><code>"very, just, above, various, indeed, due, me, now, ’re, go, ‘d, seems, into, below, own, made, fifteen, often, do, never, who, whereas, something, ’d, throughout, everywhere, anyone, fifty, beyond, because, on, and, their, three, ever, our, nor, well, also, few, may, see, he, why, together, latterly, five, a, the, moreover, my, besides, whom, though, take, again, anyway, themselves, done, although, where, since, had, am, it, wherever, forty, please, anyhow, are, an, then, thereupon, get, yourselves, until, former, out, hundred, n’t, over, someone, from, perhaps, has, along, yourself, too, around, among, mostly, ‘m, always, thru, himself, about, whose, whether, did, him, ‘s, across, 'll, much, whereupon, n‘t, used, ’ll, others, thence, you, make, herein, under, between, or, does, alone, serious, any, all, have, thus, 'd, 's, she, part, them, they, bottom, move, whatever, wherein, without, should, really, within, re, those, show, whenever, while, to, eight, towards, ‘ve, neither, hereby, itself, seemed, put, whereby, least, these, using, would, amount, eleven, through, must, beside, ’m, against, third, anything, next, no, be, less, i, being, yet, one, becomes, more, whence, therefore, several, say, whereafter, were, name, of, could, at, many, herself, elsewhere, off, ca, call, every, us, whither, 'm, some, quite, hereupon, ‘re, nowhere, after, anywhere, becoming, namely, whoever, n't, rather, during, ten, thereafter, somewhere, hers, side, sometimes, been, by, everyone, was, except, however, hence, that, amongst, what, each, whole, become, last, not, nobody, otherwise, beforehand, most, will, front, only, myself, nine, twelve, than, give, top, which, can, once, already, cannot, thereby, else, is, two, became, noone, as, even, first, six, keep, toward, ours, for, ‘ll, formerly, ’ve, here, mine, via, we, before, when, up, doing, everything, onto, might, your, so, in, seeming, such, there, none, if, sixty, almost, both, regarding, meanwhile, further, 're, enough, but, ourselves, with, ’s, still, unless, down, seem, empty, her, his, its, how, nothing, this, another, per, somehow, four, sometime, upon, twenty, either, latter, full, nevertheless, other, 've, back, behind, hereafter, therein, yours, afterwards, same"</code></pre>
 </div>
 </div>
 <p>Si cette fois on prend la liste des <em>stopwords</em> français dans <code>NLTK</code>:</p>
-<div id="ebf14550" class="cell" data-execution_count="35">
-<div class="sourceCode cell-code" id="ebf14550"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="ebf14550-1"><a href="#ebf14550-1" aria-hidden="true" tabindex="-1"></a><span class="co">", "</span>.join(stopwords.words(<span class="st">"french"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="65c47446" class="cell" data-execution_count="35">
+<div class="sourceCode cell-code" id="65c47446"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="65c47446-1"><a href="#65c47446-1" aria-hidden="true" tabindex="-1"></a><span class="co">", "</span>.join(stopwords.words(<span class="st">"french"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="35">
 <pre><code>'au, aux, avec, ce, ces, dans, de, des, du, elle, en, et, eux, il, ils, je, la, le, les, leur, lui, ma, mais, me, même, mes, moi, mon, ne, nos, notre, nous, on, ou, par, pas, pour, qu, que, qui, sa, se, ses, son, sur, ta, te, tes, toi, ton, tu, un, une, vos, votre, vous, c, d, j, l, à, m, n, s, t, y, été, étée, étées, étés, étant, étante, étants, étantes, suis, es, est, sommes, êtes, sont, serai, seras, sera, serons, serez, seront, serais, serait, serions, seriez, seraient, étais, était, étions, étiez, étaient, fus, fut, fûmes, fûtes, furent, sois, soit, soyons, soyez, soient, fusse, fusses, fût, fussions, fussiez, fussent, ayant, ayante, ayantes, ayants, eu, eue, eues, eus, ai, as, avons, avez, ont, aurai, auras, aura, aurons, aurez, auront, aurais, aurait, aurions, auriez, auraient, avais, avait, avions, aviez, avaient, eut, eûmes, eûtes, eurent, aie, aies, ait, ayons, ayez, aient, eusse, eusses, eût, eussions, eussiez, eussent'</code></pre>
 </div>
 </div>
 <p>On voit que celle-ci n’est pas très riche et mériterait d’être plus complète. Celle de <code>SpaCy</code> correspond mieux à ce qu’on attend</p>
-<div id="9f04cfe1" class="cell" data-execution_count="36">
-<div class="sourceCode cell-code" id="9f04cfe1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="9f04cfe1-1"><a href="#9f04cfe1-1" aria-hidden="true" tabindex="-1"></a>stop_words_french <span class="op">=</span> nlp.Defaults.stop_words</span>
-<span id="9f04cfe1-2"><a href="#9f04cfe1-2" aria-hidden="true" tabindex="-1"></a><span class="co">", "</span>.join(stop_words_french)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="b3017633" class="cell" data-execution_count="36">
+<div class="sourceCode cell-code" id="b3017633"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="b3017633-1"><a href="#b3017633-1" aria-hidden="true" tabindex="-1"></a>stop_words_french <span class="op">=</span> nlp.Defaults.stop_words</span>
+<span id="b3017633-2"><a href="#b3017633-2" aria-hidden="true" tabindex="-1"></a><span class="co">", "</span>.join(stop_words_french)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="36">
-<pre><code>"outre, tend, ô, avons, puis, as, d', tes, cinquante, tels, te, toute, vont, anterieure, dedans, autre, parmi, ses, mon, ouverte, cinquantième, prealable, directe, aura, uns, celles, specifique, tiens, suivantes, aupres, combien, comme, n', quatrièmement, un, miennes, different, telle, parfois, restant, ouvert, près, comment, plutôt, sous, dont, tellement, maintenant, suis, suit, si, differente, eux-mêmes, différent, facon, spécifiques, attendu, cela, quelconque, qui, jusque, car, longtemps, afin, specifiques, bas, debout, parler, n’, durant, eux, pourrais, stop, mien, miens, peu, trois, l', â, dix-neuf, da, sera, dit, touchant, moi, quelques, donc, onze, pendant, soi-même, vas, hé, dehors, telles, votres, tente, moi-même, chaque, unes, cent, importe, avant, chacun, leur, certain, retour, revoilà, pouvait, t’, font, hou, celles-là, ceux-ci, neuvième, malgre, être, hem, entre, partant, siens, quatre-vingt, relative, suffisante, vu, na, selon, tous, ha, quelque, semblaient, toujours, huit, sept, malgré, bat, ton, on, puisque, seule, tu, hors, mille, deux, qu’, et, avais, qu', vingt, elle-meme, spécifique, quand, soit, pour, troisième, quelles, desormais, sans, souvent, très, restent, ou, dix-sept, autres, celui, avoir, première, pas, avait, c’, pourquoi, toi, apres, mienne, exactement, tant, étais, abord, celui-ci, ci, tenant, or, par, devant, possible, gens, quatorze, mes, nôtres, vôtres, ouias, trente, moindres, celui-là, reste, dits, treize, pense, surtout, antérieure, memes, dix, hormis, merci, quelqu'un, suivante, premier, nombreuses, ce, es, celles-ci, certaine, avaient, peuvent, précisement, soixante, m’, ayant, au, ai, differents, parce, deuxième, vos, certaines, ceux, quant-à-soi, o, m', diverse, meme, douzième, etaient, différents, suivants, anterieur, une, antérieur, suffit, environ, ne, seuls, auxquels, dixième, precisement, eu, préalable, seulement, certes, encore, parle, son, deuxièmement, ta, tien, sinon, huitième, etc, faisant, seraient, allons, est, antérieures, etre, juste, celle, etant, feront, quatre, derrière, suffisant, septième, notre, étaient, en, autrui, suivant, ceci, avec, des, va, également, suivre, aurait, aussi, aux, quinze, laquelle, compris, moi-meme, concernant, lesquelles, elle, tienne, étant, que, pourrait, lequel, elles, sa, ni, les, mêmes, depuis, plus, serait, quatrième, devra, sauf, dejà, celle-ci, houp, pu, nombreux, il, doit, auraient, eh, déja, j’, mais, autrement, ont, votre, vous, nôtre, voici, à, doivent, differentes, faisaient, me, dire, dès, seront, enfin, c', auront, notamment, ah, moins, rend, leurs, néanmoins, sienne, même, ça, dite, semblent, allaient, vous-mêmes, lorsque, voilà, procedant, quarante, vais, cependant, plutot, quels, soi, maint, différentes, toi-même, chacune, seules, toutes, elle-même, alors, i, revoila, s’, ouste, lesquels, nul, quiconque, cinquième, jusqu, celui-la, dessus, vé, se, sixième, j', d’, lors, egalement, lui-même, derriere, assez, duquel, revoici, delà, façon, sent, six, celles-la, l’, quant, ait, tenir, desquels, ho, etais, y, vers, tiennes, a, devers, soi-meme, relativement, était, laisser, premièrement, desquelles, peux, désormais, fais, nouveau, différente, après, dans, déjà, neanmoins, elles-mêmes, ainsi, personne, quoi, de, effet, cet, là, hi, nous, directement, hue, ouverts, parlent, quel, etait, onzième, proche, celle-là, certains, où, celle-la, quoique, s', semblable, basee, possibles, cette, dessous, diverses, tres, envers, la, le, douze, peut, troisièmement, anterieures, té, siennes, divers, rendre, ils, dix-huit, lui, ceux-là, nous-mêmes, toi-meme, permet, vôtre, quelle, lès, sait, sur, plusieurs, elles-memes, sont, voila, hep, lui-meme, cinquantaine, du, auxquelles, pres, hui, t', seize, excepté, nos, chez, aie, ma, je, auquel, deja, ès, cinq, semble, seul, fait, via, tout, sien, tel, ces"</code></pre>
+<pre><code>"mon, ouverte, donc, â, combien, quel, laisser, me, pour, effet, tant, je, premièrement, car, après, desormais, celui-ci, revoila, etais, même, sienne, l', du, quelle, proche, celui-la, chaque, les, serait, ci, sa, anterieur, seraient, auraient, aurait, miens, quatrième, telles, lorsque, etait, un, quatorze, on, dix-neuf, maint, elles-mêmes, seul, semblaient, toutes, outre, vais, parle, tes, différents, plutot, quels, afin, nouveau, qui, quoique, different, suffit, ou, celles, directement, ont, ceux-ci, ès, autres, ouverts, avant, gens, ça, parler, t', desquels, fait, va, ainsi, a, pres, bas, etre, soit, es, quelles, voici, avait, nos, differente, peuvent, importe, cela, avec, parmi, pense, nôtres, hep, vont, celui, soi-meme, suivants, plus, cet, parce, juste, quelque, encore, restent, deux, seule, environ, autrement, ayant, dessous, precisement, spécifique, vous, partant, devra, alors, n', également, ô, étais, nombreux, suivantes, duquel, si, vous-mêmes, sait, quinze, fais, dix-huit, pendant, précisement, ma, elle-même, parfois, quant-à-soi, malgré, elles-memes, debout, la, anterieure, nombreuses, faisaient, leur, suffisant, être, tels, votres, neuvième, votre, siens, jusqu, et, ils, voilà, dixième, il, neanmoins, eux, voila, d', celle, avaient, ah, antérieures, tu, mêmes, quiconque, differents, possible, lès, toi, derrière, quant, trois, différentes, façon, tous, diverse, compris, comme, longtemps, specifiques, tiennes, procedant, sont, devers, quelques, allaient, permet, differentes, celle-la, qu', tend, au, se, quand, celle-ci, celles-la, pouvait, ai, tiens, uns, chacune, nôtre, pu, tellement, sans, etc, sauf, prealable, ait, or, laquelle, ses, toi-meme, quelconque, ceux, ouvert, désormais, rend, c’, facon, malgre, apres, aupres, entre, enfin, toujours, antérieure, moindres, d’, chacun, moi, lui, nous-mêmes, elle-meme, n’, des, auxquelles, lors, te, soi, était, retour, de, sept, dejà, eux-mêmes, huit, celle-là, tienne, douze, mienne, cinquantaine, ouste, dedans, suivant, étant, puis, seize, sien, sous, tenant, elles, devant, hem, certains, allons, eh, vu, quoi, excepté, reste, semble, auxquels, semblent, deja, hé, aux, restant, exactement, depuis, vers, dès, feront, vôtre, mais, suis, déja, deuxièmement, vas, onzième, préalable, puisque, sixième, autre, cinquantième, notamment, treize, i, moins, néanmoins, où, ces, quatrièmement, suit, maintenant, possibles, dessus, septième, seront, etaient, pourrait, très, vôtres, dit, c', que, cinquante, ouias, leurs, faisant, avais, da, huitième, s’, selon, soi-même, surtout, première, assez, seulement, dans, envers, ha, tente, lesquelles, cinquième, telle, troisième, desquelles, ho, font, dix-sept, avons, autrui, lesquels, j’, quatre-vingt, tien, certaine, semblable, lui-même, sur, certes, m’, stop, auquel, suffisante, qu’, dont, sinon, hui, plusieurs, merci, suivante, certaines, plutôt, tres, cinq, onze, moi-meme, unes, différente, memes, revoilà, houp, près, quarante, basee, le, relative, t’, troisièmement, o, eu, spécifiques, sera, ton, l’, m', anterieures, rendre, antérieur, trente, tel, différent, doivent, mien, s', par, moi-même, elle, ce, soixante, siennes, concernant, hors, celles-là, derriere, son, y, souvent, diverses, cependant, dix, revoici, etant, as, touchant, en, là, dehors, meme, certain, six, suivre, durant, hi, ne, une, pourquoi, té, notre, via, aie, divers, étaient, toute, aussi, premier, douzième, pas, lui-meme, hormis, celles-ci, miennes, pourrais, deuxième, bat, jusque, peut, ceci, cette, doit, est, abord, vos, tout, parlent, dits, egalement, vingt, toi-même, aura, celui-là, ta, j', nul, seules, attendu, delà, sent, avoir, na, quelqu'un, ceux-là, dite, tenir, directe, personne, hou, nous, dire, vé, quatre, relativement, specifique, mille, à, cent, auront, déjà, ni, chez, seuls, peux, hue, lequel, peu, comment, mes"</code></pre>
 </div>
 </div>
 <div class="callout callout-style-default callout-exercise callout-titled">
@@ -1830,13 +1830,13 @@ télécharger celui-ci grâce aux commandes suivantes :</p>
 </div>
 </div>
 <p>Prenons cette chaine de caractère,</p>
-<div id="019c4aae" class="cell" data-execution_count="43">
+<div id="4de20ea8" class="cell" data-execution_count="43">
 <div class="cell-output cell-output-display" data-execution_count="43">
 <pre><code>"naples. comme d'habitude, un pilote côtier partit aussitôt du port, rasa le château d'if, et alla aborder le navire entre le cap de morgion et l'île de rion. aussitôt, co"</code></pre>
 </div>
 </div>
 <p>La version racinisée est la suivante:</p>
-<div id="5fa7db68" class="cell" data-execution_count="44">
+<div id="092ed4ca" class="cell" data-execution_count="44">
 <div class="cell-output cell-output-display" data-execution_count="44">
 <pre><code>"napl,.,comm,d'habitud,,,un,pilot,côti,part,aussitôt,du,port,,,ras,le,château,d'if,,,et,alla,abord,le,navir,entre,le,cap,de,morgion,et,l'îl,de,rion,.,aussitôt,,,co"</code></pre>
 </div>
@@ -1846,13 +1846,13 @@ mais peuvent rester intelligible pour la machine. Ce choix n’est néanmoins pa
 <p>Les lemmatiseurs permettront des harmonisations plus subtiles. Ils s’appuient sur des bases de connaissance, par exemple <em>WordNet</em>, une base
 lexicographique ouverte. Par exemple, les mots <em>“women”</em>, <em>“daughters”</em>
 et <em>“leaves”</em> seront ainsi lemmatisés de la manière suivante :</p>
-<div id="f64967c7" class="cell" data-execution_count="45">
-<div class="sourceCode cell-code" id="f64967c7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="f64967c7-1"><a href="#f64967c7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> nltk.stem <span class="im">import</span> WordNetLemmatizer</span>
-<span id="f64967c7-2"><a href="#f64967c7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="f64967c7-3"><a href="#f64967c7-3" aria-hidden="true" tabindex="-1"></a>lemm <span class="op">=</span> WordNetLemmatizer()</span>
-<span id="f64967c7-4"><a href="#f64967c7-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="f64967c7-5"><a href="#f64967c7-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> word <span class="kw">in</span> [<span class="st">"women"</span>, <span class="st">"daughters"</span>, <span class="st">"leaves"</span>]:</span>
-<span id="f64967c7-6"><a href="#f64967c7-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"The lemmatized form of </span><span class="sc">{</span>word<span class="sc">}</span><span class="ss"> is: </span><span class="sc">{</span>lemm<span class="sc">.</span>lemmatize(word)<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="7ad01d9f" class="cell" data-execution_count="45">
+<div class="sourceCode cell-code" id="7ad01d9f"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="7ad01d9f-1"><a href="#7ad01d9f-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> nltk.stem <span class="im">import</span> WordNetLemmatizer</span>
+<span id="7ad01d9f-2"><a href="#7ad01d9f-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="7ad01d9f-3"><a href="#7ad01d9f-3" aria-hidden="true" tabindex="-1"></a>lemm <span class="op">=</span> WordNetLemmatizer()</span>
+<span id="7ad01d9f-4"><a href="#7ad01d9f-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="7ad01d9f-5"><a href="#7ad01d9f-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> word <span class="kw">in</span> [<span class="st">"women"</span>, <span class="st">"daughters"</span>, <span class="st">"leaves"</span>]:</span>
+<span id="7ad01d9f-6"><a href="#7ad01d9f-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"The lemmatized form of </span><span class="sc">{</span>word<span class="sc">}</span><span class="ss"> is: </span><span class="sc">{</span>lemm<span class="sc">.</span>lemmatize(word)<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>The lemmatized form of women is: woman
 The lemmatized form of daughters is: daughter
@@ -1876,7 +1876,7 @@ Exercice 5 : Lemmatisation avec nltk
 </div>
 </div>
 <p>La version lemmatisée de ce petit morceau de l’oeuvre de Dumas est la suivante:</p>
-<div id="123f8946" class="cell" data-execution_count="46">
+<div id="b8dcac42" class="cell" data-execution_count="46">
 <div class="cell-output cell-output-display" data-execution_count="46">
 <pre><code>"naples, ., comme, d'habitude, ,, un, pilote, côtier, partit, aussitôt, du, port, ,, rasa, le, château, d'if, ,, et, alla, aborder, le, navire, entre, le, cap, de, morgion, et, l'île, de, rion, ., aussitôt, ,, co"</code></pre>
 </div>
@@ -1892,9 +1892,9 @@ Exercice 5 : Lemmatisation avec nltk
 <summary>
 <p><i class="fa-brands fa-python" aria-label="python"></i> environment files have been tested on.</p>
 </summary>
-<p>Latest built version: 2024-12-26</p>
+<p>Latest built version: 2024-12-27</p>
 <p>Python version used:</p>
-<div id="303e8a37" class="cell" data-execution_count="48">
+<div id="bd7da350" class="cell" data-execution_count="48">
 <div class="cell-output cell-output-display" data-execution_count="48">
 <pre><code>'3.12.6 | packaged by conda-forge | (main, Sep 30 2024, 18:08:52) [GCC 13.3.0]'</code></pre>
 </div>
@@ -4664,7 +4664,7 @@ Inspiration pour la mise en forme du site <a href="https://www.andreashandel.com
 </div>
   </div>
 </footer>
-<script>var lightboxQuarto = GLightbox({"descPosition":"bottom","openEffect":"zoom","selector":".lightbox","loop":false,"closeEffect":"zoom"});
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","openEffect":"zoom","selector":".lightbox","descPosition":"bottom","loop":false});
 (function() {
   let previousOnload = window.onload;
   window.onload = () => {
