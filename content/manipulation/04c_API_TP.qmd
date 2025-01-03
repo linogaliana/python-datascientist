@@ -23,7 +23,6 @@ description-en: |
   and let the data producer handle the updates.
 image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/serveurpython.jpg
 echo: false
-eval: false
 ---
 
 {{< badges
@@ -44,7 +43,11 @@ Le webscraping est un pis-aller pour accéder à de la donnée. Heureusement, il
 
 Dans ce chapitre, nous nous intéressons principalement aux API de données. Ces dernières sont simplement une façon de mettre à disposition des données : plutôt que de laisser l’utilisateur consulter directement des bases de données (souvent volumineuses et complexes), l’API lui propose de formuler une requête qui est traitée par le serveur hébergeant la base de données, puis de recevoir des données en réponse à sa requête.
 
-On prend souvent pour illustrer les API l'exemple du restaurant. La documentation est votre menu : elle liste les plats (les bases de données) que vous pouvez commander et les éventuels ingrédients de celle-ci que vous pouvez choisir (les paramètres de votre requête) : poulet, boeuf ou option végé ? Lorsque vous faites ceci, vous ne connaissez pas la recette utilisée en arrière cuisine pour faire votre plat: vous recevez seulement celui-ci. De manière logique, plus le plat que vous avez demandé est raffiné (calculs complexes côté serveur), plus votre plat mettra du temps à vous arriver. 
+L'utilisation accrue d'API dans le cadre de stratégies open-data est l'un
+des piliers des 15 feuilles de route ministérielles françaises
+en matière d’ouverture, de circulation et de valorisation des données publiques.
+
+On prend souvent comme exemple pour illustrer les API l'exemple du restaurant. La documentation est votre menu : elle liste les plats (les bases de données) que vous pouvez commander et les éventuels ingrédients de celle-ci que vous pouvez choisir (les paramètres de votre requête) : poulet, boeuf ou option végé ? Lorsque vous faites ceci, vous ne connaissez pas la recette utilisée en arrière cuisine pour faire votre plat: vous recevez seulement celui-ci. De manière logique, plus le plat que vous avez demandé est raffiné (calculs complexes côté serveur), plus votre plat mettra du temps à vous arriver. 
 
 ::: {.tip}
 ## Illustration avec l'API BAN
@@ -58,3 +61,310 @@ A partir de ces instructions, le plat est lancé. En l'occurrence, il s'agit de 
 Le client n'a donc qu'à se préoccuper de faire une bonne requête et d'apprécier le plat qui lui est fourni. L'intelligence dans la mise en oeuvre est laissée aux spécialistes qui ont conçu l'API. Peut-être que d'autres spécialistes, par exemple Google Maps, mettent en oeuvre une recette différente pour ce même plat (des coordonnées géographiques) mais ils vous proposeront probablement un menu très similaire. Ceci vous simplifie beaucoup la vie: il vous suffit de changer quelques lignes de code d'appel à une API plutôt que de modifier un ensemble long et complexe de méthodes d'identification d'adresses. 
 
 :::
+
+## Approche pédagogique
+
+Après une première présentation du principe général des API, ce chapitre illustre l'usage de celles-ci via `Python` par le biais d'un _use case_ assez standard: on dispose d'un jeu de données qu'on désire d'abord géolocaliser. Pour cela, on va demander à une API de nous renvoyer des coordonnées géographiques à partir d'adresses. Ensuite on ira chercher des informations un peu plus complexes par le biais d'autres API. 
+
+
+# Première utilisation d'API 
+
+Une API a donc vocation à servir d'intermédiaire entre un client et un serveur. Ce client peut être de deux types: une interface web ou un logiciel de programmation. L'API ne fait pas d'_a priori_ sur l'outil qui sert lui passe une commande, elle lui demande seulement de respecter un standard (en général une requête http), une structure de requête (les arguments) et d'attendre le résultat.
+
+## Comprendre le principe avec un exemple interactif
+
+Le premier mode (accès par un navigateur) est principalement utilisé lorsqu'une interface web permet à un utilisateur de faire des choix afin de lui renvoyer des résultats correspondant à ceux-ci. Prenons à nouveau l'exemple de l'API de géolocalisation que nous utiliserons dans ce chapitre. Imaginons une interface web permettant à l'utilisateur deux choix: un code postal et une adresse. Cela sera injecté dans la requête et le serveur répondra avec la géolocalisation adaptée.
+
+:::: {.content-visible when-format="ipynb"}
+::: {.important}
+Une explication interactive est disponible sur [le site du cours](https://pythonds.linogaliana.fr/content/manipulation/04c_API_TP.html).
+:::
+
+::::
+
+:::: {.content-visible when-format="html"}
+
+Voici donc nos deux _widgets_ pour permettre au client (l'utilisateur de la page web) de choisir son adresse. 
+
+
+```{ojs}
+viewof codePostal = Inputs.text({value: "92120", placeholder: "92120", label: md`**Code Postal**`})
+```
+
+```{ojs}
+viewof adresse = Inputs.text({value: defaultAdresse, placeholder: defaultAdresse, label: md`**Adresse**`})
+```
+
+```{ojs}
+html`<div>${map}</div>`
+```
+
+
+Une petite mise en forme des valeurs renseignées par ce _widget_ permet d'obtenir la requête voulue: 
+
+```{ojs}
+md`
+${
+await mj`$$\underbrace{\text{${apiroot}}}_{\text{API root}}/\underbrace{\text{search}}_{\text{API endpoint}}/?\underbrace{\text{${param1}}}_{\text{main parameter}}\&\underbrace{\text{${param2}}}_{\text{additional parameter}}$$`
+}
+`
+```
+
+
+
+```{ojs}
+html`
+ Pour preuve que cette requête est bien fonctionnelle, on peut l'ouvrir dans un navigateur: <a href="${url}" target="_blank" title="Test de url dans un navigateur">
+ <i class="fa-solid fa-magnifying-glass"></i></i>
+`
+```
+
+Ce qui nous donne un output au format JSON, le format de sortie d'API le plus commun. 
+
+```{ojs}
+localisation
+```
+
+Si on veut un beau rendu, comme la carte ci-dessus, il faudra que le navigateur retravaille cet output, ce qui se fait normalement avec `Javascript`, le langage de programmation embarqué par les navigateurs. 
+
+
+## Comment faire avec `Python` ?
+
+Le principe est le même sauf que nous perdons l'aspect interactif. Il s'agira donc, avec `Python`, de construire l'URL voulu et d'aller chercher via une requête HTTP le résultat. 
+
+Nous avons déjà vu dans le chapitre de webscraping la manière dont `Python` communique avec internet: via le _package_ `requests`. Ce _package_ suit le protocole HTTP où on retrouve principalement deux types de requêtes: `GET` et `POST`:
+
+* La requête `GET` est utilisée pour récupérer des données depuis un serveur web. C'est la méthode la plus simple et courante pour accéder aux ressources d'une page web. Nous allons commencer par décrire celle-ci. 
+* La requête `POST` est utilisée pour envoyer des données au serveur, souvent dans le but de créer ou de mettre à jour une ressource. Sur les pages web, elle sert souvent à la soumission de formulaires qui nécessitent de mettre à jour des informations sur une base (mot de passe, informations clients, etc.). Nous verrons son utilité plus tard, lorsque nous commencerons à rentrer dans les requêtes authentifiées où il faudra soumettre des informations supplémentaires à notre requête. 
+
+Faisons un premier test avec `Python` en faisant comme si nous connaissions bien cette API. 
+
+```{python}
+#| echo: true
+import requests
+url_ban_example = "https://api-adresse.data.gouv.fr/search/?q=88+avenue+verdier&postcode=92120"
+requests.get(url_ban_example)
+```
+
+Qu'est-ce qu'on obtient ? Un code HTTP. Le code 200 correspond aux requêtes réussies, c'est-à-dire pour lesquelles le serveur est en mesure de répondre. Si ce n'est pas le cas, pour une raison _x_ ou _y_, vous aurez un code différent. 
+
+::: {.tip}
+## Les codes HTTP
+
+Les codes de statut HTTP sont des réponses standard envoyées par les serveurs web pour indiquer le résultat d'une requête effectuée par un client (comme un navigateur ou un script Python). Ils sont classés en différentes catégories selon le premier chiffre du code :
+
+* 1xx : Informations
+* 2xx : Succès
+* 3xx : Redirections
+* 4xx : Erreurs côté client
+* 5xx : Erreurs côté serveur
+
+Ceux à retenir sont : 200 (succès), 400 (requête mal structurée), 401 (authentification non réussie), 403 (accès interdit), 404 (ressource demandée n'existe pas), 503 (le serveur n'est pas en capacité de répondre)
+
+:::
+
+Pour récupérer le contenu renvoyé par `requests`, il existe plusieurs méthodes. Quand on un JSON bien formatté, le plus simple est d'utiliser la méthode `json` qui transforme cela en dictionnaire :
+
+```{python}
+#| echo: true
+req = requests.get(url_ban_example)
+localisation_insee = req.json()
+localisation_insee
+```
+
+En l'occurrence, on voit que les données sont dans un JSON imbriqué. Il faut donc développer un peu de code pour récupérer les informations voulues dans celui-ci:
+
+```{python}
+#| echo: true
+localisation_insee.get('features')[0].get('properties')
+```
+
+C'est là l'inconvénient principal de l'usage des API: le travail _ex post_ sur les données renvoyées. Le code nécessaire est propre à chaque API puisque l'architecture du JSON dépend de chaque API. 
+
+
+## Comment connaître les _inputs_ et _outputs_ des API ? 
+
+Ici on a pris l'API BAN comme un outil magique dont on connaissait les principaux _inputs_ (l'_endpoint_, les paramètres et leur formattage...). 
+Mais comment faire, en pratique, pour en arriver là ? Tout simplement en lisant la documentation lorsqu'elle existe et en testant celle-ci via des exemples.
+
+Les bonnes API proposent un outil interactif qui s'appelle le [`swagger`](https://swagger.io/docs/). C'est un site web interactif où sont décrites les principales fonctionnalités de l'API et où l'utilisateur peut tester des exemples interactivement. Ces documentations sont souvent créées automatiquement lors de la construction d'une API et mises à disposition par le biais d'un point d'entrée `/docs`.
+
+Concernant l'API BAN, la documentation se trouve sur <https://adresse.data.gouv.fr/api-doc/adresse>. Elle n'est pas interactive, malheureusement. Mais elle présente de nombreux exemples qui peuvent être testés directement depuis le navigateur. Il suffit d'utiliser les URL proposés comme exemple. Ceux-ci sont présentées par le biais de `curl` (un équivalent de `request` en ligne de commande Linux): 
+
+
+```{.python}
+curl "https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port&limit=15"
+```
+
+Il suffit de copier l'URL en question (`https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port&limit=15`), d'ouvrir un nouvel onglet et vérifier que cela produit bien un résultat. Puis de changer un paramètre et vérifier à nouveau, jusqu'à trouver la structure qui convient. Et après, on peut passer à `Python` comme le propose l'exercice suivant.
+
+## Application
+
+Pour commencer cet exercice, vous aurez besoin de cette variable:
+
+```{python}
+#| echo: true
+adresse = "88 Avenue Verdier"
+```
+
+
+::: {.exercise}
+## Exercice 1: Structurer un appel à une API depuis `Python`
+
+1. Tester sans aucun autre paramètre, le retour de notre API. Transformer en `DataFrame` le résultat. 
+2. Se restreindre à Montrouge avec le paramètre _ad hoc_ et la recherche du code insee ou code postal adéquat sur google. 
+3. (Optionnel): Représenter l'adresse trouvée sur une carte
+:::
+
+```{python}
+import requests
+import pandas as pd
+
+ban_root = "https://api-adresse.data.gouv.fr"
+ban_search_endpoint = "search"
+api_ban_q1 = f"{ban_root}/{ban_search_endpoint}?q={adresse.replace(" ", "+")}"
+output_api_ban = requests.get(api_ban_q1).json().get('features')
+
+df_avenue_verdier = pd.DataFrame(
+    [out['properties'] for out in output_api_ban]
+)
+```
+
+Les deux premières lignes du _dataframe_ obtenu à la question 1 devraient être
+
+```{python}
+df_avenue_verdier.head(2)
+```
+
+A la question 2, on ressort cette fois qu'une seule observation, qu'on pourrait retravailler avec `GeoPandas` pour vérifier qu'on a bien placé ce point sur une carte
+
+```{python}
+api_ban_q2 = f"{ban_root}/{ban_search_endpoint}?q={adresse.replace(" ", "+")}&postcode=92120"
+output_q2 = requests.get(api_ban_q2).json()
+```
+
+```{python}
+import pandas as pd
+import geopandas as gpd
+
+output_q2 = pd.DataFrame(
+    [output_q2.get("features")[0]['properties']]
+)
+output_q2 = gpd.GeoDataFrame(
+    output_q2,
+    geometry=gpd.points_from_xy(output_q2.x, output_q2.y), crs="EPSG:2154"
+).to_crs(4326)
+output_q2
+```
+
+Enfin, à la question 3, on obtient cette carte (plus ou moins la même que précédemment):
+
+```{python}
+import folium
+
+# Extraire la longitude et la latitude
+longitude = output_q2.geometry.x.iloc[0]
+latitude = output_q2.geometry.y.iloc[0]
+
+# Créer une carte Folium centrée sur le point
+m = folium.Map(location=[latitude, longitude], zoom_start=16)
+
+# Définir le contenu de la popup
+popup_content = f"""
+<b>{output_q2['name'].iloc[0]}</b> has been found!
+"""
+
+# Ajouter le marqueur
+folium.Marker(
+    location=[latitude, longitude],
+    popup=folium.Popup(popup_content, max_width=300),
+    icon=folium.Icon(color='blue', icon='info-sign')
+).add_to(m)
+
+# Afficher la carte dans le notebook (si utilisé dans un Jupyter Notebook)
+m
+```
+
+::: {.note}
+## Quelques API à connaître
+
+Les principaux fournisseurs de données officielles proposent des API. C'est le cas notamment de l'[Insee](https://api.insee.fr/catalogue/), d'[Eurostat](https://wikis.ec.europa.eu/display/EUROSTATHELP/API+-+Getting+started), de la [BCE](https://data.ecb.europa.eu/help/data-examples), de la [FED](https://fred.stlouisfed.org/docs/api/fred/), de la [Banque Mondiale](https://datahelpdesk.worldbank.org/knowledgebase/topics/125589)...
+
+Néanmoins, la production de données par les institutions étatiques est loin d'être restreinte aux producteurs de statistiques publiques. Le portail [API gouv](https://api.gouv.fr/) est le point de référencement principal pour les API produites par l'administration centrale française ou des administrations territoriales. De nombreuses villes publient également des données sur leurs infrastructures par le biais d'API, par exemple la [ville de Paris](https://opendata.paris.fr/api/explore/v2.1/console). 
+
+Les producteurs de données privées proposent également des API. Par exemple, la [SNCF](https://data.sncf.com/api) ou la [RATP](https://data.ratp.fr/pages/temps-reel/) proposent des API pour certains usages. Les grands acteurs du numérique, par exemple [`Spotify` {{< fa brands spotify >}}](<https://developer.spotify.com/web-api/>) proposent généralement des API pour intégrer certains de leurs services à des applications externes. 
+
+Cependant, il faut être conscient des limites de certaines API. En premier lieu, les données partagées ne sont pas forcément très riches pour ne pas compromettre la confidentialité des informations partagées par les utilisateurs du service ou la part de marché du producteur qui n'a pas intérêt à vous partager ses données à forte valeur.   Il faut également être conscient du fait qu'une API peut disparaître ou changer de structure du jour au lendemain. Les codes de restructuration de données étant assez adhérants à une structure d'API, on peut se retrouver à devoir changer un volume conséquent de code si une API critique change substantiellement. 
+
+:::
+
+# Généralisation
+
+## 
+
+## Découverte d'une requête `POST`
+
+# Gestion des secrets et des exceptions
+
+<!--------
+## Ouverture avec les API de code pour consommer des modèles (exemple avec hf)?
+-------->
+
+<!----------
+API interactive example
+---------->
+
+```{ojs}
+apiroot = "https://api-adresse.data.gouv.fr"
+param1 = {
+  const AdresseFormat = adresse.toLowerCase().replaceAll(" ", "+")
+  const url = `q=${AdresseFormat}`
+  return url
+}
+param2 = `postcode=${codePostal}`
+```
+
+
+```{ojs}
+import {mj} from "@danielefadda/mathjax"
+```
+
+
+```{ojs}
+url = {
+  const AdresseFormat = adresse.toLowerCase().replaceAll(" ", "+")
+  const url = `https://api-adresse.data.gouv.fr/search/?q=${AdresseFormat}&postcode=${codePostal}`
+  return url
+}
+```
+
+```{ojs}
+localisation = d3.json(url)
+```
+
+```{ojs}
+defaultAdresse = "88 Avenue Verdier"
+longitude = localisation.features[0].geometry.coordinates[0]
+latitude = localisation.features[0].geometry.coordinates[1]
+```
+
+```{ojs}
+map = {
+  const container = html`<div style="height:300px;">`;
+  yield container;
+  const map = L.map(container).setView([latitude, longitude], 13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; <a href=https://www.openstreetmap.org/copyright>OpenStreetMap</a> contributors"
+  }).addTo(map);
+  var marker = L.marker([latitude, longitude]).addTo(map);
+  marker.bindPopup("<b>Trouvé !</b>").openPopup();
+  return map
+}
+```
+
+
+```{ojs}
+import {L} from "@observablehq/hello-leaflet"
+```
+
+
