@@ -72,7 +72,7 @@ Le client n'a donc qu'à se préoccuper de faire une bonne requête et d'appréc
 
 :::
 
-## Approche pédagogique
+## Approche pédagogique {-}
 
 Après une première présentation du principe général des API, ce chapitre illustre l'usage de celles-ci via `Python` par le biais d'un _use case_ assez standard: on dispose d'un jeu de données qu'on désire d'abord géolocaliser. Pour cela, on va demander à une API de nous renvoyer des coordonnées géographiques à partir d'adresses. Ensuite on ira chercher des informations un peu plus complexes par le biais d'autres API. 
 
@@ -308,35 +308,18 @@ Cependant, il faut être conscient des limites de certaines API. En premier lieu
 
 :::
 
-# Généralisation
+# Plus d'exemples de requêtes `GET`
 
-## 
+## Source principale
 
-```{python}
-from loguru import logger
-url = "https://minio.lab.sspcloud.fr/lgaliana/diffusion/BPE23.parquet" 
-file_name = "BPE2023.parquet"
+Nous allons utiliser comme base principale pour ce tutoriel la [base permanente des équipements](https://www.insee.fr/fr/metadonnees/source/serie/s1161), un répertoire d'équipements publics accueillant du public.
 
-logger.info("Downloading")
+On va commencer par récupérer les données qui nous intéressent. On ne récupère pas toutes les variables du fichier mais seulement celles qu'ils nous intéressent: quelques variables sur l'équipement, son adresse et sa commune d'appartement. 
 
-# Check if the file already exists
-if not os.path.exists(file_name):
-    logger.info(f"File '{file_name}' does not exist. Initiating download from {url}.")
-    try:
-        response = requests.get(url, timeout=60)  # Added timeout for network issues
-        response.raise_for_status()  # Raises HTTPError for bad responses
-        with open(file_name, "wb") as f:
-            f.write(response.content)
-        logger.success("Download completed successfully.")
-    except Exception as e:
-        logger.error(f"Errow while downloading: {e}")
-        raise  # Re-raise the exception after logging
-else:
-    logger.info(f"The file '{file_name}' already exists. Skipping download.")
-
-```
+Nous allons nous restreindre aux établissements d'enseignement primaire, secondaire et supérieur du département de la Haute-Garonne (le département 31). Ces établissements sont identifiés par un code particulier, entre `C1` et `C5`. 
 
 ```{python}
+#| echo: true
 query = """
 FROM read_parquet('https://minio.lab.sspcloud.fr/lgaliana/diffusion/BPE23.parquet')
 SELECT NOMRS, NUMVOIE, INDREP, TYPVOIE, LIBVOIE,
@@ -361,10 +344,11 @@ L'exercice suivant viendra illustrer l'intérêt d'utiliser une API pour avoir d
 ::: {.exercise}
 ## Exercice 2
 
-1. Visiter le _swagger_ de l'API de l'Annuaire de l'Education nationale sur [api.gouv.fr/documentation](https://api.gouv.fr/documentation/api-annuaire-education) et tester une première récupération de données en utilisant le _endpoint_ `records` sans aucun paramètre
-2. Puisqu'on n'a conservé que les données de la Haute Garonne dans notre base principale, on désire ne récupérer que les établissements de ce département par le biais de notre API. Faire une requête avec le paramètre _ad hoc_, sans en ajouter d'autres
+1. Visiter le _swagger_ de l'API de l'Annuaire de l'Education nationale sur [api.gouv.fr/documentation](https://api.gouv.fr/documentation/api-annuaire-education) et tester une première récupération de données en utilisant le _endpoint_ `records` sans aucun paramètre.
+2. Puisqu'on n'a conservé que les données de la Haute Garonne dans notre base principale, on désire ne récupérer que les établissements de ce département par le biais de notre API. Faire une requête avec le paramètre _ad hoc_, sans en ajouter d'autres.
 3. Augmenter la limite du nombre de paramètres, voyez-vous le problème ? 
-4. On va tenter de récupérer ces données par le biais de l'API tabular de `data.gouv`. Sa documentation est [ici](https://tabular-api.data.gouv.fr/api/doc) et l'identifiant de la ressource est `b22f04bf-64a8-495d-b8bb-d84dbc4c7983` ([source](https://www.data.gouv.fr/fr/datasets/annuaire-de-leducation/)). Avec l'aide de la documentation, essayer de récupérer des données par le biais de cette API en utilisant le paramètre `Code_departement__exact=031` pour ne garder que le département d'intérêt. Voyez-vous le problème et comment nous pourrions automatiser la récupération de données ? 
+4. On va tenter de récupérer ces données par le biais de l'API tabular de `data.gouv`. Sa documentation est [ici](https://tabular-api.data.gouv.fr/api/doc) et l'identifiant de la ressource est `b22f04bf-64a8-495d-b8bb-d84dbc4c7983` ([source](https://www.data.gouv.fr/fr/datasets/annuaire-de-leducation/)). Avec l'aide de la documentation, essayer de récupérer des données par le biais de cette API en utilisant le paramètre `Code_departement__exact=031` pour ne garder que le département d'intérêt. 
+5. Voyez-vous le problème et comment nous pourrions automatiser la récupération de données ? 
 :::
 
 La première question nous permet de récupérer un premier jeu de données
@@ -410,17 +394,23 @@ requests.get(url_31_limite200).content
 
 Essayons avec des données plus exhaustives: le fichier brut sur `data.gouv`. Comme on peut le voir dans les métadonnées, on sait qu'on a plus de 1000 écoles dont on peut récupérer des données mais qu'on en a ici extrait seulement 20. Le champ `next` nous donne directement l'URL à utiliser pour récupérer les 20 pages suivantes: c'est grâce à lui qu'on a une chance de récupérer toutes nos données d'intérêt. 
 
-
 ```{python}
 url_api_datagouv = "https://tabular-api.data.gouv.fr/api/resources/b22f04bf-64a8-495d-b8bb-d84dbc4c7983/data/?Code_departement__exact=031"
 
-requests.get(url_api_datagouv).json()
+call_api_datagouv = requests.get(url_api_datagouv).json()
 ```
 
-Comme le code d'automatisation est assez fastidieux à écrire, le voici : 
+La partie intéressante pour automatiser la récupération de nos données est la clé `links` du JSON:
+
+```{python}
+call_api_datagouv.get('links')
+```
+
+En bouclant sur celui-ci pour parcourir la liste des URL accessibles, on peut récupérer des données. Comme le code d'automatisation est assez fastidieux à écrire, le voici : 
 
 ```{python}
 #| echo: true
+#| output: false
 import requests
 import pandas as pd
 
@@ -455,18 +445,23 @@ while current_url:
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
         break
-    except ValueError:
-        print("Failed to parse JSON response.")
-        break
 
+```
+
+Le _DataFrame_ obtenu est le suivant:
+
+```{python}
+#| echo: true
 schools_dep31 = pd.DataFrame(all_data)
 schools_dep31.head()
 ```
+
 
 On peut fusionner ces nouvelles données avec nos données précédentes pour enrichir celles-ci. Pour faire une production fiable, il faudrait faire attention aux écoles qui ne s'apparient pas mais ce n'est pas grave pour cette série d'exercices. 
 
 
 ```{python}
+#| echo: true
 bpe_enriched = bpe.merge(
   schools_dep31,
   left_on = "SIRET",
@@ -474,6 +469,7 @@ bpe_enriched = bpe.merge(
 )
 ```
 
+Cela nous donne des données enrichies de nouvelles caractéristiques sur les établissements. Il y a des coordonnées géographiques dans celles-ci mais nous allons faire comme s'il n'y en avait pas pour ré-utiliser notre API de géolocalisation.
 
 
 # Découverte des requêtes `POST`
@@ -481,9 +477,10 @@ bpe_enriched = bpe.merge(
 ## Logique
 
 Nous avons jusqu'à présent évoqué les requêtes `GET`. Nous allons maintenant présenter les requêtes `POST` qui permettent d'interagir de manière plus complexe avec des serveurs de l'API. 
+
 Pour découvrir celles-ci, nous allons reprendre l'API de géolocalisation précédente mais utiliser un autre point d'entrée qui nécessite une requête `POST`.
 
-Ces dernières sont généralement utilisées quand il est nécessaire d'envoyer des données particulières pour déclencher une action. Par exemple, dans le monde du web, si vous avez une authentification à mettre en oeuvre, une requête `POST`  permettra d'envoyer un _token_ au serveur qui répondra en acceptant votre authentification.
+Ces dernières sont généralement utilisées quand il est nécessaire d'envoyer des données particulières pour déclencher une action. Par exemple, dans le monde du web, si vous avez une authentification à mettre en oeuvre, une requête `POST` permettra d'envoyer un _token_ au serveur qui répondra en acceptant votre authentification.
 
 Dans notre cas, nous allons envoyer des données au serveur, ce dernier va les recevoir, les utiliser pour la géolocalisation puis nous envoyer une réponse. Pour continuer sur la métaphore culinaire, c'est comme si vous donniez vous-mêmes à la cuisine un _tupperware_ pour récupérer votre plat à emporter.
 
@@ -557,6 +554,8 @@ Les géolocalisations obtenues prennent cette forme
 bpe_loc.head(2)
 ```
 
+En enrichissant les données précédentes, cela donne:
+
 ```{python}
 bpe_loc = bpe_loc.loc[:, ["index", "result_score", "latitude", "longitude"]]
 bpe_enriched_geocoded = (
@@ -578,7 +577,7 @@ pd.concat(
     bpe_enriched_geocoded.filter(like = "longitude"),
     bpe_enriched_geocoded.filter(like = "latitude")
   ], axis = 1
-)
+).sample(5)
 ```
 
 Sans rentrer dans le détail, les positions semblent très similaires à quelques imprécisions près. 
@@ -600,7 +599,7 @@ bpe_enriched_geocoded = gpd.GeoDataFrame(
 Pour profiter de nos données enrichies, on peut faire une carte. Pour ajouter un peu de contexte à celle-ci, on peut mettre un fond de carte des communes en arrière plan. Celui-ci peut être récupéré avec `cartiflette`:
 
 ```{python}
-#| output: true
+#| echo: true
 from cartiflette import carti_download
 shp_communes = carti_download(
   crs = 4326,
@@ -613,6 +612,8 @@ shp_communes = carti_download(
 )
 shp_communes.crs = 4326
 ```
+
+Représentées sur une carte, cela donne la carte suivante:
 
 ```{python}
 import folium
@@ -693,9 +694,164 @@ m
 
 # Gestion des secrets et des exceptions
 
-Nous avons déjà utilisé plusieurs API. Néanmoins ces dernières étaient toutes sans authentification et présentent peu de restrictions, hormis le nombre d'échos. Ce n'est pas le cas de toutes les API. Il est fréquent que les API qui permettent d'aspirer plus de données ou d'accéder à des données confodientielles nécessitent une authentification pour tracer les utilisateurs de données. 
+Nous avons déjà utilisé plusieurs API. Néanmoins ces dernières étaient toutes sans authentification et présentent peu de restrictions, hormis le nombre d'échos. Ce n'est pas le cas de toutes les API. Il est fréquent que les API qui permettent d'aspirer plus de données ou d'accéder à des données confidentielles nécessitent une authentification pour tracer les utilisateurs de données. 
 
-Cela se fait généralement par le biais d'un _token_. Ce dernier est une sorte de mot de passe. 
+Cela se fait généralement par le biais d'un _token_. Ce dernier est une sorte de mot de passe, souvent utilisé dans les systèmes modernes d'authentification pour certifier de l'identité d'un utilisateur.trice (cf. [chapitre `Git`](/content/git/introgit.qmd)). 
+
+Pour illustrer l'usage des _tokens_, nous allons utiliser une API de l'Insee. Les API développées par l'institut statistique français nécessitent en effet une authentification. Nous allons chercher des informations agrégées de l'Insee sur la population dans chaque commune. Cela nous donnera une estimation, très grossière, du bassin de population autour d'un établissement.
+
+Avant d'en arriver là, nous allons faire un aparté sur la confidentialité des tokens et la manière d'éviter de révéler ceux-ci dans votre code. 
+
+## Utiliser un token dans un code sans le révéler
+
+Les tokens sont des informations personnelles qui ne doivent pas être partagées. Ils n'ont pas vocation à être présent dans le code. Comme ceci est évoqué à plusieurs reprises dans le cours de [mise en production](https://ensae-reproductibilite.github.io/website/) que Romain Avouac et moi donnons en 3e année, il est important de séparer le code des éléments de configuration
+
+![](/content/modern-ds/environment.png)
+
+L'idée est de trouver une recette pour apporter les éléments de configuration avec le code mais sans mettre ceux-ci en clair dans le code. L'idée générale sera de stocker la valeur du _token_ dans une variable mais ne jamais révéler celle-ci dans le code. Comment faire dès lors pour déclarer la valeur du jeton sans que celui-ci soit apparent dans le code ? 
+
+* Pour un code amené à fonctionner de manière interactive (par exemple par le biais d'un _notebook_), il est possible de créer une boite de dialogue qui injectera la valeur renseignée dans une variable. Cela se fait par le biais du package `getpass`.
+* Pour le code qui tourne en non interactif, par exemple par le biais de la ligne de commande, l'approche par variable d'environnement est la plus fiable, à condition de faire attention à ne pas mettre le fichier de mot de passe dans `Git`.
+
+L'exercice suivant permettra de mettre en oeuvre ces deux méthodes. Ces méthodes nous serviront à ajouter de manière confidentielle un _payload_ à des requêtes d'authentification, c'est-à-dire des informations confidentielles identifiantes en complément d'une requête. 
+
+
+## Application
+
+Pour cette application, à partir de la question 4, nous allons avoir besoin de créer une classe spéciale permettant à `requests` de surcharger notre requête d'un jeton d'authentification. Comme elle n'est pas triviale à créer sans connaissance préalable, la voici:
+
+```{python}
+#| echo: true
+class BearerAuth(requests.auth.AuthBase):
+    def __init__(self, token):
+        self.token = token
+    def __call__(self, r):
+        r.headers["authorization"] = "Bearer " + self.token
+        return r
+```
+
+Nous allons aussi avoir besoin de cette variable qui correspond au Siren de Decathlon
+
+```{python}
+siren = "500569405"
+```
+
+::: {.exercise}
+## Exercice 4: ajouter un _payload_ à une requête
+
+1. Se créer un compte pour l'API de l'INPI (Institut national de la protection intellectuelle) qui nous servira à récupérer des bilans des comptes sociaux d'entreprises au format PDF. 
+2. Créer les variables `username` et `password` avec `getpass` en faisant en sorte de ne pas rentrer les valeurs dans le code. 
+3. En utilisant la [documentation de l'API](https://www.inpi.fr/sites/default/files/documentation%20technique%20API_comptes_annuels%20v4_0.pdf), l'argument `json` de `requests.post`, récupérer un jeton d'authentification et le stocker dans une variable `token`. 
+4. Récupérer les données en utilisant la _f-string_ `f'https://registre-national-entreprises.inpi.fr/api/companies/{siren}/attachments'` et en donnant à `requests` l'argument `auth=BearerAuth(token)`
+5. Créer `identifier = documents.get('bilans')[0]['id']` et utiliser `requests` avec l'URL `f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download'`, sans argument, pour récupérer un PDF. Cela a-t-il fonctionné ? Vérifier le _status code_. A quoi correspond-il ? Comment éviter cela ?
+6. En supposant que l'objet `requests.get` créé s'appelle `r`, écrire l'output de notre API dans un PDF de la manière suivante:
+
+```{.python}
+binary_file_path = 'decathlon.pdf'
+with open(binary_file_path, 'wb') as f:
+    f.write(r.content)
+```
+
+7. Remplacer l'utilisation de `getpass` par l'approche variable d'environnement grâce à [`dotenv`](https://pypi.org/project/python-dotenv/)
+
+:::
+
+```{python}
+import os
+from dotenv import load_dotenv
+load_dotenv()
+```
+
+```{python}
+username = os.getenv("API_INPI_USERNAME")
+password = os.getenv("API_INPI_PASSWORD")
+```
+
+```{python}
+import requests
+
+url_login_api = "https://registre-national-entreprises.inpi.fr/api/sso/login"
+
+payload = {
+    "username": username,
+    "password": password
+}
+
+response = requests.post(url_login_api, json=payload)
+token = response.json().get('token')
+```
+
+```{python}
+r = requests.get(
+    f'https://registre-national-entreprises.inpi.fr/api/companies/{siren}/attachments',
+    auth=BearerAuth(token)
+)
+documents = r.json()
+```
+
+```{python}
+identifier = documents.get('bilans')[0]['id']
+```
+
+A la question 5, sans identifiant, on récupère le code erreur 401, qui correspond à _"Unauthorized"_, c'est-à-dire à une requête refusée. Néanmoins, si on ajoute le token comme précédemment, tout se passe bien, on récupère le bilan de Decathlon.  
+
+```{python}
+#| output: false
+r = requests.get(
+    f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download'
+)
+r.status_code
+```
+
+```{python}
+r = requests.get(
+    f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download',
+    auth=BearerAuth(token)
+)
+```
+
+```{python}
+#| output: false
+binary_file_path = 'decathlon.pdf'
+with open(binary_file_path, 'wb') as f:
+    f.write(r.content)
+```
+
+<details>
+
+<summary>
+Le PDF récupéré
+</summary>
+
+{{< pdf decathlon.pdf height="500px" width="800px">}}
+
+</details>
+
+L'approche par variable d'environnement est la plus générale et malléable. Il faut néanmoins bien faire attention à ne pas oublier d'ajouter le `.env` stockant les identifiants dans `Git`. Autrement, vous risquez de révéler des informations identifiantes ce qui annule tout effet positif des bonnes pratiques mises en oeuvre avec `dotenv`. 
+
+Pour cela, la solution est simple : ajouter la ligne `.env` au `.gitignore` et par sécurité `*.env` au cas où le fichier ne soit pas à la racine du dépôt. Pour en savoir plus sur ce fichier `.gitignore`, se rendre aux [chapitres `Git`](/content/git/index.qmd). 
+
+
+::: {.note}
+## Ouverture aux API de modèles
+
+Nous avons vu jusqu'à présent des API de données. Celles-ci permettent
+de récupérer du code. Ce n'est néanmoins pas la seule utilisation des API intéressantes pour les utilisateurs de `Python`. Il existe de nombreux autres types d'API. Parmi celles-ci, les API de modèles sont intéressantes. Elles permettent de récupérer des modèles pré-entraînés voire effectuer une phase d'inférence sur des serveurs spécialisés ayant plus de ressources que son ordinateur local (plus d'éléments dans les parties _machine learning_ et NLP). La librairie la plus connue dans ce domaine est la librairie [`transformers`](https://pypi.org/project/transformers/) développée par `HuggingFace`.
+
+L'un des objectifs du [cours de 3A de mise en production](https://ensae-reproductibilite.github.io/website/) est de montrer comment ce type d'architecture logicielle fonctionne et comment celle-ci peut être créée sur des modèles que vous auriez vous-mêmes créés. 
+:::
+
+
+
+# Exercices supplémentaires
+
+::: {.exercise}
+## Exercice bonus
+
+Dans notre exemple sur les écoles, se restreindre aux lycées et ajouter les informations sur la valeur ajoutée des lycées disponibles [ici](https://data.education.gouv.fr/explore/dataset/fr-en-indicateurs-de-resultat-des-lycees-denseignement-general-et-technologique/table/?sort=-annee). 
+:::
+
+
 
 
 
