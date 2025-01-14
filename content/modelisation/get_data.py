@@ -35,21 +35,21 @@ def create_votes_dataframes():
     )
     df_election.head(2)
     population = pd.read_excel(
-        "https://www.ers.usda.gov/webdocs/DataFiles/48747/PopulationEstimates.xls?v=290.4",
-        header=2,
+        "https://ers.usda.gov/sites/default/files/_laserfiche/DataFiles/48747/PopulationEstimates.xlsx?v=85724",
+        header=4,
     ).rename(columns={"FIPStxt": "FIPS"})
     education = pd.read_excel(
-        "https://www.ers.usda.gov/webdocs/DataFiles/48747/Education.xls?v=290.4",
-        header=4,
+        "https://ers.usda.gov/sites/default/files/_laserfiche/DataFiles/48747/Education.xlsx?v=34502",
+        header=3,
     ).rename(columns={"FIPS Code": "FIPS", "Area name": "Area_Name"})
     unemployment = pd.read_excel(
-        "https://www.ers.usda.gov/webdocs/DataFiles/48747/Unemployment.xls?v=290.4",
+        "https://ers.usda.gov/sites/default/files/_laserfiche/DataFiles/48747/Unemployment.xlsx?v=35579",
         header=4,
-    ).rename(columns={"fips_txt": "FIPS", "area_name": "Area_Name", "Stabr": "State"})
+    ).rename(columns={"FIPS_Code": "FIPS", "area_name": "Area_Name", "Stabr": "State"})
     income = pd.read_excel(
-        "https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=290.4",
+        "https://ers.usda.gov/sites/default/files/_laserfiche/DataFiles/48747/PovertyEstimates.xlsx?v=36737",
         header=4,
-    ).rename(columns={"FIPStxt": "FIPS", "Stabr": "State", "Area_name": "Area_Name"})
+    ).rename(columns={"FIPS_Code": "FIPS", "Stabr": "State", "Area_name": "Area_Name"})
 
     dfs = [
         df.set_index(["FIPS", "State"])
