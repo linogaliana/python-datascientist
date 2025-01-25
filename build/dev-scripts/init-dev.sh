@@ -9,7 +9,7 @@ curl -sSL https://raw.githubusercontent.com/linogaliana/init-scripts/refs/heads/
 git clone https://github.com/linogaliana/python-datascientist.git --single-branch --depth 1
 cd python-datascientist
 pip install uv
-uv pip install -r requirements.txt
+uv pip install -r requirements.txt --system
 
 # Formatters and precommit
 
