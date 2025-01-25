@@ -16,7 +16,6 @@ def download_url(url, save_path):
 
 
 def create_votes_dataframes():
-
     Path("data").mkdir(parents=True, exist_ok=True)
 
     download_url(
