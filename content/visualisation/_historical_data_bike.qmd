@@ -3,6 +3,7 @@
 #| code-summary: Voir le code pour bénéficier d'un historique plus long de données
 #| echo: true
 #| output: false
+#| label: download-bike-data-historical
 
 import requests
 import zipfile
@@ -17,7 +18,7 @@ list_useful_columns = [
         "Identifiant du site de comptage",
         "Nom du site de comptage",
         "Comptage horaire",
-        "Date et heure de comptage"        
+        "Date et heure de comptage"
     ]
 
 
@@ -27,11 +28,11 @@ list_useful_columns = [
 def download_unzip_and_read(url, extract_to='.', list_useful_columns=list_useful_columns):
     """
     Downloads a zip file from the specified URL, extracts its contents, and reads the CSV file based on the filename pattern in the URL.
-    
+
     Parameters:
     - url (str): The URL of the zip file to download.
     - extract_to (str): The directory where the contents of the zip file should be extracted.
-    
+
     Returns:
     - df (DataFrame): The loaded pandas DataFrame from the extracted CSV file.
     """
@@ -39,11 +40,11 @@ def download_unzip_and_read(url, extract_to='.', list_useful_columns=list_useful
         # Extract the file pattern from the URL (filename without the extension)
         file_pattern = url.split('/')[-1].replace('_zip/', '')
 
-        
+
         # Send a GET request to the specified URL to download the file
         response = requests.get(url)
         response.raise_for_status()  # Ensure we get a successful response
-        
+
         # Create a ZipFile object from the downloaded bytes
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
             # Extract all the contents to the specified directory
@@ -52,21 +53,21 @@ def download_unzip_and_read(url, extract_to='.', list_useful_columns=list_useful
 
         dir_extract_to = Path(extract_to)
         #dir_extract_to = Path(f"./{file_pattern}/")
-    
+
         # Look for the file matching the pattern
         csv_filename = [
             f.name for f in dir_extract_to.iterdir() if f.suffix == '.csv'
         ]
-            
+
         if not csv_filename:
             print(f"No file matching pattern '{file_pattern}' found.")
             return None
-            
+
         # Read the first matching CSV file into a pandas DataFrame
         csv_path = os.path.join(dir_extract_to.name, csv_filename[0])
         print(f"Reading file: {csv_path}")
         df = pd.read_csv(csv_path, sep=";")
-            
+
         # CONVERT TO GEOPANDAS
         df[['latitude', 'longitude']] = df['Coordonnées géographiques'].str.split(',', expand=True)
         df['latitude'] = pd.to_numeric(df['latitude'])
@@ -74,23 +75,23 @@ def download_unzip_and_read(url, extract_to='.', list_useful_columns=list_useful
         gdf = gpd.GeoDataFrame(
             df, geometry=gpd.points_from_xy(df.longitude, df.latitude)
         )
-        
+
         # CONVERT TO TIMESTAMP
         df["Date et heure de comptage"] = (
             df["Date et heure de comptage"]
             .astype(str)
-            .str.replace(r'\+.*', '', regex=True)      
+            .str.replace(r'\+.*', '', regex=True)
         )
         df["Date et heure de comptage"] = pd.to_datetime(
             df["Date et heure de comptage"],
             format="%Y-%m-%dT%H:%M:%S",
             errors="coerce"
-        )            
+        )
         gdf = df.loc[
             :, list_useful_columns
         ]
         return gdf
-    
+
     except requests.exceptions.RequestException as e:
         print(f"Error: The downloaded file has not been found: {e}")
         return None
@@ -182,7 +183,7 @@ else:
 
 # READ FILE AND CONVERT TO PANDAS
 query = """
-SELECT id_compteur, nom_compteur, id, sum_counts, date 
+SELECT id_compteur, nom_compteur, id, sum_counts, date
 FROM read_parquet('comptage_velo_donnees_compteurs.parquet')
 """
 
