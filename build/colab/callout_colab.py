@@ -1,6 +1,8 @@
 import os
 import re
 import markdown
+from loguru import logger
+
 
 def create_python_snippet(title, content, callout_type):
     """
@@ -71,6 +73,7 @@ def substitute_snippets(content, regex):
     Returns:
         str: Updated content with substitutions.
     """
+
     def replacement(match):
         # Extract the callout type and content
         callout_type_match = re.search(r"\.(\w+)", match.group(0))
@@ -84,46 +87,67 @@ def substitute_snippets(content, regex):
         if title_match:
             title = title_match.group(1).strip()
             # Remove the title from the content
-            content_inside = re.sub(r"^##\s*.*", "", content_inside, count=1, flags=re.MULTILINE).strip()
+            content_inside = re.sub(
+                r"^##\s*.*", "", content_inside, count=1, flags=re.MULTILINE
+            ).strip()
         else:
             title = callout_type.capitalize()
 
         # Replace with the call to `create_python_snippet`
         snippet = create_python_snippet(
-            title=f"{title}",
-            content=content_inside,
-            callout_type=callout_type
+            title=f"{title}", content=content_inside, callout_type=callout_type
         )
         return snippet
-    
+
     return regex.sub(replacement, content)
 
 
+def process_file(input_file_path, regex_pattern, output_file_path=None):
+    """
+    Reads a file, performs snippet substitutions, and writes the updated content to a new file.
 
-# Define file paths
-input_file_path = "./content/getting-started/01_environment.qmd"
-output_file_path = input_file_path.replace(".qmd", "_modified.qmd")
+    Args:
+        input_file_path (str): Path to the input file.
+        regex_pattern (str): Regex pattern to identify content blocks.
+        output_file_suffix (str): Suffix to append to the input file for the output.
+
+    Returns:
+        None
+    """
+
+    if output_file_path is None:
+        output_file_path = input_file_path.replace(".qmd", "_modified.qmd")
+
+    # Check if the input file exists
+    if not os.path.exists(input_file_path):
+        logger.error(f"Input file does not exist: {input_file_path}")
+        exit(1)
+
+    # Read the content of the input file
+    logger.info(f"Reading content from {input_file_path}")
+    with open(input_file_path, "r") as file:
+        original_content = file.read()
+
+    # Compile the regex pattern
+    filtered_div_regex = re.compile(regex_pattern, re.MULTILINE)
+
+    # Perform the substitution
+    logger.info("Performing substitution of snippets.")
+    updated_content_with_snippets = substitute_snippets(
+        original_content, filtered_div_regex
+    )
+
+    # Write the modified content to the output file
+    logger.info(f"Writing updated content to {output_file_path}")
+    with open(output_file_path, "w") as file:
+        file.write(updated_content_with_snippets)
+
+    logger.success(f"Modified content written to {output_file_path}")
 
 
-# Read the content of the input file
-if not os.path.exists(input_file_path):
-    print(f"Input file does not exist: {input_file_path}")
-    exit(1)
-
-with open(input_file_path, "r") as file:
-    original_content = file.read()
-
-
-filtered_div_regex = re.compile(
-    r":::\s*\{(?:\.note|\.caution|\.warning|\.important|\.tip|\.exercise)\}([\s\S]*?):::",
-    re.MULTILINE
-)
-
-# Perform the substitution
-updated_content_with_snippets = substitute_snippets(original_content, filtered_div_regex)
-
-# Write the modified content to the output file
-with open(output_file_path, "w") as file:
-    file.write(updated_content_with_snippets)
-
-print(f"Modified content written to {output_file_path}")
+# Example usage
+if __name__ == "__main__":
+    process_file(
+        input_file_path="./content/getting-started/01_environment.qmd",
+        regex_pattern=r":::\s*\{(?:\.note|\.caution|\.warning|\.important|\.tip|\.exercise)\}([\s\S]*?):::",
+    )

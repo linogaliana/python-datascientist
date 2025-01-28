@@ -1,0 +1,77 @@
+name: Production deployment
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - box
+
+jobs:
+  enonces:
+    name: Render notebooks
+    runs-on: ubuntu-latest
+    container: linogaliana/python-datascientist:latest
+    needs: docker
+    if: ${{ !github.event.pull_request.head.repo.fork }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Configure safe.directory  # Workaround for actions/checkout#760
+        run: |
+          git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+          git config --global --add safe.directory /__w/python-datascientist/python-datascientist-notebooks
+      - shell: bash
+        run: |
+          ls
+          conda info
+          conda list
+      - name: Convert in ipynb with Quarto
+        env:
+          API_INPI_USERNAME: ${{ secrets.API_INPI_USERNAME }}
+          API_INPI_PASSWORD: ${{ secrets.API_INPI_PASSWORD }}
+        run: |
+          export QUARTO_PROFILE=fr,en
+          rm _quarto.yml
+          cp _quarto-test.yml _quarto.yml
+          rm content/modelisation/index.qmd # Remove file not building in ipynb
+          python build/colab/tweak_quarto_project.py
+          quarto render --profile fr --to ipynb
+          quarto render --profile en --to ipynb
+      - name: Move to expected directory
+        env:
+          API_INPI_USERNAME: ${{ secrets.API_INPI_USERNAME }}
+          API_INPI_PASSWORD: ${{ secrets.API_INPI_PASSWORD }}
+        run: |
+          mkdir -p temp_notebooks
+          mkdir -p temp_notebooks/notebooks
+          python build/move_files.py --direction temp_notebooks/notebooks
+          quarto render content --to ipynb --execute -M echo:true
+          mkdir -p temp_notebooks/corrections
+          python build/move_files.py --direction temp_notebooks/corrections
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Source enonce
+          path: content/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Enonces
+          path: temp_notebooks/notebooks/
+      - name: Pushes to another repository
+        uses: linogaliana/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          source-directory: 'temp_notebooks/'
+          destination-repository-username: 'linogaliana'
+          destination-repository-name: 'python-datascientist-notebooks-colab'
+          user-email: lino.galiana@insee.fr
+          destination-github-username: linogaliana
+          #target-branch: test
+          create-target-branch-if-needed: true
+          reset-repo: true
+
+
+
