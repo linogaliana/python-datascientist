@@ -16,27 +16,17 @@ def create_python_snippet(title, content, callout_type):
     Returns:
         str: A styled HTML snippet.
     """
+
+    css_file_path = "./build/colab/colab.css"
+    if not os.path.exists(css_file_path):
+        raise FileNotFoundError(f"{css_file_path} not found. Please ensure the file exists.")
+
+    with open(css_file_path, "r") as css_file:
+        style = css_file.read()
+
     style = """
     <style>
-    .callout {
-        border: 2px solid #d1d5db;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-        background-color: #ffffff;
-        padding: 15px;
-    }
-    .callout-header {
-        font-weight: bold;
-        margin-bottom: 10px;
-        color: #ffffff;
-        background-color: #1d4ed8;
-        padding: 10px;
-        border-radius: 6px 6px 0 0;
-    }
-    .callout-body {
-        margin: 10px 0;
-    }
+    {style}
     </style>
     """
 
@@ -121,7 +111,7 @@ def process_file(input_file_path, regex_pattern, output_file_path=None):
     # Check if the input file exists
     if not os.path.exists(input_file_path):
         logger.error(f"Input file does not exist: {input_file_path}")
-        exit(1)
+        return None
 
     # Read the content of the input file
     logger.info(f"Reading content from {input_file_path}")

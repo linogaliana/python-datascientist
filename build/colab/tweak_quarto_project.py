@@ -42,8 +42,7 @@ def list_render_files(file_path):
     yaml_content = read_quarto_yaml(file_path)
 
     if not yaml_content:
-        logger.warning("No content to process.")
-        raise ValueError
+        raise FileNotFoundError("No content to process.")
 
     files = yaml_content.get("project").get("render")
 
