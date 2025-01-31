@@ -36,10 +36,12 @@ def create_python_snippet(title, content, callout_type):
             {title}
         </div>
         <div class="callout-body">
-            {content}
+            {markdown.markdown(content)}
         </div>
     </div>
     """
+
+    content = content.replace("{python}", "python")
 
     full_html = (
         "\n"
