@@ -24,7 +24,7 @@ def create_python_snippet(title, content, callout_type):
     with open(css_file_path, "r") as css_file:
         style = css_file.read()
 
-    style = """
+    style = f"""
     <style>
     {style}
     </style>
