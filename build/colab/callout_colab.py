@@ -24,7 +24,7 @@ def create_python_snippet(title, content, callout_type):
     with open(css_file_path, "r") as css_file:
         style = css_file.read()
 
-    style = """
+    style = f"""
     <style>
     {style}
     </style>
@@ -32,7 +32,7 @@ def create_python_snippet(title, content, callout_type):
 
     content_html = f"""
     <div class="callout callout-{callout_type}">
-        <div class="callout-header">
+        <div class="callout-header-{callout_type}">
             {title}
         </div>
         <div class="callout-body">
@@ -40,6 +40,8 @@ def create_python_snippet(title, content, callout_type):
         </div>
     </div>
     """
+
+    content = content.replace("{python}", "python")
 
     full_html = (
         "\n"
