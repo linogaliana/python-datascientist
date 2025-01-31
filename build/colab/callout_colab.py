@@ -32,7 +32,7 @@ def create_python_snippet(title, content, callout_type):
 
     content_html = f"""
     <div class="callout callout-{callout_type}">
-        <div class="callout-header">
+        <div class="callout-header-{callout_type}">
             {title}
         </div>
         <div class="callout-body">
