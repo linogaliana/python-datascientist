@@ -36,7 +36,7 @@ def create_python_snippet(title, content, callout_type):
             {title}
         </div>
         <div class="callout-body">
-            {markdown.markdown(content)}
+            {content}
         </div>
     </div>
     """
