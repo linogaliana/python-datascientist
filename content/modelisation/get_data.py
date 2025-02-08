@@ -16,12 +16,15 @@ def download_url(url, save_path):
 
 
 def create_votes_dataframes():
+    
     Path("data").mkdir(parents=True, exist_ok=True)
 
+    # Backup de "https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_us_county_20m.zip",
     download_url(
-        "https://www2.census.gov/geo/tiger/GENZ2019/shp/cb_2019_us_county_20m.zip",
+        "https://minio.lab.sspcloud.fr/lgaliana/data/python-ENSAE/shapefile_county_us_2019.zip",
         "data/shapefile",
     )
+
     with zipfile.ZipFile("data/shapefile", "r") as zip_ref:
         zip_ref.extractall("data/counties")
 
