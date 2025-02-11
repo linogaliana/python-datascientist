@@ -30,6 +30,8 @@ def create_python_snippet(title, content, callout_type):
     </style>
     """
 
+    content = content.replace("{python}", "python")
+
     content_html = f"""
     <div class="callout callout-{callout_type}">
         <div class="callout-header-{callout_type}">
@@ -41,7 +43,7 @@ def create_python_snippet(title, content, callout_type):
     </div>
     """
 
-    content = content.replace("{python}", "python")
+    content_html = content_html.replace("'", "\\'")
 
     full_html = (
         "\n"
