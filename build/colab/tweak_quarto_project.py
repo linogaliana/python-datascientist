@@ -68,11 +68,6 @@ if __name__ == "__main__":
     for file in files:
         process_file(
             input_file_path=file,
-            regex_pattern=r"::::\s*\{(?:\.note|\.caution|\.warning|\.important|\.tip|\.exercise)\}([\s\S]*?)::::",
-            output_file_path=file,
-        )
-        process_file(
-            input_file_path=file,
             regex_pattern=r":::\s*\{(?:\.note|\.caution|\.warning|\.important|\.tip|\.exercise)\}([\s\S]*?):::",
             output_file_path=file,
             overwrite=args.overwrite
