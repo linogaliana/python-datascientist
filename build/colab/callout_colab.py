@@ -48,7 +48,15 @@ def create_python_snippet(title, content, callout_type):
     </style>
     """
 
-    content = content.replace("{python}", "python")
+    content = (
+        "\n"
+        .join(line for line in content.splitlines() if not line.strip().startswith("#|"))
+    )
+
+    content = (
+        content
+        .replace("{python}", "python")
+    )
 
     content_html = f"""
     <div class="callout callout-{callout_type}">
