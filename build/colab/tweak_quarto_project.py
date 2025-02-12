@@ -1,7 +1,19 @@
 import os
 import yaml
+import argparse
 from loguru import logger
 from callout_colab import process_file
+
+parser = argparse.ArgumentParser(description="Tweak quarto project for Google colab notebooks")
+    
+parser.add_argument(
+    "--overwrite",
+    action="store_true",  # This makes it a boolean flag that defaults to False
+    help="Enable override mode (default: False)"
+)
+parser.set_defaults(overwrite=False)
+
+args = parser.parse_args()
 
 
 def read_quarto_yaml(file_path):
@@ -63,4 +75,5 @@ if __name__ == "__main__":
             input_file_path=file,
             regex_pattern=r":::\s*\{(?:\.note|\.caution|\.warning|\.important|\.tip|\.exercise)\}([\s\S]*?):::",
             output_file_path=file,
+            overwrite=args.overwrite
         )

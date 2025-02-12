@@ -1,7 +1,25 @@
 import os
 import re
 import markdown
+import argparse
 from loguru import logger
+
+parser = argparse.ArgumentParser(description="Example script with --override flag.")
+    
+parser.add_argument(
+    "--overwrite",
+    action="store_true",  # This makes it a boolean flag that defaults to False
+    help="Enable overwrite mode (default: False)"
+)
+parser.add_argument(
+    "--input_file_path",
+    type=str,
+    default="./content/getting-started/01_environment.qmd",
+    help="Which file should we tweak ?"
+)
+parser.set_defaults(overwrite=False)
+
+args = parser.parse_args()
 
 
 def create_python_snippet(title, content, callout_type):
@@ -96,7 +114,10 @@ def substitute_snippets(content, regex):
     return regex.sub(replacement, content)
 
 
-def process_file(input_file_path, regex_pattern, output_file_path=None):
+def process_file(
+    input_file_path, regex_pattern, output_file_path=None,
+    overwrite: bool = False
+):
     """
     Reads a file, performs snippet substitutions, and writes the updated content to a new file.
 
@@ -108,6 +129,10 @@ def process_file(input_file_path, regex_pattern, output_file_path=None):
     Returns:
         None
     """
+
+    if overwrite is True:
+        logger.info("Since overwrite argument is True, forcing output_file_path value")
+        output_file_path = None
 
     if output_file_path is None:
         output_file_path = input_file_path.replace(".qmd", "_modified.qmd")
@@ -142,6 +167,7 @@ def process_file(input_file_path, regex_pattern, output_file_path=None):
 # Example usage
 if __name__ == "__main__":
     process_file(
-        input_file_path="./content/getting-started/01_environment.qmd",
+        input_file_path=args.input_file_path,
         regex_pattern=r":::\s*\{(?:\.note|\.caution|\.warning|\.important|\.tip|\.exercise)\}([\s\S]*?):::",
+        overwrite=args.overwrite
     )
