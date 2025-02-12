@@ -176,6 +176,11 @@ def process_file(
 if __name__ == "__main__":
     process_file(
         input_file_path=args.input_file_path,
+        regex_pattern=r"::::\s*\{(?:\.note|\.caution|\.warning|\.important|\.tip|\.exercise)\}([\s\S]*?)::::",
+        overwrite=args.overwrite
+    )
+    process_file(
+        input_file_path=args.input_file_path,
         regex_pattern=r":::\s*\{(?:\.note|\.caution|\.warning|\.important|\.tip|\.exercise)\}([\s\S]*?):::",
         overwrite=args.overwrite
     )
