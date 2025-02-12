@@ -58,6 +58,8 @@ def create_python_snippet(title, content, callout_type):
         .replace("{python}", "python")
     )
 
+    content = re.sub(r"```(python)\n(.*?)\n```", r"~~~\1\n\2\n~~~", content, flags=re.DOTALL)
+
     content_html = f"""
     <div class="callout callout-{callout_type}">
         <div class="callout-header-{callout_type}">
@@ -81,6 +83,7 @@ def create_python_snippet(title, content, callout_type):
         "\n```"
         "\n"
     )
+
     return full_html
 
 
