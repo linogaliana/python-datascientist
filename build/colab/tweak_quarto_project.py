@@ -79,6 +79,8 @@ if __name__ == "__main__":
     # Find all _*.qmd files in ./content/ recursively
     qmd_files = find_qmd_files("./content/")
 
+    logger.debug(qmd_files)
+
     # Combine both lists and remove duplicates
     all_files = list(set(files + qmd_files))
 
@@ -86,6 +88,5 @@ if __name__ == "__main__":
         process_file(
             input_file_path=file,
             regex_pattern=r":::\s*\{(?:\.note|\.caution|\.warning|\.important|\.tip|\.exercise)\}([\s\S]*?):::",
-            output_file_path=file,
             overwrite=args.overwrite
         )
