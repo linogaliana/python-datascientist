@@ -4,8 +4,8 @@ import markdown
 import argparse
 from loguru import logger
 
-parser = argparse.ArgumentParser(description="Example script with --override flag.")
-    
+parser = argparse.ArgumentParser(description="Tweak qmd files for colab.")
+
 parser.add_argument(
     "--overwrite",
     action="store_true",  # This makes it a boolean flag that defaults to False
@@ -17,7 +17,6 @@ parser.add_argument(
     default="./content/getting-started/01_environment.qmd",
     help="Which file should we tweak ?"
 )
-parser.set_defaults(overwrite=False)
 
 args = parser.parse_args()
 
@@ -141,12 +140,15 @@ def process_file(
         None
     """
 
-    if overwrite is True:
-        logger.info("Since overwrite argument is True, forcing output_file_path value")
-        output_file_path = None
 
-    if output_file_path is None:
-        output_file_path = input_file_path.replace(".qmd", "_modified.qmd")
+    if overwrite is True:
+        logger.debug("Since overwrite argument is True, forcing output_file_path value")
+        output_file_path = input_file_path
+    else:
+        logger.debug("Overwrite argument is False")
+        if output_file_path is None:
+            output_file_path = input_file_path.replace(".qmd", "_modified.qmd")
+
 
     # Check if the input file exists
     if not os.path.exists(input_file_path):
