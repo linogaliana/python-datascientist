@@ -86,6 +86,7 @@ def create_python_snippet(title, content, callout_type):
 
     content_html = content_html.replace("'", "\\'")
 
+
     full_html = (
         "\n"
         "```{python}\n"
