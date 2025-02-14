@@ -47,6 +47,20 @@ def create_python_snippet(title, content, callout_type):
     </style>
     """
 
+    script = '<script src="https://kit.fontawesome.com/3c27c932d3.js" crossorigin="anonymous"></script>'
+
+    # Define a dictionary mapping callout types to their respective icons
+    icon_mapping = {
+        "tip": '<i class="fa-solid fa-lightbulb"></i>',
+        "warning": '<i class="fa-solid fa-triangle-exclamation"></i>',
+        "important": '<i class="fa-solid fa-circle-exclamation"></i>',
+        "caution": '<i class="fa-solid fa-circle-exclamation"></i>',
+        "exercise": '<i class="fa-solid fa-pen-fancy"></i>',
+    }
+
+    # Use the dictionary to get the icon, with a default value if the type is not found
+    icon = icon_mapping.get(callout_type, '<i class="fa-solid fa-comment"></i>')
+
     content = (
         "\n"
         .join(line for line in content.splitlines() if not line.strip().startswith("#|"))
@@ -62,7 +76,7 @@ def create_python_snippet(title, content, callout_type):
     content_html = f"""
     <div class="callout callout-{callout_type}">
         <div class="callout-header-{callout_type}">
-            {title}
+            {icon} {title}
         </div>
         <div class="callout-body">
             {markdown.markdown(content)}
@@ -78,7 +92,7 @@ def create_python_snippet(title, content, callout_type):
         "from IPython.display import HTML\n"
         f"style = '''\n{style}\n'''\n"
         f"content_html = '''\n{content_html}\n'''\n"
-        'HTML(f"{style}\\n{content_html}")\n'
+        'HTML(f"{script}\\n{style}\\n{content_html}")\n'
         "\n```"
         "\n"
     )
