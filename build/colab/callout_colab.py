@@ -47,7 +47,7 @@ def create_python_snippet(title, content, callout_type):
     </style>
     """
 
-    script = '<script src="https://kit.fontawesome.com/3c27c932d3.js" crossorigin="anonymous"></script>'
+    script_block = '<script src="https://kit.fontawesome.com/3c27c932d3.js" crossorigin="anonymous"></script>'
 
     # Define a dictionary mapping callout types to their respective icons
     icon_mapping = {
@@ -92,7 +92,7 @@ def create_python_snippet(title, content, callout_type):
         "from IPython.display import HTML\n"
         f"style = '''\n{style}\n'''\n"
         f"content_html = '''\n{content_html}\n'''\n"
-        'HTML(f"{script}\\n{style}\\n{content_html}")\n'
+        'HTML(f"{script_block}\\n{style}\\n{content_html}")\n'
         "\n```"
         "\n"
     )
