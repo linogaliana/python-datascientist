@@ -1,7 +1,24 @@
 import os
 import re
 import markdown
+import argparse
 from loguru import logger
+
+parser = argparse.ArgumentParser(description="Tweak qmd files for colab.")
+
+parser.add_argument(
+    "--overwrite",
+    action="store_true",  # This makes it a boolean flag that defaults to False
+    help="Enable overwrite mode (default: False)"
+)
+parser.add_argument(
+    "--input_file_path",
+    type=str,
+    default="./content/getting-started/01_environment.qmd",
+    help="Which file should we tweak ?"
+)
+
+args = parser.parse_args()
 
 
 def create_python_snippet(title, content, callout_type):
@@ -30,12 +47,34 @@ def create_python_snippet(title, content, callout_type):
     </style>
     """
 
-    content = content.replace("{python}", "python")
+    # Define a dictionary mapping callout types to their respective icons
+    icon_mapping = {
+        "tip": '<i class="fa-solid fa-lightbulb"></i>',
+        "warning": '<i class="fa-solid fa-triangle-exclamation"></i>',
+        "important": '<i class="fa-solid fa-circle-exclamation"></i>',
+        "caution": '<i class="fa-solid fa-circle-exclamation"></i>',
+        "exercise": '<i class="fa-solid fa-pen-fancy"></i>',
+    }
+
+    # Use the dictionary to get the icon, with a default value if the type is not found
+    icon = icon_mapping.get(callout_type, '<i class="fa-solid fa-comment"></i>')
+
+    content = (
+        "\n"
+        .join(line for line in content.splitlines() if not line.strip().startswith("#|"))
+    )
+
+    content = (
+        content
+        .replace("{python}", "python")
+    )
+
+    content = re.sub(r"```(python)\n(.*?)\n```", r"~~~\1\n\2\n~~~", content, flags=re.DOTALL)
 
     content_html = f"""
     <div class="callout callout-{callout_type}">
         <div class="callout-header-{callout_type}">
-            {title}
+            {icon} {title}
         </div>
         <div class="callout-body">
             {markdown.markdown(content)}
@@ -45,16 +84,18 @@ def create_python_snippet(title, content, callout_type):
 
     content_html = content_html.replace("'", "\\'")
 
+
     full_html = (
         "\n"
         "```{python}\n"
         "from IPython.display import HTML\n"
         f"style = '''\n{style}\n'''\n"
         f"content_html = '''\n{content_html}\n'''\n"
-        'HTML(f"{style}\\n{content_html}")\n'
+        'HTML(f"<script src="https://kit.fontawesome.com/3c27c932d3.js" crossorigin="anonymous"></script>\\n{style}\\n{content_html}")\n'
         "\n```"
         "\n"
     )
+
     return full_html
 
 
@@ -96,7 +137,10 @@ def substitute_snippets(content, regex):
     return regex.sub(replacement, content)
 
 
-def process_file(input_file_path, regex_pattern, output_file_path=None):
+def process_file(
+    input_file_path, regex_pattern, output_file_path=None,
+    overwrite: bool = False
+):
     """
     Reads a file, performs snippet substitutions, and writes the updated content to a new file.
 
@@ -109,8 +153,15 @@ def process_file(input_file_path, regex_pattern, output_file_path=None):
         None
     """
 
-    if output_file_path is None:
-        output_file_path = input_file_path.replace(".qmd", "_modified.qmd")
+
+    if overwrite is True:
+        logger.debug("Since overwrite argument is True, forcing output_file_path value")
+        output_file_path = input_file_path
+    else:
+        logger.debug("Overwrite argument is False")
+        if output_file_path is None:
+            output_file_path = input_file_path.replace(".qmd", "_modified.qmd")
+
 
     # Check if the input file exists
     if not os.path.exists(input_file_path):
@@ -142,6 +193,12 @@ def process_file(input_file_path, regex_pattern, output_file_path=None):
 # Example usage
 if __name__ == "__main__":
     process_file(
-        input_file_path="./content/getting-started/01_environment.qmd",
+        input_file_path=args.input_file_path,
+        regex_pattern=r"::::\s*\{(?:\.note|\.caution|\.warning|\.important|\.tip|\.exercise)\}([\s\S]*?)::::",
+        overwrite=args.overwrite
+    )
+    process_file(
+        input_file_path=args.input_file_path,
         regex_pattern=r":::\s*\{(?:\.note|\.caution|\.warning|\.important|\.tip|\.exercise)\}([\s\S]*?):::",
+        overwrite=args.overwrite
     )
