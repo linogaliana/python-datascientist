@@ -129,7 +129,7 @@ function reminder_badges(args, kwargs)
   local sspcloudVscodeBadge = make_badge(sspcloudVscodeLinkLauncher, "https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_VSCode-blue?logo=visualstudiocode&logoColor=blue", "Onyxia", badge_class)
 
   local colabLink = string.format(
-    "https://colab.research.google.com/github/linogaliana/python-datascientist-notebooks/" .. langpath .. "/blob/main/%s",
+    "https://colab.research.google.com/github/linogaliana/python-datascientist-notebooks-colab/" .. langpath .. "/blob/main/%s",
     notebook
   )
 
