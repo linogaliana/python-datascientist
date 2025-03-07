@@ -91,7 +91,7 @@ def create_python_snippet(title, content, callout_type):
         "from IPython.display import HTML\n"
         f"style = '''\n{style}\n'''\n"
         f"content_html = '''\n{content_html}\n'''\n"
-        'HTML(f"<script src="https://kit.fontawesome.com/3c27c932d3.js" crossorigin="anonymous"></script>\\n{style}\\n{content_html}")\n'
+        'HTML(f\'<script src=\"https://kit.fontawesome.com/3c27c932d3.js\" crossorigin="anonymous"></script>\\n{style}\\n{content_html}\')\n'
         "\n```"
         "\n"
     )
