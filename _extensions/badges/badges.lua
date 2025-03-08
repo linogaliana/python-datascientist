@@ -126,7 +126,7 @@ function reminder_badges(args, kwargs)
       "«" .. table.concat(onyxiaInitArgs, "%20") .. "»" ..
       ""
 
-  local sspcloudVscodeBadge = make_badge(sspcloudVscodeLinkLauncher, "https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_VSCode-blue?logo=visualstudiocode&logoColor=blue", "Onyxia", badge_class)
+  local sspcloudVscodeBadge = make_badge(sspcloudVscodeLinkLauncher, "https://custom-icon-badges.demolab.com/badge/SSP%20Cloud-Lancer_avec_VSCode-blue?logo=vsc&logoColor=white", "Onyxia", badge_class)
 
   local colabLink = string.format(
     "https://colab.research.google.com/github/linogaliana/python-datascientist-notebooks-colab/" .. langpath .. "/blob/main/%s",
