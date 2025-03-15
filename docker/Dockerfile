@@ -19,7 +19,7 @@ COPY requirements.sh .
 
 # Install graphviz
 RUN pip install uv &&\
-    pip install -r requirements.txt && \
+    uv pip install -r requirements.txt --system && \
     chmod +x requirements.sh && \
     ./requirements.sh
 
