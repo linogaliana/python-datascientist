@@ -23,7 +23,6 @@ description-en: |
   and let the data producer handle the updates.
 image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/serveurpython.jpg
 echo: false
-eval: false #temp fix for GHA
 ---
 
 {{< badges
@@ -283,7 +282,8 @@ Let's conduct a first test with `Python` as if we were already familiar with thi
 #| echo: true
 #| label: ban-first-example
 import requests
-url_ban_example = "https://api-adresse.data.gouv.fr/search/?q=88+avenue+verdier&postcode=92120"
+adresse = "88 avenue verdier"
+url_ban_example = f"https://api-adresse.data.gouv.fr/search/?q={adresse.replace(" ", "+")}&postcode=92120"
 requests.get(url_ban_example)
 ```
 
@@ -340,6 +340,7 @@ To retrieve the content returned by `requests`, there are several methods availa
 
 ```{python}
 #| echo: true
+#| label: ban-example-json
 req = requests.get(url_ban_example)
 localisation_insee = req.json()
 localisation_insee
@@ -418,6 +419,7 @@ To start this exercise, you will need the following variable:
 
 ```{python}
 #| echo: true
+#| label: adresse-input-exo1
 adresse = "88 Avenue Verdier"
 ```
 :::
@@ -668,6 +670,7 @@ The first question allows us to retrieve an initial dataset.
 :::
 
 ```{python}
+#| label: exercise2-api-education-q1
 import requests
 
 url_annuaire_education = "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records"
@@ -691,6 +694,7 @@ However, there are two issues: the number of rows and the department of interest
 :::
 
 ```{python}
+#| label: exercise2-api-education-q2
 url_31_limite10 = "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=code_departement%20like%20%22031%22"
 
 school_q2_exo2 = pd.DataFrame(
@@ -729,6 +733,7 @@ Let’s try using more comprehensive data: the raw file on `data.gouv`. As seen 
 
 
 ```{python}
+#| label: exercise2-api-datagouv
 url_api_datagouv = "https://tabular-api.data.gouv.fr/api/resources/b22f04bf-64a8-495d-b8bb-d84dbc4c7983/data/?Code_departement__exact=031"
 
 call_api_datagouv = requests.get(url_api_datagouv).json()
@@ -757,6 +762,7 @@ By looping over it to traverse the list of accessible URLs, we can retrieve the 
 ```{python}
 #| echo: true
 #| output: false
+#| label: exercise2-api-tabular
 import requests
 import pandas as pd
 
@@ -820,6 +826,7 @@ We can merge this new data with our previous dataset to enrich it. For reliable 
 
 ```{python}
 #| echo: true
+#| label: exercise2-bpe-enriched
 bpe_enriched = bpe.merge(
   schools_dep31,
   left_on = "SIRET",
@@ -936,6 +943,7 @@ bpe_loc = pd.read_csv(io.StringIO(response.text))
 
 
 ```{python}
+#| label: exercise3-q1
 import pathlib
 output_path = pathlib.Path("data/output")
 output_path.mkdir(parents=True, exist_ok=True)
@@ -987,6 +995,7 @@ By enriching the previous data, this gives:
 :::
 
 ```{python}
+#| label: exercise3-q2
 bpe_loc = bpe_loc.loc[:, ["index", "result_score", "latitude", "longitude"]]
 bpe_enriched_geocoded = (
   bpe_enriched
@@ -1025,6 +1034,7 @@ Without going into detail, the positions seem very similar, with only minor inac
 :::
 
 ```{python}
+#| label: exercise3-q3
 bpe_enriched_geocoded = bpe_enriched_geocoded.dropna(subset=["longitude_ban","latitude_ban"])
 
 bpe_enriched_geocoded = gpd.GeoDataFrame(
@@ -1049,6 +1059,7 @@ To make use of our enriched data, we can create a map. To add some context to it
 
 ```{python}
 #| echo: true
+#| label: carti-download
 from cartiflette import carti_download
 shp_communes = carti_download(
   crs = 4326,
@@ -1071,6 +1082,7 @@ Represented on a map, this gives the following map:
 :::
 
 ```{python}
+#| label: cartiflette-map
 import folium
 from folium.plugins import MarkerCluster
 import geopandas as gpd
@@ -1208,6 +1220,7 @@ For this application, starting from question 4, we will need to create a special
 
 ```{python}
 #| echo: true
+#| label: bearer-token
 class BearerAuth(requests.auth.AuthBase):
     def __init__(self, token):
         self.token = token
@@ -1278,17 +1291,20 @@ with open(binary_file_path, 'wb') as f:
 
 ```{python}
 #| output: false
+#| label: load-dotenv
 import os
 from dotenv import load_dotenv
 load_dotenv()
 ```
 
 ```{python}
+#| label: envvar
 username = os.getenv("API_INPI_USERNAME")
 password = os.getenv("API_INPI_PASSWORD")
 ```
 
 ```{python}
+#| label: payload
 import requests
 
 url_login_api = "https://registre-national-entreprises.inpi.fr/api/sso/login"
@@ -1324,6 +1340,7 @@ For question 5, without an identifier, we get the error code 401, which correspo
 
 ```{python}
 #| output: false
+#| label: request-get-status
 r = requests.get(
     f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download'
 )
@@ -1331,6 +1348,7 @@ r.status_code
 ```
 
 ```{python}
+#| label: request-get-authtoken
 r = requests.get(
     f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download',
     auth=BearerAuth(token)
@@ -1479,14 +1497,17 @@ You forgot there’s a couple in the group... Take into account the `poids` vari
 <summary>
 Create the polygon from the geolocations
 </summary>
+
 ```{.python}
-from shapely.geometry import Polygon
+from shapely.geom
+etry import Polygon
 coordinates = list(zip(adresses_geocoded['longitude'], adresses_geocoded['latitude']))
 polygon = Polygon(coordinates)
 
 polygon = gpd.GeoDataFrame(index=[0], crs='epsg:4326', geometry=[polygon])
 polygon
 ```
+
 </details>
 
 :::
@@ -1519,6 +1540,7 @@ adresses_text
 ```
 
 ```{python}
+#| label: location-api-send
 import pathlib
 output_path = pathlib.Path("data/output")
 output_path.mkdir(parents=True, exist_ok=True)
@@ -1554,6 +1576,7 @@ The geolocation obtained for this example
 
 
 ```{python}
+#| label: compute-barycenter
 from shapely.geometry import Polygon
 coordinates = list(zip(adresses_geocoded['longitude'], adresses_geocoded['latitude']))
 polygon = Polygon(coordinates)
