@@ -1,15 +1,17 @@
 # Data science with Python <img height="28" width="28" src="https://cdn.simpleicons.org/python/00ccff99" />
+[![DOI](https://zenodo.org/badge/280161677.svg)](https://zenodo.org/badge/latestdoi/280161677) [![Production deployment](https://github.com/linogaliana/python-datascientist/actions/workflows/prod.yml/badge.svg)](https://github.com/linogaliana/python-datascientist/actions/workflows/prod.yml)
 
-[![build-doc Actions Status](https://github.com/linogaliana/python-datascientist/actions/workflows/prod.yml/badge.svg)](https://github.com/linogaliana/python-datascientist/actions)
+> [!TIP]
+> **Accessing content using Jupyter Notebooks:**
+>
+> `Pandas` tutorial example (English version)
+>
+> <a href="https://datalab.sspcloud.fr/launcher/ide/vscode-python?autoLaunch=true&amp;name=%C2%AB02_pandas_intro%C2%BB&amp;init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmain%2Fsspcloud%2Finit-vscode.sh%C2%BB&amp;init.personalInitArgs=%C2%ABen/manipulation%2002_pandas_intro%20correction%C2%BB" target="_blank" rel="noopener" data-original-href="https://datalab.sspcloud.fr/launcher/ide/vscode-python?autoLaunch=true&amp;name=%C2%AB02_pandas_intro%C2%BB&amp;init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmain%2Fsspcloud%2Finit-vscode.sh%C2%BB&amp;init.personalInitArgs=%C2%ABen/manipulation%2002_pandas_intro%20correction%C2%BB"><img src="https://custom-icon-badges.demolab.com/badge/SSP%20Cloud-Lancer_avec_VSCode-blue?logo=vsc&amp;logoColor=white" alt="Onyxia"></a>
+<a href="https://datalab.sspcloud.fr/launcher/ide/jupyter-python?autoLaunch=true&amp;name=%C2%AB02_pandas_intro%C2%BB&amp;init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmain%2Fsspcloud%2Finit-jupyter.sh%C2%BB&amp;init.personalInitArgs=%C2%ABen/manipulation%2002_pandas_intro%20correction%C2%BB" target="_blank" rel="noopener" data-original-href="https://datalab.sspcloud.fr/launcher/ide/jupyter-python?autoLaunch=true&amp;name=%C2%AB02_pandas_intro%C2%BB&amp;init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmain%2Fsspcloud%2Finit-jupyter.sh%C2%BB&amp;init.personalInitArgs=%C2%ABen/manipulation%2002_pandas_intro%20correction%C2%BB"><img src="https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_Jupyter-orange?logo=Jupyter&amp;logoColor=orange" alt="Onyxia"></a>
+<a href="https://colab.research.google.com/github/linogaliana/python-datascientist-notebooks-colab//en/blob/main//notebooks/en/manipulation/02_pandas_intro.ipynb" target="_blank" rel="noopener" data-original-href="https://colab.research.google.com/github/linogaliana/python-datascientist-notebooks-colab//en/blob/main//notebooks/en/manipulation/02_pandas_intro.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
 
-<a href="https://github.com/linogaliana/python-datascientist/blob/main/notebooks/course/manipulation/01_numpy.ipynb" class="github"><i class="fab fa-github"></i></a>
-<a href="https://downgit.github.io/#/home?url=https://github.com/linogaliana/python-datascientist/blob/main/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/Download-Notebook-important?logo=Jupyter" alt="Download"></a>
-<a href="https://nbviewer.jupyter.org/github/linogaliana/python-datascientist/blob/main/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/Visualize-nbviewer-blue?logo=Jupyter" alt="nbviewer"></a>
-<a href="https://datalab.sspcloud.fr/launcher/ide/jupyter-python?autoLaunch=true&onyxia.friendlyName=%C2%ABpython-datascience%C2%BB&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmaster%2Fsspcloud%2Finit-jupyter.sh%C2%BB&init.personalInitArgs=%C2%ABmanipulation%2001_numpy%C2%BB" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/SSPcloud-Tester%20via%20SSP--cloud-informational&amp;color=yellow?logo=Python" alt="Onyxia"></a><br>
-<a href="http://colab.research.google.com/github/linogaliana/python-datascientist/blob/main/notebooks/course/manipulation/01_numpy.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
 
 
-[![DOI](https://zenodo.org/badge/280161677.svg)](https://zenodo.org/badge/latestdoi/280161677)
 
 > [!NOTE]  
 > This is the English 🇬🇧🇺🇸 version of the `README`. If you want to see the French 🇫🇷 version, you can click on the link below:
