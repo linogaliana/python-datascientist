@@ -14,7 +14,7 @@ RUN apt-get -y update && \
 
 RUN which python
 
-COPY requirements.txt .
+COPY pyproject.toml .
 COPY requirements.sh .
 
 # Install graphviz
