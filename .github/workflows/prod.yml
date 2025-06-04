@@ -5,46 +5,12 @@ on:
     branches:
       - main
       - master
-      - uv
+      - intro-more
 
 jobs:
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      -
-        name: Set up QEMU
-        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
-        uses: docker/setup-qemu-action@v3
-      -
-        name: Set up Docker Buildx
-        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
-        uses: docker/setup-buildx-action@v3
-      -
-        name: Login to DockerHub
-        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      -
-        name: Build and push
-        if: ${{ github.repository == 'linogaliana/python-datascientist' }}
-        id: docker_build
-        uses: docker/build-push-action@v6
-        env:
-          GITHUB_PAT: ${{ secrets.PAT }}
-        with:
-          file: "docker/Dockerfile"
-          push: true
-          tags: linogaliana/python-datascientist:latest
-      -
-        name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
   pages:
     name: Render-Blog
     runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
-    needs: docker
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
       - uses: actions/checkout@v4
@@ -54,18 +20,32 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
       - name: Configure safe.directory  # Workaround for actions/checkout#760
         run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+      - name: Install system dependencies
+        run: |
+          ./build/requirements.sh
+      - name: Install the latest version of uv and set the python version to 3.13t
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Prepare directory
+        run: |
+          rm _quarto.yml
+          cp _quarto-prod.yml _quarto.yml
+      - name: Install Python dependencies
+        run: |
+          uv sync
       - name: Render website
         env:
           API_INPI_USERNAME: ${{ secrets.API_INPI_USERNAME }}
           API_INPI_PASSWORD: ${{ secrets.API_INPI_PASSWORD }}
         run: |
-          rm _quarto.yml
-          cp _quarto-prod.yml _quarto.yml
-          python build/append_environment.py
-          quarto render --profile fr --to html
-          python build/sidebar.py --to english
-          quarto render --profile en --to html
-          python build/sidebar.py --to french
+          uv run build/append_environment.py
+          uv run quarto render --profile fr --to html
+          uv run build/sidebar.py --to english
+          uv run quarto render --profile en --to html
+          uv build/sidebar.py --to french
       - name: Archive build as artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -81,34 +61,40 @@ jobs:
   enonces:
     name: Render notebooks
     runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
-    needs: docker
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
       - name: Configure safe.directory  # Workaround for actions/checkout#760
+        run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+      - name: Install system dependencies
         run: |
-          git config --global --add safe.directory /__w/python-datascientist/python-datascientist
-          git config --global --add safe.directory /__w/python-datascientist/python-datascientist-notebooks
-      - shell: bash
+          ./build/requirements.sh
+      - name: Install the latest version of uv and set the python version to 3.13t
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Prepare directory
         run: |
-          ls
-          conda info
-          conda list
+          rm _quarto.yml
+          cp _quarto-prod.yml _quarto.yml
+      - name: Install Python dependencies
+        run: |
+          uv sync
       - name: Convert in ipynb with Quarto
         env:
           API_INPI_USERNAME: ${{ secrets.API_INPI_USERNAME }}
           API_INPI_PASSWORD: ${{ secrets.API_INPI_PASSWORD }}
         run: |
           export QUARTO_PROFILE=fr,en
-          rm _quarto.yml
-          cp _quarto-prod.yml _quarto.yml
           rm content/modelisation/index.qmd # Remove file not building in ipynb
-          quarto render --profile fr --to ipynb
-          quarto render --profile en --to ipynb
+          uv run quarto render --profile fr --to ipynb
+          uv run quarto render --profile en --to ipynb
       - name: Move to expected directory
         env:
           API_INPI_USERNAME: ${{ secrets.API_INPI_USERNAME }}
@@ -116,10 +102,10 @@ jobs:
         run: |
           mkdir -p temp_notebooks
           mkdir -p temp_notebooks/notebooks
-          python build/move_files.py --direction temp_notebooks/notebooks
+          uv run build/move_files.py --direction temp_notebooks/notebooks
           quarto render content --to ipynb --execute -M echo:true
           mkdir -p temp_notebooks/corrections
-          python build/move_files.py --direction temp_notebooks/corrections
+          uv run build/move_files.py --direction temp_notebooks/corrections
       - uses: actions/upload-artifact@v4
         with:
           name: Source enonce
@@ -144,35 +130,43 @@ jobs:
   enonces-vscode:
     name: Render notebooks (VSCode version)
     runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
-    needs: docker
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
       - name: Configure safe.directory  # Workaround for actions/checkout#760
+        run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+      - name: Install system dependencies
         run: |
-          git config --global --add safe.directory /__w/python-datascientist/python-datascientist
-          git config --global --add safe.directory /__w/python-datascientist/python-datascientist-notebooks
-      - shell: bash
+          ./build/requirements.sh
+      - name: Install the latest version of uv and set the python version to 3.13t
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Prepare directory
         run: |
-          ls
-          conda info
-          conda list
+          rm _quarto.yml
+          cp _quarto-prod.yml _quarto.yml
+      - name: Install Python dependencies
+        run: |
+          uv sync
       - name: Convert in ipynb with Quarto
         env:
           API_INPI_USERNAME: ${{ secrets.API_INPI_USERNAME }}
           API_INPI_PASSWORD: ${{ secrets.API_INPI_PASSWORD }}
         run: |
           export QUARTO_PROFILE=fr,en
-          rm _quarto.yml
-          python ./build/nice-vscode/tweak_pipeline_vscode.py --filename _quarto-prod.yml
+          cp _quarto.yml _quarto-prod.yml
+          uv run ./build/nice-vscode/tweak_pipeline_vscode.py --filename _quarto-prod.yml
           cp _quarto-prod2.yml _quarto.yml
           rm content/modelisation/index.qmd # Remove file not building in ipynb
-          quarto render --profile fr --to ipynb
-          quarto render --profile en --to ipynb
+          uv run quarto render --profile fr --to ipynb
+          uv run quarto render --profile en --to ipynb
       - name: Move to expected directory
         env:
           API_INPI_USERNAME: ${{ secrets.API_INPI_USERNAME }}
@@ -180,10 +174,10 @@ jobs:
         run: |
           mkdir -p temp_notebooks
           mkdir -p temp_notebooks/notebooks
-          python build/move_files.py --direction temp_notebooks/notebooks
-          quarto render content --to ipynb --execute -M echo:true
+          uv run build/move_files.py --direction temp_notebooks/notebooks
+          uv run quarto render content --to ipynb --execute -M echo:true
           mkdir -p temp_notebooks/corrections
-          python build/move_files.py --direction temp_notebooks/corrections
+          uv run build/move_files.py --direction temp_notebooks/corrections
       - name: Pushes to another repository
         uses: linogaliana/github-action-push-to-another-repository@main
         env:
