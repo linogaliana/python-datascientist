@@ -2,12 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.5.57">
+<meta name="generator" content="quarto-1.7.31">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Lino Galiana">
-<meta name="dcterms.date" content="2025-06-04">
+<meta name="dcterms.date" content="2025-06-05">
 <meta name="description" content="The purpose of machine learning is to create decision rules with good predictive performance on a new sample. To avoid overlearning, i.e.&nbsp;to have a model with good external validity, in addition to the data preparation seen in the previous chapter, it will be necessary to evaluate the models. This chapter delves into the subject of model evaluation and the issues involved. It will discuss the challenges of evaluation in both supervised and unsupervised learning environments, introduce the cross-validation method and open up to concepts such as data drift and state-of-the-art LLM-type model evaluation.">
 
 <title>Evaluating model quality – Python for data science</title>
@@ -24,8 +24,9 @@ ul.task-list li input[type="checkbox"] {
   vertical-align: middle;
 }
 /* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -36,7 +37,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -69,17 +70,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <meta name="quarto:offset" content="../../">
 <link href="../../content/modelisation/3_regression.html" rel="next">
 <link href="../../content/modelisation/0_preprocessing.html" rel="prev">
-<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../../site_libs/quarto-html/popper.min.js"></script>
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-8ef56b68f8fa1e9d2ba328e99e439f80.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-b9ffe74b40eb372d9442c4c226909c50.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-bcbb2d467579df28201c3c7b6c17bce5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-b9ffe74b40eb372d9442c4c226909c50.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <link href="../../site_libs/quarto-contrib/fontawesome6-0.1.0/all.css" rel="stylesheet">
 <link href="../../site_libs/quarto-contrib/fontawesome6-0.1.0/latex-fontsize.css" rel="stylesheet">
 <script src="../../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
@@ -219,13 +223,175 @@ window.Quarto = {
 <meta name="citation_publication_date" content="2023">
 <meta name="citation_cover_date" content="2023">
 <meta name="citation_year" content="2023">
-<meta name="citation_online_date" content="2025-06-04">
+<meta name="citation_online_date" content="2025-06-05">
 <meta name="citation_fulltext_html_url" content="https://pythonds.linogaliana.fr/">
 <meta name="citation_doi" content="10.5281/zenodo.8229676">
 <meta name="citation_language" content="en">
 </head>
 
-<body class="nav-sidebar floating nav-fixed">
+<body class="nav-sidebar floating nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top quarto-banner">
@@ -503,7 +669,7 @@ window.Quarto = {
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">2025-06-04</p>
+        <p class="date">2025-06-05</p>
       </div>
     </div>
     
@@ -595,6 +761,7 @@ window.Quarto = {
     </div>
 <!-- main -->
 <main class="content quarto-banner-title-block" id="quarto-document-content">
+
 
 
 
@@ -765,11 +932,11 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <summary>
 <p><i class="fa-brands fa-python" aria-label="python"></i> environment files have been tested on.</p>
 </summary>
-<p>Latest built version: 2025-06-04</p>
+<p>Latest built version: 2025-06-05</p>
 <p>Python version used:</p>
-<div id="93c4566f" class="cell" data-execution_count="2">
+<div id="f26e0447" class="cell" data-execution_count="2">
 <div class="cell-output cell-output-display" data-execution_count="2">
-<pre><code>'3.12.6 | packaged by conda-forge | (main, Sep 30 2024, 18:08:52) [GCC 13.3.0]'</code></pre>
+<pre><code>'3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]'</code></pre>
 </div>
 </div>
 <div class="git-details">
@@ -788,15 +955,15 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="even">
 <td style="text-align: left;">aiobotocore</td>
-<td style="text-align: left;">2.15.1</td>
+<td style="text-align: left;">2.22.0</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">aiohappyeyeballs</td>
-<td style="text-align: left;">2.4.3</td>
+<td style="text-align: left;">2.6.1</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">aiohttp</td>
-<td style="text-align: left;">3.10.8</td>
+<td style="text-align: left;">3.11.18</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">aioitertools</td>
@@ -804,19 +971,11 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="even">
 <td style="text-align: left;">aiosignal</td>
-<td style="text-align: left;">1.3.1</td>
+<td style="text-align: left;">1.3.2</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">alembic</td>
-<td style="text-align: left;">1.13.3</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">altair</td>
 <td style="text-align: left;">5.4.1</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">aniso8601</td>
-<td style="text-align: left;">9.0.1</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">annotated-types</td>
@@ -831,60 +990,60 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">1.4.4</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">archspec</td>
-<td style="text-align: left;">0.2.3</td>
+<td style="text-align: left;">argon2-cffi</td>
+<td style="text-align: left;">25.1.0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">argon2-cffi-bindings</td>
+<td style="text-align: left;">21.2.0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">arrow</td>
+<td style="text-align: left;">1.3.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">asttokens</td>
-<td style="text-align: left;">2.4.1</td>
+<td style="text-align: left;">3.0.0</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">attrs</td>
-<td style="text-align: left;">24.2.0</td>
+<td style="text-align: left;">async-lru</td>
+<td style="text-align: left;">2.0.5</td>
 </tr>
 <tr class="even">
+<td style="text-align: left;">attrs</td>
+<td style="text-align: left;">25.3.0</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">babel</td>
 <td style="text-align: left;">2.17.0</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">bcrypt</td>
-<td style="text-align: left;">4.2.0</td>
-</tr>
 <tr class="even">
 <td style="text-align: left;">beautifulsoup4</td>
-<td style="text-align: left;">4.12.3</td>
+<td style="text-align: left;">4.13.4</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">black</td>
 <td style="text-align: left;">24.8.0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">blinker</td>
-<td style="text-align: left;">1.8.2</td>
+<td style="text-align: left;">bleach</td>
+<td style="text-align: left;">6.2.0</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">blis</td>
 <td style="text-align: left;">1.3.0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">bokeh</td>
-<td style="text-align: left;">3.5.2</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">boltons</td>
-<td style="text-align: left;">24.0.0</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">boto3</td>
-<td style="text-align: left;">1.35.23</td>
+<td style="text-align: left;">1.37.3</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">botocore</td>
-<td style="text-align: left;">1.35.23</td>
+<td style="text-align: left;">1.37.3</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">branca</td>
-<td style="text-align: left;">0.7.2</td>
+<td style="text-align: left;">0.8.1</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Brotli</td>
@@ -895,104 +1054,72 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">0.0.2</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">cachetools</td>
-<td style="text-align: left;">5.5.0</td>
+<td style="text-align: left;">cartiflette</td>
+<td style="text-align: left;">0.0.3</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">cartiflette</td>
-<td style="text-align: left;">0.1.9</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">Cartopy</td>
 <td style="text-align: left;">0.24.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">catalogue</td>
 <td style="text-align: left;">2.0.10</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">cattrs</td>
 <td style="text-align: left;">24.1.3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">certifi</td>
 <td style="text-align: left;">2025.4.26</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">cffi</td>
 <td style="text-align: left;">1.17.1</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">charset-normalizer</td>
-<td style="text-align: left;">3.3.2</td>
-</tr>
 <tr class="odd">
+<td style="text-align: left;">charset-normalizer</td>
+<td style="text-align: left;">3.4.2</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">chromedriver-autoinstaller</td>
 <td style="text-align: left;">0.6.4</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">click</td>
-<td style="text-align: left;">8.1.7</td>
-</tr>
 <tr class="odd">
+<td style="text-align: left;">click</td>
+<td style="text-align: left;">8.2.1</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">click-plugins</td>
 <td style="text-align: left;">1.1.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">cligj</td>
 <td style="text-align: left;">0.7.2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">cloudpathlib</td>
 <td style="text-align: left;">0.21.1</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">cloudpickle</td>
-<td style="text-align: left;">3.0.0</td>
-</tr>
 <tr class="odd">
-<td style="text-align: left;">colorama</td>
-<td style="text-align: left;">0.4.6</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">comm</td>
 <td style="text-align: left;">0.2.2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">commonmark</td>
 <td style="text-align: left;">0.9.1</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">conda</td>
-<td style="text-align: left;">24.9.1</td>
-</tr>
 <tr class="odd">
-<td style="text-align: left;">conda-libmamba-solver</td>
-<td style="text-align: left;">24.7.0</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">conda-package-handling</td>
-<td style="text-align: left;">2.3.0</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">conda_package_streaming</td>
-<td style="text-align: left;">0.10.0</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">confection</td>
 <td style="text-align: left;">0.1.5</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">contextily</td>
 <td style="text-align: left;">1.6.2</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">contourpy</td>
-<td style="text-align: left;">1.3.0</td>
-</tr>
 <tr class="odd">
-<td style="text-align: left;">cryptography</td>
-<td style="text-align: left;">43.0.1</td>
+<td style="text-align: left;">contourpy</td>
+<td style="text-align: left;">1.3.2</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">cycler</td>
@@ -1003,96 +1130,56 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">2.0.11</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">cytoolz</td>
-<td style="text-align: left;">1.0.0</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">dask</td>
-<td style="text-align: left;">2024.9.1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">dask-expr</td>
-<td style="text-align: left;">1.1.15</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">databricks-sdk</td>
-<td style="text-align: left;">0.33.0</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">dataclasses-json</td>
 <td style="text-align: left;">0.6.7</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">debugpy</td>
-<td style="text-align: left;">1.8.6</td>
+<td style="text-align: left;">1.8.14</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">decorator</td>
-<td style="text-align: left;">5.1.1</td>
+<td style="text-align: left;">5.2.1</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Deprecated</td>
-<td style="text-align: left;">1.2.14</td>
+<td style="text-align: left;">defusedxml</td>
+<td style="text-align: left;">0.7.1</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">diskcache</td>
 <td style="text-align: left;">5.6.3</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">distributed</td>
-<td style="text-align: left;">2024.9.1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">distro</td>
-<td style="text-align: left;">1.9.0</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">docker</td>
-<td style="text-align: left;">7.1.0</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">duckdb</td>
-<td style="text-align: left;">1.1.1</td>
+<td style="text-align: left;">1.3.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">en_core_web_sm</td>
 <td style="text-align: left;">3.8.0</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">entrypoints</td>
-<td style="text-align: left;">0.4</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">et_xmlfile</td>
 <td style="text-align: left;">2.0.0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">exceptiongroup</td>
-<td style="text-align: left;">1.2.2</td>
+<td style="text-align: left;">executing</td>
+<td style="text-align: left;">2.2.0</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">executing</td>
-<td style="text-align: left;">2.1.0</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">fastexcel</td>
 <td style="text-align: left;">0.14.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">fastjsonschema</td>
 <td style="text-align: left;">2.21.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">fiona</td>
 <td style="text-align: left;">1.10.1</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">Flask</td>
-<td style="text-align: left;">3.0.3</td>
-</tr>
 <tr class="even">
 <td style="text-align: left;">folium</td>
-<td style="text-align: left;">0.19.7</td>
+<td style="text-align: left;">0.19.6</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">fontawesomefree</td>
@@ -1100,23 +1187,23 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="even">
 <td style="text-align: left;">fonttools</td>
-<td style="text-align: left;">4.54.1</td>
+<td style="text-align: left;">4.58.0</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">fqdn</td>
+<td style="text-align: left;">1.5.1</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">fr_core_news_sm</td>
 <td style="text-align: left;">3.8.0</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">frozendict</td>
-<td style="text-align: left;">2.4.4</td>
-</tr>
 <tr class="odd">
 <td style="text-align: left;">frozenlist</td>
-<td style="text-align: left;">1.4.1</td>
+<td style="text-align: left;">1.6.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">fsspec</td>
-<td style="text-align: left;">2024.9.0</td>
+<td style="text-align: left;">2025.5.0</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">geographiclib</td>
@@ -1135,30 +1222,6 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">2.4.1</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">gitdb</td>
-<td style="text-align: left;">4.0.11</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">GitPython</td>
-<td style="text-align: left;">3.1.43</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">google-auth</td>
-<td style="text-align: left;">2.35.0</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">graphene</td>
-<td style="text-align: left;">3.3</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">graphql-core</td>
-<td style="text-align: left;">3.2.4</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">graphql-relay</td>
-<td style="text-align: left;">3.2.0</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">graphviz</td>
 <td style="text-align: left;">0.20.3</td>
 </tr>
@@ -1168,43 +1231,27 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="odd">
 <td style="text-align: left;">greenlet</td>
-<td style="text-align: left;">3.1.1</td>
+<td style="text-align: left;">3.2.2</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">gunicorn</td>
-<td style="text-align: left;">22.0.0</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">h11</td>
 <td style="text-align: left;">0.16.0</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">h2</td>
-<td style="text-align: left;">4.1.0</td>
-</tr>
 <tr class="odd">
-<td style="text-align: left;">hpack</td>
-<td style="text-align: left;">4.0.0</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">htmltools</td>
 <td style="text-align: left;">0.6.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">httpcore</td>
 <td style="text-align: left;">1.0.9</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">httpx</td>
 <td style="text-align: left;">0.28.1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">httpx-sse</td>
 <td style="text-align: left;">0.4.0</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">hyperframe</td>
-<td style="text-align: left;">6.0.1</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">idna</td>
@@ -1216,15 +1263,15 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="odd">
 <td style="text-align: left;">importlib_metadata</td>
-<td style="text-align: left;">8.5.0</td>
+<td style="text-align: left;">8.7.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">importlib_resources</td>
-<td style="text-align: left;">6.4.5</td>
+<td style="text-align: left;">6.5.2</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">inflate64</td>
-<td style="text-align: left;">1.0.3</td>
+<td style="text-align: left;">1.0.1</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">ipykernel</td>
@@ -1232,19 +1279,27 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="odd">
 <td style="text-align: left;">ipython</td>
-<td style="text-align: left;">8.28.0</td>
+<td style="text-align: left;">9.3.0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">itsdangerous</td>
-<td style="text-align: left;">2.2.0</td>
+<td style="text-align: left;">ipython_pygments_lexers</td>
+<td style="text-align: left;">1.1.1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ipywidgets</td>
+<td style="text-align: left;">8.1.7</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">isoduration</td>
+<td style="text-align: left;">20.11.0</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">jedi</td>
-<td style="text-align: left;">0.19.1</td>
+<td style="text-align: left;">0.19.2</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Jinja2</td>
-<td style="text-align: left;">3.1.4</td>
+<td style="text-align: left;">3.1.6</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">jmespath</td>
@@ -1252,23 +1307,31 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="even">
 <td style="text-align: left;">joblib</td>
-<td style="text-align: left;">1.4.2</td>
+<td style="text-align: left;">1.5.1</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">json5</td>
+<td style="text-align: left;">0.12.0</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">jsonpatch</td>
 <td style="text-align: left;">1.33</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">jsonpointer</td>
 <td style="text-align: left;">3.0.0</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">jsonschema</td>
-<td style="text-align: left;">4.24.0</td>
-</tr>
 <tr class="even">
+<td style="text-align: left;">jsonschema</td>
+<td style="text-align: left;">4.23.0</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">jsonschema-specifications</td>
 <td style="text-align: left;">2025.4.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">jupyter</td>
+<td style="text-align: left;">1.1.1</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">jupyter-cache</td>
@@ -1279,76 +1342,92 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">8.6.3</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">jupyter-console</td>
+<td style="text-align: left;">6.6.3</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">jupyter_core</td>
 <td style="text-align: left;">5.7.2</td>
 </tr>
+<tr class="odd">
+<td style="text-align: left;">jupyter-events</td>
+<td style="text-align: left;">0.12.0</td>
+</tr>
 <tr class="even">
+<td style="text-align: left;">jupyter-lsp</td>
+<td style="text-align: left;">2.2.5</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">jupyter_server</td>
+<td style="text-align: left;">2.16.0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">jupyter_server_terminals</td>
+<td style="text-align: left;">0.5.3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">jupyterlab</td>
+<td style="text-align: left;">4.4.3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">jupyterlab_pygments</td>
+<td style="text-align: left;">0.3.0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">jupyterlab_server</td>
+<td style="text-align: left;">2.27.3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">jupyterlab_widgets</td>
+<td style="text-align: left;">3.0.15</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">kaleido</td>
 <td style="text-align: left;">0.2.1</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">kiwisolver</td>
-<td style="text-align: left;">1.4.7</td>
-</tr>
 <tr class="even">
+<td style="text-align: left;">kiwisolver</td>
+<td style="text-align: left;">1.4.8</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">langchain</td>
 <td style="text-align: left;">0.3.25</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">langchain-community</td>
 <td style="text-align: left;">0.3.9</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">langchain-core</td>
-<td style="text-align: left;">0.3.63</td>
-</tr>
 <tr class="odd">
+<td style="text-align: left;">langchain-core</td>
+<td style="text-align: left;">0.3.61</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">langchain-text-splitters</td>
 <td style="text-align: left;">0.3.8</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">langcodes</td>
 <td style="text-align: left;">3.5.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">langsmith</td>
 <td style="text-align: left;">0.1.147</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">language_data</td>
 <td style="text-align: left;">1.3.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">lazy_loader</td>
 <td style="text-align: left;">0.4</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">libmambapy</td>
-<td style="text-align: left;">1.5.9</td>
-</tr>
 <tr class="odd">
-<td style="text-align: left;">locket</td>
-<td style="text-align: left;">1.0.0</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">loguru</td>
 <td style="text-align: left;">0.7.3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">lxml</td>
 <td style="text-align: left;">5.4.0</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lz4</td>
-<td style="text-align: left;">4.3.3</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Mako</td>
-<td style="text-align: left;">1.3.5</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">mamba</td>
-<td style="text-align: left;">1.5.9</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">mapclassify</td>
@@ -1359,124 +1438,100 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">1.2.1</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Markdown</td>
-<td style="text-align: left;">3.6</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">markdown-it-py</td>
 <td style="text-align: left;">3.0.0</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">MarkupSafe</td>
-<td style="text-align: left;">2.1.5</td>
-</tr>
 <tr class="even">
+<td style="text-align: left;">MarkupSafe</td>
+<td style="text-align: left;">3.0.2</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">marshmallow</td>
 <td style="text-align: left;">3.26.1</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">matplotlib</td>
-<td style="text-align: left;">3.9.2</td>
-</tr>
 <tr class="even">
+<td style="text-align: left;">matplotlib</td>
+<td style="text-align: left;">3.10.3</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">matplotlib-inline</td>
 <td style="text-align: left;">0.1.7</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">mdurl</td>
 <td style="text-align: left;">0.1.2</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">menuinst</td>
-<td style="text-align: left;">2.1.2</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">mercantile</td>
 <td style="text-align: left;">1.2.1</td>
 </tr>
 <tr class="even">
+<td style="text-align: left;">mistune</td>
+<td style="text-align: left;">3.1.3</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">mizani</td>
 <td style="text-align: left;">0.11.4</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">mlflow</td>
-<td style="text-align: left;">2.16.2</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">mlflow-skinny</td>
-<td style="text-align: left;">2.16.2</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">msgpack</td>
-<td style="text-align: left;">1.1.0</td>
-</tr>
 <tr class="even">
 <td style="text-align: left;">multidict</td>
-<td style="text-align: left;">6.1.0</td>
+<td style="text-align: left;">6.4.4</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">multivolumefile</td>
 <td style="text-align: left;">0.2.3</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">munkres</td>
-<td style="text-align: left;">1.1.4</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">murmurhash</td>
 <td style="text-align: left;">1.0.13</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">mypy_extensions</td>
 <td style="text-align: left;">1.1.0</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">narwhals</td>
-<td style="text-align: left;">1.41.0</td>
-</tr>
 <tr class="even">
+<td style="text-align: left;">narwhals</td>
+<td style="text-align: left;">1.40.0</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">nbclient</td>
 <td style="text-align: left;">0.10.0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">nbconvert</td>
+<td style="text-align: left;">7.16.6</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">nbformat</td>
 <td style="text-align: left;">5.10.4</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">nest_asyncio</td>
+<td style="text-align: left;">nest-asyncio</td>
 <td style="text-align: left;">1.6.0</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">networkx</td>
-<td style="text-align: left;">3.3</td>
+<td style="text-align: left;">3.4.2</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">nltk</td>
 <td style="text-align: left;">3.9.1</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">numpy</td>
-<td style="text-align: left;">2.1.2</td>
+<td style="text-align: left;">notebook</td>
+<td style="text-align: left;">7.4.3</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">opencv-python-headless</td>
-<td style="text-align: left;">4.10.0.84</td>
+<td style="text-align: left;">notebook_shim</td>
+<td style="text-align: left;">0.2.4</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">numpy</td>
+<td style="text-align: left;">2.2.6</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">openpyxl</td>
 <td style="text-align: left;">3.1.5</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">opentelemetry-api</td>
-<td style="text-align: left;">1.16.0</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">opentelemetry-sdk</td>
-<td style="text-align: left;">1.16.0</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">opentelemetry-semantic-conventions</td>
-<td style="text-align: left;">0.37b0</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">orjson</td>
@@ -1487,28 +1542,28 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">1.3.0.post0</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">OWSLib</td>
-<td style="text-align: left;">0.34.0</td>
+<td style="text-align: left;">overrides</td>
+<td style="text-align: left;">7.7.0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">packaging</td>
-<td style="text-align: left;">24.1</td>
+<td style="text-align: left;">OWSLib</td>
+<td style="text-align: left;">0.33.0</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">packaging</td>
+<td style="text-align: left;">24.2</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">pandas</td>
 <td style="text-align: left;">2.2.3</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">paramiko</td>
-<td style="text-align: left;">3.5.0</td>
-</tr>
 <tr class="odd">
+<td style="text-align: left;">pandocfilters</td>
+<td style="text-align: left;">1.5.1</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">parso</td>
 <td style="text-align: left;">0.8.4</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">partd</td>
-<td style="text-align: left;">1.4.2</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">pathspec</td>
@@ -1516,7 +1571,7 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="even">
 <td style="text-align: left;">patsy</td>
-<td style="text-align: left;">0.5.6</td>
+<td style="text-align: left;">1.0.1</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Pebble</td>
@@ -1527,32 +1582,24 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">4.9.0</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">pickleshare</td>
-<td style="text-align: left;">0.7.5</td>
+<td style="text-align: left;">pillow</td>
+<td style="text-align: left;">11.2.1</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">pillow</td>
-<td style="text-align: left;">10.4.0</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">pip</td>
 <td style="text-align: left;">25.1.1</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">platformdirs</td>
-<td style="text-align: left;">4.3.6</td>
-</tr>
 <tr class="odd">
+<td style="text-align: left;">platformdirs</td>
+<td style="text-align: left;">4.3.8</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">plotly</td>
 <td style="text-align: left;">6.1.2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">plotnine</td>
 <td style="text-align: left;">0.13.6</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">pluggy</td>
-<td style="text-align: left;">1.5.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">polars</td>
@@ -1560,91 +1607,67 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="odd">
 <td style="text-align: left;">preshed</td>
-<td style="text-align: left;">3.0.10</td>
+<td style="text-align: left;">3.0.9</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">prometheus_client</td>
-<td style="text-align: left;">0.21.0</td>
+<td style="text-align: left;">0.22.1</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">prometheus_flask_exporter</td>
-<td style="text-align: left;">0.23.1</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">prompt_toolkit</td>
-<td style="text-align: left;">3.0.48</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">protobuf</td>
-<td style="text-align: left;">4.25.3</td>
+<td style="text-align: left;">3.0.51</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">psutil</td>
-<td style="text-align: left;">6.0.0</td>
+<td style="text-align: left;">propcache</td>
+<td style="text-align: left;">0.3.1</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">psutil</td>
+<td style="text-align: left;">7.0.0</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">ptyprocess</td>
 <td style="text-align: left;">0.7.0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">pure_eval</td>
 <td style="text-align: left;">0.2.3</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">py7zr</td>
-<td style="text-align: left;">1.0.0</td>
-</tr>
 <tr class="even">
+<td style="text-align: left;">py7zr</td>
+<td style="text-align: left;">0.22.0</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">pyarrow</td>
 <td style="text-align: left;">17.0.0</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">pyarrow-hotfix</td>
-<td style="text-align: left;">0.6</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">pyasn1</td>
-<td style="text-align: left;">0.6.1</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">pyasn1_modules</td>
-<td style="text-align: left;">0.4.1</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">pybcj</td>
 <td style="text-align: left;">1.0.6</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">pycosat</td>
-<td style="text-align: left;">0.6.6</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">pycparser</td>
 <td style="text-align: left;">2.22</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">pycryptodomex</td>
 <td style="text-align: left;">3.23.0</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">pydantic</td>
 <td style="text-align: left;">2.11.5</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">pydantic_core</td>
 <td style="text-align: left;">2.33.2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">pydantic-settings</td>
 <td style="text-align: left;">2.9.1</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">Pygments</td>
-<td style="text-align: left;">2.18.0</td>
-</tr>
 <tr class="even">
-<td style="text-align: left;">PyNaCl</td>
-<td style="text-align: left;">1.5.0</td>
+<td style="text-align: left;">Pygments</td>
+<td style="text-align: left;">2.19.1</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">pynsee</td>
@@ -1652,39 +1675,39 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="even">
 <td style="text-align: left;">pyogrio</td>
-<td style="text-align: left;">0.10.0</td>
+<td style="text-align: left;">0.11.0</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">pyOpenSSL</td>
-<td style="text-align: left;">24.2.1</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">pyparsing</td>
-<td style="text-align: left;">3.1.4</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">pyppmd</td>
-<td style="text-align: left;">1.2.0</td>
+<td style="text-align: left;">3.2.3</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">pyproj</td>
-<td style="text-align: left;">3.7.0</td>
+<td style="text-align: left;">pyppmd</td>
+<td style="text-align: left;">1.1.1</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">pyproj</td>
+<td style="text-align: left;">3.7.1</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">pyshp</td>
 <td style="text-align: left;">2.3.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">PySocks</td>
 <td style="text-align: left;">1.7.1</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">python-dateutil</td>
-<td style="text-align: left;">2.9.0</td>
-</tr>
 <tr class="even">
+<td style="text-align: left;">python-dateutil</td>
+<td style="text-align: left;">2.9.0.post0</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">python-dotenv</td>
 <td style="text-align: left;">1.0.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">python-json-logger</td>
+<td style="text-align: left;">3.3.0</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">python-magic</td>
@@ -1692,31 +1715,23 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="even">
 <td style="text-align: left;">pytz</td>
-<td style="text-align: left;">2024.1</td>
+<td style="text-align: left;">2025.2</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">pyu2f</td>
-<td style="text-align: left;">0.1.5</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">pywaffle</td>
 <td style="text-align: left;">1.1.1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">PyYAML</td>
 <td style="text-align: left;">6.0.2</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">pyzmq</td>
-<td style="text-align: left;">26.2.0</td>
-</tr>
 <tr class="odd">
-<td style="text-align: left;">pyzstd</td>
-<td style="text-align: left;">0.16.2</td>
+<td style="text-align: left;">pyzmq</td>
+<td style="text-align: left;">26.4.0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">querystring_parser</td>
-<td style="text-align: left;">1.2.4</td>
+<td style="text-align: left;">pyzstd</td>
+<td style="text-align: left;">0.17.0</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">rasterio</td>
@@ -1728,7 +1743,7 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="odd">
 <td style="text-align: left;">regex</td>
-<td style="text-align: left;">2024.9.11</td>
+<td style="text-align: left;">2024.11.6</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">requests</td>
@@ -1747,6 +1762,14 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">1.3.4</td>
 </tr>
 <tr class="even">
+<td style="text-align: left;">rfc3339-validator</td>
+<td style="text-align: left;">0.1.4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">rfc3986-validator</td>
+<td style="text-align: left;">0.1.1</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">rich</td>
 <td style="text-align: left;">14.0.0</td>
 </tr>
@@ -1755,56 +1778,48 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">0.25.1</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">rsa</td>
-<td style="text-align: left;">4.9</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">rtree</td>
 <td style="text-align: left;">1.4.0</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">ruamel.yaml</td>
-<td style="text-align: left;">0.18.6</td>
-</tr>
 <tr class="odd">
-<td style="text-align: left;">ruamel.yaml.clib</td>
-<td style="text-align: left;">0.2.8</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">s3fs</td>
-<td style="text-align: left;">2024.9.0</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">s3transfer</td>
-<td style="text-align: left;">0.10.2</td>
+<td style="text-align: left;">2025.5.0</td>
 </tr>
 <tr class="even">
+<td style="text-align: left;">s3transfer</td>
+<td style="text-align: left;">0.11.3</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">scikit-image</td>
 <td style="text-align: left;">0.24.0</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">scikit-learn</td>
-<td style="text-align: left;">1.5.2</td>
-</tr>
 <tr class="even">
+<td style="text-align: left;">scikit-learn</td>
+<td style="text-align: left;">1.6.1</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">scipy</td>
 <td style="text-align: left;">1.13.0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">seaborn</td>
 <td style="text-align: left;">0.13.2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">selenium</td>
 <td style="text-align: left;">4.33.0</td>
 </tr>
+<tr class="even">
+<td style="text-align: left;">Send2Trash</td>
+<td style="text-align: left;">1.8.3</td>
+</tr>
 <tr class="odd">
 <td style="text-align: left;">setuptools</td>
-<td style="text-align: left;">74.1.2</td>
+<td style="text-align: left;">80.8.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">shapely</td>
-<td style="text-align: left;">2.0.6</td>
+<td style="text-align: left;">2.1.1</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">shellingham</td>
@@ -1812,47 +1827,39 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="even">
 <td style="text-align: left;">six</td>
-<td style="text-align: left;">1.16.0</td>
+<td style="text-align: left;">1.17.0</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">smart-open</td>
 <td style="text-align: left;">7.1.0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">smmap</td>
-<td style="text-align: left;">5.0.0</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">sniffio</td>
 <td style="text-align: left;">1.3.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">sortedcontainers</td>
 <td style="text-align: left;">2.4.0</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">soupsieve</td>
-<td style="text-align: left;">2.5</td>
-</tr>
 <tr class="even">
+<td style="text-align: left;">soupsieve</td>
+<td style="text-align: left;">2.7</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">spacy</td>
 <td style="text-align: left;">3.8.4</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">spacy-legacy</td>
 <td style="text-align: left;">3.0.12</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">spacy-loggers</td>
 <td style="text-align: left;">1.0.5</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">SQLAlchemy</td>
-<td style="text-align: left;">2.0.35</td>
-</tr>
 <tr class="even">
-<td style="text-align: left;">sqlparse</td>
-<td style="text-align: left;">0.5.1</td>
+<td style="text-align: left;">SQLAlchemy</td>
+<td style="text-align: left;">2.0.41</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">srsly</td>
@@ -1860,7 +1867,7 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="even">
 <td style="text-align: left;">stack-data</td>
-<td style="text-align: left;">0.6.2</td>
+<td style="text-align: left;">0.6.3</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">statsmodels</td>
@@ -1871,12 +1878,12 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">0.9.0</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">tblib</td>
-<td style="text-align: left;">3.0.0</td>
+<td style="text-align: left;">tenacity</td>
+<td style="text-align: left;">9.1.2</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">tenacity</td>
-<td style="text-align: left;">9.0.0</td>
+<td style="text-align: left;">terminado</td>
+<td style="text-align: left;">0.18.1</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">texttable</td>
@@ -1888,15 +1895,15 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="odd">
 <td style="text-align: left;">threadpoolctl</td>
-<td style="text-align: left;">3.5.0</td>
+<td style="text-align: left;">3.6.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">tifffile</td>
-<td style="text-align: left;">2025.6.1</td>
+<td style="text-align: left;">2025.5.24</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">toolz</td>
-<td style="text-align: left;">1.0.0</td>
+<td style="text-align: left;">tinycss2</td>
+<td style="text-align: left;">1.4.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">topojson</td>
@@ -1904,7 +1911,7 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="odd">
 <td style="text-align: left;">tornado</td>
-<td style="text-align: left;">6.4.1</td>
+<td style="text-align: left;">6.5.1</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">tqdm</td>
@@ -1923,12 +1930,12 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">0.12.2</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">truststore</td>
-<td style="text-align: left;">0.9.2</td>
+<td style="text-align: left;">typer</td>
+<td style="text-align: left;">0.15.3</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">typer</td>
-<td style="text-align: left;">0.16.0</td>
+<td style="text-align: left;">types-python-dateutil</td>
+<td style="text-align: left;">2.9.0.20250516</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">typing_extensions</td>
@@ -1944,23 +1951,23 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="odd">
 <td style="text-align: left;">tzdata</td>
-<td style="text-align: left;">2024.2</td>
+<td style="text-align: left;">2025.2</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Unidecode</td>
 <td style="text-align: left;">1.4.0</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">uri-template</td>
+<td style="text-align: left;">1.3.0</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">url-normalize</td>
 <td style="text-align: left;">2.2.1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">urllib3</td>
 <td style="text-align: left;">2.4.0</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">uv</td>
-<td style="text-align: left;">0.7.10</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">wasabi</td>
@@ -1975,36 +1982,36 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 <td style="text-align: left;">0.4.1</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">webcolors</td>
+<td style="text-align: left;">24.11.1</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">webdriver-manager</td>
 <td style="text-align: left;">4.0.2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">webencodings</td>
+<td style="text-align: left;">0.5.1</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">websocket-client</td>
 <td style="text-align: left;">1.8.0</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Werkzeug</td>
-<td style="text-align: left;">3.0.4</td>
+<td style="text-align: left;">widgetsnbextension</td>
+<td style="text-align: left;">4.0.14</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">wheel</td>
-<td style="text-align: left;">0.44.0</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">wordcloud</td>
 <td style="text-align: left;">1.9.3</td>
 </tr>
-<tr class="even">
-<td style="text-align: left;">wrapt</td>
-<td style="text-align: left;">1.16.0</td>
-</tr>
 <tr class="odd">
+<td style="text-align: left;">wrapt</td>
+<td style="text-align: left;">1.17.2</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">wsproto</td>
 <td style="text-align: left;">1.2.0</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">xgboost</td>
-<td style="text-align: left;">2.1.1</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">xlrd</td>
@@ -2012,27 +2019,19 @@ Precision, i.e., the rate of true positives among positive predictions, increase
 </tr>
 <tr class="even">
 <td style="text-align: left;">xyzservices</td>
-<td style="text-align: left;">2024.9.0</td>
+<td style="text-align: left;">2025.4.0</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">yarl</td>
-<td style="text-align: left;">1.13.1</td>
+<td style="text-align: left;">1.20.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">yellowbrick</td>
 <td style="text-align: left;">1.5</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">zict</td>
-<td style="text-align: left;">3.0.0</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">zipp</td>
-<td style="text-align: left;">3.20.2</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">zstandard</td>
-<td style="text-align: left;">0.23.0</td>
+<td style="text-align: left;">3.21.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;"></td>
@@ -2914,383 +2913,255 @@ window._ojs.selfContained = false;
 window._ojs.runtime.interpretFromScriptTags();
 </script>
 <script id="quarto-html-after-body" type="application/javascript">
-window.document.addEventListener("DOMContentLoaded", function (event) {
-  const toggleBodyColorMode = (bsSheetEl) => {
-    const mode = bsSheetEl.getAttribute("data-mode");
-    const bodyEl = window.document.querySelector("body");
-    if (mode === "dark") {
-      bodyEl.classList.add("quarto-dark");
-      bodyEl.classList.remove("quarto-light");
-    } else {
-      bodyEl.classList.add("quarto-light");
-      bodyEl.classList.remove("quarto-dark");
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
     }
-  }
-  const toggleBodyColorPrimary = () => {
-    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
-    if (bsSheetEl) {
-      toggleBodyColorMode(bsSheetEl);
-    }
-  }
-  toggleBodyColorPrimary();  
-  const disableStylesheet = (stylesheets) => {
-    for (let i=0; i < stylesheets.length; i++) {
-      const stylesheet = stylesheets[i];
-      stylesheet.rel = 'prefetch';
-    }
-  }
-  const enableStylesheet = (stylesheets) => {
-    for (let i=0; i < stylesheets.length; i++) {
-      const stylesheet = stylesheets[i];
-      stylesheet.rel = 'stylesheet';
-    }
-  }
-  const manageTransitions = (selector, allowTransitions) => {
-    const els = window.document.querySelectorAll(selector);
-    for (let i=0; i < els.length; i++) {
-      const el = els[i];
-      if (allowTransitions) {
-        el.classList.remove('notransition');
-      } else {
-        el.classList.add('notransition');
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
       }
+      return false;
     }
-  }
-  const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
-    const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
-    const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
-    let newTheme = '';
-    if(darkModeDefault) {
-      newTheme = isAlternate ? baseTheme : alternateTheme;
-    } else {
-      newTheme = isAlternate ? alternateTheme : baseTheme;
-    }
-    const changeGiscusTheme = () => {
-      // From: https://github.com/giscus/giscus/issues/336
-      const sendMessage = (message) => {
-        const iframe = document.querySelector('iframe.giscus-frame');
-        if (!iframe) return;
-        iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
       }
-      sendMessage({
-        setConfig: {
-          theme: newTheme
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/pythonds\.linogaliana\.fr");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
         }
       });
     }
-    const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
-    if (isGiscussLoaded) {
-      changeGiscusTheme();
-    }
-  }
-  const toggleColorMode = (alternate) => {
-    // Switch the stylesheets
-    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
-    manageTransitions('#quarto-margin-sidebar .nav-link', false);
-    if (alternate) {
-      enableStylesheet(alternateStylesheets);
-      for (const sheetNode of alternateStylesheets) {
-        if (sheetNode.id === "quarto-bootstrap") {
-          toggleBodyColorMode(sheetNode);
-        }
-      }
-    } else {
-      disableStylesheet(alternateStylesheets);
-      toggleBodyColorPrimary();
-    }
-    manageTransitions('#quarto-margin-sidebar .nav-link', true);
-    // Switch the toggles
-    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
-    for (let i=0; i < toggles.length; i++) {
-      const toggle = toggles[i];
-      if (toggle) {
-        if (alternate) {
-          toggle.classList.add("alternate");     
-        } else {
-          toggle.classList.remove("alternate");
-        }
-      }
-    }
-    // Hack to workaround the fact that safari doesn't
-    // properly recolor the scrollbar when toggling (#1455)
-    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
-      manageTransitions("body", false);
-      window.scrollTo(0, 1);
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-        manageTransitions("body", true);
-      }, 40);  
-    }
-  }
-  const isFileUrl = () => { 
-    return window.location.protocol === 'file:';
-  }
-  const hasAlternateSentinel = () => {  
-    let styleSentinel = getColorSchemeSentinel();
-    if (styleSentinel !== null) {
-      return styleSentinel === "alternate";
-    } else {
-      return false;
-    }
-  }
-  const setStyleSentinel = (alternate) => {
-    const value = alternate ? "alternate" : "default";
-    if (!isFileUrl()) {
-      window.localStorage.setItem("quarto-color-scheme", value);
-    } else {
-      localAlternateSentinel = value;
-    }
-  }
-  const getColorSchemeSentinel = () => {
-    if (!isFileUrl()) {
-      const storageValue = window.localStorage.getItem("quarto-color-scheme");
-      return storageValue != null ? storageValue : localAlternateSentinel;
-    } else {
-      return localAlternateSentinel;
-    }
-  }
-  const darkModeDefault = false;
-  let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
-  // Dark / light mode switch
-  window.quartoToggleColorScheme = () => {
-    // Read the current dark / light value 
-    let toAlternate = !hasAlternateSentinel();
-    toggleColorMode(toAlternate);
-    setStyleSentinel(toAlternate);
-    toggleGiscusIfUsed(toAlternate, darkModeDefault);
-  };
-  // Ensure there is a toggle, if there isn't float one in the top right
-  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
-    const a = window.document.createElement('a');
-    a.classList.add('top-right');
-    a.classList.add('quarto-color-scheme-toggle');
-    a.href = "";
-    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
-    const i = window.document.createElement("i");
-    i.classList.add('bi');
-    a.appendChild(i);
-    window.document.body.appendChild(a);
-  }
-  // Switch to dark mode if need be
-  if (hasAlternateSentinel()) {
-    toggleColorMode(true);
-  } else {
-    toggleColorMode(false);
-  }
-  const icon = "";
-  const anchorJS = new window.AnchorJS();
-  anchorJS.options = {
-    placement: 'right',
-    icon: icon
-  };
-  anchorJS.add('.anchored');
-  const isCodeAnnotation = (el) => {
-    for (const clz of el.classList) {
-      if (clz.startsWith('code-annotation-')) {                     
-        return true;
-      }
-    }
-    return false;
-  }
-  const onCopySuccess = function(e) {
-    // button target
-    const button = e.trigger;
-    // don't keep focus
-    button.blur();
-    // flash "checked"
-    button.classList.add('code-copy-button-checked');
-    var currentTitle = button.getAttribute("title");
-    button.setAttribute("title", "Copied!");
-    let tooltip;
-    if (window.bootstrap) {
-      button.setAttribute("data-bs-toggle", "tooltip");
-      button.setAttribute("data-bs-placement", "left");
-      button.setAttribute("data-bs-title", "Copied!");
-      tooltip = new bootstrap.Tooltip(button, 
-        { trigger: "manual", 
-          customClass: "code-copy-button-tooltip",
-          offset: [0, -8]});
-      tooltip.show();    
-    }
-    setTimeout(function() {
-      if (tooltip) {
-        tooltip.hide();
-        button.removeAttribute("data-bs-title");
-        button.removeAttribute("data-bs-toggle");
-        button.removeAttribute("data-bs-placement");
-      }
-      button.setAttribute("title", currentTitle);
-      button.classList.remove('code-copy-button-checked');
-    }, 1000);
-    // clear code selection
-    e.clearSelection();
-  }
-  const getTextToCopy = function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-  }
-  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-    text: getTextToCopy
-  });
-  clipboard.on('success', onCopySuccess);
-  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-    // For code content inside modals, clipBoardJS needs to be initialized with a container option
-    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
-    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-      text: getTextToCopy,
-      container: window.document.getElementById('quarto-embedded-source-code-modal')
-    });
-    clipboardModal.on('success', onCopySuccess);
-  }
-    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
-    var mailtoRegex = new RegExp(/^mailto:/);
-      var filterRegex = new RegExp("https:\/\/pythonds\.linogaliana\.fr");
-    var isInternal = (href) => {
-        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
-    }
-    // Inspect non-navigation links and adorn them if external
- 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
-    for (var i=0; i<links.length; i++) {
-      const link = links[i];
-      if (!isInternal(link.href)) {
-        // undo the damage that might have been done by quarto-nav.js in the case of
-        // links that we want to consider external
-        if (link.dataset.originalHref !== undefined) {
-          link.href = link.dataset.originalHref;
-        }
-      }
-    }
-  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
-    const config = {
-      allowHTML: true,
-      maxWidth: 500,
-      delay: 100,
-      arrow: false,
-      appendTo: function(el) {
-          return el.parentElement;
-      },
-      interactive: true,
-      interactiveBorder: 10,
-      theme: 'quarto',
-      placement: 'bottom-start',
-    };
-    if (contentFn) {
-      config.content = contentFn;
-    }
-    if (onTriggerFn) {
-      config.onTrigger = onTriggerFn;
-    }
-    if (onUntriggerFn) {
-      config.onUntrigger = onUntriggerFn;
-    }
-    window.tippy(el, config); 
-  }
-  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
-  for (var i=0; i<noterefs.length; i++) {
-    const ref = noterefs[i];
-    tippyHover(ref, function() {
-      // use id or data attribute instead here
-      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
-      try { href = new URL(href).hash; } catch {}
-      const id = href.replace(/^#\/?/, "");
-      const note = window.document.getElementById(id);
-      if (note) {
-        return note.innerHTML;
-      } else {
-        return "";
-      }
-    });
-  }
-  const xrefs = window.document.querySelectorAll('a.quarto-xref');
-  const processXRef = (id, note) => {
-    // Strip column container classes
-    const stripColumnClz = (el) => {
-      el.classList.remove("page-full", "page-columns");
-      if (el.children) {
-        for (const child of el.children) {
-          stripColumnClz(child);
-        }
-      }
-    }
-    stripColumnClz(note)
-    if (id === null || id.startsWith('sec-')) {
-      // Special case sections, only their first couple elements
-      const container = document.createElement("div");
-      if (note.children && note.children.length > 2) {
-        container.appendChild(note.children[0].cloneNode(true));
-        for (let i = 1; i < note.children.length; i++) {
-          const child = note.children[i];
-          if (child.tagName === "P" && child.innerText === "") {
-            continue;
-          } else {
-            container.appendChild(child.cloneNode(true));
-            break;
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
           }
         }
-        if (window.Quarto?.typesetMath) {
-          window.Quarto.typesetMath(container);
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
         }
-        return container.innerHTML
       } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
         if (window.Quarto?.typesetMath) {
           window.Quarto.typesetMath(note);
         }
-        return note.innerHTML;
-      }
-    } else {
-      // Remove any anchor links if they are present
-      const anchorLink = note.querySelector('a.anchorjs-link');
-      if (anchorLink) {
-        anchorLink.remove();
-      }
-      if (window.Quarto?.typesetMath) {
-        window.Quarto.typesetMath(note);
-      }
-      // TODO in 1.5, we should make sure this works without a callout special case
-      if (note.classList.contains("callout")) {
-        return note.outerHTML;
-      } else {
-        return note.innerHTML;
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
       }
     }
-  }
-  for (var i=0; i<xrefs.length; i++) {
-    const xref = xrefs[i];
-    tippyHover(xref, undefined, function(instance) {
-      instance.disable();
-      let url = xref.getAttribute('href');
-      let hash = undefined; 
-      if (url.startsWith('#')) {
-        hash = url;
-      } else {
-        try { hash = new URL(url).hash; } catch {}
-      }
-      if (hash) {
-        const id = hash.replace(/^#\/?/, "");
-        const note = window.document.getElementById(id);
-        if (note !== null) {
-          try {
-            const html = processXRef(id, note.cloneNode(true));
-            instance.setContent(html);
-          } finally {
-            instance.enable();
-            instance.show();
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
           }
         } else {
-          // See if we can fetch this
-          fetch(url.split('#')[0])
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
           .then(res => res.text())
           .then(html => {
             const parser = new DOMParser();
             const htmlDoc = parser.parseFromString(html, "text/html");
-            const note = htmlDoc.getElementById(id);
+            const note = htmlDoc.querySelector('main.content');
             if (note !== null) {
-              const html = processXRef(id, note);
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
               instance.setContent(html);
             } 
           }).finally(() => {
@@ -3298,189 +3169,193 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
             instance.show();
           });
         }
-      } else {
-        // See if we can fetch a full url (with no hash to target)
-        // This is a special case and we should probably do some content thinning / targeting
-        fetch(url)
-        .then(res => res.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const htmlDoc = parser.parseFromString(html, "text/html");
-          const note = htmlDoc.querySelector('main.content');
-          if (note !== null) {
-            // This should only happen for chapter cross references
-            // (since there is no id in the URL)
-            // remove the first header
-            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
-              note.children[0].remove();
-            }
-            const html = processXRef(null, note);
-            instance.setContent(html);
-          } 
-        }).finally(() => {
-          instance.enable();
-          instance.show();
-        });
-      }
-    }, function(instance) {
-    });
-  }
-      let selectedAnnoteEl;
-      const selectorForAnnotation = ( cell, annotation) => {
-        let cellAttr = 'data-code-cell="' + cell + '"';
-        let lineAttr = 'data-code-annotation="' +  annotation + '"';
-        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
-        return selector;
-      }
-      const selectCodeLines = (annoteEl) => {
-        const doc = window.document;
-        const targetCell = annoteEl.getAttribute("data-target-cell");
-        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
-        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
-        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
-        const lineIds = lines.map((line) => {
-          return targetCell + "-" + line;
-        })
-        let top = null;
-        let height = null;
-        let parent = null;
-        if (lineIds.length > 0) {
-            //compute the position of the single el (top and bottom and make a div)
-            const el = window.document.getElementById(lineIds[0]);
-            top = el.offsetTop;
-            height = el.offsetHeight;
-            parent = el.parentElement.parentElement;
-          if (lineIds.length > 1) {
-            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
-            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
-            height = bottom - top;
-          }
-          if (top !== null && height !== null && parent !== null) {
-            // cook up a div (if necessary) and position it 
-            let div = window.document.getElementById("code-annotation-line-highlight");
-            if (div === null) {
-              div = window.document.createElement("div");
-              div.setAttribute("id", "code-annotation-line-highlight");
-              div.style.position = 'absolute';
-              parent.appendChild(div);
-            }
-            div.style.top = top - 2 + "px";
-            div.style.height = height + 4 + "px";
-            div.style.left = 0;
-            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
-            if (gutterDiv === null) {
-              gutterDiv = window.document.createElement("div");
-              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
-              gutterDiv.style.position = 'absolute';
-              const codeCell = window.document.getElementById(targetCell);
-              const gutter = codeCell.querySelector('.code-annotation-gutter');
-              gutter.appendChild(gutterDiv);
-            }
-            gutterDiv.style.top = top - 2 + "px";
-            gutterDiv.style.height = height + 4 + "px";
-          }
-          selectedAnnoteEl = annoteEl;
-        }
-      };
-      const unselectCodeLines = () => {
-        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
-        elementsIds.forEach((elId) => {
-          const div = window.document.getElementById(elId);
-          if (div) {
-            div.remove();
-          }
-        });
-        selectedAnnoteEl = undefined;
-      };
-        // Handle positioning of the toggle
-    window.addEventListener(
-      "resize",
-      throttle(() => {
-        elRect = undefined;
-        if (selectedAnnoteEl) {
-          selectCodeLines(selectedAnnoteEl);
-        }
-      }, 10)
-    );
-    function throttle(fn, ms) {
-    let throttle = false;
-    let timer;
-      return (...args) => {
-        if(!throttle) { // first call gets through
-            fn.apply(this, args);
-            throttle = true;
-        } else { // all the others get throttled
-            if(timer) clearTimeout(timer); // cancel #2
-            timer = setTimeout(() => {
-              fn.apply(this, args);
-              timer = throttle = false;
-            }, ms);
-        }
-      };
-    }
-      // Attach click handler to the DT
-      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
-      for (const annoteDlNode of annoteDls) {
-        annoteDlNode.addEventListener('click', (event) => {
-          const clickedEl = event.target;
-          if (clickedEl !== selectedAnnoteEl) {
-            unselectCodeLines();
-            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
-            if (activeEl) {
-              activeEl.classList.remove('code-annotation-active');
-            }
-            selectCodeLines(clickedEl);
-            clickedEl.classList.add('code-annotation-active');
-          } else {
-            // Unselect the line
-            unselectCodeLines();
-            clickedEl.classList.remove('code-annotation-active');
-          }
-        });
-      }
-  const findCites = (el) => {
-    const parentEl = el.parentElement;
-    if (parentEl) {
-      const cites = parentEl.dataset.cites;
-      if (cites) {
-        return {
-          el,
-          cites: cites.split(' ')
-        };
-      } else {
-        return findCites(el.parentElement)
-      }
-    } else {
-      return undefined;
-    }
-  };
-  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
-  for (var i=0; i<bibliorefs.length; i++) {
-    const ref = bibliorefs[i];
-    const citeInfo = findCites(ref);
-    if (citeInfo) {
-      tippyHover(citeInfo.el, function() {
-        var popup = window.document.createElement('div');
-        citeInfo.cites.forEach(function(cite) {
-          var citeDiv = window.document.createElement('div');
-          citeDiv.classList.add('hanging-indent');
-          citeDiv.classList.add('csl-entry');
-          var biblioDiv = window.document.getElementById('ref-' + cite);
-          if (biblioDiv) {
-            citeDiv.innerHTML = biblioDiv.innerHTML;
-          }
-          popup.appendChild(citeDiv);
-        });
-        return popup.innerHTML;
+      }, function(instance) {
       });
     }
-  }
-});
-</script>
-<script src="https://giscus.app/client.js" data-repo="linogaliana/python-datascientist" data-repo-id="MDEwOlJlcG9zaXRvcnkyODAxNjE2Nzc=" data-category="General" data-category-id="DIC_kwDOELLtjc4B-5TX" data-mapping="title" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="light" data-lang="en" crossorigin="anonymous" async="">
-</script>
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
 <input type="hidden" id="giscus-base-theme" value="light">
 <input type="hidden" id="giscus-alt-theme" value="dark">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "linogaliana/python-datascientist";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyODAxNjE2Nzc=";
+    script.dataset.category = "General";
+    script.dataset.categoryId = "DIC_kwDOELLtjc4B-5TX";
+    script.dataset.mapping = "title";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "top";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
       <a href="../../content/modelisation/0_preprocessing.html" class="pagination-link" aria-label="Preprocessing before building machine learning models">
@@ -3511,7 +3386,7 @@ Inspiration pour la mise en forme du site <a href="https://www.andreashandel.com
 </div>
   </div>
 </footer>
-<script>var lightboxQuarto = GLightbox({"openEffect":"zoom","closeEffect":"zoom","selector":".lightbox","loop":false,"descPosition":"bottom"});
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
 (function() {
   let previousOnload = window.onload;
   window.onload = () => {
