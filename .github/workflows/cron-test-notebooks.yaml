@@ -27,14 +27,28 @@ jobs:
   check:
     needs: define-matrix
     runs-on: ubuntu-latest
-    container: linogaliana/python-datascientist:latest
     continue-on-error: true
     strategy:
         matrix:
             manifest: ${{ fromJson(needs.define-matrix.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v4   
+      - uses: actions/checkout@v4
         with:
           repository: 'linogaliana/python-datascientist-notebooks'
+      - name: Install system dependencies
+        run: |
+          sudo ./build/requirements.sh
+      - name: Install the latest version of uv and set the python version to 3.13t
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - uses: quarto-dev/quarto-actions/setup@v2
       - run: |
-          quarto render ${{ matrix.manifest }} --execute
+          quarto --version
+      - name: Install Python dependencies
+        run: |
+          uv sync
+      - run: |
+          uv run quarto render ${{ matrix.manifest }} --execute
