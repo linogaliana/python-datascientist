@@ -1,7 +1,6 @@
 function RawBlock(el)
   local output_file = PANDOC_STATE.output_file or ""
   local is_english = output_file:match("^en/")
-  local is_index = output_file:match("index%.html$")
 
   if el.format ~= "html" then return end
 
@@ -29,8 +28,8 @@ function RawBlock(el)
     </div>
   ]], url, label, flag_svg)
 
-  -- Sur index.html uniquement, on insère le bouton en haut de page après <main>
-  if is_index and el.text:match('<main.-id="quarto%-document%-content".->') then
+  -- Injection du bouton si le bloc contient <main id="quarto-document-content">
+  if el.text:match('<main.-id="quarto%-document%-content".->') then
     return {
       el,
       pandoc.RawBlock("html", button_html)
