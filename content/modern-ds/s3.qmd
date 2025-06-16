@@ -6,64 +6,87 @@ tags:
 categories:
   - Tutoriel
   - Avancé
-abstract: |
-  Dans les entreprises et administrations, un nombre croissant 
-  d'infrastructure se basent sur des _clouds_, qui sont des sessions non persistentes où les données ne sont pas stockées dans les mêmes serveurs que les machines qui exécutent du code. L'une des technologies dominantes dans le domaine est un système de stockage nommé `S3`, développé par [Amazon](https://docs.aws.amazon.com/fr_fr/AmazonS3/latest/userguide/Welcome.html). 
-  
-  `Python`, à travers plusieurs _packages_ (notamment `boto3`, `s3fs` ou `pyarrow`),
-  permet d'utiliser ce système de stockage distant comme si on
-  accédait à des fichiers depuis son poste personnel. Cette révolution est 
-  étroitement associée à l'émergence du format de
-  données [`Apache Parquet`](https://parquet.apache.org/), format utilisable en
-  `Python` par le biais du package [`pyarrow`](https://arrow.apache.org/docs/python/index.html)
-  ou avec [`Spark`](https://spark.apache.org/) et présentant
-  de nombreux avantages pour l'analyse de données (vitesse d'import, possibilité de traiter
-  des données plus volumineuses que la RAM...)
+description: |
+  Le format `Parquet` est un format de données connaissant une popularité importante du fait de ses caractéristiques techniques (orientation colonne, compression, interopérabilité...), de sa nature _open source_ et du riche écosystème associé dont les frameworks les plus proéminents sont `Arrow` et `DuckDB`. A ces nombreux avantages s'ajoutent une intégration native aux infrastructures _cloud_ basées sur `S3`, des extensions nombreuses pour traiter des données complexes comme les données géographiques ou, plus récemment, le portage en WASM de `DuckDB` permettant de construire des applications réactives impliquant des transformations de données directement depuis le navigateur. 
+
 eval: false
 image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/python_cloud.png
 ---
 
 {{< badges >}}
 
-Ce chapitre est une introduction à la question
-du stockage des données et aux innovations 
-récentes dans ce domaine.
+
+Ce chapitre introduit les enjeux du stockage des données ainsi que les innovations récentes qui permettent de les héberger dans le _cloud_ sans compromettre l'efficacité ou la simplicité de leur traitement.
 
 
-L'objectif
-est d'abord de présenter les avantages
-du format `Parquet` et la manière dont 
-on peut utiliser les
-librairies [`pyarrow`](https://arrow.apache.org/docs/python/index.html)
-ou [`duckdb`](https://duckdb.org/docs/api/python/overview.html) pour traiter
-de manière efficace des données volumineuses
-au format `Parquet`. Ensuite, on présentera
-la manière dont ce format `parquet` s'intègre
-bien avec des systèmes de stockage _cloud_,
-qui tendent à devenir la norme dans le monde
-de la _data science_. 
+::: {.tip}
+## Objectif de ce chapitre
+
+* Comprendre les enjeux liés au stockage et au traitement de différents formats de données ;  
+* Distinguer le stockage sous forme de fichier et sous forme de base de données ;  
+* Découvrir le format `Parquet`, ses avantages par rapport aux formats plats ou propriétaires ;  
+* Apprendre à traiter ces données avec `Arrow` et `DuckDB` ;  
+* Identifier les implications du stockage dans le _cloud_ et comment `Python` peut s'y adapter.
+
+:::
+
+Ce chapitre s'appuie sur un atelier dédié au sujet que j'ai donné dans le cadre du réseau des _data scientists_ de la statistique publique (`SSPHub`)
+
+::: {.note}
+## Replay de l'atelier sur ce sujet
+
+```{=html}
+<details>
+
+<summary>
+
+Afficher les _slides_ associées
+
+</summary>
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><iframe class="sourceCode yaml code-with-copy" src="https://inseefrlab.github.io/ssphub-ateliers-slides/slides-data/parquet"></iframe></div>
+
+
+_[Cliquer ici](https://inseefrlab.github.io/ssphub-ateliers-slides/slides-data/parquet){target="_blank"}
+pour les afficher en plein écran._
+
+</details>
+
+
+<details>
+
+
+<summary>
+
+Regarder le _replay_ de la session _live_ du 09 Avril 2025:
+
+</summary>
+
+{{< video https://minio.lab.sspcloud.fr/lgaliana/ssphub/replay/20250416_masterclass_parquet/GMT20250416-130715_Recording_1686x768.mp4 >}}
+
+
+</details>
+```
+:::
+
 
 # Elements de contexte
 
 ## Principe du stockage de la donnée
 
-Pour comprendre les apports du format `Parquet`, il est nécessaire
-de faire un détour pour comprendre la manière dont une information
-est stockée et accessible à un langage de traitement de la donnée.
+Avant de comprendre les apports du format `Parquet`, il est utile de revenir brièvement sur la manière dont l’information est stockée et rendue accessible à un langage de traitement comme `Python`[^lamarche-dondon].
 
-Il existe deux approches dans le monde du stockage de la donnée. 
-La première est celle de la __base de données relationnelle__. La seconde est le
-principe du __fichier__. 
-La différence entre les deux est dans la manière dont l'accès aux
-données est organisé. 
 
-## Les fichiers
+[^lamarche-dondon]: Pour en savoir plus sur les enjeux liés à un choix de format de données, voir @dondon2023quels.
 
-Dans un fichier, les données sont organisées selon un certain format et
-le logiciel de traitement de la donnée va aller chercher et structurer
-l'information en fonction de ce format. Par exemple, dans un fichier 
-`.csv`, les différentes informations seront stockées au même niveau
-avec un caractère pour les séparer (la virgule `,` dans les `.csv` anglosaxons, le point virgule dans les `.csv` français, la tabulation dans les `.tsv`). Le fichier suivant
+Deux approches principales coexistent : le **stockage sous forme de fichiers** et celui sous forme de **bases de données relationnelles**. La distinction entre ces deux paradigmes repose sur la façon dont l’accès aux données est organisé.
+
+
+## Le stockage sous forme de fichiers
+
+### Les fichiers plats
+
+Dans un fichier plat, les données sont organisées de manière linéaire, souvent séparées par un caractère (virgule, point-virgule, tabulation). Exemple avec un fichier `.csv` :
 
 ```raw
 nom ; profession 
@@ -72,36 +95,35 @@ Obélix ; Tailleur de menhir ;
 Assurancetourix ; Barde
 ```
 
-sera ainsi organisé naturellement sous forme tabulée par `Python`
+`Python` peut facilement structurer cette information :
 
 ```{python}
 #| echo: false
 #| eval: true
 
+file_content = """
+  nom ; profession
+  Astérix ; 
+  Obélix ; Tailleur de menhir
+  Assurancetourix ; Barde
+"""
+
 import pandas as pd
 from io import StringIO
 pd.read_csv(
-    StringIO(
-        """
-        nom ; profession
-        Astérix ; 
-        Obélix ; Tailleur de menhir
-        Assurancetourix ; Barde
-        """
-    ),
-    sep = ";"
+  StringIO(file_content), #<1> 
+  sep = ";"
 )
 ```
+1. `StringIO` permet de traiter la chaîne de caractère comme le contenu d'un fichier.
 
-A propos des fichiers de ce type, on parle de __fichiers plats__ car
-les enregistrements relatifs à une observation sont stockés ensemble,
-sans hiérarchie.  
+A propos des fichiers de ce type, on parle de __fichiers plats__ car les enregistrements relatifs à une observation sont stockés ensemble, sans hiérarchie.
 
-Certains formats de données vont permettre d'organiser les informations
-de manière différente. Par exemple, le format `JSON` va
-hiérarchiser différemment la même information [^1]:
+### Les fichiers hiérarchiques
 
-```raw
+D'autres formats, comme `JSON`, structurent les données de manière hiérarchique :
+
+```json
 [
   {
     "nom": "Astérix"
@@ -119,102 +141,80 @@ hiérarchiser différemment la même information [^1]:
 
 ::: {.caution}
 
-La différence entre le CSV et le format `JSON` va au-delà d'un simple "formattage" des données.
+La différence entre un fichier `.csv` et un fichier `JSON` ne réside pas seulement dans le format : elle implique une autre logique de stockage.
 
-Par sa nature non tabulaire, le format JSON permet des mises à jour beaucoup plus facile de la donnée dans les entrepôts de données.
+Le format `JSON`, non tabulaire, est plus souple : il permet de mettre à jour la structure des données sans recompiler ou modifier les anciennes lignes. Cela facilite la collecte évolutive dans des contextes comme les API.
 
-Par exemple, un site web qui collecte de nouvelles données n'aura pas à mettre à jour l'ensemble de ses enregistrements antérieurs
-pour stocker la nouvelle donnée (par exemple pour indiquer que pour tel ou tel client cette donnée n'a pas été collectée)
-mais pourra la stocker dans
-un nouvel item. Ce sera à l'outil de requête (`Python` ou un autre outil)
-de créer une relation entre les enregistrements stockés à des endroits
-différents.
 
-Ce type d'approche flexible est l'un des fondements de l'approche `NoSQL`,
-sur laquelle nous allons revenir, qui a permis l'émergence de technologies au coeur de l'écosystème actuel du _big-data_ comme `Hadoop` ou `ElasticSearch`. 
+Par exemple, un site web qui collecte de nouvelles données n'aura pas à mettre à jour l'ensemble de ses enregistrements antérieurs pour stocker la nouvelle donnée (par exemple pour indiquer que pour tel ou tel client cette donnée n'a pas été collectée) mais pourra la stocker dans un nouvel item.
+
+
+
+Ce sera à l'outil de requête (`Python` ou un autre outil)
+de créer une relation entre les enregistrements stockés à des endroits différents.
+
+C’est ce principe qui sous-tend de nombreuses bases `NoSQL` (comme `ElasticSearch`), centrales dans l’univers du _big data_.
 
 :::
-
 
 Cette fois, quand on n'a pas d'information, on ne se retrouve pas avec nos deux séparateurs accolés (cf. la ligne _"Astérix"_) mais l'information
 n'est tout simplement pas collectée. 
 
-::: {.note}
+### Données réparties sur plusieurs fichiers
 
-Il se peut très bien que l'information sur une observation soit disséminée
-dans plusieurs fichiers dont les formats diffèrent.
+Il est fréquent qu’une observation soit répartie entre plusieurs fichiers de formats différents. Par exemple, en géomatique, les contours géographiques peuvent être stockés de différentes manières pour accompagner les données qu'elles contextualisent:
 
-Par exemple, dans le domaine des données géographiques,
-lorsqu'une donnée est disponible sous format de fichier(s), elle peut l'être de deux manières!
-
-- Soit la donnée est stockée dans un seul fichier qui mélange contours géographiques et valeurs attributaires
-(la valeur associée à cette observation géographique, par exemple le taux d'abstention). Ce principe est celui du `geojson`.
-- Soit la donnée est stockée dans plusieurs fichiers qui sont spécialisés : un fichier va stocker les contours géographiques,
-l'autre les données attributaires et d'autres fichiers des informations annexes (comme le système de projection). Ce principe est celui du `shapefile`.
-C'est alors le logiciel qui requête
-les données (`Python` par exemple) qui saura où aller chercher l'information
-dans les différents fichiers et associer celle-ci de manière cohérente.
-
-:::
+* Soit tout est empilé dans un unique fichier qui contient à la fois les contours géographiques et les valeurs attributaires. Cette logique est celle suivie, par exemple, par le `GeoJSON` ;
+* Soit plusieurs fichiers se répartissent l'ensemble des données et, pour lire la donnée dans son ensemble (contours géographiques, données des différentes zones géographiques, système de projection, etc.), il faudra donc associer ceux-ci pour avoir un tableau de données complet. C'est l'approche suivie par le format `Shapefile`.
 
 
+Lorsque la donnée est éclatée dans plusieurs fichiers, c'est alors à l’outil de traitement (ex. `Python`) d’effectuer la jonction logique.
 
-Un concept supplémentaire dans le monde du fichier est celui du __file system__. Le  _file system_ est
-le système de localisation et de nommage des fichiers. 
-Pour simplifier, le _file system_ est la manière dont votre ordinateur saura
-retrouver, dans son système de stockage, les bits présents dans tel ou tel fichier
-appartenant à tel ou tel dossier.  
+### Le rôle du _file system_
 
-## Les bases de données
+Le **système de fichiers** (_file system_) permet à l’ordinateur de localiser physiquement les fichiers sur le disque. C’est un composant central dans la gestion de fichiers : il assure leur nommage, leur hiérarchie et leur accès.
 
 
-La logique des bases de données est différente. Elle est plus systémique. 
-Un système de gestion de base de données (_Database Management System_)
-est un logiciel qui gère à la fois le stockage d'un ensemble de données reliée,
-permet de mettre à jour celle-ci (ajout ou suppression d'informations, modification
-des caractéristiques d'une table...)
-et qui gère également
-les modalités d'accès à la donnée (type de requête, utilisateurs
-ayant les droits en lecture ou en écriture...). 
+## Le stockage sous forme de bases de données
 
-La relation entre les entités présentes dans une base de données
-prend généralement la forme d'un __schéma en étoile__. Une base va centraliser
-les informations disponibles qui seront ensuite détaillées dans des tables
-dédiées. 
+La logique des bases de données est différente. Elle est plus systémique. Une **base de données relationnelle** est gérée par un **Système de Gestion de Base de Données** (SGBD) qui permet :
 
-![](https://www.databricks.com/wp-content/uploads/2022/04/star-schema-erd.png)
-Source: [La documentation `Databricks` sur le schéma en étoile](https://www.databricks.com/fr/glossary/star-schema)
+- de stocker des ensembles cohérents de données,
+- d’en permettre la mise à jour (ajout, suppression, modification),
+- d’en contrôler l’accès (droits utilisateurs, types de requêtes, etc.).
+
+Les données sont organisées en **tables** reliées par des **relations**, souvent selon un **schéma en étoile** :
+
+![Source: [Documentation Databricks](https://www.databricks.com/fr/glossary/star-schema)](https://www.databricks.com/wp-content/uploads/2022/04/star-schema-erd.png)
+
 
 Le logiciel associé à la base de données fera ensuite le lien
-entre ces tables à partir de requêtes `SQL`. L'un des logiciels les plus efficaces dans ce domaine
-est [`PostgreSQL`](https://www.postgresql.org/). `Python` est tout à fait
-utilisable pour passer une requête SQL à un gestionnaire de base de données. 
-Les packages [`sqlalchemy`](https://www.sqlalchemy.org/) et [`psycopg2`](https://www.psycopg.org/docs/)
-peuvent servir à utiliser `PostgreSQL` pour requêter une
-base de donnée ou la mettre à jour. 
+entre ces tables à partir de requêtes `SQL`. L'un des logiciels les plus efficaces dans ce domaine est [`PostgreSQL`](https://www.postgresql.org/).
 
-La logique de la base de données est donc très différente de celle du fichier.
-Ces derniers sont beaucoup plus légers pour plusieurs raisons. 
-D'abord, parce qu'ils sont moins adhérents à 
-un logiciel gestionnaire. Là où le fichier ne nécessite, pour la gestion,
-qu'un _file system_, installé par défaut sur
-tout système d'exploitation, une base de données va nécessiter un
-logiciel spécialisé. L'inconvénient de l'approche fichier, sous sa forme
-standard, est qu'elle
-ne permet pas une gestion fine des droits d'accès et amène généralement à une 
-duplication de la donnée pour éviter que la source initiale soit
-ré-écrite (involontairement ou de manière intentionnelle par un utilisateur malveillant).
-Résoudre ce problème est l'une des
-innovations des systèmes _cloud_, sur lesquelles nous reviendrons en évoquant le
-système `S3`.
-Un deuxième inconvénient de l'approche base de données par
-rapport à l'approche fichier, pour un utilisateur de `Python`,
-est que les premiers nécessitent l'intermédiation du logiciel de gestion 
-de base de données là où, dans le second cas, on va se contenter d'une
-librairie, donc un système beaucoup plus léger, 
-qui sait comment transformer la donnée brute en `DataFrame`. 
-Pour ces raisons, entre autres, les bases de données sont donc moins à la 
-mode dans l'écosystème récent de la _data science_ que les fichiers.
+
+### Requêtes en Python
+
+`Python` est tout à fait utilisable pour passer une requête SQL à un gestionnaire de base de données. Historiquement, les packages [`sqlalchemy`](https://www.sqlalchemy.org/) et [`psycopg2`](https://www.psycopg.org/docs/) ont été très utilisés pour envoyer des requêtes à une base de données `PostgreSQL` (lire celle-ci, la mettre à jour, etc.). Aujourd'hui, [`DuckDB`](https://duckdb.org/), sur lequel nous reviendrons lorsque nous parlerons du format `Parquet`, est un choix pratique pour passer des requêtes SQL à un SGBD `PostgreSQL`. 
+
+### Pourquoi les fichiers ont le vent en poupe
+
+Le succès croissant des formats fichiers dans l’écosystème de la data science s’explique par plusieurs facteurs techniques et pratiques qui les rendent particulièrement adaptés aux usages analytiques modernes.
+
+En premier lieu, les fichiers sont beaucoup plus légers à manipuler que les bases de données. Ils ne nécessitent pas l'installation ou le maintien d’un logiciel de gestion spécialisé : un simple _file system_, déjà présent sur tout système d’exploitation, suffit à y accéder.
+
+Pour lire un fichier dans `Python`, il suffit d’utiliser une librairie comme `Pandas`. À l’inverse, interagir avec une base de données implique souvent :
+
+- l’installation et la configuration d’un SGBD (comme `PostgreSQL`, `MySQL`, etc.) ;
+- la gestion d’une connexion réseau ;
+- le recours à des bibliothèques comme `sqlalchemy` ou `psycopg2`.
+
+Cette différence de complexité rend l’approche fichier beaucoup plus souple et rapide pour les tâches exploratoires ou ponctuelles.
+
+Cette légèreté a une contrepartie : les fichiers ne permettent pas une gestion fine des droits d’accès. Il est difficile, par exemple, d’empêcher un utilisateur de modifier ou supprimer la donnée à moins de dupliquer le fichier et de travailler sur une copie. C’est l’une des limites de l’approche fichier dans les environnements multi-utilisateurs mais auxquelles les solutions _cloud_, notamment la technologie `S3` sur laquelle nous reviendrons, apportent des réponses.
+
+La principale raison pour laquelle les fichiers sont souvent privilégiés par rapport aux SGBD réside dans la nature des opérations effectuées. Les bases de données relationnelles prennent tout leur sens lorsque l’on doit gérer des écritures fréquentes ou des mises à jour complexes sur des ensembles de données structurés — c’est-à-dire dans une **logique applicative**, où la donnée évolue continuellement (ajout, modification, suppression).
+
+À l’inverse, dans un contexte **analytique**, on se contente généralement de lire et de manipuler temporairement des données sans modifier la source. L’objectif est d’interroger, d’agréger, de filtrer — pas de pérenniser les changements. Pour ce type d’usage, les fichiers (notamment dans des formats optimisés comme `Parquet`, comme nous allons le voir) sont parfaitement adaptés : ils offrent une lecture rapide, une portabilité élevée et n'imposent pas l'intermédiation d’un moteur de base de données.
 
 # Le format `Parquet`
 
