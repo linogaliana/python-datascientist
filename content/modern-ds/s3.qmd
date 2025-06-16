@@ -192,13 +192,11 @@ Le logiciel associé à la base de données fera ensuite le lien
 entre ces tables à partir de requêtes `SQL`. L'un des logiciels les plus efficaces dans ce domaine est [`PostgreSQL`](https://www.postgresql.org/).
 
 
-### Requêtes en Python
-
 `Python` est tout à fait utilisable pour passer une requête SQL à un gestionnaire de base de données. Historiquement, les packages [`sqlalchemy`](https://www.sqlalchemy.org/) et [`psycopg2`](https://www.psycopg.org/docs/) ont été très utilisés pour envoyer des requêtes à une base de données `PostgreSQL` (lire celle-ci, la mettre à jour, etc.). Aujourd'hui, [`DuckDB`](https://duckdb.org/), sur lequel nous reviendrons lorsque nous parlerons du format `Parquet`, est un choix pratique pour passer des requêtes SQL à un SGBD `PostgreSQL`. 
 
-### Pourquoi les fichiers ont le vent en poupe
+### Pourquoi les fichiers ont le vent en poupe {-}
 
-Le succès croissant des formats fichiers dans l’écosystème de la data science s’explique par plusieurs facteurs techniques et pratiques qui les rendent particulièrement adaptés aux usages analytiques modernes.
+Le succès croissant des fichiers dans l’écosystème de la data science s’explique par plusieurs facteurs techniques et pratiques qui les rendent particulièrement adaptés aux usages analytiques modernes.
 
 En premier lieu, les fichiers sont beaucoup plus légers à manipuler que les bases de données. Ils ne nécessitent pas l'installation ou le maintien d’un logiciel de gestion spécialisé : un simple _file system_, déjà présent sur tout système d’exploitation, suffit à y accéder.
 
@@ -216,100 +214,73 @@ La principale raison pour laquelle les fichiers sont souvent privilégiés par r
 
 À l’inverse, dans un contexte **analytique**, on se contente généralement de lire et de manipuler temporairement des données sans modifier la source. L’objectif est d’interroger, d’agréger, de filtrer — pas de pérenniser les changements. Pour ce type d’usage, les fichiers (notamment dans des formats optimisés comme `Parquet`, comme nous allons le voir) sont parfaitement adaptés : ils offrent une lecture rapide, une portabilité élevée et n'imposent pas l'intermédiation d’un moteur de base de données.
 
+
 # Le format `Parquet`
 
 
-Le format `CSV` a rencontré un grand succès par sa simplicité : il 
-est lisible par un humain (un bloc-note suffit pour l'ouvrir et
-apercevoir les premières lignes), sa nature plate lui permet
-de bien correspondre au concept de données tabulées sans hiérarchie 
-qui peuvent être rapidement valorisées, il est universel (il n'est
-pas adhérent à un logiciel). Cependant, le CSV présente
-plusieurs inconvénients qui justifient l'émergence d'un format
-concurrent :
+Le format `CSV` a longtemps été plébiscité en raison de sa simplicité :
 
-- le CSV est un format __lourd__ car les informations ne sont pas compressées 
-(ce qui le rend lisible facilement depuis un bloc-note) mais aussi
-parce que toutes les données sont stockées de la même manière.
-C'est la
-librairie faisant l'import qui va essayer d'optimiser le typage des données
-pour trouver le typage qui utilise le moins de mémoire possible sans
-altération de l'information. En effet, si `pandas` détermine qu'une colonne
-présente les valeurs `6 ; 5 ; 0`, il va privilégier l'utilisation du type
-`int` au type `double` qui sera lui même préféré au type `object` (objets
-de type données textuelles). Cependant, pour faire cela, `pandas` va devoir
-scanner un nombre suffisant de valeurs, ce qui demande du temps et expose 
-à des erreurs (en se fondant sur trop peu de valeurs, on peut se tromper
-de typage) ;
-- le stockage étant __orienté ligne__, 
-accéder à une information donnée dans un `CSV` implique
-de le lire le fichier en entier, sélectionner la ou les colonnes
-d'intérêt et ensuite les lignes désirées. Par exemple, si on désire
-connaître uniquement la profession de la deuxième ligne dans l'exemple
-plus haut :point_up:, un algorithme de recherche devra:
-prendre le fichier, déterminer que la profession est la deuxième colonne,
-et ensuite aller chercher la deuxième ligne dans cette colonne. Si
-on désire accéder à un sous-ensemble de lignes dont les indices
-sont connus, le `CSV` est intéressant. Cependant,
-si on désire accéder à un sous-ensemble
-de colonnes dans un fichier (ce qui est un cas d'usage plus fréquent
-pour les _data scientists_), alors le `CSV` n'est pas le format le plus
-approprié ;
-- mettre à jour la donnée est coûteux car cela implique de réécrire
-l'ensemble du fichier. Par exemple, si après une première
-analyse de la donnée,
-on désire ajouter une colonne, on ne peut accoler ces nouvelles informations
-à celles déjà existantes, il est nécessaire de réécrire l'ensemble 
-du fichier. Pour reprendre l'exemple de nos gaulois préférés, si on veut
-ajouter une colonne `cheveux` entre les deux déjà existantes,
-il faudra changer totalement le fichier: 
+- Il est **lisible par un humain** (un simple éditeur de texte suffit pour en lire le contenu) ;
+- Il repose sur une **structure tabulaire** simple, bien adaptée à de nombreuses situations d’analyse ;
+- Il est **universel** et interopérable, car non dépendant d’un logiciel particulier.
 
-```raw
-"""
-nom ; cheveux ; profession
-Astérix; blond; ; 
-Obélix; roux; Tailleur de menhir
-Assurancetourix; blond; Barde
-"""
-```
+Mais cette simplicité a un coût. Plusieurs limites du format `CSV` ont justifié l’émergence de formats plus performants pour l'analyse de données comme `Parquet`
+
+
+## Limites du format `CSV`
+
+Le CSV est un format **lourd** :
+
+* Il n’est pas compressé, ce qui augmente sa taille disque ;
+* Toutes les données y sont stockées de façon brute. L’optimisation du typage (entier, flottant, chaîne…) est laissée à la librairie qui l’importe (comme `Pandas`), ce qui nécessite de **scanner les données** à l’ouverture, augmentant le temps de chargement et le risque d’erreur.
+
+Le CSV est **orienté ligne** :
+
+* Pour accéder à une colonne spécifique, il faut lire **chaque ligne** du fichier puis en extraire la colonne d’intérêt ;
+* Ce modèle est peu performant lorsqu’on souhaite ne manipuler qu’un **sous-ensemble de colonnes** — un cas très courant en data science.
+
+Le CSV est **coûteux à modifier** :
+
+* Ajouter une colonne ou insérer une donnée intermédiaire implique de **réécrire tout le fichier**. Par exemple, ajouter une colonne `cheveux` nécessiterait de produire une nouvelle version du fichier :
+
+    ```raw
+    nom ; cheveux ; profession
+    Astérix ; blond ; 
+    Obélix ; roux ; Tailleur de menhir
+    Assurancetourix ; blond ; Barde
+    ```
 
 ::: {.note}
+### À propos des formats propriétaires
 
-La plupart des logiciels d'analyse de données proposent 
-un format de fichier pour sauvegarder des bases de données. On
-peut citer le `.pickle` (`Python`), le `.rda` ou `.RData` (`R`),
-le `.dta` (`Stata`) ou le `.sas7bdat` (`SAS`). L'utilisation
-de ces formats est problématique car cela revient à se lier
-les mains pour l'analyse ultérieure des données, surtout
-lorsqu'il s'agit d'un format propriétaire (comme avec
-`SAS` ou `Stata`). 
+La plupart des outils de data science proposent des formats de sérialisation spécifiques : 
 
-Par exemple, `Python` ne
-sait pas nativement lire un `.sas7bdat`. Il existe des librairies
-pour le faire (notamment `Pandas`) mais le format
-étant propriétaire, les développeurs de la librairie ont dû tâtonner et
-on n'est ainsi jamais assuré qu'il n'y ait pas d'altération de la donnée. 
+- `.pickle` pour `Python`,  
+- `.rda` ou `.RData` pour `R`,  
+- `.dta` pour `Stata`,  
+- `.sas7bdat` pour `SAS`.
 
-Malgré tous les inconvénients du `.csv` listés plus haut, il présente 
-l'immense avantage, par rapport à ces formats, de l'universalité. 
-Il vaut ainsi mieux privilégier un `.csv` à ces formats pour le stockage
-de la donnée. Ceci dit, comme vise à le montrer ce chapitre, il vaut
-mieux privilégier le format `parquet` au `CSV`.
+Cependant, ces formats sont **propriétaires** ou **fortement couplés à un langage**, ce qui pose des problèmes d’interopérabilité. Par exemple, `Python` ne peut pas lire nativement un `.sas7bdat`. Même s’il existe des bibliothèques dédiées, l’absence de documentation officielle rend le support incertain.
 
+À ce titre, malgré ses limites, le `.csv` conserve l’avantage de l’universalité. Mais le format `Parquet` combine cette portabilité avec des performances bien supérieures.
 :::
 
 
-Pour répondre à ces limites du `CSV`, le format `parquet`, 
-qui est un [projet open-source `Apache`](https://apache.org/), a émergé.
-La première différence entre le format `parquet` et le `CSV` est
-que le premier repose sur un __stockage orienté colonne__ là où
-le second est orienté ligne. Pour comprendre la différence, voici un
-exemple issu du [blog d'upsolver](https://www.upsolver.com/blog/apache-parquet-why-use): 
+## L’émergence du format `Parquet`
 
-![](https://www.upsolver.com/wp-content/uploads/2020/05/Screen-Shot-2020-05-26-at-17.52.58.png)
+Pour répondre à ces limites, le format `Parquet`, développé comme [projet _open-source_ Apache](https://parquet.apache.org/), propose une approche radicalement différente.
 
-Dans notre exemple précédent, cela donnera une information prenant 
-la forme suivante (ignorez l'élément `pyarrow.Table`, nous
+Sa principale caractéristique : il est **orienté colonne**. Contrairement au CSV, les données de chaque colonne sont stockées **séparément**. Cela permet :
+
+- de charger uniquement les colonnes utiles à une analyse ;
+- de compresser plus efficacement les données ;
+- d’accélérer significativement les requêtes sélectives.
+
+Voici une représentation tirée du [blog d'Upsolver](https://www.upsolver.com/blog/apache-parquet-why-use) qui illustre la différence entre stockage ligne (`row-based`) et stockage colonne (`columnar`) :
+
+![Parquet vs CSV](https://www.upsolver.com/wp-content/uploads/2020/05/Screen-Shot-2020-05-26-at-17.52.58.png)
+
+Dans notre exemple, on pourrait lire la colonne `profession` sans parcourir les noms, ce qui rend l'accès plus rapide (ignorez l'élément `pyarrow.Table`, nous
 reviendrons dessus) :
 
 ```{python}
@@ -331,57 +302,35 @@ df = csv.read_csv(source, parse_options = csv.ParseOptions(delimiter=";"))
 df
 ```
 
-Pour reprendre l'exemple fil rouge :point_up:, il sera ainsi beaucoup plus
-facile de récupérer la deuxième ligne de la colonne `profession`:
-on ne considère que le vecteur `profession` et on récupère la deuxième
-valeur. 
-Le requêtage d'échantillon de données ne nécessite donc pas l'import de 
-l'ensemble des données. A cela s'ajoute des fonctionnalités supplémentaires
-des librairies d'import de données parquet (par exemple `pyarrow` ou `spark`)
-qui vont faciliter des recherches complexes basées, par exemple, sur des
-requêtes de type `SQL`, ou permettant l'utilisation de données plus volumineuses que la RAM. 
+Grâce à la structure orientée colonne, il est possible de lire uniquement une variable (comme `profession`) sans avoir à parcourir toutes les lignes du fichier.
 
-Le format `parquet` présente d'autres avantages par rapport au
-`CSV`: 
+## Avantages clés du format `Parquet`
 
-- Le format `parquet` est (très) compressé, ce qui réduit la volumétrie
-des données sur disque ;
-- Des métadonnées, notamment le typage des variables, sont stockées en complément dans le fichier.
-Cette partie, nommée le _footer_ du fichier `parquet`, permet que l'import des données soit 
-optimisé sans risque d'altération de celle-ci. Pour un producteur de données, c'est une manière
-d'assurer la qualité des données. Par exemple, un fournisseur de
-données de type code-barre sera
-certain que les données `000012` ne seront pas considérées identiques à un code-barre `12`.
-- Il est possible de partitionner un jeu de données en fonction de différents niveaux (par
-exemple des niveaux géographiques) en une arborescence de fichiers `parquet`. Cela
-permet de travailler sur un échantillon pour facilement passer à l'échelle ensuite.
-Par exemple, une structure partitionnée, empruntée
-à la [documentation `Spark`](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html#partition-discovery)
-peut prendre la forme suivante :
+- **Compression native** : les fichiers `Parquet` sont compressés de façon efficace, ce qui réduit considérablement leur taille sur disque sans perte d'information.
+- **Typage intégré** : chaque colonne est associée à un type précis dans le fichier (stocké dans le _footer_). Cela :
+  - fiabilise l’import (pas d’erreur de détection automatique) ;
+  - évite l’altération de données sensibles (par exemple `000012` n’est pas interprété comme `12`).
+- **Partitionnement natif** : `Parquet` permet de **structurer un jeu de données en sous-ensembles hiérarchiques**, ce qui facilite l’accès à des échantillons ciblés tout en gardant la possibilité de monter en charge ensuite.
+
+Exemple de partitionnement (tiré de la [documentation Spark](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html#partition-discovery)) :
 
 ```raw
 path
 └── to
     └── table
         ├── gender=male
-        │   ├── ...
-        │   │
         │   ├── country=US
         │   │   └── data.parquet
         │   ├── country=CN
         │   │   └── data.parquet
-        │   └── ...
         └── gender=female
-            ├── ...
-            │
             ├── country=US
             │   └── data.parquet
             ├── country=CN
             │   └── data.parquet
-            └── ...
 ```
 
-Qu'on lise un ou plusieurs fichiers, on finira avec le schéma suivant :
+À la lecture, l’ensemble est reconstruit sous forme tabulaire :
 
 ```raw
 root
@@ -391,80 +340,78 @@ root
 |-- country: string (nullable = true)
 ```
 
-Ces différents avantages expliquent le succès du format `parquet` dans le monde du
-_big-data_. Le paragraphe suivant, extrait du [post d'upsolver]() déjà cité, 
-résume bien l'intérêt:
 
-> Complex data such as logs and event streams would need to be represented as a table with hundreds or thousands of columns, and many millions of rows. Storing this table in a row based format such as CSV would mean:
-> 
-> - Queries will take longer to run since more data needs to be scanned, rather than only querying the subset of columns we need to answer a query (which typically requires aggregating based on dimension or category)
-> - Storage will be more costly since CSVs are not compressed as efficiently as Parquet
+## Un format taillé pour l’analyse — pas uniquement le _big data_
 
-Cependant, **`Parquet` ne devrait pas intéresser que les producteurs ou utilisateurs de données _big-data_**.
-C'est l'ensemble
-des producteurs de données qui bénéficient des fonctionalités
-de `Parquet`. 
+Comme le rappelle le blog d’Upsolver :
 
-Pour en savoir plus sur `Arrow`,
-des éléments supplémentaires sur `Parquet` sont disponibles sur ce très bon
-post de blog d'[upsolver](https://www.upsolver.com/blog/apache-parquet-why-use)
-et [sur la page officielle du projet `Parquet`](https://parquet.apache.org/).
+> _Complex data such as logs and event streams would need to be represented as a table with hundreds or thousands of columns, and many millions of rows. Storing this table in a row-based format such as CSV would mean:_
+>
+> - _Queries will take longer to run since more data needs to be scanned..._
+> - _Storage will be more costly since CSVs are not compressed as efficiently as Parquet_
 
-## Lire un `parquet` en `Python`: la librairie `pyarrow`
+Mais le format `Parquet` **n’est pas réservé aux architectures _big data_**. Toute personne produisant ou manipulant des jeux de données bénéficiera de ses qualités :
 
-La librairie `pyarrow` permet la lecture et l'écriture
-de fichiers `parquet` avec `Python`[^3]. Elle repose
-sur un type particulier de _dataframe_, le `pyarrow.Table`
-qui peut être utilisé en substitut ou en complément
-du `DataFrame` 
-de `pandas`. Il est recommandé de régulièrement
+- fichiers plus petits,
+- import rapide et fiable,
+
+
+
+## Lire un `Parquet` en `Python`: exemple
+
+Il existe de nombreuses librairies fonctionnant bien avec `Parquet` mais les deux plus utiles à connaître sont `pyarrow` et `duckdb`. 
+
+La librairie [`pyarrow`](https://arrow.apache.org/docs/python/) permet de lire et écrire des fichiers `Parquet` tout en tirant parti de la structure colonne du format[^doc-arrow]. Elle repose sur un objet `pyarrow.Table`, qui peut, une fois les calculs lourds effectués, être converti vers un `DataFrame` `pandas` pour bénéficier d’un écosystème plus riche en fonctionnalités.
+
+La librairie [`duckdb`](https://duckdb.org/docs/api/python/) permet d’interroger directement des fichiers `Parquet` à l’aide du langage `SQL`, sans les charger entièrement en mémoire. Autrement dit, elle reprend la philosophie du monde de la base de données (l'utilisation de SQL) mais sur des fichiers. Le résultat des requêtes peut être converti en `DataFrame` `pandas`, ce qui permet de profiter à la fois de la souplesse de `pandas` et de la performance du moteur SQL embarqué. 
+
+
+[^doc-arrow]: Il est recommandé de régulièrement
 consulter la documentation officielle de `pyarrow` 
 concernant [la lecture et écriture de fichiers](https://arrow.apache.org/docs/python/parquet.html) et celle relative
 aux [manipulations de données](https://arrow.apache.org/cookbook/py/data.html).
 
-[^3]: Elle permet aussi la lecture et l'écriture 
-de `.csv`.
+::: {.tip}
+L'utilisation des alias `pa` pour `pyarrow` et `pq` pour `pyarrow.parquet` est une convention largement adoptée, à l'image de celle de `pd` pour `pandas`.
+:::
 
-Pour illustrer les fonctionalités de `pyarrow`,
-repartons de notre CSV initial que nous allons
-enrichir d'une nouvelle variable numérique
-et que nous
-allons 
-convertir en objet `pyarrow` avant de l'écrire au format `parquet`:
+Pour illustrer ces fonctionnalités, prenons un jeu de données issu des données synthétiques du recensement de la population diffusés par l'Insee. 
 
 ```{python}
 #| eval: true
-import pandas as pd
-from io import StringIO 
-import pyarrow as pa
+import requests
 import pyarrow.parquet as pq
 
-s = """
-nom;cheveux;profession
-Astérix;blond;
-Obélix;roux;Tailleur de menhir
-Assurancetourix;blond;Barde
-"""
+# Example Parquet
+url = "https://minio.lab.sspcloud.fr/projet-formation/bonnes-pratiques/data/RPindividus/REGION=93/part-0.parquet"
 
-source = StringIO(s)
+# Télécharger le fichier et l'enregistrer en local
+with open("example.parquet", "wb") as f:
+    response = requests.get(url)
+    f.write(response.content)
+```
 
-df = pd.read_csv(source, sep = ";", index_col=False)
-df["taille"] = [155, 190, 175]
-table = pa.Table.from_pandas(df)
+::: {.panel-tabset group="language"}
+## `Arrow` 
 
+L'idéal pour bénéficier pleinement des optimisations permises par le format `Parquet` est de passer par `pyarrow.dataset`. Cela permettra de bénéficier des optimisations permises par le combo `Parquet` et `Arrow`, que toutes les manières de lire un `Parquet` avec `Arrow` ne proposent pas (cf. prochains exercices).
+
+```{python}
+import pyarrow.dataset as ds
+
+dataset = ds.dataset(
+  "example.parquet"
+).scanner(columns = ["AGED", "IPONDI", "DEPT"])
+table = dataset.to_table()
 table
-
-pq.write_table(table, 'example.parquet')
 ```
 
 
-::: {.tip}
+:::: {.tip}
 L'utilisation des noms `pa` pour `pyarrow` et `pq` pour
 `pyarrow.parquet` est une convention communautaire
 qu'il est recommandé de suivre.
-
-:::
-
+::::
 
 Pour importer et traiter ces données, on peut conserver
 les données sous le format `pyarrow.Table`
@@ -475,150 +422,130 @@ manipulations offertes par l'écosystème
 `pandas` qui est généralement mieux connu que
 celui d'`Arrow`. 
 
-Supposons qu'on ne s'intéresse qu'à la taille et à la couleur
-de cheveux de nos gaulois. 
-Il n'est pas nécessaire d'importer l'ensemble de la base, cela
-ferait perdre du temps pour rien. On appelle
-cette approche le __`column pruning`__ qui consiste à 
-ne parcourir, dans le fichier, que les colonnes qui nous
-intéressent. Du fait du stockage orienté colonne du `parquet`,
-il suffit de ne considérer que les blocs qui nous 
-intéressent (alors qu'avec un CSV il faudrait scanner tout
-le fichier avant de pouvoir éliminer certaines colonnes).
-Ce principe du `column pruning` se matérialise avec
-l'argument `columns` dans `parquet`.
-
-Ensuite, avec `pyarrow`, on pourra utiliser `pyarrow.compute` pour
-effectuer des opérations directement sur une table
-`Arrow` :
+## `DuckDB` 
 
 ```{python}
-#| eval: false
-import pyarrow.compute as pc
-
-table = pq.read_table('example.parquet', columns=['taille', 'cheveux'])
-
-(
-  table
-  .group_by("cheveux")
-  .aggregate([("taille", "mean")])
-)
+import duckdb
+duckdb.sql("""
+FROM read_parquet('example.parquet')
+SELECT AGED, IPONDI, DEPT
+""")
 ```
-
-La manière équivalente de procéder en passant
-par l'intermédiaire de `pandas` est
-
-```{python}
-#| eval: true
-table = pq.read_table('example.parquet', columns=['taille', 'cheveux'])
-
-(
-  table
-  .to_pandas()
-  .groupby("cheveux")["taille"]
-  .mean()
-)
-```
-
-Ici, comme les données sont peu volumineuses, deux des
-avantages du `parquet` par rapport
-au `CSV` (données moins
-volumineuses et vitesse de l'import)
-ne s'appliquent pas vraiment. 
-
-
-::: {.note}
-
-Un autre principe d'optimisation de la performance qui est
-au coeur de la librairie `Arrow` est le `filter pushdown`
-(ou `predicate pushdown`). 
-
-Quand on exécute un filtre de sélection de ligne 
-juste après avoir chargé un jeu de données,
-`Arrow` va essayer de le mettre en oeuvre lors de l'étape de lecture
-et non après. Autrement dit, `Arrow` va modifier le plan 
-d'exécution pour pousser le filtre en amont de la séquence d'exécution
-afin de ne pas essayer de lire les lignes inutiles. 
 
 :::
 
+## Des exercices pour en apprendre plus
+
+Voici une série d'exercices issues du cours de [Mise en production de projets data science](https://ensae-reproductibilite.github.io/website/chapters/big-data.html#sec-new-formats) que Romain Avouac et moi proposons à la fin du cursus d'ingénieurs de l'ENSAE. 
+
+Ces exercices illustrent progressivement quelques concepts présentés ci-dessus tout en présentant les bonnes pratiques à adopter pour traiter des données volumineuses. La correction de ces exercices est disponible sur la page du cours en question.
+
+Tout au long de cette application, nous allons voir comment utiliser le format `Parquet` de la manière la plus efficiente possible. Afin de comparer les différents formats et méthodes d'utilisation, nous allons **comparer le temps d'exécution et l'usage mémoire d'une requête standard**. Commençons déjà, sur un premier exemple avec une donnée légère, pour comparer les formats `CSV` et `Parquet`.
+
+Pour cela, nous allons avoir besoin de récupérer des données au format `Parquet`. Nous proposons d'utiliser les données détaillées et anonymisées du recensement de la population française: environ 20 millions de lignes pour 80 colonnes. Le code pour récupérer celles-ci est donné ci-dessous
 
 
+<details>
+<summary>
+Code pour récupérer les données
+</summary>
+
+```{python}
+#| eval: false
+import pyarrow.parquet as pq
+import pyarrow as pa
+import os
+
+# Définir le fichier de destination
+filename_table_individu = "data/RPindividus.parquet"
+
+# Copier le fichier depuis le stockage distant (remplacer par une méthode adaptée si nécessaire)
+os.system("mc cp s3/projet-formation/bonnes-pratiques/data/RPindividus.parquet data/RPindividus.parquet") #<1>
+
+# Charger le fichier Parquet
+table = pq.read_table(filename_table_individu)
+df = table.to_pandas()
+
+# Filtrer les données pour REGION == "24"
+df_filtered = df.loc[df["REGION"] == "24"]
+
+# Sauvegarder en CSV
+df_filtered.to_csv("data/RPindividus_24.csv", index=False)
+
+# Sauvegarder en Parquet
+pq.write_table(pa.Table.from_pandas(df_filtered), "data/RPindividus_24.parquet")
+```
+1. Cette ligne de code utilise l'utilitaire Minio Client disponible sur le `SSPCloud`. Si vous n'êtes pas sur cette infrastructure, vous pouvez vous référer à la boite dédiée
+
+::: {.callout-important collapse="true"}
+## Si vous n'êtes pas sur le `SSPCloud`
+
+Vous devrez remplacer la ligne
+
+```{.python}
+os.system("mc cp s3/projet-formation/bonnes-pratiques/data/RPindividus.parquet data/RPindividus.parquet")
+```
+
+qui utilise l'outil en ligne de commande `mc` par un code téléchargeant cette donnée à partir de l'URL [https://projet-formation.minio.lab.sspcloud.fr/bonnes-pratiques/data/RPindividus.parquet](https://projet-formation.minio.lab.sspcloud.fr/bonnes-pratiques/data/RPindividus.parquet).
+
+Il y a de nombreuses manières de faire. Vous pouvez par exemple le faire en pur `Python` avec `requests`. Si vous avez `curl` installé, vous pouvez aussi l'utiliser. Par l'intermédiaire de `Python`, cela donnera la commande `os.system("curl -o data/RPindividus.parquet https://projet-formation/bonnes-pratiques/data/RPindividus.parquet")`.
+
+:::
+
+</details>
+
+
+Ces exercices vont utiliser des décorateurs `Python`, c'est-à-dire des fonctions qui surchargent le comportement d'une autre fonction. En l'occurrence, nous allons créer une fonction exécutant une chaine d'opérations et la surcharger avec une autre chargée de contrôler l'usage mémoire et le temps d'exécution.
+
+{{< include "/content/modern-ds/_exercise.qmd" >}}
+
+# Les données dans le _cloud_
+
+Le stockage _cloud_, dans le contexte de la science des données, reprend le principe de services comme `Dropbox` ou `Google Drive` : un utilisateur accède à des fichiers distants comme s’ils étaient sur son propre disque[^4]. Autrement dit, pour un utilisateur de `Python`, **la manipulation de fichiers stockés dans le cloud peut sembler identique** à celle de fichiers locaux.
+
+Mais contrairement à un dossier de type `Mes Documents/monsuperfichier`, les fichiers ne résident pas sur l’ordinateur local. Ils sont hébergés sur un serveur distant, et chaque opération (lecture, écriture) passe par une connexion réseau.
+
+## Pourquoi ne pas utiliser `Dropbox` ou `Drive` ?
+
+Même si ces services permettent un accès distant, ils ne sont pas conçus pour le traitement de données :
+
+- Ils n’optimisent pas les accès concurrents ;
+- Ils ne gèrent pas finement les droits d’accès ou la journalisation des opérations ;
+- Ils ne proposent pas de fonctionnalités orientées stockage analytique (partitionnement, versionnage, etc.).
+
+C’est pourquoi les principaux fournisseurs _cloud_ (AWS, Google Cloud, Azure...) proposent des solutions spécifiques au stockage de données, souvent basées sur des systèmes orientés objet, dont le plus connu est `S3`.
+
+## Le système `S3`
+
+Le système `S3` (_Simple Storage Service_), développé par Amazon, est devenu un standard dans le monde du stockage cloud. Il s’agit d’un système :
+
+- **fiable** (réplication des données) ;
+- **sécurisé** (données chiffrées, contrôle d’accès granulaire) ;
+- **scalable** (adapté à des volumes massifs).
+
+### Le concept de *bucket*
+
+L’unité centrale de S3 est le **bucket** : un espace de stockage (privé ou public) qui peut contenir une arborescence de fichiers.
+
+Pour accéder à un fichier dans un bucket :
+
+- L’utilisateur doit être **autorisé** (via des identifiants ou des jetons d’accès, souvent appelés *tokens*) ;
+- Une fois authentifié, il peut **lire, écrire ou modifier** les fichiers à l’intérieur du bucket, à la manière d’un système de fichiers distant.
 
 
 
 # Les données sur le _cloud_
 
-Si les fichiers `parquet` sont une 
-solution avantageuse pour 
-les _data scientists_, ils ne résolvent
-pas tous les inconvénients de
-l'approche fichier. 
-En particulier, la question de la
-duplication des données pour la mise
-à disposition sécurisée des sources
-n'est pas résolue. Pour que 
-l'utilisateur `B` n'altère pas les
-données de l'utilisateur `A`, il est nécessaire
-qu'ils travaillent sur deux fichiers
-différents, dont l'un peut être une copie
-de l'autre. 
-
-La mise à disposition de données dans
-les systèmes de stockage _cloud_ est
-une réponse à ce problème.
-Les _data lake_ qui se sont développés dans les 
-institutions et entreprises utilisatrices de données
-
-
-Le principe d'un stockage cloud
-est le même que celui d'une
-`Dropbox` ou d'un `Drive` mais adapté à
-l'analyse de données. Un utilisateur de données
-accède à un fichier stocké sur un serveur distant
-_comme s'il_ était dans son _file system_ local[^4]. 
-Donc, du point de vue de l'utilisateur `Python`, 
+Le principe d'un stockage _cloud_ est le même que celui d'une
+`Dropbox` ou d'un `Drive` mais adapté à l'analyse de données. Un utilisateur de données accède à un fichier stocké sur un serveur distant _comme s'il_ était dans son _file system_ local[^4]. Donc, du point de vue de l'utilisateur `Python`, 
 il n'y a pas de différence fondamentale. Cependant,
 les données ne sont pas hebergées dans un dossier
 local (par exemple `Mes Documents/monsuperfichier`)
 mais sur un serveur distant auquel l'utilisateur
 de `Python` accède à travers un échange réseau.
 
-![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/featured.png)
+Néanmoins, `Dropbox` ou `Drive` ne sont pas faits pour du stockage de données. Pour ces dernières, il est plus pertinent d'utiliser une technologie adaptée (voir [le cours de mise en production](https://ensae-reproductibilite.github.io/website/chapters/big-data.html)). Les principaux fournisseurs de service  _cloud_ (AWS, GCP, Azure...) reposent sur le même principe avec un stockage orienté objet reposant sur une technologie de type `S3`.
 
-Dans l'univers du _cloud_, la hiérarchisation des données
-dans des dossiers et des fichiers bien rangés 
-est d'ailleurs moins
-importante que dans le monde du _file system_ local. 
-Lorsque vous essayez de retrouver un fichier dans
-votre arborescence de fichiers, vous utilisez parfois
-la barre de recherche de votre explorateur de fichiers,
-avec des résultats mitigés[^4]. Dans le monde du _cloud_,
-les fichiers sont parfois accumulés de manière plus 
-chaotique car les outils de recherche sont plus 
-efficaces[^4]. 
-
-[^4]: D'ailleurs, les générations n'ayant connu nativement
-que ce type de stockage ne sont pas familiarisées
-au concept de _file system_ et préfèrent 
-payer le temps de recherche. Voir
-[cet article](https://futurism.com/the-byte/gen-z-kids-file-systems)
-sur le sujet. 
-
-En ce qui concerne la sécurité des données,
-la gestion des droits de lecture et écriture peut être
-fine: on peut autoriser certains utilisateurs uniquement 
-à la lecture, d'autres peuvent avoir les droits
-d'écriture pour modifier les données. Cela permet
-de concilier les avantages des bases de données (la sécurisation
-des données) avec ceux des fichiers. 
-
-## Qu'est-ce que le système de stockage `S3` ?
-
-Dans les entreprises et administrations,
-un nombre croissant de données sont
-disponibles depuis un système de stockage
-nommé `S3`. 
 Le système `S3` (*Simple Storage System*) est un système de stockage développé
 par Amazon et qui est maintenant devenu une référence pour le stockage en ligne.
 Il s'agit d'une architecture à la fois
@@ -643,6 +570,9 @@ présenté ci-dessous.
 
 :::
 
+[^4]: Ce comportement est souvent rendu possible via des systèmes de fichiers virtuels ou des wrappers compatibles avec `pandas`, `pyarrow`, `duckdb`, etc.
+
+
 
 ## Comment faire avec Python ?
 
@@ -654,653 +584,16 @@ est possible grâce à des API. Les deux principales librairies sont les suivant
 * [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html), une librairie créée et maintenue par Amazon ;
 * [s3fs](https://s3fs.readthedocs.io/en/latest/), une librairie qui permet d'interagir avec les fichiers stockés à l'instar d'un filesystem classique.
 
-La librairie `pyarrow` que nous avons déjà présentée permet également
-de traiter des données stockées sur le _cloud_ comme si elles
+Les librairies `pyarrow` et `duckdb` que nous avons déjà présentées permettent également de traiter des données stockées sur le _cloud_ comme si elles
 étaient sur le serveur local. C'est extrêmement pratique 
 et permet de fiabiliser la lecture ou l'écriture de fichiers
 dans une architecture _cloud_. 
-Un exemple, assez court, est disponible 
-[dans la documentation officielle](https://arrow.apache.org/docs/python/filesystems.html#s3)
-
-Il existe également d'autres librairies permettant de gérer
-des _pipelines_ de données (chapitre à venir) de manière
-quasi indifférente entre une architecture locale et une architecture
-_cloud_. Parmi celles-ci, nous présenterons quelques exemples 
-avec `snakemake`. 
-En arrière-plan, `snakemake`
-va utiliser `boto3` pour communiquer avec le système
-de stockage.
-
-
-Enfin, selon le même principe du _comme si_ les données
-étaient en local, il existe l'outil en ligne de commande
-`mc` ([`Minio Client`](https://docs.min.io/docs/minio-client-complete-guide.html)) qui permet de gérer par des lignes
-de commande Linux les dépôts distants comme s'ils étaient
-locaux. 
-
-Toutes ces librairies offrent la possibilité de se connecter depuis `Python`,
-à un dépôt de fichiers distant, de lister les fichiers disponibles dans un
-*bucket*, d'en télécharger un ou plusieurs ou de faire de l'*upload*
-Nous allons présenter quelques-unes des opérations les plus fréquentes,
-en mode _cheatsheet_. 
-
-
-
-
-### Connexion à un bucket
-
-Par la suite, on va utiliser des alias pour les trois valeurs suivantes, qui servent
-à s'authentifier. 
-
-```python
-key_id = 'MY_KEY_ID'
-access_key = 'MY_ACCESS_KEY'
-token = "MY_TOKEN"
-```
-
-Ces valeurs peuvent être également disponibles dans 
-les variables d'environnement de `Python`. Comme il s'agit d'une information
-d'authentification personnelle, il ne faut pas stocker les vraies valeurs de ces
-variables dans un projet, sous peine de partager des traits d'identité sans le
-vouloir lors d'un partage de code. 
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>boto3</code> 👇</summary>
-```
-
-Avec `boto3`, on créé d'abord un client puis on exécute des requêtes dessus.
-Pour initialiser un client, il suffit, en supposant que l'url du dépôt S3 est
-`"https://minio.lab.sspcloud.fr"`, de faire:
-
-```python
-import boto3
-s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>S3FS</code> 👇</summary>
-```
-
-La logique est identique avec `s3fs`. 
-
-Si on a des jetons d'accès à jour et dans les variables d'environnement
-adéquates:
-
-```python
-import s3fs
-fs = s3fs.S3FileSystem(
-  client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>Arrow</code> 👇</summary>
-```
-
-
-La logique d'`Arrow` est proche de celle de `s3fs`. Seuls les noms
-d'arguments changent
-
-Si on a des jetons d'accès à jour et dans les variables d'environnement
-adéquates:
-
-```python
-from pyarrow import fs
-s3 = fs.S3FileSystem(endpoint_override="http://"+"minio.lab.sspcloud.fr")
-```
-
-```{=html}
-</details>
-```
-:::
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>Snakemake</code> 👇</summary>
-```
-
-La logique de `Snakemake` est, quant à elle,
-plus proche de celle de `boto3`. Seuls les noms
-d'arguments changent
-
-Si on a des jetons d'accès à jour et dans les variables d'environnement
-adéquates:
-
-```python
-from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
-S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-
-
-Il se peut que la connexion à ce stade soit refusée (`HTTP error 403`).
-Cela peut provenir 
-d'une erreur dans l'URL utilisé. Cependant, cela reflète plus généralement
-des paramètres d'authentification erronés.
-
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>boto3</code> 👇</summary>
-```
-
-Les paramètres d'authentification sont des arguments supplémentaires:
-
-```python
-import boto3
-s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr",
-                  aws_access_key_id=key_id, 
-                  aws_secret_access_key=access_key, 
-                  aws_session_token = token)
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>S3FS</code> 👇</summary>
-```
-
-La logique est la même, seuls les noms d'arguments diffèrent
-
-```python
-import s3fs
-fs = s3fs.S3FileSystem(
-  client_kwargs={'endpoint_url': 'https://'+'minio.lab.sspcloud.fr'},
-  key = key_id, secret = access_key,
-  token = token)
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>Arrow</code> 👇</summary>
-```
-
-Tout est en argument cette fois:
-
-```python
-from pyarrow import fs
-
-s3 = fs.S3FileSystem(
-    access_key = key_id,
-    secret_key = access_key,
-    session_token = token,
-    endpoint_override = 'https://'+'minio.lab.sspcloud.fr',
-    scheme = "https"
-    )
-```
-
-```{=html}
-</details>
-```
-:::
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>Snakemake</code> 👇</summary>
-```
-
-La logique est la même, seuls les noms d'arguments diffèrent
-
-```python
-from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
-S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'), access_key_id=key_id, secret_access_key=access_key)
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-
 
 ::: {.note}
 
 Sur le SSP Cloud, les jetons d'accès au stockage S3 sont injectés automatiquement dans les services lors de leur création. Ils sont ensuite valides pour une durée de 7 jours. Si l'icône du service passe du vert au rouge, cela signifie que ces jetons sont périmés, il faut donc sauvegarder son code / ses données et reprendre depuis un nouveau service.
 
 :::
-
-
-### Lister les fichiers
-
-S'il n'y a pas d'erreur à ce stade, c'est que la connexion est bien effective.
-Pour le vérifier, on peut essayer de faire la liste des fichiers disponibles
-dans un `bucket` auquel on désire accéder.
-
-Par exemple, on peut vouloir
-tester l'accès aux bases `FILOSOFI` (données de revenu localisées disponibles
-sur <https://www.insee.fr>) au sein du bucket `donnees-insee`. 
-
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>boto3</code> 👇</summary>
-```
-
-Pour cela,
-la méthode `list_objects` offre toutes les options nécessaires:
-
-```python
-import boto3
-s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
-for key in s3.list_objects(Bucket='donnees-insee', Prefix='diffusion/FILOSOFI')['Contents']:
-    print(key['Key'])
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>S3FS</code> 👇</summary>
-```
-
-Pour lister les fichiers, c'est la méthode `ls` (celle-ci ne liste pas par
-défaut les fichiers de manière récursive comme `boto3`):
-
-```python
-import s3fs
-fs = s3fs.S3FileSystem(
-  client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
-fs.ls("donnees-insee/diffusion")
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>Arrow</code> 👇</summary>
-```
-
-```python
-from pyarrow import fs
-s3 = fs.S3FileSystem(endpoint_override='https://'+'minio.lab.sspcloud.fr')
-s3.get_file_info(fs.FileSelector('donnees-insee/diffusion', recursive=True))
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>mc</code> 👇</summary>
-```
-
-
-```shell
-mc ls -r
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-
-
-
-### Télécharger un fichier depuis `S3` pour l'enregistrer en local
-
-Cette méthode n'est en général pas recommandée car, comme on va le voir
-par la suite, il est possible de lire à la volée des fichiers. Cependant,
-télécharger un fichier depuis le _cloud_ pour l'écrire sur le disque
-local peut parfois être utile (par exemple, lorsqu'il est nécessaire
-de dézipper un fichier). 
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>boto3</code> 👇</summary>
-```
-
-On utilise cette fois la méthode `download_file`
-
-```python
-import boto3
-s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
-s3.download_file('donnees-insee', "diffusion/FILOSOFI/2014/FILOSOFI_COM.csv", 'data.csv')
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>S3FS</code> 👇</summary>
-```
-
-```python
-import s3fs
-fs = s3fs.S3FileSystem(
-  client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
-fs.download('donnees-insee/diffusion/FILOSOFI/2014/FILOSOFI_COM.csv','test.csv')
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>Snakemake</code> 👇</summary>
-```
-
-```python
-from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
-S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
-bucket = "mon-bucket"
-
-rule ma_super_regle_s3:
-    input:
-        fichier = S3.remote(f'{bucket}/moninput.csv')
-    output:
-        fichier='mon_dossier_local/monoutput.csv'
-    run:
-        shell("cp {input[0]} {output[0]}")
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>mc</code> 👇</summary>
-```
-
-```python
-mc cp "donnees-insee/FILOSOFI/2014/FILOSOFI_COM.csv" 'data.csv'
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-
-
-
-### Lire un fichier directement
-
-La méthode précédente n'est pas optimale. En effet, l'un des intérêts des API
-est qu'on peut traiter un fichier sur `S3` comme s'il s'agissait d'un fichier
-sur son PC. Cela est d'ailleurs une manière plus sécurisée de procéder puisqu'on
-lit les données à la volée, sans les écrire dans un filesystem local. 
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>boto3</code> 👇</summary>
-```
-
-
-```python
-import boto3
-s3 = boto3.client("s3",endpoint_url = "https://minio.lab.sspcloud.fr")
-obj = s3.get_object(Bucket='donnees-insee', Key="diffusion/FILOSOFI/2014/FILOSOFI_COM.csv")
-df = pd.read_csv(obj['Body'], sep = ";")
-df.head(2)
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>S3FS</code> 👇</summary>
-```
-
-Le code suivant devrait permettre d'effectuer la même opération avec `s3fs`
-
-```python
-import pandas as pd
-import s3fs
-fs = s3fs.S3FileSystem(
-  client_kwargs={'endpoint_url': 'https://minio.lab.sspcloud.fr'})
-df = pd.read_csv(fs.open('{}/{}'.format('donnees-insee', "diffusion/FILOSOFI/2014/FILOSOFI_COM.csv"),
-                         mode='rb'), sep = ";"
-                 )
-
-df.head(2)
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>Snakemake</code> 👇</summary>
-```
-
-```python
-from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
-S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
-bucket = "mon-bucket"
-
-rule ma_super_regle_s3:
-    input:
-        fichier = S3.remote(f'{bucket}/moninput.csv')
-    run:
-        import pandas as pd
-        df = pd.read_csv(input.fichier)
-        # PLUS D'OPERATIONS
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>Arrow</code> 👇</summary>
-```
-
-`Arrow` est une librairie qui permet de lire des `CSV`.
-Il est néanmoins
-beaucoup plus pratique d'utiliser le format `parquet` avec `arrow`. 
-Dans un premier temps, on configure le _filesystem_ avec les 
-fonctionalités d'`Arrow` (cf. précédemment). 
-
-```{python}
-from pyarrow import fs
-
-s3 = fs.S3FileSystem(endpoint_override='http://'+'minio.lab.sspcloud.fr')
-```
-
-Pour lire un csv, on fera:
-
-```python
-from pyarrow import fs
-from pyarrow import csv
-
-s3 = fs.S3FileSystem(endpoint_override='https://'+'minio.lab.sspcloud.fr')
-
-with s3.open_input_file("donnees-insee/diffusion/FILOSOFI/2014/FILOSOFI_COM.csv") as file:
-    df = csv.read_csv(file, parse_options=csv.ParseOptions(delimiter=";")).to_pandas()
-```
-
-Pour un fichier au format parquet, la démarche est plus simple grâce à l'argument
-`filesystem` dans `pyarrow.parquet.ParquetDataset` :
-
-```python
-import pyarrow.parquet as pq
-
-#bucket = ""
-#parquet_file=""
-df = pq.ParquetDataset(f'{bucket}/{parquet_file}', filesystem=s3).read_pandas().to_pandas()
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-
-
-### Uploader un fichier
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>boto3</code> 👇</summary>
-```
-
-```python
-s3.upload_file(file_name, bucket, object_name)
-```
-
-```{=html}
-</details>
-```
-:::
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>S3FS</code> 👇</summary>
-```
-
-
-```python
-fs.put(filepath, f"{bucket}/{object_name}", recursive=True)
-```
-
-```{=html}
-</details>
-```
-:::
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>Arrow</code> 👇</summary>
-```
-
-
-Supposons que `df` soit un `pd.DataFrame` 
-Dans un système local, on convertirait
-en table `Arrow` puis on écrirait en `parquet`
-([voir la documentation officielle](https://arrow.apache.org/docs/python/parquet.html#reading-and-writing-single-files)).
-Quand on est sur un système `S3`, il s'agit seulement d'ajouter
-notre connexion à `S3` dans l'argument `filesystem`
-([voir la page sur ce sujet dans la documentation Arrow](https://arrow.apache.org/docs/python/filesystems.html#filesystem-s3))
-
-```python
-import pyarrow as pa
-import pyarrow.parquet as pq
-
-table = pa.Table.from_pandas(df)
-pq.write_table(table, f"{bucket}/{path}", filesystem=s3)
-```
-
-```{=html}
-</details>
-```
-:::
-
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>Snakemake</code> 👇</summary>
-```
-
-
-```python
-from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
-S3 = S3RemoteProvider(host = "https://" + os.getenv('AWS_S3_ENDPOINT'))
-bucket = "mon-bucket"
-
-rule ma_super_regle_s3:
-    input:
-        fichier='mon_dossier_local/moninput.csv'
-    output:
-        fichier=S3.remote(f'{bucket}/monoutput.csv')
-    run:
-        shell("cp output.fichier input.fichier")
-```
-
-
-```{=html}
-</details>
-```
-:::
-
-
-
-::: {.cell .markdown}
-```{=html}
-<details><summary><code>mc</code> 👇</summary>
-```
-
-
-```python
-mc cp 'data.csv' "MONBUCKET/monoutput.csv"
-```
-
-```{=html}
-</details>
-```
-:::
-
 
 
 ## Cas pratique : stocker les données de son projet sur le SSP Cloud
@@ -1310,8 +603,6 @@ Une composante essentielle de l'évaluation des projets `Python` est la __reprod
 En pratique, cela n'est pas toujours possible. Peut-être que vos données ne sont pas directement publiquement accessibles, ou bien sont disponibles sous des formats complexes qui demandent des pré-traitements avant d'être exploitables dans un format de donnée standard. Peut-être que vos données résultent d'une phase de récupération automatisée via une [API](/content/manipulation/04c_API_TP.qmd) ou du [webscraping](/content/manipulation/04a_webscraping_TP.qmd), auquel cas l'étape de récupération peut prendre du temps à reproduire. Par ailleurs, les sites internet évoluent fréquemment dans le temps, il est donc préférable de "figer" les données une fois l'étape de récupération effectuée. De la même façon, même s'il ne s'agit pas de données source, vous pouvez vouloir entraîner des modèles et stocker leur version entraînée, car cette étape peut également être chronophage.
 
 Dans toutes ces situations, il est nécessaire de pouvoir stocker des données (ou des modèles). **Votre dépôt `Git` n'est pas le lieu adapté pour le stockage de fichiers volumineux**. Un projet `Python` bien construit est modulaire: il sépare le stockage du code (`Git`), d'éléments de configuration (par exemple des jetons d'API qui ne doivent pas être dans le code) et du stockage des données. Cette séparation conceptuelle entre code et données permet de meilleurs projets. 
-
-![](environment.png)
 
 Là où `Git` est fait pour stocker du code, on utilise des solutions adaptées pour le stockage de fichiers. De nombreuses solutions existent pour ce faire. Sur le SSP Cloud, on propose `MinIO`, une implémentation open-source du stockage `S3` présenté plus haut. Ce court tutoriel vise à présenter une utilisation standard dans le cadre de vos projets.
 
