@@ -1,0 +1,414 @@
+:::{.exercise collapse="false"}
+# Partie 1 : Du `CSV` au `Parquet`
+
+* Créer un notebook `benchmark_parquet.ipynb` afin de réaliser les différentes comparaisons de performance de l'application
+* Créons notre décorateur, en charge de _benchmarker_ le code `Python`:
+
+  ```{python}
+  #| eval: false
+  #| code-fold: true
+  #| code-summary: "Dérouler pour retrouver le code du décorateur permettant de mesurer la performance"
+  import time
+  from memory_profiler import memory_usage
+  from functools import wraps
+  import warnings
+
+    def convert_size(size_bytes):
+    if size_bytes == 0:
+        return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])
+
+    # Decorator to measure execution time and memory usage
+    def measure_performance(func, return_output=False):
+        @wraps(func)
+        def wrapper(return_output=False, *args, **kwargs):
+            warnings.filterwarnings("ignore")
+            start_time = time.time()
+            mem_usage = memory_usage((func, args, kwargs), interval=0.1)
+            end_time = time.time()
+            warnings.filterwarnings("always")
+
+            exec_time = end_time - start_time
+            peak_mem = max(mem_usage)  # Peak memory usage
+            exec_time_formatted = f"\033[92m{exec_time:.4f} sec\033[0m"
+            peak_mem_formatted = f"\033[92m{convert_size(1024*peak_mem)}\033[0m"
+
+            print(f"{func.__name__} - Execution Time: {exec_time_formatted} | Peak Memory Usage: {peak_mem_formatted}")
+            if return_output is True:
+                return func(*args, **kwargs)
+
+        return wrapper
+  ```
+
+* La requête suivante permet de calculer les données pour construire une pyramide des âges sur un département donné, à partir du fichier `CSV` du recensement. La tester dans votre _notebook_:
+
+  ```{python}
+  #| eval: false
+  #| code-fold: true
+  #| code-summary: "Dérouler pour récupérer le code de lecture du CSV"
+  import pandas as pd
+
+  # Charger le fichier CSV
+  df = pd.read_csv("data/RPindividus_24.csv")
+  res = (
+      df.loc[df["DEPT"] == 36]
+      .groupby(["AGED", "DEPT"])["IPONDI"]
+      .sum().reset_index()
+      .rename(columns={"IPONDI": "n_indiv"})
+  )
+  ```
+
+* Reprendre ce code pour encapsuler ces opérations dans une fonction `process_csv_appli1` :
+
+  ```{python}
+  #| eval: false
+  #| code-fold: true
+  #| code-summary: "Dérouler pour récupérer le code pour mesurer les performances de la lecture en CSV"
+
+  # Apply the decorator to functions
+  @measure_performance
+  def process_csv_appli1(*args, **kwargs):
+      df = pd.read_csv("data/RPindividus_24.csv")
+      return (
+          df.loc[df["DEPT"] == 36]
+          .groupby(["AGED", "DEPT"])["IPONDI"]
+          .sum().reset_index()
+          .rename(columns={"IPONDI": "n_indiv"})
+      )
+  ```
+
+* Exécuter `process_csv_appli1()` et `process_csv_appli1(return_output=True)`
+
+* Sur le même modèle, construire une fonction `process_parquet_appli1` basée cette fois sur le fichier `data/RPindividus_24.parquet` chargé avec la fonction [read_parquet](https://pandas.pydata.org/docs/reference/api/pandas.read_parquet.html) de `Pandas`
+* Comparer les performances (temps d'exécution et allocation mémoire) de ces deux méthodes grâce à la fonction.
+
+
+```{python}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Code complet de l'application"
+import math
+import pandas as pd
+import time
+from memory_profiler import memory_usage
+from functools import wraps
+import warnings
+
+def convert_size(size_bytes):
+   if size_bytes == 0:
+       return "0B"
+   size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+   i = int(math.floor(math.log(size_bytes, 1024)))
+   p = math.pow(1024, i)
+   s = round(size_bytes / p, 2)
+   return "%s %s" % (s, size_name[i])
+
+# Decorator to measure execution time and memory usage
+def measure_performance(func, return_output=False):
+    @wraps(func)
+    def wrapper(return_output=False, *args, **kwargs):
+        warnings.filterwarnings("ignore")
+        start_time = time.time()
+        mem_usage = memory_usage((func, args, kwargs), interval=0.1)
+        end_time = time.time()
+        warnings.filterwarnings("always")
+
+        exec_time = end_time - start_time
+        peak_mem = max(mem_usage)  # Peak memory usage
+        exec_time_formatted = f"\033[92m{exec_time:.4f} sec\033[0m"
+        peak_mem_formatted = f"\033[92m{convert_size(1024*peak_mem)}\033[0m"
+
+        print(f"{func.__name__} - Execution Time: {exec_time_formatted} | Peak Memory Usage: {peak_mem_formatted}")
+        if return_output is True:
+            return func(*args, **kwargs)
+
+    return wrapper
+
+# Apply the decorator to functions
+@measure_performance
+def process_csv(*args, **kwargs):
+    df = pd.read_csv("data/RPindividus_24.csv")
+    return (
+        df.loc[df["DEPT"] == 36]
+        .groupby(["AGED", "DEPT"])["IPONDI"]
+        .sum().reset_index()
+        .rename(columns={"IPONDI": "n_indiv"})
+    )
+
+@measure_performance
+def process_parquet(*args, **kwargs):
+    df = pd.read_parquet("data/RPindividus_24.parquet")
+    return (
+        df.loc[df["DEPT"] == "36"]
+        .groupby(["AGED", "DEPT"])["IPONDI"]
+        .sum().reset_index()
+        .rename(columns={"IPONDI": "n_indiv"})
+    )
+
+process_csv()
+process_parquet()
+```
+
+:::
+
+_❓️ Quelle semble être la limite de la fonction `read_parquet` ?_
+
+On gagne déjà un temps conséquent en lecture mais on ne bénéficie pas vraiment de l'optimisation permise par `Parquet` car on transforme les données directement après la lecture en `DataFrame` `Pandas`. On n'utilise donc pas l'une des fonctionnalités principales du format `Parquet`, qui explique ses excellentes performances: le _predicate pushdown_ qui consiste à optimiser notre traitement pour faire remonter, le plus tôt possible, les filtres sur les colonnes pour ne garder que celles vraiment utilisées dans le traitement.
+
+
+
+::: {.exercise collapse="false"}
+## Partie 2 : Exploiter la *lazy evaluation* et les optimisations d'`Arrow` ou de `DuckDB`
+
+La partie précédente a montré un **gain de temps considérable** du passage de `CSV` à `Parquet`. Néanmoins, l'**utilisation mémoire était encore très élevée** alors qu'on utilise de fait qu'une infime partie du fichier.
+
+Dans cette partie, on va voir comment utiliser la ***lazy evaluation*** et les **optimisations du plan d'exécution** effectuées par `Arrow` pour exploiter pleinement la puissance du format `Parquet`.
+
+* Ouvrir le fichier  `data/RPindividus_24.parquet` avec [pyarrow.dataset](https://arrow.apache.org/docs/python/dataset.html). Regarder la classe de l'objet obtenu.
+* Tester le code ci-dessous pour lire un échantillon de données:
+
+```{python}
+#| eval: false
+(
+    dataset.scanner()
+    .head(5)
+    .to_pandas()
+)
+```
+
+Comprenez-vous la différence avec précédemment ? Observez dans la documentation la méthode `to_table` : comprenez-vous son principe ?
+
+* Construire une fonction `summarize_parquet_arrow` (resp. `summarize_parquet_duckdb`) qui importe cette fois les données avec la fonction [`pyarrow.dataset`](https://arrow.apache.org/docs/python/dataset.html) (resp. avec `DuckDB`) et effectue l'agrégation voulue.
+* Comparer les performances (temps d'exécution et allocation mémoire) des trois méthodes (`Parquet` lu et processé avec `Pandas`, `Arrow` et `DuckDB`) grâce à notre fonction.
+
+```{python}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Code complet de l'application"
+
+import duckdb
+import pyarrow.dataset as ds
+
+@measure_performance
+def summarize_parquet_duckdb(*args, **kwargs):
+    con = duckdb.connect(":memory:")
+    query = """
+    FROM read_parquet('data/RPindividus_24.parquet')
+    SELECT AGED, DEPT, SUM(IPONDI) AS n_indiv
+    GROUP BY AGED, DEPT
+    """
+
+    return (con.sql(query).to_df())
+
+@measure_performance
+def summarize_parquet_arrow(*args, **kwargs):
+
+    dataset = ds.dataset("data/RPindividus_24.parquet", format="parquet")
+    table = dataset.to_table()
+    grouped_table = (
+        table
+        .group_by(["AGED", "DEPT"])
+        .aggregate([("IPONDI", "sum")])
+        .rename_columns(["AGED", "DEPT", "n_indiv"])
+        .to_pandas()
+    )
+
+    return (
+        grouped_table
+    )
+
+process_parquet()
+summarize_parquet_duckdb()
+summarize_parquet_arrow()
+```
+
+:::
+
+Avec l'évaluation différée, on obtient donc un processus en plusieurs temps:
+
+* `Arrow` ou `DuckDB` reçoit des instructions, les optimise, exécute les requêtes
+* Seules les données en sortie de cette chaîne sont renvoyées à `Python`
+
+![](https://linogaliana.github.io/parquet-recensement-tutomate/img/duckdb-delegation1.png)
+
+
+## Application 3 {.smaller}
+
+::: {.exercise collapse="false"}
+# Partie 3a : Et si on filtrait sur les lignes ?
+
+Ajoutez une étape de filtre sur les lignes dans nos requêtes:
+
+* Avec `DuckDB`, vous devez modifier la requête avec un `WHERE DEPT IN ('18', '28', '36')`
+* Avec `Arrow`, vous devez modifier l'étape `to_table` de cette manière: `dataset.to_table(filter=pc.field("DEPT").isin(['18', '28', '36']))`
+
+
+```{python}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Correction de cet exercice"
+import pyarrow.dataset as ds
+import pyarrow.compute as pc
+import duckdb
+
+@measure_performance
+def summarize_filter_parquet_arrow(*args, **kwargs):
+
+    dataset = ds.dataset("data/RPindividus.parquet", format="parquet")
+    table = dataset.to_table(filter=pc.field("DEPT").isin(['18', '28', '36']))
+    grouped_table = (
+        table
+        .group_by(["AGED", "DEPT"])
+        .aggregate([("IPONDI", "sum")])
+        .rename_columns(["AGED", "DEPT", "n_indiv"])
+        .to_pandas()
+    )
+
+    return (
+        grouped_table
+    )
+
+@measure_performance
+def summarize_filter_parquet_duckdb(*args, **kwargs):
+    con = duckdb.connect(":memory:")
+    query = """
+    FROM read_parquet('data/RPindividus_24.parquet')
+    SELECT AGED, DEPT, SUM(IPONDI) AS n_indiv
+    WHERE DEPT IN ('11','31','34')
+    GROUP BY AGED, DEPT
+    """
+
+    return (con.sql(query).to_df())
+
+
+summarize_filter_parquet_arrow()
+summarize_filter_parquet_duckdb()
+```
+
+:::
+
+*❓️ Pourquoi ne gagne-t-on pas de temps avec nos filtres sur les lignes (voire pourquoi en perdons nous?) comme c'est le cas avec les filtres sur les colonnes ?*
+
+La donnée n'est pas organisée par blocs de lignes comme elle l'est pas bloc de colonne. Heureusement, il existe pour cela un moyen: le partitionnement !
+
+::: {.exercise collapse="false"}
+# Partie 3 : Le `Parquet` partitionné
+
+La *lazy evaluation* et les optimisations d'`Arrow` apportent des gain de performance considérables. Mais on peut encore faire mieux ! Lorsqu'on sait qu'on va être amené à **filter régulièrement les données selon une variable d'intérêt**, on a tout intérêt à **partitionner** le fichier `Parquet` selon cette variable.
+
+1. Parcourir la documentation de la fonction [`pyarrow.parquet.write_to_dataset`](https://arrow.apache.org/docs/python/parquet.html#writing-to-partitioned-datasets) pour comprendre comment spécifier une clé de partitionnement lors de l’écriture d’un fichier `Parquet`. Plusieurs méthodes sont possibles.
+
+2. Importer la table complète des individus du recensement depuis `"data/RPindividus.parquet"` avec la fonction [`pyarrow.dataset.dataset`](https://arrow.apache.org/docs/python/generated/pyarrow.dataset.dataset.html) et l'exporter en une table partitionnée `"data/RPindividus_partitionne.parquet"`, partitionnée par la région (`REGION`) et le département (`DEPT`).
+
+3. Observer l’arborescence des fichiers de la table exportée pour voir comment la partition a été appliquée.
+
+4. Modifier nos fonctions d'import, filtre et agrégations via `Arrow` ou `DuckDB` pour utiliser, cette fois, le `Parquet` partitionné. Comparer à l'utilisation du fichier non partitionné.
+
+```{python}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Correction de la question 2 (écriture du Parquet partitionné)"
+import pyarrow.parquet as pq
+dataset = ds.dataset(
+    "data/RPindividus.parquet", format="parquet"
+).to_table()
+
+pq.write_to_dataset(
+    dataset,
+    root_path="data/RPindividus_partitionne",
+    partition_cols=["REGION", "DEPT"]
+)
+```
+
+```{python}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Correction de la question 4 (lecture du Parquet partitionné)"
+import pyarrow.dataset as ds
+import pyarrow.compute as pc
+import duckdb
+
+@measure_performance
+def summarize_filter_parquet_partitioned_arrow(*args, **kwargs):
+
+    dataset = ds.dataset("data/RPindividus_partitionne/", partitioning="hive")
+    table = dataset.to_table(filter=pc.field("DEPT").isin(['18', '28', '36']))
+
+    grouped_table = (
+        table
+        .group_by(["AGED", "DEPT"])
+        .aggregate([("IPONDI", "sum")])
+        .rename_columns(["AGED", "DEPT", "n_indiv"])
+        .to_pandas()
+    )
+
+    return (
+        grouped_table
+    )
+
+@measure_performance
+def summarize_filter_parquet_complete_arrow(*args, **kwargs):
+
+    dataset = ds.dataset("data/RPindividus.parquet")
+    table = dataset.to_table(filter=pc.field("DEPT").isin(['18', '28', '36']))
+
+    grouped_table = (
+        table
+        .group_by(["AGED", "DEPT"])
+        .aggregate([("IPONDI", "sum")])
+        .rename_columns(["AGED", "DEPT", "n_indiv"])
+        .to_pandas()
+    )
+
+    return (
+        grouped_table
+    )
+
+
+@measure_performance
+def summarize_filter_parquet_complete_duckdb(*args, **kwargs):
+    con = duckdb.connect(":memory:")
+    query = """
+    FROM read_parquet('data/RPindividus.parquet')
+    SELECT AGED, DEPT, SUM(IPONDI) AS n_indiv
+    WHERE DEPT IN ('11','31','34')
+    GROUP BY AGED, DEPT
+    """
+
+    return (con.sql(query).to_df())
+
+
+@measure_performance
+def summarize_filter_parquet_partitioned_duckdb(*args, **kwargs):
+    con = duckdb.connect(":memory:")
+    query = """
+    FROM read_parquet('data/RPindividus_partitionne/**/*.parquet', hive_partitioning = True)
+    SELECT AGED, DEPT, SUM(IPONDI) AS n_indiv
+    WHERE DEPT IN ('11','31','34')
+    GROUP BY AGED, DEPT
+    """
+
+    return (con.sql(query).to_df())
+
+
+summarize_filter_parquet_complete_arrow()
+summarize_filter_parquet_partitioned_arrow()
+summarize_filter_parquet_complete_duckdb()
+summarize_filter_parquet_partitioned_duckdb()
+```
+
+
+:::
+
+*❓️ Dans le cadre d'une mise à disposition de données en `Parquet`, comment bien choisir la/les clé(s) de partitionnement ? Quelle est la limite à garder en tête ?*
+
+
+## Pour aller plus loin
+
+* La [formation aux bonnes pratiques `R` et `Git`](https://inseefrlab.github.io/formation-bonnes-pratiques-git-R/) développée par l'Insee avec des éléments très similaires à ceux présentés dans ce chapitre.
+* Un [atelier](https://linogaliana.github.io/parquet-recensement-tutomate/) sur le format `Parquet` et l'écosystème `DuckDB` pour l'EHESS avec des exemples `R` et `Python` utilisant la même source de données que l'application.
+* Le [guide de prise en main](https://ssphub.netlify.app/post/parquetrp/) des données du recensement au format `Parquet` avec des exemples d'utilisation de `DuckDB` en WASM (directement depuis le navigateur, sans installation `R` ou `Python`)
