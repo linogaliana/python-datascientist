@@ -10,19 +10,53 @@ image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/python_clo
 {{< badges >}}
 
 
-Ce chapitre introduit les enjeux du stockage des données ainsi que les innovations récentes qui permettent de les héberger dans le _cloud_ sans compromettre l'efficacité ou la simplicité de leur traitement.
+::: {.content-visible when-profile="fr"}
 
+Nous avons vu dans les chapitres précédents comment récupérer, et harmoniser, des données issues de multiples sources: fichiers type CSV, API, _webscraping_, etc.  Le panorama des manières possibles de consommer de la donnée serait incomplet sans évoquer un nouveau venu dans le paysage de la donnée, à savoir le format de données `Parquet`. Du fait de ses caractéristiques techniques pensées pour l'analyse de données, et de sa simplicité d'usage avec `Python`, ce format devient de plus en plus incontournable. Il s'agit d'ailleurs d'une pierre angulaire des infrastructures _cloud_ qui, depuis le milieu des années 2010, tendent à devenir l'environnement usuel dans le domaine de la _data science_ (pour plus de détails, voir le [cours de mise en production de Romain Avouac et moi](https://ensae-reproductibilite.github.io/website/chapters/big-data.html)).  
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+In the previous chapters, we explored how to retrieve and harmonize data from various source: CSV files, APIs, web scraping, and more. However, no overview of data access methods would be complete without mentioning a relatively recent addition to the data ecosystem: the `Parquet` data format. 
+
+Thanks to its technical advantages - specifically designed for analytical workloads  - and its seamless integration with Python, `Parquet` is becoming increasingly essential. It has, in fact, become a key component of modern cloud infrastructures, which have emerged since the mid-2010s as the standard environment for data science workflows.[^lang-mlops-en]
+
+
+[^lang-mlops-en]: For more details, see the [production deployment course by Romain Avouac and myself](https://ensae-reproductibilite.github.io/website/chapters/big-data.html). Apologies to non-French-speaking readers—this resource is currently only available in French.
+
+
+:::
+
+
+:::: {.content-visible when-profile="fr"}
 
 ::: {.tip}
 ## Objectif de ce chapitre
-
 * Comprendre les enjeux liés au stockage et au traitement de différents formats de données ;  
 * Distinguer le stockage sous forme de fichier et sous forme de base de données ;  
 * Découvrir le format `Parquet`, ses avantages par rapport aux formats plats ou propriétaires ;  
 * Apprendre à traiter ces données avec `Arrow` et `DuckDB` ;  
 * Identifier les implications du stockage dans le _cloud_ et comment `Python` peut s'y adapter.
-
 :::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.tip}
+## Objectives
+
+* Understand the challenges involved in storing and processing different types of data formats  
+* Distinguish between file-based storage and database systems  
+* Discover `Parquet` format and its advantages over flat files and proprietary formats  
+* Learn how to work with `Parquet` data using `Arrow` and `DuckDB`  
+* Explore the implications of cloud-based storage and how `Python` can adapt to modern data infrastructures
+:::
+
+::::
+
+:::: {.content-visible when-profile="fr"}
 
 Ce chapitre s'appuie sur un atelier dédié au sujet que j'ai donné dans le cadre du réseau des _data scientists_ de la statistique publique (`SSPHub`)
 
@@ -34,7 +68,7 @@ Ce chapitre s'appuie sur un atelier dédié au sujet que j'ai donné dans le cad
 
 <summary>
 
-Afficher les _slides_ associées
+Afficher les slides associées
 
 </summary>
 
@@ -63,6 +97,9 @@ Regarder le _replay_ de la session _live_ du 09 Avril 2025:
 ```
 :::
 
+:::
+
+:::: {.content-visible when-profile="fr"}
 
 # Elements de contexte
 
@@ -70,11 +107,27 @@ Regarder le _replay_ de la session _live_ du 09 Avril 2025:
 
 Avant de comprendre les apports du format `Parquet`, il est utile de revenir brièvement sur la manière dont l’information est stockée et rendue accessible à un langage de traitement comme `Python`[^lamarche-dondon].
 
-
 [^lamarche-dondon]: Pour en savoir plus sur les enjeux liés à un choix de format de données, voir @dondon2023quels.
 
 Deux approches principales coexistent : le **stockage sous forme de fichiers** et celui sous forme de **bases de données relationnelles**. La distinction entre ces deux paradigmes repose sur la façon dont l’accès aux données est organisé.
 
+::::
+
+:::: {.content-visible when-profile="en"}
+
+# Contextual Elements
+
+## Principles of Data Storage
+
+Before exploring the advantages of the `Parquet` format, it is helpful to briefly review how data is stored and made accessible to a processing language like `Python`[^lamarche-dondon-en].
+
+[^lamarche-dondon-en]: For a deeper discussion of data format selection challenges, see @dondon2023quels.
+
+Two main approaches coexist: **file-based storage** and **relational database storage**. The key distinction between these paradigms lies in how access to data is structured and managed.
+
+::::
+
+:::: {.content-visible when-profile="fr"}
 
 ## Le stockage sous forme de fichiers
 
@@ -90,6 +143,28 @@ Assurancetourix ; Barde
 ```
 
 `Python` peut facilement structurer cette information :
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+## File-Based Storage
+
+### Flat Files
+
+In a flat file, data is organized in a linear fashion, with values typically separated by a delimiter such as a comma, semicolon, or tab. Here’s a simple example using a `.csv` file:
+
+```raw
+nom ; profession 
+Astérix ; 
+Obélix ; Tailleur de menhir ;
+Assurancetourix ; Barde
+```
+
+`Python` can easily structure this information:
+
+::::
+
 
 ```{python}
 #| echo: false
@@ -111,11 +186,34 @@ pd.read_csv(
 ```
 1. `StringIO` permet de traiter la chaîne de caractère comme le contenu d'un fichier.
 
-A propos des fichiers de ce type, on parle de __fichiers plats__ car les enregistrements relatifs à une observation sont stockés ensemble, sans hiérarchie.
+:::: {.content-visible when-profile="fr"}
+
+À propos des fichiers de ce type, on parle de __fichiers plats__ car les enregistrements relatifs à une observation sont stockés ensemble, sans hiérarchie.
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+These are referred to as __flat files__ because all the records related to a given observation are stored sequentially, without any hierarchical structure.
+
+::::
+
+
+:::: {.content-visible when-profile="fr"}
 
 ### Les fichiers hiérarchiques
 
 D'autres formats, comme `JSON`, structurent les données de manière hiérarchique :
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+### Hierarchical files
+
+Other formats, such as `JSON`, structure data in a hierarchical way:
+
+::::
 
 ```json
 [
@@ -133,16 +231,18 @@ D'autres formats, comme `JSON`, structurent les données de manière hiérarchiq
 ]
 ```
 
+:::: {.content-visible when-profile="fr"}
+
+Cette fois, quand on n'a pas d'information, on ne se retrouve pas avec nos deux séparateurs accolés (cf. la ligne _"Astérix"_) mais l'information
+n'est tout simplement pas collectée. 
+
 ::: {.caution}
 
 La différence entre un fichier `.csv` et un fichier `JSON` ne réside pas seulement dans le format : elle implique une autre logique de stockage.
 
 Le format `JSON`, non tabulaire, est plus souple : il permet de mettre à jour la structure des données sans recompiler ou modifier les anciennes lignes. Cela facilite la collecte évolutive dans des contextes comme les API.
 
-
 Par exemple, un site web qui collecte de nouvelles données n'aura pas à mettre à jour l'ensemble de ses enregistrements antérieurs pour stocker la nouvelle donnée (par exemple pour indiquer que pour tel ou tel client cette donnée n'a pas été collectée) mais pourra la stocker dans un nouvel item.
-
-
 
 Ce sera à l'outil de requête (`Python` ou un autre outil)
 de créer une relation entre les enregistrements stockés à des endroits différents.
@@ -151,8 +251,31 @@ C’est ce principe qui sous-tend de nombreuses bases `NoSQL` (comme `ElasticSea
 
 :::
 
-Cette fois, quand on n'a pas d'information, on ne se retrouve pas avec nos deux séparateurs accolés (cf. la ligne _"Astérix"_) mais l'information
-n'est tout simplement pas collectée. 
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+In such cases, when information is missing - as in the line for _"Astérix"_ - you don’t see two delimiters side by side. Instead, the missing data is simply left out.
+
+::: {.caution}
+
+The difference between a `.csv` file and a `JSON` file lies not only in their format but also in their underlying logic of data storage.
+
+`JSON` is a non-tabular format that offers greater flexibility: it allows the structure of the data to evolve over time without requiring previous entries to be modified or recompiled. This makes it particularly well-suited for dynamic data collection environments, such as APIs.
+
+For instance, a website that begins collecting a new piece of information doesn't need to retroactively update all prior records. It can simply add the new field to the relevant entries—omitting it from others where the information wasn't collected.
+
+It is then up to the query tool—such as `Python` or another platform—to reconcile and link data across these differing structures.
+
+This flexible approach underpins many `NoSQL` databases (like `ElasticSearch`), which play a central role in the _big data_ ecosystem.
+
+:::
+
+:::: 
+
+
+:::: {.content-visible when-profile="fr"}
 
 ### Données réparties sur plusieurs fichiers
 
@@ -161,13 +284,33 @@ Il est fréquent qu’une observation soit répartie entre plusieurs fichiers de
 * Soit tout est empilé dans un unique fichier qui contient à la fois les contours géographiques et les valeurs attributaires. Cette logique est celle suivie, par exemple, par le `GeoJSON` ;
 * Soit plusieurs fichiers se répartissent l'ensemble des données et, pour lire la donnée dans son ensemble (contours géographiques, données des différentes zones géographiques, système de projection, etc.), il faudra donc associer ceux-ci pour avoir un tableau de données complet. C'est l'approche suivie par le format `Shapefile`.
 
-
 Lorsque la donnée est éclatée dans plusieurs fichiers, c'est alors à l’outil de traitement (ex. `Python`) d’effectuer la jonction logique.
 
 ### Le rôle du _file system_
 
 Le **système de fichiers** (_file system_) permet à l’ordinateur de localiser physiquement les fichiers sur le disque. C’est un composant central dans la gestion de fichiers : il assure leur nommage, leur hiérarchie et leur accès.
 
+::::
+
+:::: {.content-visible when-profile="en"}
+
+### Data split across multiple files
+
+It is common for a single observation to be distributed across multiple files in different formats. In geomatics, for example, geographic boundaries are often stored separately from the data that gives them context:
+
+* In some cases, everything is bundled into a single file that contains both the geographic shapes and the associated attribute values. This is the approach used by formats like `GeoJSON`;
+* In other cases, the data is split across several files, and reading the full information - geographic shapes, data for each zone, projection system, etc. - requires combining them. This is the case with the `Shapefile` format.
+
+When data is distributed across multiple files, this is up to the processing tool (e.g., `Python`) to perform the necessary joins and link the information together.
+
+### The role of the _file system_
+
+The **file system** enables the computer to locate files physically on the disk. It plays a central role in file management, handling file naming, folder hierarchy, and access permissions.
+
+:::: 
+
+
+:::: {.content-visible when-profile="fr"}
 
 ## Le stockage sous forme de bases de données
 
@@ -181,12 +324,9 @@ Les données sont organisées en **tables** reliées par des **relations**, souv
 
 ![Source: [Documentation Databricks](https://www.databricks.com/fr/glossary/star-schema)](https://www.databricks.com/wp-content/uploads/2022/04/star-schema-erd.png)
 
+Le logiciel associé à la base de données fera ensuite le lien entre ces tables à partir de requêtes `SQL`. L'un des logiciels les plus efficaces dans ce domaine est [`PostgreSQL`](https://www.postgresql.org/).
 
-Le logiciel associé à la base de données fera ensuite le lien
-entre ces tables à partir de requêtes `SQL`. L'un des logiciels les plus efficaces dans ce domaine est [`PostgreSQL`](https://www.postgresql.org/).
-
-
-`Python` est tout à fait utilisable pour passer une requête SQL à un gestionnaire de base de données. Historiquement, les packages [`sqlalchemy`](https://www.sqlalchemy.org/) et [`psycopg2`](https://www.psycopg.org/docs/) ont été très utilisés pour envoyer des requêtes à une base de données `PostgreSQL` (lire celle-ci, la mettre à jour, etc.). Aujourd'hui, [`DuckDB`](https://duckdb.org/), sur lequel nous reviendrons lorsque nous parlerons du format `Parquet`, est un choix pratique pour passer des requêtes SQL à un SGBD `PostgreSQL`. 
+`Python` est tout à fait utilisable pour passer une requête SQL à un gestionnaire de base de données. Historiquement, les packages [`sqlalchemy`](https://www.sqlalchemy.org/) et [`psycopg2`](https://www.psycopg.org/docs/) ont été très utilisés pour envoyer des requêtes à une base de données `PostgreSQL` (lire celle-ci, la mettre à jour, etc.). Aujourd'hui, [`DuckDB`](https://duckdb.org/), sur lequel nous reviendrons lorsque nous parlerons du format `Parquet`, est un choix pratique pour passer des requêtes SQL à un SGBD `PostgreSQL`.
 
 ### Pourquoi les fichiers ont le vent en poupe {-}
 
@@ -208,9 +348,52 @@ La principale raison pour laquelle les fichiers sont souvent privilégiés par r
 
 À l’inverse, dans un contexte **analytique**, on se contente généralement de lire et de manipuler temporairement des données sans modifier la source. L’objectif est d’interroger, d’agréger, de filtrer — pas de pérenniser les changements. Pour ce type d’usage, les fichiers (notamment dans des formats optimisés comme `Parquet`, comme nous allons le voir) sont parfaitement adaptés : ils offrent une lecture rapide, une portabilité élevée et n'imposent pas l'intermédiation d’un moteur de base de données.
 
+::::
+
+:::: {.content-visible when-profile="en"}
+
+## Storing Data in a Database
+
+The logic behind databases differs fundamentally and is more systematic in nature. A **relational database** is managed by a **Database Management System (DBMS)**, which provides capabilities for:
+
+- storing coherent datasets;
+- performing updates (insertions, deletions, modifications);
+- controlling access (user permissions, query types, etc.).
+
+Data is organized into **tables** connected by **relationships**, often structured according to a **star schema**:
+
+![Source: [Databricks Documentation](https://www.databricks.com/fr/glossary/star-schema)](https://www.databricks.com/wp-content/uploads/2022/04/star-schema-erd.png)
+
+The software managing the database links these tables together using `SQL` queries. One of the most powerful and widely used systems for this purpose is [`PostgreSQL`](https://www.postgresql.org/).
+
+`Python` can interact with databases by issuing SQL queries. Historically, packages such as [`sqlalchemy`](https://www.sqlalchemy.org/) and [`psycopg2`](https://www.psycopg.org/docs/) have been standard tools for communicating with `PostgreSQL` databases, enabling both reading and updating operations. More recently, [`DuckDB`](https://duckdb.org/) has emerged as a lightweight and user-friendly alternative for querying relational data, and it will be discussed again in the context of the `Parquet` format.
+
+### Why File-Based Storage is gaining popularity {-}
+
+The increasing popularity of file-based storage in the data science ecosystem is due to a number of technical and practical advantages that make it well-suited for modern analytical workflows.
+
+Files are generally more lightweight and easier to manage than databases. They do not require the installation or maintenance of specialized software; a basic file system, available on every operating system, is sufficient for accessing them.
+
+Reading a file in `Python` simply involves using a library such as `Pandas`. In contrast, interacting with a database typically requires:
+
+- installing and configuring a DBMS (e.g., `PostgreSQL`, `MySQL`);
+- managing network connections;
+- relying on libraries such as `sqlalchemy` or `psycopg2`.
+
+This additional complexity makes file-based workflows more flexible and faster for exploratory tasks.
+
+However, this simplicity comes with limitations. File-based systems generally lack fine-grained access control. For instance, preventing a user from modifying or deleting a file is difficult without duplicating it and working from a copy. This represents a constraint in multi-user environments, although cloud-based storage solutions — particularly `S3` technology, which will be addressed later — offer effective remedies.
+
+The primary reason why files are often preferred over DBMSs lies in the nature of the operations being performed. Relational databases are particularly well-suited for contexts involving frequent updates or complex operations on structured data — a typical **application logic**, in which data is continuously evolving (through insertions, updates, or deletions).
+
+By contrast, in **analytical** contexts, the focus is on reading and temporarily manipulating data without altering the original source. The objective is to query, aggregate, and filter — not to persist changes. In such scenarios, files (especially when stored in optimized formats like `Parquet`) are ideal: they offer fast read times, high portability, and eliminate the overhead associated with running a full database engine.
+
+:::: 
+
+
+:::: {.content-visible when-profile="fr"}
 
 # Le format `Parquet`
-
 
 Le format `CSV` a longtemps été plébiscité en raison de sa simplicité :
 
@@ -219,7 +402,6 @@ Le format `CSV` a longtemps été plébiscité en raison de sa simplicité :
 - Il est **universel** et interopérable, car non dépendant d’un logiciel particulier.
 
 Mais cette simplicité a un coût. Plusieurs limites du format `CSV` ont justifié l’émergence de formats plus performants pour l'analyse de données comme `Parquet`
-
 
 ## Limites du format `CSV`
 
@@ -245,7 +427,7 @@ Le CSV est **coûteux à modifier** :
     ```
 
 ::: {.note}
-### À propos des formats propriétaires
+## À propos des formats propriétaires
 
 La plupart des outils de data science proposent des formats de sérialisation spécifiques : 
 
@@ -259,6 +441,61 @@ Cependant, ces formats sont **propriétaires** ou **fortement couplés à un lan
 À ce titre, malgré ses limites, le `.csv` conserve l’avantage de l’universalité. Mais le format `Parquet` combine cette portabilité avec des performances bien supérieures.
 :::
 
+::::
+
+:::: {.content-visible when-profile="en"}
+
+# The `Parquet` format
+
+The `CSV` format has long been popular for its simplicity:
+
+- It is **human-readable** (any text editor can open it);
+- It relies on a **simple tabular structure**, well-suited for many analytical situations;
+- It is **universal** and interoperable, as it is not tied to any specific software.
+
+However, this simplicity comes at a cost. Several limitations of the `CSV` format have led to the emergence of more efficient formats for data analysis, such as `Parquet`.
+
+## Limitations of the `CSV` format
+
+CSV is a **heavy** format:
+
+* It is not compressed, increasing its disk size;
+* All data is stored as raw text. Data type optimization (integer, float, string, etc.) is deferred to the importing library (like `Pandas`), which must **scan the data** at load time—slowing down performance and increasing error risk.
+
+CSV is **row-oriented**:
+
+* To access a specific column, every **row must be read**, and the relevant column extracted;
+* This model performs poorly when only a **subset of columns** is needed—a common case in data science.
+
+CSV is **expensive to modify**:
+
+* Adding a column or inserting intermediate data requires **rewriting the entire file**. For example, adding a `hair` column would mean generating a new version of the file:
+
+    ```raw
+    name ; hair ; profession
+    Asterix ; blond ; 
+    Obelix ; redhead ; Menhir sculptor
+    Assurancetourix ; blond ; Bard
+    ```
+
+::: {.note}
+## About proprietary formats
+
+Most data science tools offer their own serialization formats:
+
+- `.pickle` for `Python`,  
+- `.rda` or `.RData` for `R`,  
+- `.dta` for `Stata`,  
+- `.sas7bdat` for `SAS`.
+
+However, these formats are **proprietary** or **tightly coupled to one language**, which raises interoperability issues. For example, `Python` cannot natively read `.sas7bdat`. Even when third-party libraries exist, the lack of official documentation makes support unreliable.
+
+In this regard, despite its limitations, `.csv` remains popular for its universality. But the `Parquet` format offers both this portability and significantly better performance.
+:::
+
+:::: 
+
+:::: {.content-visible when-profile="fr"}
 
 ## L’émergence du format `Parquet`
 
@@ -276,6 +513,28 @@ Voici une représentation tirée du [blog d'Upsolver](https://www.upsolver.com/b
 
 Dans notre exemple, on pourrait lire la colonne `profession` sans parcourir les noms, ce qui rend l'accès plus rapide (ignorez l'élément `pyarrow.Table`, nous
 reviendrons dessus) :
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+## The Rise of the `Parquet` Format
+
+To address these limitations, the `Parquet` format—developed as an [Apache open-source project](https://parquet.apache.org/) offers a radically different approach.
+
+Its key characteristic: it is **column-oriented**. Unlike CSVs, data for each column is stored **separately**. This allows:
+
+- loading only the columns relevant for analysis;
+- more efficient data compression;
+- significantly faster selective queries.
+
+Here's a diagram from the [Upsolver blog](https://www.upsolver.com/blog/apache-parquet-why-use) illustrating the difference between row-based and columnar storage:
+
+![Parquet vs CSV](https://www.upsolver.com/wp-content/uploads/2020/05/Screen-Shot-2020-05-26-at-17.52.58.png)
+
+In our example, you could read the `profession` column without parsing names, making access faster (ignore the `pyarrow.Table` element—we’ll return to it later):
+
+:::: 
 
 ```{python}
 #| echo: false
@@ -296,17 +555,18 @@ df = csv.read_csv(source, parse_options = csv.ParseOptions(delimiter=";"))
 df
 ```
 
+:::: {.content-visible when-profile="fr"}
+
 Grâce à la structure orientée colonne, il est possible de lire uniquement une variable (comme `profession`) sans avoir à parcourir toutes les lignes du fichier.
 
-## Avantages clés du format `Parquet`
+::::
 
-- **Compression native** : les fichiers `Parquet` sont compressés de façon efficace, ce qui réduit considérablement leur taille sur disque sans perte d'information.
-- **Typage intégré** : chaque colonne est associée à un type précis dans le fichier (stocké dans le _footer_). Cela :
-  - fiabilise l’import (pas d’erreur de détection automatique) ;
-  - évite l’altération de données sensibles (par exemple `000012` n’est pas interprété comme `12`).
-- **Partitionnement natif** : `Parquet` permet de **structurer un jeu de données en sous-ensembles hiérarchiques**, ce qui facilite l’accès à des échantillons ciblés tout en gardant la possibilité de monter en charge ensuite.
+:::: {.content-visible when-profile="en"}
 
-Exemple de partitionnement (tiré de la [documentation Spark](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html#partition-discovery)) :
+Thanks to the column-oriented structure, it is possible to read only a single variable (such as `profession`) without having to scan every row in the file.
+
+:::: 
+
 
 ```raw
 path
@@ -324,7 +584,18 @@ path
             │   └── data.parquet
 ```
 
+:::: {.content-visible when-profile="fr"}
+
 À la lecture, l’ensemble est reconstruit sous forme tabulaire :
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+When read, the entire dataset is reconstructed into a tabular format:
+
+:::: 
+
 
 ```raw
 root
@@ -335,21 +606,58 @@ root
 ```
 
 
-## Un format taillé pour l’analyse — pas uniquement le _big data_
+:::: {.content-visible when-profile="fr"}
+
+## Un format taillé pour l’analyse - pas uniquement le _big data_
 
 Comme le rappelle le blog d’Upsolver :
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+## A format designed for analysis — not just big data
+
+As emphasized in the Upsolver blog:
+
+:::: 
+
 
 > _Complex data such as logs and event streams would need to be represented as a table with hundreds or thousands of columns, and many millions of rows. Storing this table in a row-based format such as CSV would mean:_
 >
 > - _Queries will take longer to run since more data needs to be scanned..._
 > - _Storage will be more costly since CSVs are not compressed as efficiently as Parquet_
 
+
+:::: {.content-visible when-profile="fr"}
+
 Mais le format `Parquet` **n’est pas réservé aux architectures _big data_**. Toute personne produisant ou manipulant des jeux de données bénéficiera de ses qualités :
 
 - fichiers plus petits,
 - import rapide et fiable,
 
+::::
 
+:::: {.content-visible when-profile="en"}
+
+However, the `Parquet` format **is not limited to _big data_ architectures**. Its advantages are accessible to anyone who produces or works with datasets, regardless of scale:
+
+- significantly reduced file sizes;
+- fast, reliable, and memory-efficient data import.
+
+:::: 
+
+<!---
+
+fin traduction pour le moment
+
+---->
+
+:::: {.content-visible when-profile="en"}
+
+The translation of this chapter is still in progress. The remaining sections will be available soon.
+
+::::
 
 ## Lire un `Parquet` en `Python`: exemple
 
