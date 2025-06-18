@@ -1154,7 +1154,7 @@ Par défaut, un bucket vous est personnel, c'est à dire que les données qui s'
 Il existe différentes possibilités de rendre des fichiers plus ou moins publics sur `MinIO`. La plus simple, et celle que nous vous recommandons, est de créer un dossier `diffusion` à la racine de votre bucket. Sur le SSP Cloud, tous les fichiers qui se situent dans un dossier `diffusion` sont accessibles **en lecture** à l'ensemble des utilisateurs authentifiés. Utilisez l'interface [Mes Fichiers](https://datalab.sspcloud.fr/my-files) pour créer un dossier `diffusion` à la racine de votre *bucket*. Si tout a bien fonctionné, la commande `Python` ci-dessus devrait désormais afficher le chemin `mon_nom_utilisateur_sspcloud/diffusion`.
 
 ::: {.note}
-Le stockage *cloud* favorise le travail collaboratif ! 
+## Le stockage *cloud* favorise le travail collaboratif ! 
 
 Plutôt que chaque membre du projet travaille avec ses propres fichiers sur son ordinateur, ce qui implique une synchronisation fréquente entre membres du groupe et limite la reproductibilité du fait des risques d'erreur, les fichiers sont mis sur un dépôt central, que chaque membre du groupe peut ensuite requêter. 
 
@@ -1170,7 +1170,7 @@ By default, a bucket is personal, meaning the data inside can only be read or mo
 There are several ways to make files more or less public on `MinIO`. The simplest—and the one we recommend—is to create a folder named `diffusion` at the root of your bucket. On SSP Cloud, all files inside a `diffusion` folder are **readable** by all authenticated users. Use the [My Files](https://datalab.sspcloud.fr/my-files) interface to create a `diffusion` folder at the root of your *bucket*. If everything worked correctly, the Python command above should now display the path `your_sspcloud_username/diffusion`.
 
 ::: {.note}
-Cloud storage encourages collaborative work!
+## Cloud storage encourages collaborative work!
 
 Instead of each project member working with their own files on their personal machine—which would require frequent syncing and makes reproducibility more error-prone—files are placed in a central repository that every group member can access.
 
@@ -1179,13 +1179,14 @@ To do this, the group should agree to use one member’s bucket, and ensure that
 ::::
 
 
+:::: {.content-visible when-profile="fr"}
 ### Récupération et stockage de données
 
 Maintenant que nous savons où mettre nos données sur `MinIO`, regardons comment le faire en pratique depuis `Python`.
 
 #### Cas d'un Dataframe {-}
 
-Reprenons un exemple issu du cours sur les [API](/content/manipulation/04c_API_TP.qmd#illustration-avec-une-api-de-lademe-pour-obtenir-des-diagnostics-énergétiques pour simuler une étape de récupération de données coûteuse en temps. 
+Reprenons un exemple issu du cours sur les [API](/content/manipulation/04c_API_TP.qmd#illustration-avec-une-api-de-lademe-pour-obtenir-des-diagnostics-énergétiques) pour simuler une étape de récupération de données coûteuse en temps. 
 
 ```{python}
 #| eval: true
@@ -1202,6 +1203,33 @@ df_dpe.head(2)
 Cette requête nous permet de récupérer un _DataFrame_ `Pandas`, dont les deux premières lignes sont imprimées ci-dessus. Dans notre cas le processus est volontairement simpliste, mais on peut imaginer que de nombreuses étapes de requêtage / préparation de la données sont nécessaires pour aboutir à un dataframe exploitable dans la suite du projet, et que ce processus est coûteux en temps. On va donc stocker ces données "intermédiaires" sur `MinIO` afin de pouvoir exécuter la suite du projet sans devoir refaire tourner tout le code qui les a produites.
 
 On peut utiliser les fonctions d'export de `Pandas`, qui permettent d'exporter dans différents formats de données. Vu qu'on est dans le cloud, une étape supplémentaire est nécessaire : on ouvre une connexion vers `MinIO`, puis on exporte notre dataframe.
+::::
+
+:::: {.content-visible when-profile="en"}
+### Retrieving and storing data
+
+Now that we know where to place our data on `MinIO`, let’s look at how to do it in practice using `Python`.
+
+#### Case of a DataFrame {-}
+
+Let’s revisit an example from the course on [APIs](/content/manipulation/04c_API_TP.qmd#illustration-avec-une-api-de-lademe-pour-obtenir-des-diagnostics-énergétiques) to simulate a time-consuming data retrieval step.
+
+```{python}
+#| eval: true
+import requests
+import pandas as pd
+
+url_api = "https://koumoul.com/data-fair/api/v1/datasets/dpe-france/lines?format=json&q_mode=simple&qs=code_insee_commune_actualise%3A%2201450%22&size=100&select=%2A&sampling=neighbors"
+response_json = requests.get(url_api).json()
+df_dpe = pd.json_normalize(response_json["results"])
+
+df_dpe.head(2)
+```
+
+This request returns a `Pandas` _DataFrame_, and the first two rows are printed above. In our example, the process is deliberately simple, but in practice, you might have many steps of querying and preparing the data before obtaining a usable DataFrame for the rest of the project. This process might be time-consuming, so we’ll store these "intermediate" data on `MinIO` to avoid rerunning all the code that generated them each time.
+
+We can use `Pandas` export functions, which allow saving data in various formats. Since we’re working in the cloud, one additional step is needed: we open a connection to `MinIO`, then export our DataFrame.
+::::
 
 ```{python}
 #| eval: false
@@ -1212,14 +1240,27 @@ with fs.open(FILE_PATH_OUT_S3, 'w') as file_out:
     df_dpe.to_csv(file_out)
 ```
 
+:::: {.content-visible when-profile="fr"}
 On peut vérifier que notre fichier a bien été uploadé via l'interface [Mes Fichiers](https://datalab.sspcloud.fr/my-files) ou bien directement en `Python` en interrogeant le contenu du dossier `diffusion` de notre *bucket* :
+::::
+
+:::: {.content-visible when-profile="en"}
+You can verify that your file has been successfully uploaded either via the [My Files](https://datalab.sspcloud.fr/my-files) interface, or directly in `Python` by checking the contents of the `diffusion` folder in your *bucket*:
+::::
+
 
 ```{python}
 #| eval: false
 fs.ls(f"{MY_BUCKET}/diffusion")
 ```
 
+:::: {.content-visible when-profile="fr"}
 On pourrait tout aussi simplement exporter notre _dataset_ en `Parquet`, pour limiter l'espace de stockage et maximiser les performances à la lecture. Attention : vu que `Parquet` est un format compressé, il faut préciser qu'on écrit un fichier binaire : le mode d'ouverture du fichier passé à la fonction `fs.open` passe de `w` (`write`) à `wb` (`write binary`).
+::::
+
+:::: {.content-visible when-profile="en"}
+We could just as easily export our dataset in `Parquet` format to reduce storage space and improve read performance. Note: since `Parquet` is a compressed format, you must specify that you're writing a binary file — the file opening mode passed to `fs.open` should be changed from `w` (write) to `wb` (write binary).
+::::
 
 ```{python}
 #| eval: false
@@ -1229,11 +1270,22 @@ with fs.open(FILE_PATH_OUT_S3, 'wb') as file_out:
     df_dpe.to_parquet(file_out)
 ```
 
+:::: {.content-visible when-profile="fr"}
 #### Cas de fichiers {-}
 
 Dans la partie précédente, on était dans le cas "simple" d'un dataframe, ce qui nous permettait d'utiliser directement les fonctions d'export de `Pandas`. Maintenant, imaginons qu'on ait plusieurs fichiers d'entrée, pouvant chacun avoir des formats différents. Un cas typique de tels fichiers sont les fichiers `ShapeFile`, qui sont des fichiers de données géographiques, et se présentent sous forme d'une combinaison de fichiers (cf. [chapitre sur GeoPandas](/content/manipulation/03_geopandas_intro.qmd#le-format-shapefile-.shp-et-le-geopackage-.gpkg)). Commençons par récupérer un fichier `.shp` pour voir sa structure.
 
 On récupère ci-dessous les [contours des départements français](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/), sous la forme d'une archive `.zip` qu'on va décompresser en local dans un dossier `departements_fr`.
+::::
+
+:::: {.content-visible when-profile="en"}
+#### File-based use case {-}
+
+In the previous section, we dealt with the "simple" case of a DataFrame, which allowed us to use `Pandas`' built-in export functions. Now, let's imagine we have multiple input files, each potentially in a different format. A typical example of such files are `ShapeFile`s, which are geographic data files and are composed of several related files (see [GeoPandas chapter](/content/manipulation/03_geopandas_intro.qmd#le-format-shapefile-.shp-et-le-geopackage-.gpkg)). Let’s start by downloading a `.shp` file to inspect its structure.
+
+Below, we retrieve the [boundaries of French departments](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/) in the form of a `.zip` archive, which we will unzip locally into a `departements_fr` folder.
+::::
+
 
 ```{python}
 import io
@@ -1251,13 +1303,21 @@ zipfile.extractall("departements_fr")
 os.listdir("departements_fr")
 ```
 
+:::: {.content-visible when-profile="fr"}
 Vu qu'il s'agit cette fois de fichiers locaux et non d'un *dataframe* `Pandas`, on doit utiliser le package `s3fs` pour transférer les fichiers du filesystem local au filesystem distant (`MinIO`). Grâce à la commande `put`, on peut copier en une seule commande le dossier sur `MinIO`. Attention à bien spécifier le paramètre `recursive=True`, qui permet de copier à la fois un dossier et son contenu.
+::::
+
+:::: {.content-visible when-profile="en"}
+Since we're now dealing with local files rather than a `Pandas` *DataFrame*, we need to use the `s3fs` package to transfer files from the local filesystem to the remote filesystem (`MinIO`). Using the `put` command, we can copy an entire folder to `MinIO` in a single step. Be sure to set the `recursive=True` parameter so that both the folder and its contents are copied.
+::::
+
 
 ```{python}
 #| eval: false
 fs.put("departements_fr/", f"{MY_BUCKET}/diffusion/departements_fr/", recursive=True)
 ```
 
+:::: {.content-visible when-profile="fr"}
 Vérifions que le dossier a bien été copié :
 
 ```{python}
@@ -1266,7 +1326,20 @@ fs.ls(f"{MY_BUCKET}/diffusion/departements_fr")
 ```
 
 Si tout a bien fonctionné, la commande ci-dessus devrait renvoyer une liste contenant les chemins sur `MinIO` des différents fichiers (`.shp`, `.shx`, `.prj`, etc.) constitutifs du `ShapeFile` des départements.
+::::
 
+:::: {.content-visible when-profile="en"}
+Let’s check that the folder was successfully copied:
+
+```{python}
+#| eval: false
+fs.ls(f"{MY_BUCKET}/diffusion/departements_fr")
+```
+
+If everything worked correctly, the command above should return a list of file paths on `MinIO` for the various components of the department `ShapeFile` (`.shp`, `.shx`, `.prj`, etc.).
+::::
+
+:::: {.content-visible when-profile="fr"}
 ### Utilisation des données
 
 En sens inverse, pour récupérer les fichiers depuis `MinIO` dans une session `Python`, les commandes sont symétriques.
@@ -1327,3 +1400,67 @@ df_dep.head(2)
 ## Pour aller plus loin
 
 - [La documentation sur MinIO du SSPCloud](https://docs.sspcloud.fr/content/storage.html)
+::::
+
+:::: {.content-visible when-profile="en"}
+### Using the data
+
+In the reverse direction, to retrieve files from `MinIO` in a `Python` session, the commands are symmetrical.
+
+#### Case of a dataframe {-}
+
+Make sure to pass the `r` parameter (`read`, for reading) instead of `w` (`write`, for writing) to the `fs.open` function to avoid overwriting the file!
+
+```{python}
+#| eval: false
+MY_BUCKET = "your_sspcloud_username"
+FILE_PATH_S3 = f"{MY_BUCKET}/diffusion/df_dpe.csv"
+
+# Import
+with fs.open(FILE_PATH_S3, 'r') as file_in:
+    df_dpe = pd.read_csv(file_in)
+
+# Check
+df_dpe.head(2)
+```
+
+Similarly, if the file is in `Parquet` format (don’t forget to use `rb` instead of `r` due to compression):
+
+```{python}
+#| eval: false
+MY_BUCKET = "your_sspcloud_username"
+FILE_PATH_S3 = f"{MY_BUCKET}/diffusion/df_dpe.parquet"
+
+# Import
+with fs.open(FILE_PATH_S3, 'rb') as file_in:
+    df_dpe = pd.read_parquet(file_in)
+
+# Check
+df_dpe.head(2)
+```
+
+#### Case of files {-}
+
+For file collections, you’ll first need to download the files from `MinIO` to your local machine (i.e., the current SSP Cloud session).
+
+```{python}
+#| eval: false
+
+# Retrieve files from MinIO to the local machine
+fs.get(f"{MY_BUCKET}/diffusion/departements_fr/", "departements_fr/", recursive=True)
+```
+
+Then, you can import them in the usual way using the appropriate `Python` package. For `ShapeFile`s, where multiple files make up a single dataset, one command is sufficient after retrieval:
+
+```{python}
+#| eval: false
+import geopandas as gpd
+
+df_dep = gpd.read_file("departements_fr")
+df_dep.head(2)
+```
+
+## To go further
+
+- [SSPCloud documentation on MinIO](https://docs.sspcloud.fr/content/storage.html)
+::::
