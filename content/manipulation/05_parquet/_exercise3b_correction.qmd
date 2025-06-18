@@ -1,0 +1,93 @@
+
+```{python}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Correction de la question 2 (écriture du Parquet partitionné)"
+import pyarrow.parquet as pq
+dataset = ds.dataset(
+    "data/RPindividus.parquet", format="parquet"
+).to_table()
+
+pq.write_to_dataset(
+    dataset,
+    root_path="data/RPindividus_partitionne",
+    partition_cols=["REGION", "DEPT"]
+)
+```
+
+```{python}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Correction de la question 4 (lecture du Parquet partitionné)"
+import pyarrow.dataset as ds
+import pyarrow.compute as pc
+import duckdb
+
+@measure_performance
+def summarize_filter_parquet_partitioned_arrow(*args, **kwargs):
+
+    dataset = ds.dataset("data/RPindividus_partitionne/", partitioning="hive")
+    table = dataset.to_table(filter=pc.field("DEPT").isin(['18', '28', '36']))
+
+    grouped_table = (
+        table
+        .group_by(["AGED", "DEPT"])
+        .aggregate([("IPONDI", "sum")])
+        .rename_columns(["AGED", "DEPT", "n_indiv"])
+        .to_pandas()
+    )
+
+    return (
+        grouped_table
+    )
+
+@measure_performance
+def summarize_filter_parquet_complete_arrow(*args, **kwargs):
+
+    dataset = ds.dataset("data/RPindividus.parquet")
+    table = dataset.to_table(filter=pc.field("DEPT").isin(['18', '28', '36']))
+
+    grouped_table = (
+        table
+        .group_by(["AGED", "DEPT"])
+        .aggregate([("IPONDI", "sum")])
+        .rename_columns(["AGED", "DEPT", "n_indiv"])
+        .to_pandas()
+    )
+
+    return (
+        grouped_table
+    )
+
+
+@measure_performance
+def summarize_filter_parquet_complete_duckdb(*args, **kwargs):
+    con = duckdb.connect(":memory:")
+    query = """
+    FROM read_parquet('data/RPindividus.parquet')
+    SELECT AGED, DEPT, SUM(IPONDI) AS n_indiv
+    WHERE DEPT IN ('11','31','34')
+    GROUP BY AGED, DEPT
+    """
+
+    return (con.sql(query).to_df())
+
+
+@measure_performance
+def summarize_filter_parquet_partitioned_duckdb(*args, **kwargs):
+    con = duckdb.connect(":memory:")
+    query = """
+    FROM read_parquet('data/RPindividus_partitionne/**/*.parquet', hive_partitioning = True)
+    SELECT AGED, DEPT, SUM(IPONDI) AS n_indiv
+    WHERE DEPT IN ('11','31','34')
+    GROUP BY AGED, DEPT
+    """
+
+    return (con.sql(query).to_df())
+
+
+summarize_filter_parquet_complete_arrow()
+summarize_filter_parquet_partitioned_arrow()
+summarize_filter_parquet_complete_duckdb()
+summarize_filter_parquet_partitioned_duckdb()
+```
