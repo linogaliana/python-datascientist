@@ -1,0 +1,94 @@
+:::: {.content-visible when-profile="fr"}
+
+::: {.exercise collapse="false"}
+## Partie 2 : Exploiter la *lazy evaluation* et les optimisations d'`Arrow` ou de `DuckDB`
+
+La partie précédente a montré un **gain de temps considérable** du passage de `CSV` à `Parquet`. Néanmoins, l'**utilisation mémoire était encore très élevée** alors qu'on utilise de fait qu'une infime partie du fichier.
+
+Dans cette partie, on va voir comment utiliser la ***lazy evaluation*** et les **optimisations du plan d'exécution** effectuées par `Arrow` pour exploiter pleinement la puissance du format `Parquet`.
+
+* Ouvrir le fichier  `data/RPindividus_24.parquet` avec [pyarrow.dataset](https://arrow.apache.org/docs/python/dataset.html). Regarder la classe de l'objet obtenu.
+* Tester le code ci-dessous pour lire un échantillon de données:
+
+```{python}
+#| eval: false
+(
+    dataset.scanner()
+    .head(5)
+    .to_pandas()
+)
+```
+
+Comprenez-vous la différence avec précédemment ? Observez dans la documentation la méthode `to_table` : comprenez-vous son principe ?
+
+* Construire une fonction `summarize_parquet_arrow` (resp. `summarize_parquet_duckdb`) qui importe cette fois les données avec la fonction [`pyarrow.dataset`](https://arrow.apache.org/docs/python/dataset.html) (resp. avec `DuckDB`) et effectue l'agrégation voulue.
+* Comparer les performances (temps d'exécution et allocation mémoire) des trois méthodes (`Parquet` lu et processé avec `Pandas`, `Arrow` et `DuckDB`) grâce à notre fonction.
+
+<details>
+
+<summary>
+Correction
+</summary>
+
+{{< include "/content/manipulation/05_parquet/_exercise2_benchmark.qmd" >}}
+
+</details>
+
+:::
+
+Avec l'évaluation différée, on obtient donc un processus en plusieurs temps:
+
+* `Arrow` ou `DuckDB` reçoit des instructions, les optimise, exécute les requêtes
+* Seules les données en sortie de cette chaîne sont renvoyées à `Python`
+
+![](https://linogaliana.github.io/parquet-recensement-tutomate/img/duckdb-delegation1.png)
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.exercise collapse="false"}
+## Part 2: Leveraging *Lazy Evaluation* and the Optimizations of `Arrow` or `DuckDB`
+
+In the previous section, we observed a **significant improvement in read times** when switching from `CSV` to `Parquet`. However, **memory usage remained high**, even though only a small portion of the data was actually used.
+
+In this section, we will explore how to take advantage of ***lazy evaluation*** and **execution plan optimizations** offered by `Arrow` to fully unlock the performance benefits of the `Parquet` format.
+
+* Open the file `data/RPindividus_24.parquet` using [`pyarrow.dataset`](https://arrow.apache.org/docs/python/dataset.html). Check the class of the resulting object.
+* Run the code below to read a sample of the data:
+
+```{python}
+#| eval: false
+(
+    dataset.scanner()
+    .head(5)
+    .to_pandas()
+)
+```
+
+Can you identify the difference compared to the previous approach? Consult the documentation for the `to_table` method—do you understand what it does and why it matters?
+
+* Create a function `summarize_parquet_arrow` (and a corresponding `summarize_parquet_duckdb`) that imports the data using [`pyarrow.dataset`](https://arrow.apache.org/docs/python/dataset.html) (or `DuckDB`) and performs the required aggregation.
+
+* Use the benchmarking decorator to compare the performance (execution time and memory usage) of the three approaches: reading and processing `Parquet` data using `Pandas`, `PyArrow`, and `DuckDB`.
+
+<details>
+
+<summary>
+Correction
+</summary>
+
+{{< include "/content/manipulation/05_parquet/_exercise2_benchmark.qmd" >}}
+
+</details>
+
+
+:::
+
+With lazy evaluation, the process unfolds in several stages:
+
+* `Arrow` or `DuckDB` receives a set of instructions, builds an execution plan, optimizes it, and then executes the query;
+* Only the final result of this pipeline is returned to `Python`, rather than the entire dataset.
+
+
+![](https://linogaliana.github.io/parquet-recensement-tutomate/img/duckdb-delegation1.png)
+::::

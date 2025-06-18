@@ -1,0 +1,40 @@
+```{python}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Code complet de l'application"
+
+import duckdb
+import pyarrow.dataset as ds
+
+@measure_performance
+def summarize_parquet_duckdb(*args, **kwargs):
+    con = duckdb.connect(":memory:")
+    query = """
+    FROM read_parquet('data/RPindividus_24.parquet')
+    SELECT AGED, DEPT, SUM(IPONDI) AS n_indiv
+    GROUP BY AGED, DEPT
+    """
+
+    return (con.sql(query).to_df())
+
+@measure_performance
+def summarize_parquet_arrow(*args, **kwargs):
+
+    dataset = ds.dataset("data/RPindividus_24.parquet", format="parquet")
+    table = dataset.to_table()
+    grouped_table = (
+        table
+        .group_by(["AGED", "DEPT"])
+        .aggregate([("IPONDI", "sum")])
+        .rename_columns(["AGED", "DEPT", "n_indiv"])
+        .to_pandas()
+    )
+
+    return (
+        grouped_table
+    )
+
+process_parquet()
+summarize_parquet_duckdb()
+summarize_parquet_arrow()
+```
