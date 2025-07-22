@@ -13,32 +13,43 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{github.event.pull_request.head.repo.full_name}}
+
       - name: Configure safe.directory  # Workaround for actions/checkout#760
         run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+
       - name: Install system dependencies
         run: |
           sudo ./build/requirements.sh
-      - name: Install the latest version of uv and set the python version to 3.13t
+
+      - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.12"
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - uses: quarto-dev/quarto-actions/setup@v2
-      - run: |
-          quarto --version
+          version: "latest"
+          python-version: 3.12
+
+      - name: Restore environment
+        run: uv sync
+
+      # Step 3: Set up Quarto
+      - name: Set up quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Install SpaCy corpus and check quarto version
+        run: |
+          uv run spacy download en_core_web_sm
+          uv run quarto --version
+          
       - name: Prepare directory
         run: |
           rm _quarto.yml
           cp _quarto-prod.yml _quarto.yml
-      - name: Install Python dependencies
-        run: |
-          uv sync
+
       - name: Render website
         env:
           API_INPI_USERNAME: ${{ secrets.API_INPI_USERNAME }}
@@ -61,37 +72,49 @@ jobs:
           git config --global user.email quarto-github-actions-publish@example.com
           git config --global user.name "Quarto GHA Workflow Runner"
           quarto publish gh-pages . --no-render --no-browser
+
   enonces:
     name: Render notebooks
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{github.event.pull_request.head.repo.full_name}}
+
       - name: Configure safe.directory  # Workaround for actions/checkout#760
         run: git config --global --add safe.directory /__w/python-datascientist/python-datascientist
+
       - name: Install system dependencies
         run: |
           sudo ./build/requirements.sh
-      - name: Install the latest version of uv and set the python version to 3.13t
+
+      - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.12"
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - uses: quarto-dev/quarto-actions/setup@v2
-      - run: |
-          quarto --version
+          version: "latest"
+          python-version: 3.12
+
+      - name: Restore environment
+        run: uv sync
+
+      # Step 3: Set up Quarto
+      - name: Set up quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Install SpaCy corpus and check quarto version
+        run: |
+          uv run spacy download en_core_web_sm
+          uv run quarto --version
+          
       - name: Prepare directory
         run: |
           rm _quarto.yml
           cp _quarto-prod.yml _quarto.yml
-      - name: Install Python dependencies
-        run: |
-          uv sync
+
       - name: Convert in ipynb with Quarto
         env:
           API_INPI_USERNAME: ${{ secrets.API_INPI_USERNAME }}
@@ -128,75 +151,6 @@ jobs:
           source-directory: 'temp_notebooks/'
           destination-repository-username: 'linogaliana'
           destination-repository-name: 'python-datascientist-notebooks'
-          user-email: lino.galiana@insee.fr
-          destination-github-username: linogaliana
-          #target-branch: test
-          create-target-branch-if-needed: true
-          reset-repo: true
-  enonces-vscode:
-    name: Render notebooks (VSCode version)
-    runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.head.repo.fork }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - name: Configure safe.directory  # Workaround for actions/checkout#760
-        run: |
-            git config --global --add safe.directory /__w/python-datascientist/python-datascientist
-            git config --global --add safe.directory /__w/python-datascientist/python-datascientist-notebooks-vscode
-      - name: Install system dependencies
-        run: |
-          sudo ./build/requirements.sh
-      - name: Install the latest version of uv and set the python version to 3.13t
-        uses: astral-sh/setup-uv@v6
-        with:
-          python-version: "3.12"
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - uses: quarto-dev/quarto-actions/setup@v2
-      - run: |
-          quarto --version
-      - name: Prepare directory
-        run: |
-          rm _quarto.yml
-          cp _quarto-prod.yml _quarto.yml
-      - name: Install Python dependencies
-        run: |
-          uv sync
-      - name: Convert in ipynb with Quarto
-        env:
-          API_INPI_USERNAME: ${{ secrets.API_INPI_USERNAME }}
-          API_INPI_PASSWORD: ${{ secrets.API_INPI_PASSWORD }}
-        run: |
-          export QUARTO_PROFILE=fr,en
-          cp _quarto.yml _quarto-prod.yml
-          uv run ./build/nice-vscode/tweak_pipeline_vscode.py --filename _quarto-prod.yml
-          cp _quarto-prod2.yml _quarto.yml
-          rm content/modelisation/index.qmd # Remove file not building in ipynb
-          uv run quarto render --profile fr --to ipynb
-          uv run quarto render --profile en --to ipynb
-      - name: Move to expected directory
-        env:
-          API_INPI_USERNAME: ${{ secrets.API_INPI_USERNAME }}
-          API_INPI_PASSWORD: ${{ secrets.API_INPI_PASSWORD }}
-        run: |
-          mkdir -p temp_notebooks
-          mkdir -p temp_notebooks/notebooks
-          uv run build/move_files.py --direction temp_notebooks/notebooks
-          uv run quarto render content --to ipynb --execute -M echo:true
-          mkdir -p temp_notebooks/corrections
-          uv run build/move_files.py --direction temp_notebooks/corrections
-      - name: Pushes to another repository
-        uses: linogaliana/github-action-push-to-another-repository@main
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
-        with:
-          source-directory: 'temp_notebooks/'
-          destination-repository-username: 'linogaliana'
-          destination-repository-name: 'python-datascientist-notebooks-vscode'
           user-email: lino.galiana@insee.fr
           destination-github-username: linogaliana
           #target-branch: test

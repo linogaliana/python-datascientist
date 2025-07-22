@@ -25,3 +25,5 @@ curl -L $DOWNLOAD_URL -o "${WORK_DIR}/${CHAPTER}.ipynb"
 
 # Open the relevant notebook when starting Jupyter Lab
 echo "c.LabApp.default_url = '/lab/tree/${CHAPTER}.ipynb'" >> /home/onyxia/.jupyter/jupyter_server_config.py
+
+pip install jupyterlab-quarto
