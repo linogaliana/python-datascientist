@@ -15,7 +15,7 @@ else
   COURSE_DIR="${CLONE_DIR}/notebooks"
 fi
 
-BASE_URL="https://raw.githubusercontent.com/linogaliana/python-datascientist-notebooks-vscode/main"
+BASE_URL="https://raw.githubusercontent.com/linogaliana/python-datascientist-notebooks/main"
 NOTEBOOK_PATH="${PATH_WITHIN}/${SECTION}/${CHAPTER}.ipynb"
 DOWNLOAD_URL="${BASE_URL}/${NOTEBOOK_PATH}"
 
