@@ -1,36 +1,12 @@
 :::: {.content-visible when-profile="fr"}
 
-::: {.callout-tip}
-## Exercice 2 (optionnel) : Regarder les corrélations entre les variables
+Pour le prochain exercice, afin d'illustrer le principe de l'inspection visuelle des corrélations, nous n'allons garder qu'un nombre limité de variables, choisies de manière quelle que peu arbitraire.
 
-__Cet exercice est OPTIONNEL__
-
-1. Créer un DataFrame `df2` plus petit avec les variables `winner`, `votes_gop`, `Unemployment_rate_2019`,
-`Median_Household_Income_2019`,
-`Percent of adults with less than a high school diploma, 2015-19`,
-`Percent of adults with a bachelor's degree or higher, 2015-19`
-2. Représenter grâce à un graphique la matrice de corrélation. Vous pouvez utiliser le _package_ `seaborn` et sa fonction `heatmap`.
-3. Représenter une matrice de nuages de points des variables de la base `df2` avec `pd.plotting.scatter_matrix`
-4. (optionnel) Refaire ces figures avec `Plotly` qui offre également la possibilité de faire une matrice de corrélation. 
-
-:::
 ::::
 
 :::: {.content-visible when-profile="en"}
 
-::: {.callout-tip}
-## Exercise 2 (Optional): Examining Correlations Between Variables
-
-__This exercise is OPTIONAL__
-
-1. Create a smaller DataFrame `df2` with the variables `winner`, `votes_gop`, `Unemployment_rate_2019`,
-`Median_Household_Income_2019`,
-`Percent of adults with less than a high school diploma, 2015-19`,
-`Percent of adults with a bachelor's degree or higher, 2015-19`.
-2. Use a graph to represent the correlation matrix. You can use the `seaborn` package and its `heatmap` function.
-
-
-:::
+For the next exercise, to illustrate the principle of visual inspection of correlations, we'll keep only a limited number of variables, chosen somewhat arbitrarily.
 
 ::::
 
@@ -39,7 +15,6 @@ __This exercise is OPTIONAL__
 #| output: false
 #| echo: true
 
-# 1. Créer le data.frame df2.
 df2 = votes.set_index("GEOID").loc[
     : ,
     [
@@ -52,21 +27,65 @@ df2 = votes.set_index("GEOID").loc[
 df2 = df2.dropna()
 ```
 
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
+## Exercice 2 (optionnel) : Regarder les corrélations entre les variables
+
+__Cet exercice est OPTIONNEL__
+
+Représenter grâce à un graphique la matrice de corrélation. Vous pouvez utiliser le _package_ `seaborn` et sa fonction `heatmap`.
+
+:::
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-tip}
+## Exercise 2 (Optional): Examining Correlations Between Variables
+
+__This exercise is OPTIONAL__
+
+Use a graph to represent the correlation matrix. You can use the `seaborn` package and its `heatmap` function.
+
+:::
+
+::::
+
+
+
+
 
 ::: {.content-visible when-profile="fr"}
-La matrice construite avec `seaborn` (question 2) aura l'aspect suivant :
+La matrice de corrélation peut être construite de plusieurs manières, en fonction du _framework_ de prédilection (cf. le [chapitre consacré à la visualisation](/content/visualisation/matplotlib.qmd)). Voici celui obtenu avec `seaborn`, qui convient bien pour une visualisation rapide mais sur lequel il faudrait fournir un travail non négligeable pour obtenir un graphique prêt à la publication:
 :::
 
 ::: {.content-visible when-profile="en"}
-Matrix created with `seaborn` (question 2) will look as follows:
+The correlation matrix can be constructed in various ways, depending on the framework you choose (see the [chapter on visualization](/content/visualisation/matplotlib.qmd)). The example below was produced using `seaborn`, which is well-suited for quick visualizations. However, considerable refinement would be needed to make the graphic suitable for publication.
 :::
 
 ```{python}
+#| code-fold: true
+#| code-summary: "Code to produce correlation matrix with seaborn"
+#| echo: true
+#| output: false
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-corr = df2.drop("winner", axis = 1).corr()
+column_labels = {
+    'votes_gop': 'GOP votes',
+    'Unemployment_rate_2019': 'Unemployment\n(2019)',
+    'Median_Household_Income_2021': 'Median Income\n(2021)',
+    'Percent of adults with less than a high school diploma, 2018-22': 'Less than HS diploma\n(2018–22)',
+    'Percent of adults with a bachelor\'s degree or higher, 2018-22': 'Bachelor\'s degree or\nhigher (2018–22)'
+}
+
+corr = (
+    df2.drop("winner", axis = 1)
+    .rename(columns=column_labels)
+    .corr()
+)
 
 mask = np.zeros_like(corr, dtype=bool)
 mask[np.triu_indices_from(mask)] = True
@@ -78,7 +97,7 @@ fig = plt.figure()
 cmap = sns.diverging_palette(220, 10, as_cmap=True)
 
 # Draw the heatmap with the mask and correct aspect ratio
-sns.heatmap(
+g = sns.heatmap(
     corr,
     mask=mask,     # Mask upper triangular matrix
     cmap=cmap,
@@ -86,37 +105,169 @@ sns.heatmap(
     vmax=.3,
     vmin=-.3,
     center=0,      # The center value of the legend. With divergent cmap, where white is
-    square=True,   # Force cells to be square
-    linewidths=.5, # Width of lines that divide cells
-    cbar_kws={"shrink": .5}  # Extra kwargs for the legend; in this case, shrink by 50%
+    square=True,   
+    linewidths=.5, 
+    cbar_kws={"shrink": .5} 
 )
 
-plt.show(fig)
+g
+plt.xticks(rotation=30, ha='right')
+plt.yticks(rotation=0)
+plt.show()
+```
+
+```{python}
+#| fig-cap: "Correlation matrix with seaborn"
+#| label: fig-corr-seaborn
+g.figure
 ```
 
 
 ::: {.content-visible when-profile="fr"}
-Le nuage de point obtenu à l'issue de la question 3 ressemblera à :
+On peut également obtenir une figure similaire, mais un peu plus propre, grâce à `plotnine`, l'équivalent de la librairie `R` `ggplot`  en `Python` (pour en savoir plus, retourner au [chapitre consacré à la visualisation](/content/visualisation/matplotlib.qmd)). Comme on trouve moins de source d'inspiration en `Python` (car en `R` on a profusion d'exemples) sur internet pour cette librairie, plus récente que `matplotlib` ou `seaborn`, le code est directement donné[^chatgpt].
+
+[^chatgpt]: Celui-ci a été généré avec l'aide de `ChatGPT` en quelques secondes. Cela m'a évité de me casser la tête sur la structure de données idéale pour reprendre l'exemple des _heatmap_ de la [documentation de `plotnine`](https://plotnine.org/gallery/annotated-heatmap.html). 
 :::
 
 ::: {.content-visible when-profile="en"}
-The scatter plot obtained after question 3 will look like:
+A similar but slightly cleaner figure can be produced using `plotnine`, the `Python` equivalent of the `ggplot2` library in `R` (for more details, see the [chapter on visualization](/content/visualization/matplotlib.qmd)). Since there is less online inspiration for `plotnine` - which is newer than `matplotlib` or `seaborn` - and fewer examples available compared to the rich ecosystem around `R`, the full code is provided below[^chatgpt-en].
+
+[^chatgpt-en]: This version was generated with the help of `ChatGPT` in just a few seconds, sparing me the trouble of figuring out the ideal data structure to replicate the _heatmap_ example from the [`plotnine` documentation](https://plotnine.org/gallery/annotated-heatmap.html).
+ 
 :::
 
+```{python}
+#| code-fold: true
+#| code-summary: "Code to produce correlation matrix with plotnine"
+#| echo: true
+#| output: false
+corr = (
+    df2.drop("winner", axis = 1)
+    .rename(columns=column_labels)
+    .corr()
+)
+
+# 2. Transformation en format long
+corr_long = corr.reset_index().melt(id_vars='index')
+corr_long.columns = ['var1', 'var2', 'corr']
+
+# 3. Supprimer la diagonale supérieure
+corr_long['mask'] = corr_long.apply(lambda row: sorted([row['var1'], row['var2']]), axis=1)
+corr_long['keep'] = corr_long['mask'].duplicated(keep='first')
+corr_long = corr_long[~corr_long['keep']].drop(columns=['mask', 'keep'])
+
+# 4. Ordre cohérent
+var_order = corr.columns.tolist()
+corr_long['var1'] = pd.Categorical(corr_long['var1'], categories=var_order, ordered=True)
+corr_long['var2'] = pd.Categorical(corr_long['var2'], categories=var_order[::-1], ordered=True)
+
+# 5. Groupe pour texte contrasté
+corr_long['p_group'] = np.where(corr_long['corr'].abs() > 0.2, 'white', 'black')
+
+# 5. Création du plot
+p = (
+    ggplot(corr_long, aes(x='var1', y='var2', fill='corr'))
+    + geom_tile(width=0.95, height=0.95)
+    + geom_text(aes(label='round(corr, 2)', color='p_group'), size=9, show_legend=False)
+    + scale_fill_gradient2(low='blue', mid='white', high='red', midpoint=0, limits=(-1, 1))
+    + scale_color_manual(values={'white': 'white', 'black': 'black'})
+    + coord_fixed()
+    + labs(x = "", y = "")
+    + theme(
+        axis_text_x=element_text(rotation=45, ha='right'),
+        figure_size=(8, 6),
+        panel_background=element_rect(fill='white'),
+        legend_position = "none"
+    )
+)
+
+p
+```
+
+```{python}
+#| fig-cap: "Correlation matrix with plotnine"
+#| label: fig-corr-plotnine
+p
+```
+
+:::: {.content-visible when-profile="fr"}
+
+Dernier exemple, on peut aussi construire cette matrice de corrélation avec `Plotly`, même si ce n'est pas l'écosystème le plus pratique.
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+Last but not least, you can also build this correlation matrix with `Plotly`, even if it's not the most practical ecosystem.
+
+::::
 
 ```{python}
 #| echo: true
-# 3. Matrice de nuages de points
-pd.plotting.scatter_matrix(df2)
+#| code-fold: true
+#| code-summary: "Code to produce correlation matrix with plotly"
+#| output: false
+import plotly.express as px
+import pandas as pd
+import numpy as np
+
+# Compute correlation matrix
+corr = (
+    df2.drop("winner", axis=1)
+    .round(2)
+    .rename(columns=column_labels)
+    .corr()
+)
+
+# Mask upper triangle
+mask = np.triu(np.ones_like(corr, dtype=bool))
+corr_masked = corr.mask(mask)
+
+# Plot heatmap
+fig = px.imshow(
+    corr_masked.values,
+    x=corr.columns,
+    y=corr.columns,
+    color_continuous_scale='RdBu_r',  # <- reversed color scale
+    zmin=-1,
+    zmax=1,
+    text_auto=".2f"
+)
+
+# Customize hover
+fig.update_traces(
+    hovertemplate="Var 1: %{y}<br>Var 2: %{x}<br>Corr: %{z:.2f}<extra></extra>"
+)
+
+# Layout tweaks
+fig.update_layout(
+    coloraxis_showscale=False,
+    xaxis=dict(showticklabels=False, title=None, ticks=''),  # remove axis title and ticks
+    yaxis=dict(showticklabels=True, title=None, ticks=''),
+    plot_bgcolor="rgba(0,0,0,0)",
+    margin=dict(t=10, b=10, l=10, r=10),  # <-- shrink ALL margins
+    width=600,
+    height=600
+)
+
+fig.show()
 ```
 
-::: {.content-visible when-profile="fr"}
-Le résultat de la question 4 devrait, quant à lui,
-ressembler au graphique suivant :
-:::
 
-::: {.content-visible when-profile="en"}
-The result of question 4, on the other hand, should look like the following chart:
-:::
+```{python}
+#| fig-cap: "Correlation matrix built with plotly"
+#| label: fig-corr-plotly
+fig.show()
+```
 
+:::: {.content-visible when-profile="fr"}
 
+De manière assez attendue, les corrélations (en valeur absolue) les plus fortes concernent le revenu et le niveau de diplôme. On peut aussi noter que le revenu est corrélé positivement au score des républicains. Néanmoins, ce résultat n'est pas toutes choses égales par ailleurs. Pour pouvoir aller plus loin dans l'analyse, il faudra introduire une forme de modélisation pour contrôler des relations croisées entre nos caractéristiques. 
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+As expected, the strongest correlations (in absolute value) are between income and education level. Income is also positively correlated with the Republican vote share. However, these results are purely descriptive and do not account for potential confounding factors. To explore these relationships more rigorously, we’ll need to introduce a modeling approach that can control for the interplay between variables.
+
+::::
