@@ -1,7 +1,7 @@
 import yaml
 from tweak_markdown import read_file, write_file
 
-FILENAME_TO_ADD = "build/append-environment_meta_info.qmd"
+FILENAME_TO_ADD = "build/append-environment/_meta_info.qmd"
 
 def process_quarto_config(quarto_config_file):
     with open(quarto_config_file, "r", encoding="utf-8") as yml_file:
