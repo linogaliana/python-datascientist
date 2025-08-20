@@ -48,9 +48,11 @@ def make_details_for_part(group, part_name, field = "title"):
         f"</details>"
     )
 
-def create_div_chapter_list(version = "fr", introductory_text=''):
+def create_div_chapter_list(version = "fr", introductory_text='', max_n = None):
 
     df = build_metadata_dataframe(f'_quarto-{version}.yml')
+    if max_n is not None:
+        df = df.head(max_n)
     field = "title"
     if version == "en":
         field = field + "-en"
@@ -77,7 +79,7 @@ def create_div_chapter_list(version = "fr", introductory_text=''):
         html_blocks.append(make_details_for_part(group, part_title, field))
 
     final_html = (
-        '<div class="list-chapter-ordered">\n'
+        f'<div class="list-chapter-ordered-{version}">\n'
         f'{introductory_text}'
         f'{"\n\n".join(html_blocks)}'
         '</div>'
