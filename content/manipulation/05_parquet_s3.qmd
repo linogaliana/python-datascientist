@@ -1279,7 +1279,7 @@ with fs.open(FILE_PATH_OUT_S3, 'wb') as file_out:
 
 Dans la partie précédente, on était dans le cas "simple" d'un dataframe, ce qui nous permettait d'utiliser directement les fonctions d'export de `Pandas`. Maintenant, imaginons qu'on ait plusieurs fichiers d'entrée, pouvant chacun avoir des formats différents. Un cas typique de tels fichiers sont les fichiers `ShapeFile`, qui sont des fichiers de données géographiques, et se présentent sous forme d'une combinaison de fichiers (cf. [chapitre sur GeoPandas](/content/manipulation/03_geopandas_intro.qmd#le-format-shapefile-.shp-et-le-geopackage-.gpkg)). Commençons par récupérer un fichier `.shp` pour voir sa structure.
 
-On récupère ci-dessous les [contours des départements français](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/), sous la forme d'une archive `.zip` qu'on va décompresser en local dans un dossier `departements_fr`.
+On récupère ci-dessous les contours du département de la Réunion [produits par l'IGN](https://geoservices.ign.fr/telechargement-api/ADMIN-EXPRESS-COG-CARTO), sous la forme d'une archive `.7z` qu'on va décompresser en local dans un dossier `departements_fr`.
 ::::
 
 :::: {.content-visible when-profile="en"}
@@ -1287,7 +1287,7 @@ On récupère ci-dessous les [contours des départements français](https://www.
 
 In the previous section, we dealt with the "simple" case of a DataFrame, which allowed us to use `Pandas`' built-in export functions. Now, let's imagine we have multiple input files, each potentially in a different format. A typical example of such files are `ShapeFile`s, which are geographic data files and are composed of several related files (see [GeoPandas chapter](/content/manipulation/03_geopandas_intro.qmd#le-format-shapefile-.shp-et-le-geopackage-.gpkg)). Let’s start by downloading a `.shp` file to inspect its structure.
 
-Below, we retrieve the [boundaries of French departments](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/) in the form of a `.zip` archive, which we will unzip locally into a `departements_fr` folder.
+Below are the outlines of the department of Réunion [produced by the IGN](https://geoservices.ign.fr/telechargement-api/ADMIN-EXPRESS-COG-CARTO), in the form of a `..7z` archive that we will unzip locally into a folder called `departements_fr`.
 ::::
 
 
@@ -1295,13 +1295,14 @@ Below, we retrieve the [boundaries of French departments](https://www.data.gouv.
 import io
 import os
 import requests
-import zipfile
+import py7zr
 
 # Import et décompression
-contours_url = "https://www.data.gouv.fr/fr/datasets/r/eb36371a-761d-44a8-93ec-3d728bec17ce"
+contours_url = "https://data.geopf.fr/telechargement/download/ADMIN-EXPRESS-COG-CARTO/ADMIN-EXPRESS-COG-CARTO_3-2__SHP_RGR92UTM40S_REU_2023-05-03/ADMIN-EXPRESS-COG-CARTO_3-2__SHP_RGR92UTM40S_REU_2023-05-03.7z"
 response = requests.get(contours_url, stream=True)
-zipfile = zipfile.ZipFile(io.BytesIO(response.content))
-zipfile.extractall("departements_fr")
+
+with py7zr.SevenZipFile(io.BytesIO(response.content), mode='r') as archive:
+    archive.extractall(path="departements_fr")
 
 # Vérification du dossier (local, pas sur S3)
 os.listdir("departements_fr")
@@ -1329,7 +1330,14 @@ Vérifions que le dossier a bien été copié :
 fs.ls(f"{MY_BUCKET}/diffusion/departements_fr")
 ```
 
-Si tout a bien fonctionné, la commande ci-dessus devrait renvoyer une liste contenant les chemins sur `MinIO` des différents fichiers (`.shp`, `.shx`, `.prj`, etc.) constitutifs du `ShapeFile` des départements.
+Si le dossier, comme ici, contient des fichiers à plusieurs niveaux, il faudra parcourir la liste de manière récursive pour accéder aux fichiers. Si par exemple, on s'intéresse exclusivement aux découpages des communes, on pourra par exemple utiliser un [`glob`](https://docs.python.org/fr/3/library/glob.html):
+
+```{python}
+#| eval: false
+fs.glob(f'{MY_BUCKET}/diffusion/departements_fr/**/COMMUNE.*')
+``` 
+
+Si tout a bien fonctionné, la commande ci-dessus devrait renvoyer une liste contenant les chemins sur `MinIO` des différents fichiers (`.shp`, `.shx`, `.prj`, etc.) constitutifs du `ShapeFile` des communes de la Réunion.
 ::::
 
 :::: {.content-visible when-profile="en"}
@@ -1340,7 +1348,15 @@ Let’s check that the folder was successfully copied:
 fs.ls(f"{MY_BUCKET}/diffusion/departements_fr")
 ```
 
-If everything worked correctly, the command above should return a list of file paths on `MinIO` for the various components of the department `ShapeFile` (`.shp`, `.shx`, `.prj`, etc.).
+If the folder, as in this case, contains files at multiple levels, you will need to browse the list recursively to access the files. If, for example, you are only interested in municipal divisions, you can use a [`glob`](https://docs.python.org/fr/3/library/glob.html):
+
+
+```{python}
+#| eval: false
+fs.glob(f'{MY_BUCKET}/diffusion/departements_fr/**/COMMUNE.*')
+``` 
+
+If everything worked correctly, the command above should return a list of file paths on `MinIO` for the various components of the Réunion cities `ShapeFile` (`.shp`, `.shx`, `.prj`, etc.).
 ::::
 
 :::: {.content-visible when-profile="fr"}
@@ -1395,11 +1411,21 @@ Puis on les importe classiquement depuis `Python` avec le *package* approprié. 
 
 ```{python}
 #| eval: false
+from pathlib import Path
 import geopandas as gpd
 
-df_dep = gpd.read_file("departements_fr")
+localpath = Path("departements_fr") #<1>
+
+
+df_dep = gpd.read_file(
+  list(
+    localpath.glob("**/COMMUNE.shp")
+  )[0] #<2>
+)
 df_dep.head(2)
 ```
+1. Comme notre dossier contient beaucoup de fichiers, on va devoir faire une recherche dedans via, à nouveau, un [`glob`](https://docs.python.org/fr/3/library/glob.html)
+2. `Pathlib` nous donnant une liste, on se restreint au premier écho et on importe avec `GeoPandas`
 
 ## Pour aller plus loin
 
@@ -1458,11 +1484,22 @@ Then, you can import them in the usual way using the appropriate `Python` packag
 
 ```{python}
 #| eval: false
+from pathlib import Path
 import geopandas as gpd
 
-df_dep = gpd.read_file("departements_fr")
+localpath = Path("departements_fr") #<1>
+
+
+df_dep = gpd.read_file(
+  list(
+    localpath.glob("**/COMMUNE.shp")
+  )[0] #<2>
+)
 df_dep.head(2)
 ```
+1. As our file contains many files, we will need to search through it using, once again, a [`glob`](https://docs.python.org/fr/3/library/glob.html)
+2. `Pathlib` gives us a list, so we restrict ourselves to the first echo and import it with `GeoPandas`
+
 
 ## To go further
 
