@@ -2,7 +2,7 @@ from build.sidebar import (
   build_metadata_dataframe
 )
 
-def make_li(path, title, scale_badge=0.8):
+def make_li(path, title, scale_badge=0.8, version = "fr"):
     """
     Retourne un <li> HTML avec lien + badge.
     Si index.qmd alors texte : Lire l’introduction de la partie
@@ -21,7 +21,10 @@ def make_li(path, title, scale_badge=0.8):
     
     
     if path.endswith("index.qmd"):
-        text = "Lire l’introduction de la partie"
+        if version == "fr":
+            text = "Lire l’introduction de la partie"
+        else:
+            text = "Read the introduction"
     else:
         text = title
     
@@ -31,12 +34,8 @@ def make_li(path, title, scale_badge=0.8):
         f'</li>'
     )
 
-def make_details_for_part(group, part_name, field = "title"):
-    """
-    group = sous-dataframe d’un chapitre
-    part_name = texte pour le <summary>
-    """
-    lis = "\n".join(make_li(row['path'], row[field]) for _, row in group.iterrows())
+def make_details_for_part(group, part_name, field = "title", version = "fr"):
+    lis = "\n".join(make_li(row['path'], row[field], version=version) for _, row in group.iterrows())
     
     return (
         f"<details>\n"
@@ -76,7 +75,7 @@ def create_div_chapter_list(version = "fr", introductory_text='', max_n = None):
         group = df[df['chapter'] == chap]
         # Nom de partie à mettre dans <summary> :
         part_title = group.iloc[0][field]
-        html_blocks.append(make_details_for_part(group, part_title, field))
+        html_blocks.append(make_details_for_part(group, part_title, field, version))
 
     final_html = (
         f'<div class="list-chapter-ordered-{version}">\n'
