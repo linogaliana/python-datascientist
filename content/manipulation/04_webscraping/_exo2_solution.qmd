@@ -8,6 +8,8 @@ import pandas as pd
 ```
 
 ```{python}
+#| eval: false
+
 # 1. We need to use Mozilla user-agent for that site
 import requests
 
@@ -19,6 +21,35 @@ req = requests.get(
 page = bs4.BeautifulSoup(req.content, "lxml")
 ```
 
+
+```{python}
+#| echo: false
+import requests
+import bs4
+import time
+
+url_root = "http://pokemondb.net/pokedex/national"
+
+def fetch_page(url, max_retries=3, delay=2):
+    for attempt in range(1, max_retries + 1):
+        try:
+            resp = requests.get(
+                url,
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=10  # éviter de bloquer indéfiniment
+            )
+            resp.raise_for_status()  # lève une exception si code HTTP pas 200
+            return bs4.BeautifulSoup(resp.content, "lxml")
+        except Exception as e:
+            print(f"Échec {attempt}/{max_retries}: {e}")
+            if attempt < max_retries:
+                time.sleep(delay)
+            else:
+                raise  # après le dernier essai, on laisse remonter l’erreur
+
+# Exemple d’utilisation
+page = fetch_page(url_root)
+```
 
 ```{python}
 #| output: false
@@ -48,21 +79,21 @@ page_pokemon = get_page("bulbasaur")
 indice_tableau = 0 #premier tableau : 0
 print("\n tableau", indice_tableau+1, " : deux premières lignes")
 tableau_1 = page_pokemon.findAll('table', { 'class' : "vitals-table"})[indice_tableau] 
-for elements in tableau_1.find('tbody').findChildren(['tr'])[0:2]:  #Afficher les 2 éléments du tableau
-    print(elements.findChild('th'))
-    print(elements.findChild('td'))
+for elements in tableau_1.find('tbody').find_children(['tr'])[0:2]:  #Afficher les 2 éléments du tableau
+    print(elements.find_child('th'))
+    print(elements.find_child('td'))
 print("\n\n\n")
 
 # Generalization
 def get_cara_pokemon(pokemon_name):
     page = get_page(pokemon_name)
     data = {}
-    for table in page.findAll('table', { 'class' : "vitals-table"})[0:4] :
+    for table in page.find_all('table', { 'class' : "vitals-table"})[0:4] :
         table_body = table.find('tbody')
-        for rows in table_body.findChildren(['tr']) :
+        for rows in table_body.find_children(['tr']) :
             if len(rows) > 1 : # attention aux tr qui ne contiennent rien
-                column = rows.findChild('th').getText()
-                cells = rows.findChild('td').getText()
+                column = rows.find_child('th').getText()
+                cells = rows.find_child('td').getText()
                 cells = cells.replace('\t','').replace('\n',' ')
                 data[column] = cells
                 data['name'] = pokemon_name

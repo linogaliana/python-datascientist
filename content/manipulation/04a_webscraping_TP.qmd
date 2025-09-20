@@ -334,23 +334,19 @@ The `HTML` code for the following table:
 
 ```{html}
 <table>
-<caption> Le Titre de mon tableau </caption>
-
-   <tr>
-      <th>Prénom</th>
-      <th>Nom</th>
-      <th>Profession</th>
-   </tr>
-   <tr>
-      <td>Mike </td>
-      <td>Stuntman</td>
-      <td>Cascadeur</td>
-   </tr>
-   <tr>
-      <td>Mister</td>
-      <td>Pink</td>
-      <td>Gangster</td>
-   </tr>
+    <caption> Le Titre de mon tableau </caption>
+    <tr>
+        <th>Nom</th>
+        <th>Profession</th>
+    </tr>
+    <tr>
+        <td>Astérix</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Obélix</td>
+        <td>Tailleur de Menhir</td>
+    </tr>
 </table>
 ```
 
@@ -359,23 +355,19 @@ Donnera dans le navigateur :
 ::: {.cell .markdown}
 ```{=html}
 <table>
-<caption> Le Titre de mon tableau </caption>
-
-   <tr>
-      <th>Prénom</th>
-      <th>Nom</th>
-      <th>Profession</th>
-   </tr>
-   <tr>
-      <td>Mike </td>
-      <td>Stuntman</td>
-      <td>Cascadeur</td>
-   </tr>
-   <tr>
-      <td>Mister</td>
-      <td>Pink</td>
-      <td>Gangster</td>
-   </tr>
+    <caption> Le Titre de mon tableau </caption>
+    <tr>
+        <th>Nom</th>
+        <th>Profession</th>
+    </tr>
+    <tr>
+        <td>Astérix</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Obélix</td>
+        <td>Tailleur de Menhir</td>
+    </tr>
 </table>
 ```
 :::
@@ -595,8 +587,30 @@ Step 2️⃣: search this abundant source code for the tags that will extract th
 
 ```{python}
 #| echo: true
+#| eval: false
 import bs4
 page = bs4.BeautifulSoup(request_text, "lxml")
+```
+
+```{python}
+#| echo: false
+import bs4
+import time
+
+# More complex process behind the stage to
+# retry if failure in GHA (timeout...)
+def parse_html(request_text, max_retries=3, delay=2):
+    for attempt in range(1, max_retries + 1):
+        try:
+            page = bs4.BeautifulSoup(request_text, "lxml")
+            return page  # success
+        except Exception as e:
+            if attempt < max_retries:
+                time.sleep(delay)  # wait a few seconds before trying again
+            else:
+                raise  # if #try > max_retries, raise error
+
+page = parse_html(request_text)
 ```
 
 ::: {.content-visible when-profile="fr"}
@@ -679,20 +693,20 @@ print(page.find("table"))
 :::
 
 ::: {.content-visible when-profile="fr"}
-## La méthode `findAll`
+## La méthode `find_all`
 
-Pour trouver toutes les occurrences, on utilise `.findAll()`.
+Pour trouver toutes les occurrences, on utilise `.find_all()`.
 :::
 
 ::: {.content-visible when-profile="en"}
-## The `findAll` Method
+## The `find_all` Method
 
-To find all occurrences, use `.findAll()`.
+To find all occurrences, use `.find_all()`.
 :::
 
 ```{python}
 #| echo: true
-print("Il y a", len(page.findAll("table")), "éléments dans la page qui sont des <table>")
+print("Il y a", len(page.find_all("table")), "éléments dans la page qui sont des <table>")
 ```
 
 ::: {.content-visible when-profile="fr"}
@@ -833,7 +847,7 @@ def extract_stadium_info(search_team: bs4.BeautifulSoup) -> tuple:
     Returns:
         tuple: A tuple containing the stadium name, latitude, and longitude, or (None, None, None) if not found.
     """
-    for stadium in search_team.findAll('tr'):
+    for stadium in search_team.find_all('tr'):
         try:
             header = stadium.find('th', {'scope': 'row'})
             if header and header.contents[0].string == "Stade":
@@ -857,8 +871,8 @@ def extract_stadium_name_url(stadium: bs4.element.Tag) -> tuple:
         tuple: A tuple containing the stadium name and its Wikipedia URL, or (None, None) if not found.
     """
     try:
-        url_stade = stadium.findAll('a')[1].get('href')
-        name_stadium = stadium.findAll('a')[1].get('title')
+        url_stade = stadium.find_all('a')[1].get('href')
+        name_stadium = stadium.find_all('a')[1].get('title')
         url_get_stade = f"http://fr.wikipedia.org{url_stade}"
         return name_stadium, url_get_stade
     except (AttributeError, IndexError) as e:
@@ -929,7 +943,7 @@ def retrieve_all_stadium_from_league(url_list: dict, division: str = "L1") -> pd
         pd.DataFrame: A DataFrame containing information about the stadiums in the specified division.
     """
     page = retrieve_page(url_list[division])
-    teams = page.findAll('span', {'class': 'toponyme'})
+    teams = page.find_all('span', {'class': 'toponyme'})
     all_info = []
 
     for team in teams:
@@ -976,7 +990,7 @@ use `folium` for this, which is introduced in the
 :::
 
 ::: {.content-visible when-profile="en"}
-## Stadium Map with `folium` {#cartes-stades-ligue1}
+## Stadium Map with `folium` {#cartes-stades-ligue1-en}
 :::
 
 
@@ -1053,7 +1067,7 @@ from the website [pokemondb.net](http://pokemondb.net/pokedex/national).
 
 ::: {.callout-important}
 :::: {.content-visible when-profile="fr"}
-Comme pour Wikipedia, ce site demande à `request` d'indiqurer un paramètre pour contrôler l'_user-agent_. Par exemple, 
+Comme pour Wikipedia, ce site demande à `request` d'indiquer un paramètre pour contrôler l'_user-agent_. Par exemple, 
 ::::
 :::: {.content-visible when-profile="en"}
 As with Wikipedia, this site asks `request` to specify a parameter to control the _user-agent_. For instance,
@@ -1069,15 +1083,12 @@ requests.get(... , headers = {'User-Agent': 'Mozilla/5.0'})
 
 
 ::: {.content-visible when-profile="fr"}
-Pour la question 1, l'objectif est d'obtenir le code source d'un tableau comme
-celui qui suit
-(Pokémon [Nincada](http://pokemondb.net/pokedex/nincada)).
+Pour la question 1, l'objectif est d'obtenir le code source d'un tableau comme celui qui suit (Pokémon [Nincada](http://pokemondb.net/pokedex/nincada)).
 :::
 
 ::: {.content-visible when-profile="en"}
 For question 1, the goal is to obtain the source code of a table like
-the one below
-(Pokémon [Nincada](http://pokemondb.net/pokedex/nincada)).
+the one below (Pokémon [Nincada](http://pokemondb.net/pokedex/nincada)).
 :::
 
 ::: {.cell .markdown}
@@ -1249,7 +1260,7 @@ the one below
 
 ::: {.content-visible when-profile="fr"}
 Pour la question 2, l'objectif est d'obtenir
-les images des pokémons.
+les images des pokémons comme dans la @fig
 :::
 
 ::: {.content-visible when-profile="en"}
@@ -1511,8 +1522,10 @@ Then we launch the browser:
 from selenium.webdriver.chrome.service import Service
 service = Service(executable_path=path_to_web_driver)
 
-browser = webdriver.Chrome(service=service,
-                           options=chrome_options)
+browser = webdriver.Chrome(
+    service=service,
+    options=chrome_options
+)
 ```
 
 ::: {.content-visible when-profile="fr"}
@@ -1535,8 +1548,34 @@ So we'll ask `selenium` to search for this element:
 
 ```{python}
 #| echo: true
-#| output: false
+#| eval: false
 browser.get('https://www.bing.com/news')
+```
+
+```{python}
+#| echo: false
+
+# try-error because GHA sometimes fails (timeout...)
+url = "https://www.bing.com/news"
+
+def safe_get(browser, url, max_retries=3, delay=2):
+    for attempt in range(1, max_retries + 1):
+        try:
+            browser.get(url)
+            return  # succès, on sort de la fonction
+        except WebDriverException as e:
+            if attempt < max_retries:
+                time.sleep(delay)
+            else:
+                raise  # après le dernier essai, on relance l’erreur
+
+# Utilisation
+safe_get(browser, url)
+```
+
+```{python}
+#| echo: true
+#| output: false
 
 search = browser.find_element("name", "q")
 print(search)
