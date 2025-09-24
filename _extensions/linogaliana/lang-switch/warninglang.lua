@@ -14,8 +14,8 @@ function Div(el)
       local link = filename_relative:gsub("/content/", "/en/content/")
       html_text =
         "Ceci est la version française 🇫🇷 de ce chapitre, " ..
-        "pour voir la version anglaise allez " ..
-        "<a href=\"https://pythonds.linogaliana.fr/" .. link .. "\">ici</a>."
+        "pour voir la version anglaise rendez-vous sur " ..
+        "<a href=\"https://pythonds.linogaliana.fr/" .. link .. "\">le site du cours</a>."
     end
 
     -- Ici on réintroduit bien le callout
