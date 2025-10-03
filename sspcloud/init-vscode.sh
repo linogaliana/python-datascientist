@@ -2,19 +2,22 @@
 
 SECTION=$1
 CHAPTER=$2
-
+VERSION=$3
 #FILE="notebooks/course/manipulation/01_numpy.ipynb"
 
+
 WORK_DIR="/home/onyxia/work"
-if [[ "$3" == "correction" ]];
+if [[ "${VERSION}" != "correction" ]];
 then 
   PATH_WITHIN="notebooks"
   COURSE_DIR="${CLONE_DIR}/corrections"
   REPO="python-datascientist-notebooks"
+  echo "Using exercises"
 else
   PATH_WITHIN="notebooks"
   COURSE_DIR="${CLONE_DIR}/notebooks"
   REPO="py4ds-notebooks-corrections"
+  echo "Using corrected exercises"
 fi
 
 BASE_URL="https://raw.githubusercontent.com/linogaliana/${REPO}/main"
