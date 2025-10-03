@@ -10,12 +10,14 @@ if [[ "$3" == "correction" ]];
 then 
   PATH_WITHIN="notebooks"
   COURSE_DIR="${CLONE_DIR}/corrections"
+  REPO="python-datascientist-notebooks"
 else
-  PATH_WITHIN="corrections"
+  PATH_WITHIN="notebooks"
   COURSE_DIR="${CLONE_DIR}/notebooks"
+  REPO="py4ds-notebooks-corrections"
 fi
 
-BASE_URL="https://raw.githubusercontent.com/linogaliana/python-datascientist-notebooks/main"
+BASE_URL="https://raw.githubusercontent.com/linogaliana/${REPO}/main"
 NOTEBOOK_PATH="${PATH_WITHIN}/${SECTION}/${CHAPTER}.ipynb"
 DOWNLOAD_URL="${BASE_URL}/${NOTEBOOK_PATH}"
 
