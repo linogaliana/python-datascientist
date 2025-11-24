@@ -83,7 +83,7 @@ function reminder_badges(args, kwargs)
 
 
   local onyxiaInitArgs = { section, chapterNoExtension }
-  if correction then
+  if (correction == "true") then
     table.insert(onyxiaInitArgs, "correction")
   end
 

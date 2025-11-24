@@ -37,7 +37,7 @@ def create_data_cv(data):
 
     X_train, X_test, y_train, y_test = train_test_split(
         data.drop("Valeur_fonciere", axis=1),
-        data[["Valeur_fonciere"]].values.ravel(),
+        data["Valeur_fonciere"],
         test_size=0.2,
         random_state=123,
     )
