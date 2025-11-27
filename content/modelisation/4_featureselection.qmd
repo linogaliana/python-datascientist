@@ -108,6 +108,8 @@ le LASSO permet de fixer un certain nombre de coefficients à 0.
 Les variables dont la norme est non nulle passent ainsi le test de sélection. 
 
 ::: {.callout-tip}
+## Le programme d'optimisation du LASSO
+
 Le LASSO est un programme d'optimisation sous contrainte. On cherche à trouver l'estimateur $\beta$ qui minimise l'erreur quadratique (régression linéaire) sous une contrainte additionnelle régularisant les paramètres:
 $$
 \min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) \\ 
@@ -149,6 +151,8 @@ LASSO allows certain coefficients to be set to 0.
 Variables with non-zero norms thus pass the selection test.
 
 ::: {.callout-tip}
+## LASSO optimization program
+
 LASSO is a constrained optimization problem. It seeks to find the estimator $\beta$ that minimizes the quadratic error (linear regression) under an additional constraint regularizing the parameters:
 $$
 \min_{\beta} \frac{1}{2}\mathbb{E}\bigg( \big( X\beta - y  \big)^2 \bigg) \\ 
@@ -202,6 +206,110 @@ df2 = df2.loc[
 
 df2 = df2.loc[:,~df2.columns.duplicated()]
 ```
+
+:::: {.content-visible when-profile="fr"}
+Dans le prochain exercice, nous allons utiliser la fonction suivante pour avoir une matrice de corrélation plus esthétique que celle permise par défaut avec `Pandas`.
+:::
+
+
+:::: {.content-visible when-profile="en"}
+We will use the following function to represent correlation matrix.
+:::
+
+
+```{python}
+#| echo: true
+#| code-fold: true
+import numpy as np
+import pandas as pd
+import plotly.express as px
+
+
+def plot_corr_heatmap(
+    df: pd.DataFrame,
+    drop_cols=None,
+    column_labels: dict | None = None,
+    decimals: int = 2,
+    width: int = 600,
+    height: int = 600,
+    show_xlabels: bool = False
+):
+    """
+    Trace une heatmap de corrélation (triangle inférieur) à partir d'un DataFrame.
+
+    Paramètres
+    ----------
+    df : pd.DataFrame
+        DataFrame d'entrée.
+    drop_cols : list ou None
+        Liste de colonnes à supprimer avant le calcul de la corrélation
+        (ex: ['winner']).
+    column_labels : dict ou None
+        Dictionnaire pour renommer les colonnes (ex: column_labels).
+    decimals : int
+        Nombre de décimales pour l'arrondi avant corr().
+    width, height : int
+        Dimensions de la figure Plotly.
+    show_xlabels : bool
+        Afficher ou non les labels en abscisse.
+    """
+    data = df.copy()
+
+    # 1. Colonnes à drop
+    if drop_cols is not None:
+        data = data.drop(columns=drop_cols)
+
+    # 2. Arrondi + renommage éventuel
+    if column_labels is not None:
+        data = data.rename(columns=column_labels)
+    data = data.round(decimals)
+
+    # 3. Matrice de corrélation
+    corr = data.corr()
+
+    # 4. Masque triangle supérieur
+    mask = np.triu(np.ones_like(corr, dtype=bool))
+    corr_masked = corr.mask(mask)
+
+    # 5. Heatmap Plotly
+    fig = px.imshow(
+        corr_masked.values,
+        x=corr.columns,
+        y=corr.columns,
+        color_continuous_scale='RdBu_r',  # échelle inversée
+        zmin=-1,
+        zmax=1,
+        text_auto=".2f"
+    )
+
+    # 6. Hover custom
+    fig.update_traces(
+        hovertemplate="Var 1: %{y}<br>Var 2: %{x}<br>Corr: %{z:.2f}<extra></extra>"
+    )
+
+    # 7. Layout
+    fig.update_layout(
+        coloraxis_showscale=False,
+        xaxis=dict(
+            showticklabels=show_xlabels,
+            title=None,
+            ticks=''
+        ),
+        yaxis=dict(
+            showticklabels=show_xlabels,
+            title=None,
+            ticks=''
+        ),
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(t=10, b=10, l=10, r=10),
+        width=width,
+        height=height
+    )
+
+    return fig
+
+```
+
 
 :::: {.content-visible when-profile="fr"}
 Dans cet exercice, nous utiliserons
@@ -468,6 +576,8 @@ preprocessor
 ```
 
 ```{python}
+#| output: false
+
 # Question 4
 model = Lasso(fit_intercept=True, alpha = 0.1)  
 
@@ -521,7 +631,11 @@ The model is quite parsimonious as it uses a subset of our initial variables (es
 
 
 ```{python}
-features_selec.str.replace("(number__|category__)", "", regex = True)
+pd.DataFrame(
+  {
+    "selected": features_selec.str.replace("(number__|category__)", "", regex = True)
+  }
+)
 ```
 
 :::: {.content-visible when-profile="fr"}
@@ -537,15 +651,15 @@ Additionally, redundant variables are being selected. A more thorough data clean
 
 
 ```{python}
-#| output: false
 #4. Corrélations entre les variables sélectionnées
 
-features_selected = features_selec.loc[features_selec.str.startswith("number__")].str.replace("number__", "", regex = True)
+features_selected = (
+  features_selec
+  .loc[features_selec.str.startswith("number__")]
+  .str.replace("number__", "", regex = True)
+)
 
-corr = df2.loc[: , features_selected].corr()
-
-plt.figure()
-p = corr.style.background_gradient(cmap='coolwarm', axis=None).format('{:.2f}')
+p = plot_corr_heatmap(df2.loc[: , features_selected])
 p
 ```
 
@@ -623,7 +737,7 @@ The parsimonious model is (slightly) more performant:
 ```{python}
 pd.DataFrame({
   "parcimonieux": [rmse_parci, rsq_parci, len(features_selected)],
-  "non parcimonieux": [rmse_nonparci, rsq_nonparci, ols_pipeline[-1].coef_.shape[1] + 1]},
+  "non parcimonieux": [rmse_nonparci, rsq_nonparci, ols_pipeline[-1].coef_.shape[0] + 1]},
   index = ['RMSE', 'R2', 'Nombre de paramètres']
 )
 ```
@@ -682,6 +796,7 @@ difficult to handle.
 
 ```{python}
 #| echo: true
+#| output: false
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 
@@ -698,11 +813,14 @@ numeric_pipeline = Pipeline(steps=[
     ('impute', SimpleImputer(strategy='mean')),
     ('scale', StandardScaler())
 ])
+
 preprocessed_features = pd.DataFrame(
   numeric_pipeline.fit_transform(
     X_train.drop(columns = categorical_features)
   )
 )
+
+numeric_pipeline 
 ```
 
 
@@ -732,6 +850,7 @@ varies (explore $\alpha \in [0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0]$).
 
 ```{python}
 #| output: false
+from plotnine import *
 
 #6. Utilisation de lasso_path
 my_alphas = np.array([0.001,0.01,0.02,0.025,0.05,0.1,0.25,0.5,0.8,1.0])
@@ -742,16 +861,24 @@ alpha_for_path, coefs_lasso, _ = lasso_path(
   alphas=my_alphas)
 #print(coefs_lasso)
 nb_non_zero = np.apply_along_axis(func1d=np.count_nonzero,arr=coefs_lasso,axis=0)
-nb_non_zero = pd.DataFrame(
-  nb_non_zero
-).sum(axis = 0)
+
+output_lasso = pd.DataFrame(
+  {"alpha": alpha_for_path, "non_zero": nb_non_zero}
+)
+
 
 # graphique
 
-sns.set_style("whitegrid")
-plt.figure()
-p = sns.lineplot(y=nb_non_zero, x=alpha_for_path)
-p.set(title = r"Number variables and regularization parameter ($\alpha$)", xlabel=r'$\alpha$', ylabel='Nb. de variables')
+p = (
+  ggplot(output_lasso) +
+  geom_line(aes(x = "alpha", y = "non_zero")) +
+  labs(
+    title = r"Number variables and regularization parameter ($\alpha$)",
+    x = r'$\alpha$',
+    y = 'Nb. de variables'
+  ) +
+  theme_minimal()
+)
 ```
 
 :::: {.content-visible when-profile="fr"}
@@ -766,7 +893,7 @@ the number of parameters is as follows:
 
 
 ```{python}
-p.figure.get_figure()
+p
 ```
 
 :::: {.content-visible when-profile="fr"}
@@ -777,11 +904,6 @@ On voit que plus $\alpha$ est élevé, moins le modèle sélectionne de variable
 We see that the higher $\alpha$ is, the fewer variables the model selects.
 ::::
 
-
-```{python}
-#| output: false
-p.figure.get_figure().savefig("featured_selection.png")
-```
 
 :::: {.content-visible when-profile="fr"}
 # Validation croisée pour sélectionner le modèle
@@ -878,10 +1000,21 @@ lasso_optimal = lasso_pipeline.fit(X_train,y_train)
 features_selec2 = extract_features_selected(lasso_optimal)
 ```
 
+:::: {.content-visible when-profile="fr"}
 Les variables sélectionnées sont : 
+::::
+
+
+:::: {.content-visible when-profile="fr"}
+Selected features are:
+::::
 
 ```{python}
-features_selec2.str.replace("(number__|category__)", "", regex = True)
+pd.DataFrame(
+  {
+    "selected": features_selec2.str.replace("(number__|category__)", "", regex = True)
+  }
+)
 ```
 
 
