@@ -153,6 +153,7 @@ def main():
             total_blocks += blocks
 
         if args.replace:
+            logger.debug(f"Replacing directly {in_path}")
             out_path = in_path
         else:
             root, ext = os.path.splitext(in_path)
