@@ -1,62 +1,215 @@
 ```{python}
-#| output: false
-#| eval: true
+#| label: exercise3-q1
+import pathlib
+output_path = pathlib.Path("data/output")
+output_path.mkdir(parents=True, exist_ok=True)
+csv_file = output_path / "bpe_before_geoloc.csv"
 
-import json
-import requests
-import pandas as pd
-```
+bpe_enriched["adresse"] = bpe_enriched["adresse"].str.replace(",", "")
 
-
-```{python}
-#| output: false
-#| eval: true
-
-# Necessary parameters
-df = pd.DataFrame([3274080005003,  5449000000996, 8002270014901,
-3228857000906, 3017620421006, 8712100325953], columns = ['code_ean'])
-nutri = ['energy_100g', 'nutriscore_grade', 'nova_group', 'fat_100g', 'saturated-fat_100g', 'carbohydrates_100g', 'sugars_100g', 'salt_100g', 'fiber_100g', 'proteins_100g', 'calcium_100g', 'iron_100g', 'sodium_100g', 'cholesterol_100g']
-cols_api = ['code', 'product_name', 'categories', 'categories_tags'] + [f"nutriments.{i}" for i in nutri]
+bpe_enriched.loc[:, ["adresse", "DEPCOM", "Nom_commune"]].to_csv(csv_file)
 ```
 
 ```{python}
-#| output: false
-#| eval: true
+import io
 
-def get_products_api(barcode, col = cols_api):
-    url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
-    #print(url)
-    res = requests.get(url)
-    results = res.json()
-    product = results["product"]
-    openfood = pd.json_normalize(product)
-    openfood = openfood[list(set(col) & set(openfood.columns))]
-    return openfood
-  
-# Example
-get_products_api(3274080005003, col=["code","nutriments.fat_100g"])
+params = {
+    "columns": ["adresse", "Nom_commune"],
+    "citycode": "DEPCOM",
+    "result_columns": ["result_score", "latitude", "longitude"],
+}
+
+response = requests.post(
+        "https://api-adresse.data.gouv.fr/search/csv/",
+        data=params,
+        files={"data": open(csv_file, "rb")},
+    )
+
+
+bpe_loc = pd.read_csv(io.StringIO(response.text))
+bpe_loc = bpe_loc.rename({"Unnamed: 0": "index"}, axis = "columns")
 ```
+
+::: {.content-visible when-profile="fr"}
+Les géolocalisations obtenues prennent cette forme
+:::
+
+::: {.content-visible when-profile="en"}
+The obtained geolocations take this form
+:::
+
+```{python}
+bpe_loc.head(2)
+```
+
+::: {.content-visible when-profile="fr"}
+En enrichissant les données précédentes, cela donne:
+:::
+
+::: {.content-visible when-profile="en"}
+By enriching the previous data, this gives:
+:::
+
+```{python}
+#| label: exercise3-q2
+bpe_loc = bpe_loc.loc[:, ["index", "result_score", "latitude", "longitude"]]
+bpe_enriched_geocoded = (
+  bpe_enriched
+  .reset_index()
+  .merge(bpe_loc, on = "index", suffixes = ["_annuaire", "_ban"])
+  .drop("index", axis = "columns")
+)
+
+bpe_enriched_geocoded.head(2)
+```
+
+::: {.content-visible when-profile="fr"}
+On peut vérifier que la géolocalisation ne soit pas trop délirante en comparant avec les longitudes et latitudes de l'annuaire de l'éducation ajouté précédemment:
+:::
+
+::: {.content-visible when-profile="en"}
+We can check that the geolocation is not too off by comparing it with the longitudes and latitudes of the education directory added earlier:
+:::
+
+```{python}
+pd.concat(
+  [
+    bpe_enriched_geocoded.loc[:, ["NOMRS", "Nom_commune"]],
+    bpe_enriched_geocoded.filter(like = "longitude"),
+    bpe_enriched_geocoded.filter(like = "latitude")
+  ], axis = 1
+).sample(5)
+```
+
+::: {.content-visible when-profile="fr"}
+Sans rentrer dans le détail, les positions semblent très similaires à quelques imprécisions près.
+:::
+
+::: {.content-visible when-profile="en"}
+Without going into detail, the positions seem very similar, with only minor inaccuracies.
+:::
+
+```{python}
+#| label: exercise3-q3
+bpe_enriched_geocoded = bpe_enriched_geocoded.dropna(subset=["longitude_ban","latitude_ban"])
+
+bpe_enriched_geocoded = gpd.GeoDataFrame(
+    bpe_enriched_geocoded,
+    geometry=gpd.points_from_xy(
+      bpe_enriched_geocoded['longitude_ban'],
+      bpe_enriched_geocoded['latitude_ban']
+      ),
+    crs="EPSG:4326"
+)
+
+```
+
+::: {.content-visible when-profile="fr"}
+Pour profiter de nos données enrichies, on peut faire une carte. Pour ajouter un peu de contexte à celle-ci, on peut mettre un fond de carte des communes en arrière plan. Celui-ci peut être récupéré avec `cartiflette`:
+:::
+
+::: {.content-visible when-profile="en"}
+To make use of our enriched data, we can create a map. To add some context to it, we can place a background map of the municipalities. This can be retrieved using `cartiflette`:
+:::
 
 
 ```{python}
-#| output: false
-#| eval: true
-openfood = [get_products_api(barcode) for barcode in df['code_ean'].dropna().astype(str).unique()]
-openfood = pd.concat(openfood)
+#| echo: true
+#| label: carti-download
+from cartiflette import carti_download
+shp_communes = carti_download(
+  crs = 4326,
+  values = ["31"],
+  borders="COMMUNE",
+  vectorfile_format="topojson",
+  filter_by="DEPARTEMENT",
+  source="EXPRESS-COG-CARTO-TERRITOIRE",
+  year=2022
+)
+shp_communes.crs = 4326
 ```
+
+::: {.content-visible when-profile="fr"}
+Représentées sur une carte, cela donne la carte suivante:
+:::
+
+::: {.content-visible when-profile="en"}
+Represented on a map, this gives the following map:
+:::
 
 ```{python}
-#| eval: true
-openfood.head(3)
+#| label: cartiflette-map
+import folium
+from folium.plugins import MarkerCluster
+import geopandas as gpd
+
+department_border = shp_communes.dissolve(by="INSEE_DEP")
+city_borders = shp_communes.copy()
+
+longitude = bpe_enriched_geocoded.geometry.x.iloc[0]
+latitude = bpe_enriched_geocoded.geometry.y.iloc[0]
+m = folium.Map(location=[latitude, longitude], zoom_start=10)
+
+# Add department border (black, bold)
+folium.GeoJson(
+    data=department_border,
+    style_function=lambda x: {
+        "fill": False,
+        "color": "black",
+        "weight": 3  # Bold border
+    }
+).add_to(m)
+
+# Add city borders (blue, thin)
+folium.GeoJson(
+    data=city_borders,
+    style_function=lambda x: {
+        "fill": False,
+        "color": "blue",
+        "weight": 1  # Thin border
+    }
+).add_to(m)
+
+# Initialize the MarkerCluster
+marker_cluster = MarkerCluster().add_to(m)
+
+def generate_popup(row):
+    # Initialiser le contenu avec le nom de l'école
+    popup_content = f"<b>Nom:</b> {row['NOMRS']}<br>"
+
+    # Ajouter "Ecole élémentaire" avec une icône ✅️ ou ❌️ selon la valeur
+    ecole_element_status = "✅️" if row.get('Ecole_elementaire', False) else "❌️"
+    popup_content += f"<b>Ecole élémentaire:</b> {ecole_element_status}<br>"
+
+    # Ajouter "Nombre d'élèves" si disponible
+    if not pd.isnull(row.get('Nombre_d_eleves')):
+        popup_content += f"<b>Nombre d'élèves:</b> {row['Nombre_d_eleves']}<br>"
+
+    # Ajouter "Voie générale" si disponible
+    if not pd.isnull(row.get('Voie_generale')):
+        popup_content += f"<b>Voie générale:</b> {row['Voie_generale']}<br>"
+
+    # Ajouter "Voie technologique" si disponible
+    if not pd.isnull(row.get('Voie_technologique')):
+        popup_content += f"<b>Voie technologique:</b> {row['Voie_technologique']}<br>"
+
+    return popup_content
+
+
+# Add GeoDataFrame points to the MarkerCluster
+for _, row in bpe_enriched_geocoded.iterrows():
+    # Create the popup content
+    popup_content = generate_popup(row)
+
+    popup = folium.Popup(popup_content, max_width=300)
+
+    # Add the marker to the cluster
+    folium.Marker(
+        location=[row.geometry.y, row.geometry.x],  # Extract latitude and longitude
+        popup=popup,
+        icon=folium.Icon(color="blue", icon="info-sign")
+    ).add_to(marker_cluster)
+
+# Display the map inline (optional for Jupyter Notebooks)
+m
 ```
-
-For example, here is the photo of the product with the barcode `5449000000996`. Do you recognize it?
-
-
-```{python}
-#| eval: true
-url_image = get_products_api(5449000000996, col = ["image_front_small_url"])["image_front_small_url"].iloc[0]
-```
-
-![](`{python} url_image`)
-

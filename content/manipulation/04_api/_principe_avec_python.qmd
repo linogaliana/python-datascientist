@@ -1,0 +1,152 @@
+::: {.content-visible when-profile="fr"}
+## Comment faire avec `Python` ?
+
+Le principe est le même sauf que nous perdons l'aspect interactif. Il s'agira donc, avec `Python`, de construire l'URL voulue et d'aller chercher via une requête HTTP le résultat.
+
+Nous avons déjà vu dans le chapitre de webscraping la manière dont `Python` communique avec internet: via le _package_ `requests`. Ce _package_ suit le protocole HTTP où on retrouve principalement deux types de requêtes: `GET` et `POST`:
+
+* La requête `GET` est utilisée pour récupérer des données depuis un serveur web. C'est la méthode la plus simple et courante pour accéder aux ressources d'une page web. Nous allons commencer par décrire celle-ci.
+* La requête `POST` est utilisée pour envoyer des données au serveur, souvent dans le but de créer ou de mettre à jour une ressource. Sur les pages web, elle sert souvent à la soumission de formulaires qui nécessitent de mettre à jour des informations sur une base (mot de passe, informations clients, etc.). Nous verrons son utilité plus tard, lorsque nous commencerons à rentrer dans les requêtes authentifiées où il faudra soumettre des informations supplémentaires à notre requête.
+
+Faisons un premier test avec `Python` en faisant comme si nous connaissions bien cette API.
+:::
+
+::: {.content-visible when-profile="en"}
+## How to Do It with `Python`?
+
+The principle is the same, although we lose the interactive aspect. With `Python`, the idea is to construct the desired URL and fetch the result through an HTTP request.
+
+We have already seen in the web scraping chapter how `Python` communicates with the internet via the `requests` package. This package follows the HTTP protocol where two main types of requests can be found: `GET` and `POST`:
+
+* The `GET` request is used to retrieve data from a web server. It is the simplest and most common method for accessing the resources on a web page. We will start by describing this one.
+* The `POST` request is used to send data to the server, often with the goal of creating or updating a resource. On web pages, it is commonly used for submitting forms that need to update information in a database (passwords, customer data, etc.). We will see its usefulness later, when we begin to deal with authenticated requests where additional information must be submitted with our query.
+
+Let's conduct a first test with `Python` as if we were already familiar with this API.
+:::
+
+```{python}
+#| echo: true
+#| label: ban-first-example
+import requests
+adresse = "88 avenue verdier"
+url_ban_example = f"https://api-adresse.data.gouv.fr/search/?q={adresse.replace(" ", "+")}&postcode=92120"
+requests.get(url_ban_example)
+```
+
+::: {.content-visible when-profile="fr"}
+Qu'est-ce qu'on obtient ? Un code HTTP. Le code 200 correspond aux requêtes réussies, c'est-à-dire pour lesquelles le serveur est en mesure de répondre. Si ce n'est pas le cas, pour une raison _x_ ou _y_, vous aurez un code différent.
+:::
+
+::: {.content-visible when-profile="en"}
+What do we get? An HTTP code. The code 200 corresponds to successful requests, meaning that the server is able to respond. If this is not the case, for some reason _x_ or _y_, you will receive a different code.
+:::
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
+## Les codes HTTP
+
+Les codes de statut HTTP sont des réponses standard envoyées par les serveurs web pour indiquer le résultat d'une requête effectuée par un client (comme un navigateur ou un script Python). Ils sont classés en différentes catégories selon le premier chiffre du code :
+
+* 1xx : Informations
+* 2xx : Succès
+* 3xx : Redirections
+* 4xx : Erreurs côté client
+* 5xx : Erreurs côté serveur
+
+Ceux à retenir sont : 200 (succès), 400 (requête mal structurée), 401 (authentification non réussie), 403 (accès interdit), 404 (ressource demandée n'existe pas), 503 (le serveur n'est pas en capacité de répondre)
+:::
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-tip}
+## HTTP Status Codes
+
+HTTP status codes are standard responses sent by web servers to indicate the result of a request made by a client (such as a web browser or a Python script). They are categorized based on the first digit of the code:
+
+* 1xx: Informational
+* 2xx: Success
+* 3xx: Redirection
+* 4xx: Client-side Errors
+* 5xx: Server-side Errors
+
+The key codes to remember are: 200 (success), 400 (bad request), 401 (authentication failed), 403 (forbidden), 404 (resource not found), 503 (the server is unable to respond)
+:::
+
+::::
+
+::: {.content-visible when-profile="fr"}
+Pour récupérer le contenu renvoyé par `requests`, il existe plusieurs méthodes. Quand on un JSON bien formatté, le plus simple est d'utiliser la méthode `json` qui transforme cela en dictionnaire :
+:::
+
+::: {.content-visible when-profile="en"}
+To retrieve the content returned by `requests`, there are several methods available. When the JSON is well-formatted, the simplest approach is to use the `json` method, which converts it into a dictionary:
+:::
+
+```{python}
+#| echo: true
+#| label: ban-example-json
+req = requests.get(url_ban_example)
+localisation_insee = req.json()
+localisation_insee
+```
+
+::: {.content-visible when-profile="fr"}
+En l'occurrence, on voit que les données sont dans un JSON imbriqué. Il faut donc développer un peu de code pour récupérer les informations voulues dans celui-ci:
+:::
+
+::: {.content-visible when-profile="en"}
+In this case, we can see that the data is nested within a JSON. Therefore, a bit of code needs to be written to extract the desired information from it:
+:::
+
+
+```{python}
+#| echo: true
+localisation_insee.get('features')[0].get('properties')
+```
+
+::: {.content-visible when-profile="fr"}
+C'est là l'inconvénient principal de l'usage des API: le travail _ex post_ sur les données renvoyées. Le code nécessaire est propre à chaque API puisque l'architecture du JSON dépend de chaque API.
+:::
+
+::: {.content-visible when-profile="en"}
+This is the main disadvantage of using APIs: the post-processing of the returned data. The necessary code is specific to each API, since the structure of the JSON depends on the API.
+:::
+
+
+::: {.content-visible when-profile="fr"}
+## Comment connaître les _inputs_ et _outputs_ des API ?
+
+Ici on a pris l'API BAN comme un outil magique dont on connaissait les principaux _inputs_ (l'_endpoint_, les paramètres et leur formattage...).
+Mais comment faire, en pratique, pour en arriver là ? Tout simplement en lisant la documentation lorsqu'elle existe et en testant celle-ci via des exemples.
+
+Les bonnes API proposent un outil interactif qui s'appelle le [`swagger`](https://swagger.io/docs/). C'est un site web interactif où sont décrites les principales fonctionnalités de l'API et où l'utilisateur peut tester des exemples interactivement. Ces documentations sont souvent créées automatiquement lors de la construction d'une API et mises à disposition par le biais d'un point d'entrée `/docs`. Elles permettent souvent d'éditer certains paramètres dans le navigateur, voir le JSON obtenu (ou l'erreur générée) et récupérer la requête formattée qui permet d'obtenir celui-ci. Ces consoles interactives dans le navigateur permettent de répliquer le tâtonnement qu'on peut faire par ailleurs dans des outils spécialisés comme [`postman`](https://www.postman.com/).
+
+Concernant l'API BAN, la documentation se trouve sur <https://adresse.data.gouv.fr/api-doc/adresse>. Elle n'est pas interactive, malheureusement. Mais elle présente de nombreux exemples qui peuvent être testés directement depuis le navigateur. Il suffit d'utiliser les URL proposées comme exemple. Ceux-ci sont présentés par le biais de `curl` (un équivalent de `requests` en ligne de commande Linux):
+
+```{.python}
+curl "https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port&limit=15"
+```
+
+Il suffit de copier l'URL en question (`https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port&limit=15`), d'ouvrir un nouvel onglet et vérifier que cela produit bien un résultat. Puis de changer un paramètre et vérifier à nouveau, jusqu'à trouver la structure qui convient. Et après, on peut passer à `Python` comme le propose l'exercice suivant.
+
+
+:::
+
+::: {.content-visible when-profile="en"}
+## How to Know the _Inputs_ and _Outputs_ of APIs?
+
+Here, we took the BAN API as a magical tool whose main _inputs_ (the endpoint, parameters, and their formatting...) were known.
+But how does one actually get there in practice? Simply by reading the documentation when it exists and testing it with examples.
+
+Good APIs provide an interactive tool called [`swagger`](https://swagger.io/docs/). It is an interactive website where the API's main features are described and where the user can interactively test examples. These documentations are often automatically created during the construction of an API and made available via an entry point `/docs`. They often allow you to edit certain parameters in the browser, view the obtained JSON (or the generated error), and retrieve the formatted query that produced it. These interactive browser consoles replicate the experimentation that can otherwise be done using specialized tools like [`postman`](https://www.postman.com/).
+
+Regarding the BAN API, the documentation can be found at <https://adresse.data.gouv.fr/api-doc/adresse>. Unfortunately, it is not interactive. However, it provides many examples that can be directly tested from the browser. You simply need to use the URLs provided as examples. These are presented using `curl` (a command-line equivalent of `requests` in Linux):
+
+```{.python}
+curl "https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port&limit=15"
+```
+
+Just copy the URL (`https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port&limit=15`), open a new tab, and verify that it produces a result. Then change a parameter and check again until you find the structure that fits. After that, you can move on to `Python` as suggested in the following exercise.
+:::

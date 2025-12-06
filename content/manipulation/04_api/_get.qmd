@@ -1,0 +1,57 @@
+::: {.content-visible when-profile="fr"}
+# Plus d'exemples de requêtes `GET`
+
+## Source principale
+
+Nous allons utiliser comme base principale pour ce tutoriel la [base permanente des équipements](https://www.insee.fr/fr/metadonnees/source/serie/s1161), un répertoire d'équipements publics accueillant du public.
+
+On va commencer par récupérer les données qui nous intéressent. On ne récupère pas toutes les variables du fichier mais seulement celles qu'ils nous intéressent: quelques variables sur l'équipement, son adresse et sa commune d'appartement.
+
+Nous allons nous restreindre aux établissements d'enseignement primaire, secondaire et supérieur du département de la Haute-Garonne (le département 31). Ces établissements sont identifiés par un code particulier, entre `C1` et `C5`.
+:::
+
+::: {.content-visible when-profile="en"}
+# More Examples of `GET` Requests
+
+## Main Source
+
+We will use as the main basis for this tutorial the [permanent equipment database](https://www.insee.fr/fr/metadonnees/source/serie/s1161), a directory of public facilities open to the public.
+
+We will begin by retrieving the data that interest us. Rather than fetching every variable in the file, we only retrieve the ones we need: some variables concerning the facility, its address, and its local municipality.
+
+We will restrict our scope to primary, secondary, and higher education institutions in the department of Haute-Garonne (department 31). These facilities are identified by a specific code, ranging from `C1` to `C5`.
+:::
+
+```{python}
+#| echo: true
+#| label: read-bpe-parquet
+import duckdb
+
+query = """
+FROM read_parquet('https://minio.lab.sspcloud.fr/lgaliana/diffusion/BPE23.parquet')
+SELECT NOMRS, NUMVOIE, INDREP, TYPVOIE, LIBVOIE,
+       CADR, CODPOS, DEPCOM, DEP, TYPEQU,
+       concat_ws(' ', NUMVOIE, INDREP, TYPVOIE, LIBVOIE) AS adresse, SIRET
+WHERE DEP = '31'
+      AND NOT (starts_with(TYPEQU, 'C6') OR starts_with(TYPEQU, 'C7'))
+"""
+
+bpe = duckdb.sql(query)
+bpe = bpe.to_df()
+```
+
+::: {.content-visible when-profile="fr"}
+## Récupérer des données à façon grâce aux API
+
+Nous avons vu précédemment le principe général d'une requête d'API. Pour illustrer, de manière plus massive, la récupération de données par le biais d'une API, essayons de récupérer des données complémentaires à notre source principale. Nous allons utiliser l'annuaire de l'éducation qui fournit de nombreuses informations sur les établissements scolaires. Nous utiliserons le SIRET pour croiser les deux sources de données.
+
+L'exercice suivant viendra illustrer l'intérêt d'utiliser une API pour avoir des données à façon et la simplicité à récupérer celles-ci via `Python`. Néanmoins, cet exercice illustrera également une des limites de certaines API, à savoir la volumétrie des données à récupérer.
+:::
+
+::: {.content-visible when-profile="en"}
+## Retrieving Custom Data via APIs
+
+We previously covered the general principle of an API request. To further illustrate how to retrieve data on a larger scale using an API, let’s try to fetch supplementary data to our main source. We will use the education directory, which provides extensive information on educational institutions. We will use the SIRET number to cross-reference the two data sources.
+
+The following exercise will demonstrate the advantage of using an API to obtain custom data and the ease of fetching it via `Python`. However, this exercise will also highlight one of the limitations of certain APIs, namely the volume of data that needs to be retrieved.
+:::
