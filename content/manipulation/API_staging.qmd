@@ -1,0 +1,1423 @@
+
+::: {.content-visible when-profile="fr"}
+## Comment faire avec `Python` ?
+
+Le principe est le même sauf que nous perdons l'aspect interactif. Il s'agira donc, avec `Python`, de construire l'URL voulue et d'aller chercher via une requête HTTP le résultat.
+
+Nous avons déjà vu dans le chapitre de webscraping la manière dont `Python` communique avec internet: via le _package_ `requests`. Ce _package_ suit le protocole HTTP où on retrouve principalement deux types de requêtes: `GET` et `POST`:
+
+* La requête `GET` est utilisée pour récupérer des données depuis un serveur web. C'est la méthode la plus simple et courante pour accéder aux ressources d'une page web. Nous allons commencer par décrire celle-ci.
+* La requête `POST` est utilisée pour envoyer des données au serveur, souvent dans le but de créer ou de mettre à jour une ressource. Sur les pages web, elle sert souvent à la soumission de formulaires qui nécessitent de mettre à jour des informations sur une base (mot de passe, informations clients, etc.). Nous verrons son utilité plus tard, lorsque nous commencerons à rentrer dans les requêtes authentifiées où il faudra soumettre des informations supplémentaires à notre requête.
+
+Faisons un premier test avec `Python` en faisant comme si nous connaissions bien cette API.
+:::
+
+::: {.content-visible when-profile="en"}
+## How to Do It with `Python`?
+
+The principle is the same, although we lose the interactive aspect. With `Python`, the idea is to construct the desired URL and fetch the result through an HTTP request.
+
+We have already seen in the web scraping chapter how `Python` communicates with the internet via the `requests` package. This package follows the HTTP protocol where two main types of requests can be found: `GET` and `POST`:
+
+* The `GET` request is used to retrieve data from a web server. It is the simplest and most common method for accessing the resources on a web page. We will start by describing this one.
+* The `POST` request is used to send data to the server, often with the goal of creating or updating a resource. On web pages, it is commonly used for submitting forms that need to update information in a database (passwords, customer data, etc.). We will see its usefulness later, when we begin to deal with authenticated requests where additional information must be submitted with our query.
+
+Let's conduct a first test with `Python` as if we were already familiar with this API.
+:::
+
+```{python}
+#| echo: true
+#| label: ban-first-example
+import requests
+adresse = "88 avenue verdier"
+url_ban_example = f"https://api-adresse.data.gouv.fr/search/?q={adresse.replace(" ", "+")}&postcode=92120"
+requests.get(url_ban_example)
+```
+
+::: {.content-visible when-profile="fr"}
+Qu'est-ce qu'on obtient ? Un code HTTP. Le code 200 correspond aux requêtes réussies, c'est-à-dire pour lesquelles le serveur est en mesure de répondre. Si ce n'est pas le cas, pour une raison _x_ ou _y_, vous aurez un code différent.
+:::
+
+::: {.content-visible when-profile="en"}
+What do we get? An HTTP code. The code 200 corresponds to successful requests, meaning that the server is able to respond. If this is not the case, for some reason _x_ or _y_, you will receive a different code.
+:::
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
+## Les codes HTTP
+
+Les codes de statut HTTP sont des réponses standard envoyées par les serveurs web pour indiquer le résultat d'une requête effectuée par un client (comme un navigateur ou un script Python). Ils sont classés en différentes catégories selon le premier chiffre du code :
+
+* 1xx : Informations
+* 2xx : Succès
+* 3xx : Redirections
+* 4xx : Erreurs côté client
+* 5xx : Erreurs côté serveur
+
+Ceux à retenir sont : 200 (succès), 400 (requête mal structurée), 401 (authentification non réussie), 403 (accès interdit), 404 (ressource demandée n'existe pas), 503 (le serveur n'est pas en capacité de répondre)
+:::
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-tip}
+## HTTP Status Codes
+
+HTTP status codes are standard responses sent by web servers to indicate the result of a request made by a client (such as a web browser or a Python script). They are categorized based on the first digit of the code:
+
+* 1xx: Informational
+* 2xx: Success
+* 3xx: Redirection
+* 4xx: Client-side Errors
+* 5xx: Server-side Errors
+
+The key codes to remember are: 200 (success), 400 (bad request), 401 (authentication failed), 403 (forbidden), 404 (resource not found), 503 (the server is unable to respond)
+:::
+
+::::
+
+::: {.content-visible when-profile="fr"}
+Pour récupérer le contenu renvoyé par `requests`, il existe plusieurs méthodes. Quand on un JSON bien formatté, le plus simple est d'utiliser la méthode `json` qui transforme cela en dictionnaire :
+:::
+
+::: {.content-visible when-profile="en"}
+To retrieve the content returned by `requests`, there are several methods available. When the JSON is well-formatted, the simplest approach is to use the `json` method, which converts it into a dictionary:
+:::
+
+```{python}
+#| echo: true
+#| label: ban-example-json
+req = requests.get(url_ban_example)
+localisation_insee = req.json()
+localisation_insee
+```
+
+::: {.content-visible when-profile="fr"}
+En l'occurrence, on voit que les données sont dans un JSON imbriqué. Il faut donc développer un peu de code pour récupérer les informations voulues dans celui-ci:
+:::
+
+::: {.content-visible when-profile="en"}
+In this case, we can see that the data is nested within a JSON. Therefore, a bit of code needs to be written to extract the desired information from it:
+:::
+
+
+```{python}
+#| echo: true
+localisation_insee.get('features')[0].get('properties')
+```
+
+::: {.content-visible when-profile="fr"}
+C'est là l'inconvénient principal de l'usage des API: le travail _ex post_ sur les données renvoyées. Le code nécessaire est propre à chaque API puisque l'architecture du JSON dépend de chaque API.
+:::
+
+::: {.content-visible when-profile="en"}
+This is the main disadvantage of using APIs: the post-processing of the returned data. The necessary code is specific to each API, since the structure of the JSON depends on the API.
+:::
+
+
+::: {.content-visible when-profile="fr"}
+## Comment connaître les _inputs_ et _outputs_ des API ?
+
+Ici on a pris l'API BAN comme un outil magique dont on connaissait les principaux _inputs_ (l'_endpoint_, les paramètres et leur formattage...).
+Mais comment faire, en pratique, pour en arriver là ? Tout simplement en lisant la documentation lorsqu'elle existe et en testant celle-ci via des exemples.
+
+Les bonnes API proposent un outil interactif qui s'appelle le [`swagger`](https://swagger.io/docs/). C'est un site web interactif où sont décrites les principales fonctionnalités de l'API et où l'utilisateur peut tester des exemples interactivement. Ces documentations sont souvent créées automatiquement lors de la construction d'une API et mises à disposition par le biais d'un point d'entrée `/docs`. Elles permettent souvent d'éditer certains paramètres dans le navigateur, voir le JSON obtenu (ou l'erreur générée) et récupérer la requête formattée qui permet d'obtenir celui-ci. Ces consoles interactives dans le navigateur permettent de répliquer le tâtonnement qu'on peut faire par ailleurs dans des outils spécialisés comme [`postman`](https://www.postman.com/).
+
+Concernant l'API BAN, la documentation se trouve sur <https://adresse.data.gouv.fr/api-doc/adresse>. Elle n'est pas interactive, malheureusement. Mais elle présente de nombreux exemples qui peuvent être testés directement depuis le navigateur. Il suffit d'utiliser les URL proposées comme exemple. Ceux-ci sont présentés par le biais de `curl` (un équivalent de `requests` en ligne de commande Linux):
+
+```{.python}
+curl "https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port&limit=15"
+```
+
+Il suffit de copier l'URL en question (`https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port&limit=15`), d'ouvrir un nouvel onglet et vérifier que cela produit bien un résultat. Puis de changer un paramètre et vérifier à nouveau, jusqu'à trouver la structure qui convient. Et après, on peut passer à `Python` comme le propose l'exercice suivant.
+
+## Application
+
+Pour commencer cet exercice, vous aurez besoin de cette variable:
+
+```{python}
+#| echo: true
+#| label: adresse-input-first-exercise
+adresse = "88 Avenue Verdier"
+```
+
+:::
+
+::: {.content-visible when-profile="en"}
+## How to Know the _Inputs_ and _Outputs_ of APIs?
+
+Here, we took the BAN API as a magical tool whose main _inputs_ (the endpoint, parameters, and their formatting...) were known.
+But how does one actually get there in practice? Simply by reading the documentation when it exists and testing it with examples.
+
+Good APIs provide an interactive tool called [`swagger`](https://swagger.io/docs/). It is an interactive website where the API's main features are described and where the user can interactively test examples. These documentations are often automatically created during the construction of an API and made available via an entry point `/docs`. They often allow you to edit certain parameters in the browser, view the obtained JSON (or the generated error), and retrieve the formatted query that produced it. These interactive browser consoles replicate the experimentation that can otherwise be done using specialized tools like [`postman`](https://www.postman.com/).
+
+Regarding the BAN API, the documentation can be found at <https://adresse.data.gouv.fr/api-doc/adresse>. Unfortunately, it is not interactive. However, it provides many examples that can be directly tested from the browser. You simply need to use the URLs provided as examples. These are presented using `curl` (a command-line equivalent of `requests` in Linux):
+
+```{.python}
+curl "https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port&limit=15"
+```
+
+Just copy the URL (`https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port&limit=15`), open a new tab, and verify that it produces a result. Then change a parameter and check again until you find the structure that fits. After that, you can move on to `Python` as suggested in the following exercise.
+
+## Application
+
+To start this exercise, you will need the following variable:
+
+```{python}
+#| echo: true
+#| label: adresse-input-exo1
+adresse = "88 Avenue Verdier"
+```
+:::
+
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
+## Exercice 1: Structurer un appel à une API depuis `Python`
+
+1. Tester sans aucun autre paramètre, le retour de notre API. Transformer en `DataFrame` le résultat.
+2. Se restreindre à Montrouge avec le paramètre _ad hoc_ et la recherche du code insee ou code postal adéquat sur google.
+3. (Optionnel): Représenter l'adresse trouvée sur une carte
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-tip}
+## Exercise 1: Structure an API Call from `Python`
+
+1. Test the API without any additional parameters, and convert the result into a `DataFrame`.
+2. Limit the search to Montrouge using the appropriate parameter and find the corresponding INSEE code or postal code via Google.
+3. (Optional): Display the found address on a map.
+:::
+
+::::
+
+
+```{python}
+#| label: exercise1-question1
+import requests
+import pandas as pd
+
+ban_root = "https://api-adresse.data.gouv.fr"
+ban_search_endpoint = "search"
+api_ban_q1 = f"{ban_root}/{ban_search_endpoint}?q={adresse.replace(" ", "+")}"
+output_api_ban = requests.get(api_ban_q1).json().get('features')
+
+df_avenue_verdier = pd.DataFrame(
+    [out['properties'] for out in output_api_ban]
+)
+```
+
+::: {.content-visible when-profile="fr"}
+Les deux premières lignes du _dataframe_ obtenu à la question 1 devraient être
+:::
+
+::: {.content-visible when-profile="en"}
+The first two rows of the `DataFrame` obtained in question 1 should be
+:::
+
+
+```{python}
+df_avenue_verdier.head(2)
+```
+
+::: {.content-visible when-profile="fr"}
+A la question 2, on ressort cette fois qu'une seule observation, qu'on pourrait retravailler avec `GeoPandas` pour vérifier qu'on a bien placé ce point sur une carte
+:::
+
+::: {.content-visible when-profile="en"}
+For question 2, this time we get back only one observation, which could be further processed with `GeoPandas` to verify that the point has been correctly placed on a map.
+:::
+
+
+```{python}
+api_ban_q2 = f"{ban_root}/{ban_search_endpoint}?q={adresse.replace(" ", "+")}&postcode=92120"
+output_q2 = requests.get(api_ban_q2).json()
+```
+
+```{python}
+#| label: exercise1-question2
+import pandas as pd
+import geopandas as gpd
+
+output_q2 = pd.DataFrame(
+    [output_q2.get("features")[0]['properties']]
+)
+output_q2 = gpd.GeoDataFrame(
+    output_q2,
+    geometry=gpd.points_from_xy(output_q2.x, output_q2.y), crs="EPSG:2154"
+).to_crs(4326)
+output_q2
+```
+
+::: {.content-visible when-profile="fr"}
+Enfin, à la question 3, on obtient cette carte (plus ou moins la même que précédemment):
+:::
+
+::: {.content-visible when-profile="en"}
+Finally, for question 3, we obtain this map (more or less the same as before):
+:::
+
+```{python}
+#| label: exercise1-question3-folium
+import folium
+
+# Extraire la longitude et la latitude
+longitude = output_q2.geometry.x.iloc[0]
+latitude = output_q2.geometry.y.iloc[0]
+
+# Créer une carte Folium centrée sur le point
+m = folium.Map(location=[latitude, longitude], zoom_start=16)
+
+# Définir le contenu de la popup
+popup_content = f"""
+<b>{output_q2['name'].iloc[0]}</b> has been found!
+"""
+
+# Ajouter le marqueur
+folium.Marker(
+    location=[latitude, longitude],
+    popup=folium.Popup(popup_content, max_width=300),
+    icon=folium.Icon(color='blue', icon='info-sign')
+).add_to(m)
+
+# Afficher la carte dans le notebook (si utilisé dans un Jupyter Notebook)
+m
+```
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-note}
+## Quelques API à connaître
+
+Les principaux fournisseurs de données officielles proposent des API. C'est le cas notamment de l'[Insee](https://api.insee.fr/catalogue/), d'[Eurostat](https://wikis.ec.europa.eu/display/EUROSTATHELP/API+-+Getting+started), de la [BCE](https://data.ecb.europa.eu/help/data-examples), de la [FED](https://fred.stlouisfed.org/docs/api/fred/), de la [Banque Mondiale](https://datahelpdesk.worldbank.org/knowledgebase/topics/125589)...
+
+Néanmoins, la production de données par les institutions étatiques est loin d'être restreinte aux producteurs de statistiques publiques. Le portail [API gouv](https://api.gouv.fr/) est le point de référencement principal pour les API produites par l'administration centrale française ou des administrations territoriales. De nombreuses villes publient également des données sur leurs infrastructures par le biais d'API, par exemple la [ville de Paris](https://opendata.paris.fr/api/explore/v2.1/console).
+
+Les producteurs de données privées proposent également des API. Par exemple, la [SNCF](https://data.sncf.com/api) ou la [RATP](https://data.ratp.fr/pages/temps-reel/) proposent des API pour certains usages. Les grands acteurs du numérique, par exemple [`Spotify` {{< fa brands spotify >}}](<https://developer.spotify.com/web-api/>) proposent généralement des API pour intégrer certains de leurs services à des applications externes.
+
+Cependant, il faut être conscient des limites de certaines API. En premier lieu, les données partagées ne sont pas forcément très riches pour ne pas compromettre la confidentialité des informations partagées par les utilisateurs du service ou la part de marché du producteur qui n'a pas intérêt à vous partager ses données à forte valeur. Il faut également être conscient du fait qu'une API peut disparaître ou changer de structure du jour au lendemain. Les codes de restructuration de données étant assez adhérents à une structure d'API, on peut se retrouver à devoir changer un volume conséquent de code si une API critique change substantiellement.
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-note}
+## Some APIs to Know
+
+The main providers of official data offer APIs. This is notably the case for [Insee](https://api.insee.fr/catalogue/), [Eurostat](https://wikis.ec.europa.eu/display/EUROSTATHELP/API+-+Getting+started), the [ECB](https://data.ecb.europa.eu/help/data-examples), [FED](https://fred.stlouisfed.org/docs/api/fred/), and the [World Bank](https://datahelpdesk.worldbank.org/knowledgebase/topics/125589)...
+
+However, data production by state institutions is far from limited to public statistics producers. The [API gouv](https://api.gouv.fr/) portal serves as the main reference point for APIs produced by the French central administration or territorial authorities. Many cities also publish data about their infrastructures via APIs, for example the [City of Paris](https://opendata.paris.fr/api/explore/v2.1/console).
+
+Private data providers also offer APIs. For instance, [SNCF](https://data.sncf.com/api) or [RATP](https://data.ratp.fr/pages/temps-reel/) provide APIs for various purposes. Major digital players, such as [`Spotify` {{< fa brands spotify >}}](<https://developer.spotify.com/web-api/>), generally offer APIs to integrate some of their services into external applications.
+
+That said, it is important to be aware of the limitations of certain APIs. First, the data shared may not be very detailed so as not to compromise the confidentiality of the users’ information or the market share of the provider, which may have little incentive to share high-value data. Additionally, an API can disappear or change its structure overnight. Since data restructuring code is often closely tied to an API's structure, you might end up having to modify a significant amount of code if a critical API undergoes a substantial change.
+:::
+
+::::
+
+::: {.content-visible when-profile="fr"}
+# Plus d'exemples de requêtes `GET`
+
+## Source principale
+
+Nous allons utiliser comme base principale pour ce tutoriel la [base permanente des équipements](https://www.insee.fr/fr/metadonnees/source/serie/s1161), un répertoire d'équipements publics accueillant du public.
+
+On va commencer par récupérer les données qui nous intéressent. On ne récupère pas toutes les variables du fichier mais seulement celles qu'ils nous intéressent: quelques variables sur l'équipement, son adresse et sa commune d'appartement.
+
+Nous allons nous restreindre aux établissements d'enseignement primaire, secondaire et supérieur du département de la Haute-Garonne (le département 31). Ces établissements sont identifiés par un code particulier, entre `C1` et `C5`.
+:::
+
+::: {.content-visible when-profile="en"}
+# More Examples of `GET` Requests
+
+## Main Source
+
+We will use as the main basis for this tutorial the [permanent equipment database](https://www.insee.fr/fr/metadonnees/source/serie/s1161), a directory of public facilities open to the public.
+
+We will begin by retrieving the data that interest us. Rather than fetching every variable in the file, we only retrieve the ones we need: some variables concerning the facility, its address, and its local municipality.
+
+We will restrict our scope to primary, secondary, and higher education institutions in the department of Haute-Garonne (department 31). These facilities are identified by a specific code, ranging from `C1` to `C5`.
+:::
+
+```{python}
+#| echo: true
+#| label: read-bpe-parquet
+import duckdb
+
+query = """
+FROM read_parquet('https://minio.lab.sspcloud.fr/lgaliana/diffusion/BPE23.parquet')
+SELECT NOMRS, NUMVOIE, INDREP, TYPVOIE, LIBVOIE,
+       CADR, CODPOS, DEPCOM, DEP, TYPEQU,
+       concat_ws(' ', NUMVOIE, INDREP, TYPVOIE, LIBVOIE) AS adresse, SIRET
+WHERE DEP = '31'
+      AND NOT (starts_with(TYPEQU, 'C6') OR starts_with(TYPEQU, 'C7'))
+"""
+
+bpe = duckdb.sql(query)
+bpe = bpe.to_df()
+```
+
+::: {.content-visible when-profile="fr"}
+## Récupérer des données à façon grâce aux API
+
+Nous avons vu précédemment le principe général d'une requête d'API. Pour illustrer, de manière plus massive, la récupération de données par le biais d'une API, essayons de récupérer des données complémentaires à notre source principale. Nous allons utiliser l'annuaire de l'éducation qui fournit de nombreuses informations sur les établissements scolaires. Nous utiliserons le SIRET pour croiser les deux sources de données.
+
+L'exercice suivant viendra illustrer l'intérêt d'utiliser une API pour avoir des données à façon et la simplicité à récupérer celles-ci via `Python`. Néanmoins, cet exercice illustrera également une des limites de certaines API, à savoir la volumétrie des données à récupérer.
+:::
+
+::: {.content-visible when-profile="en"}
+## Retrieving Custom Data via APIs
+
+We previously covered the general principle of an API request. To further illustrate how to retrieve data on a larger scale using an API, let’s try to fetch supplementary data to our main source. We will use the education directory, which provides extensive information on educational institutions. We will use the SIRET number to cross-reference the two data sources.
+
+The following exercise will demonstrate the advantage of using an API to obtain custom data and the ease of fetching it via `Python`. However, this exercise will also highlight one of the limitations of certain APIs, namely the volume of data that needs to be retrieved.
+:::
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
+## Exercice 2
+
+1. Visiter le _swagger_ de l'API de l'Annuaire de l'Education nationale sur [api.gouv.fr/documentation](https://api.gouv.fr/documentation/api-annuaire-education) et tester une première récupération de données en utilisant le _endpoint_ `records` sans aucun paramètre.
+2. Puisqu'on n'a conservé que les données de la Haute Garonne dans notre base principale, on désire ne récupérer que les établissements de ce département par le biais de notre API. Faire une requête avec le paramètre _ad hoc_, sans en ajouter d'autres.
+3. Augmenter la limite du nombre de paramètres, voyez-vous le problème ?
+4. On va tenter de récupérer ces données par le biais de l'API tabular de `data.gouv`. Sa documentation est [ici](https://tabular-api.data.gouv.fr/api/doc) et l'identifiant de la ressource est `b22f04bf-64a8-495d-b8bb-d84dbc4c7983` ([source](https://www.data.gouv.fr/fr/datasets/annuaire-de-leducation/)). Avec l'aide de la documentation, essayer de récupérer des données par le biais de cette API en utilisant le paramètre `Code_departement__exact=031` pour ne garder que le département d'intérêt.
+5. Voyez-vous le problème et comment nous pourrions automatiser la récupération de données ?
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-tip}
+## Exercise 2
+
+1. Visit the _swagger_ of the National Education Directory API on [api.gouv.fr/documentation](https://api.gouv.fr/documentation/api-annuaire-education) and test an initial data retrieval using the `records` endpoint without any parameters.
+2. Since we have retained only data from Haute Garonne in our main database, we want to retrieve only the institutions from that department using our API. Make a query with the appropriate parameter, without adding any extras.
+3. Increase the limit on the number of parameters—do you see the problem?
+4. We will attempt to retrieve these data via the `data.gouv` Tabular API. Its documentation is [here](https://tabular-api.data.gouv.fr/api/doc) and the resource identifier is `b22f04bf-64a8-495d-b8bb-d84dbc4c7983` ([source](https://www.data.gouv.fr/fr/datasets/annuaire-de-leducation/)). With the help of the documentation, try to retrieve data via this API using the parameter `Code_departement__exact=031` to select only the department of interest.
+5. Do you see the problem and how we could automate data retrieval?
+:::
+
+::::
+
+::: {.content-visible when-profile="fr"}
+La première question nous permet de récupérer un premier jeu de données
+:::
+
+::: {.content-visible when-profile="en"}
+The first question allows us to retrieve an initial dataset.
+:::
+
+```{python}
+#| label: exercise2-api-education-q1
+import requests
+
+url_annuaire_education = "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records"
+
+school_q1_exo2 = pd.DataFrame(
+  requests
+  .get(url_annuaire_education)
+  .json()
+  .get("results")
+)
+
+school_q1_exo2.head(2)
+```
+
+::: {.content-visible when-profile="fr"}
+Néanmoins, on a deux problèmes : le nombre de lignes et le département d'intérêt. Essayons déjà avec la question 2 de changer ce dernier.
+:::
+
+::: {.content-visible when-profile="en"}
+However, there are two issues: the number of rows and the department of interest. Let’s first address the latter with question 2.
+:::
+
+```{python}
+#| label: exercise2-api-education-q2
+url_31_limite10 = "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=code_departement%20like%20%22031%22"
+
+school_q2_exo2 = pd.DataFrame(
+  requests
+  .get(url_31_limite10)
+  .json()
+  .get("results")
+)
+school_q2_exo2.head()
+```
+
+::: {.content-visible when-profile="fr"}
+C'est mieux, mais nous avons toujours seulement 10 observations. Si on essaie d'ajuster le nombre de lignes (question 3), on obtient le retour suivant de l'API :
+:::
+
+::: {.content-visible when-profile="en"}
+This is better, but we still only have 10 observations. If we try to adjust the number of rows (question 3), we get the following response from the API:
+:::
+
+
+
+```{python}
+url_31_limite200 = "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=code_departement%20like%20%22031%22&limit=200"
+
+requests.get(url_31_limite200).content
+```
+
+
+::: {.content-visible when-profile="fr"}
+Essayons avec des données plus exhaustives : le fichier brut sur `data.gouv`. Comme on peut le voir dans les métadonnées, on sait qu'on a plus de 1000 écoles dont on peut récupérer des données, mais qu'on en a ici extrait seulement 20. Le champ `next` nous donne directement l'URL à utiliser pour récupérer les 20 pages suivantes : c'est grâce à lui qu'on a une chance de récupérer toutes nos données d'intérêt.
+:::
+
+::: {.content-visible when-profile="en"}
+Let’s try using more comprehensive data: the raw file on `data.gouv`. As seen in the metadata, we know there are over 1,000 schools for which data can be retrieved, but only 20 have been extracted here. The `next` field directly provides the URL to fetch the next 20 pages: this is how we can ensure we retrieve all our data of interest.
+:::
+
+
+```{python}
+#| label: exercise2-api-datagouv
+url_api_datagouv = "https://tabular-api.data.gouv.fr/api/resources/b22f04bf-64a8-495d-b8bb-d84dbc4c7983/data/?Code_departement__exact=031"
+
+call_api_datagouv = requests.get(url_api_datagouv).json()
+```
+
+::: {.content-visible when-profile="fr"}
+La partie intéressante pour automatiser la récupération de nos données est la clé `links` du JSON :
+:::
+
+::: {.content-visible when-profile="en"}
+The key part for automating the retrieval of our data is the `links` key in the JSON:
+:::
+
+```{python}
+call_api_datagouv.get('links')
+```
+
+::: {.content-visible when-profile="fr"}
+En bouclant sur celui-ci pour parcourir la liste des URL accessibles, on peut récupérer des données. Comme le code d'automatisation est assez fastidieux à écrire, le voici :
+:::
+
+::: {.content-visible when-profile="en"}
+By looping over it to traverse the list of accessible URLs, we can retrieve the data. Since the automation code is rather tedious to write, here it is:
+:::
+
+```{python}
+#| echo: true
+#| output: false
+#| label: exercise2-api-tabular
+import requests
+import pandas as pd
+
+# Initialize the initial API URL
+url_api_datagouv = "https://tabular-api.data.gouv.fr/api/resources/b22f04bf-64a8-495d-b8bb-d84dbc4c7983/data/?Code_departement__exact=031&page_size=50"
+
+# Initialize an empty list to store all data entries
+all_data = []
+
+# Initialize the URL for pagination
+current_url = url_api_datagouv
+
+# Loop until there is no next page
+while current_url:
+    try:
+        # Make a GET request to the current URL
+        response = requests.get(current_url)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+
+        # Parse the JSON response
+        json_response = response.json()
+
+        # Extract data and append to the all_data list
+        page_data = json_response.get('data', [])
+        all_data.extend(page_data)
+        print(f"Fetched {len(page_data)} records from {current_url}")
+
+        # Get the next page URL
+        links = json_response.get('links', {})
+        current_url = links.get('next')  # This will be None if there's no next page
+
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        break
+
+```
+
+::: {.content-visible when-profile="fr"}
+Le _DataFrame_ obtenu est le suivant:
+:::
+
+::: {.content-visible when-profile="en"}
+The resulting _DataFrame_ is as follows:
+:::
+
+
+```{python}
+#| echo: true
+schools_dep31 = pd.DataFrame(all_data)
+schools_dep31.head()
+```
+
+::: {.content-visible when-profile="fr"}
+On peut fusionner ces nouvelles données avec nos données précédentes pour enrichir celles-ci. Pour faire une production fiable, il faudrait faire attention aux écoles qui ne s'apparient pas, mais ce n'est pas grave pour cette série d'exercices.
+:::
+
+::: {.content-visible when-profile="en"}
+We can merge this new data with our previous dataset to enrich it. For reliable production, care should be taken with schools that do not match, but this is not critical for this series of exercises.
+:::
+
+
+```{python}
+#| echo: true
+#| label: exercise2-bpe-enriched
+bpe_enriched = bpe.merge(
+  schools_dep31,
+  left_on = "SIRET",
+  right_on = "SIREN_SIRET"
+)
+bpe_enriched.head(2)
+```
+
+::: {.content-visible when-profile="fr"}
+Cela nous donne des données enrichies de nouvelles caractéristiques sur les établissements. Il y a des coordonnées géographiques dans celles-ci, mais nous allons faire comme s'il n'y en avait pas pour réutiliser notre API de géolocalisation.
+:::
+
+::: {.content-visible when-profile="en"}
+This provides us with data enriched with new characteristics about the institutions. Although there are geographic coordinates in the dataset, we will pretend there aren't to reuse our geolocation API.
+:::
+
+
+::: {.content-visible when-profile="fr"}
+# Découverte des requêtes `POST`
+
+## Logique
+
+Nous avons jusqu'à présent évoqué les requêtes `GET`. Nous allons maintenant présenter les requêtes `POST` qui permettent d'interagir de manière plus complexe avec des serveurs de l'API.
+
+Pour découvrir celles-ci, nous allons reprendre l'API de géolocalisation précédente mais utiliser un autre point d'entrée qui nécessite une requête `POST`.
+
+Ces dernières sont généralement utilisées quand il est nécessaire d'envoyer des données particulières pour déclencher une action. Par exemple, dans le monde du web, si vous avez une authentification à mettre en oeuvre, une requête `POST` permettra d'envoyer un _token_ au serveur qui répondra en acceptant votre authentification.
+
+Dans notre cas, nous allons envoyer des données au serveur, ce dernier va les recevoir, les utiliser pour la géolocalisation puis nous envoyer une réponse. Pour continuer sur la métaphore culinaire, c'est comme si vous donniez vous-mêmes à la cuisine un _tupperware_ pour récupérer votre plat à emporter.
+
+## Principe
+
+Prenons cette requête proposée sur le site de documentation de l'API de géolocalisation:
+
+```{.bash}
+curl -X POST -F data=@path/to/file.csv -F columns=voie -F columns=ville -F citycode=ma_colonne_code_insee https://api-adresse.data.gouv.fr/search/csv/
+```
+
+Comme nous avons pu l'évoquer précédemment, `curl` est un outil en ligne de commande qui permet de faire des requêtes API. L'option `-X POST` indique, de manière assez transparente, qu'on désire faire une requête `POST`.
+
+Les autres arguments sont passés par le biais des options `-F`. En l'occurrence, on envoie un fichier et on ajoute des paramètres pour aider le serveur à aller chercher la donnée dedans. L'`@` indique que `file.csv` doit être lu sur le disque et envoyé dans le corps de la requête comme une donnée de formulaire.
+
+## Application avec `Python`
+
+Nous avions `requests.get`, il est donc logique que nous ayons `requests.post`. Cette fois, il faudra passer des paramètres à notre requête sous la forme d'un dictionnaire dont les clés sont le nom de l'argument et les valeurs sont des objets `Python`.
+
+Le principal défi, illustré dans le prochain exercice, est le passage de l'argument `data`: il faudra renvoyer le fichier comme un objet `Python` par le biais de la fonction `open`.
+:::
+::: {.content-visible when-profile="en"}
+# Discovering `POST` Requests
+
+## Logic
+
+So far, we have discussed `GET` requests. Now, we will introduce `POST` requests, which allow for more complex interactions with API servers.
+
+To explore this, we will revisit the previous geolocation API but use a different endpoint that requires a `POST` request.
+
+`POST` requests are typically used when specific data needs to be sent to trigger an action. For instance, in the web world, if authentication is required, a `POST` request can send a token to the server, which will respond by accepting your authentication.
+
+In our case, we will send data to the server, which will process it for geolocation and then send us a response. To continue the culinary metaphor, it’s like handing over your own container (_tupperware_) to the kitchen to collect your takeaway meal.
+
+## Principle
+
+Let’s look at this request provided on the geolocation API’s documentation site:
+
+```{.bash}
+curl -X POST -F data=@path/to/file.csv -F columns=voie -F columns=ville -F citycode=ma_colonne_code_insee https://api-adresse.data.gouv.fr/search/csv/
+```
+
+As mentioned earlier, `curl` is a command-line tool for making API requests. The `-X POST` option clearly indicates that we want to make a `POST` request.
+
+Other arguments are passed using the `-F` options. In this case, we are sending a file and adding parameters to help the server locate the data inside it. The `@` symbol indicates that `file.csv` should be read from the disk and sent in the request body as form data.
+
+## Application with `Python`
+
+We have `requests.get`, so naturally, we also have `requests.post`. This time, parameters must be passed to our request as a dictionary, where the keys are argument names and the values are `Python` objects.
+
+The main challenge, illustrated in the next exercise, lies in passing the `data` argument: the file must be sent as a `Python` object using the `open` function.
+:::
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
+## Exercice 3: une requête `POST` pour géolocaliser en masse nos données
+
+1. Enregistrer au format CSV les colonnes `adresse`, `DEPCOM` et `Nom_commune` de la base d'équipements fusionnée avec notre répertoire précédent (objet `bpe_enriched`). Il peut être utile, avant l'écriture au format CSV, de remplacer les virgules dans la colonne `adresse` par des espaces.
+2. Créer l'objet `response` avec `requests.post` et les bons arguments pour géocoder votre CSV.
+3. Transformer votre output en objet `geopandas` avec la commande suivante:
+
+```{.python}
+bpe_loc = pd.read_csv(io.StringIO(response.text))
+```
+
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-tip}
+## Exercise 3: A `POST` request to geolocate our data in bulk
+
+1. Save the `adresse`, `DEPCOM`, and `Nom_commune` columns of the equipment database merged with our previous directory (object `bpe_enriched`) in CSV format. Before writing to CSV, it may be helpful to replace commas in the `adresse` column with spaces.
+2. Create the `response` object using `requests.post` with the correct arguments to geocode your CSV.
+3. Transform your output into a `geopandas` object using the following command:
+
+```{.python}
+bpe_loc = pd.read_csv(io.StringIO(response.text))
+```
+
+:::
+
+::::
+
+
+```{python}
+#| label: exercise3-q1
+import pathlib
+output_path = pathlib.Path("data/output")
+output_path.mkdir(parents=True, exist_ok=True)
+csv_file = output_path / "bpe_before_geoloc.csv"
+
+bpe_enriched["adresse"] = bpe_enriched["adresse"].str.replace(",", "")
+
+bpe_enriched.loc[:, ["adresse", "DEPCOM", "Nom_commune"]].to_csv(csv_file)
+```
+
+```{python}
+import io
+
+params = {
+    "columns": ["adresse", "Nom_commune"],
+    "citycode": "DEPCOM",
+    "result_columns": ["result_score", "latitude", "longitude"],
+}
+
+response = requests.post(
+        "https://api-adresse.data.gouv.fr/search/csv/",
+        data=params,
+        files={"data": open(csv_file, "rb")},
+    )
+
+
+bpe_loc = pd.read_csv(io.StringIO(response.text))
+bpe_loc = bpe_loc.rename({"Unnamed: 0": "index"}, axis = "columns")
+```
+
+::: {.content-visible when-profile="fr"}
+Les géolocalisations obtenues prennent cette forme
+:::
+
+::: {.content-visible when-profile="en"}
+The obtained geolocations take this form
+:::
+
+```{python}
+bpe_loc.head(2)
+```
+
+::: {.content-visible when-profile="fr"}
+En enrichissant les données précédentes, cela donne:
+:::
+
+::: {.content-visible when-profile="en"}
+By enriching the previous data, this gives:
+:::
+
+```{python}
+#| label: exercise3-q2
+bpe_loc = bpe_loc.loc[:, ["index", "result_score", "latitude", "longitude"]]
+bpe_enriched_geocoded = (
+  bpe_enriched
+  .reset_index()
+  .merge(bpe_loc, on = "index", suffixes = ["_annuaire", "_ban"])
+  .drop("index", axis = "columns")
+)
+
+bpe_enriched_geocoded.head(2)
+```
+
+::: {.content-visible when-profile="fr"}
+On peut vérifier que la géolocalisation ne soit pas trop délirante en comparant avec les longitudes et latitudes de l'annuaire de l'éducation ajouté précédemment:
+:::
+
+::: {.content-visible when-profile="en"}
+We can check that the geolocation is not too off by comparing it with the longitudes and latitudes of the education directory added earlier:
+:::
+
+```{python}
+pd.concat(
+  [
+    bpe_enriched_geocoded.loc[:, ["NOMRS", "Nom_commune"]],
+    bpe_enriched_geocoded.filter(like = "longitude"),
+    bpe_enriched_geocoded.filter(like = "latitude")
+  ], axis = 1
+).sample(5)
+```
+
+::: {.content-visible when-profile="fr"}
+Sans rentrer dans le détail, les positions semblent très similaires à quelques imprécisions près.
+:::
+
+::: {.content-visible when-profile="en"}
+Without going into detail, the positions seem very similar, with only minor inaccuracies.
+:::
+
+```{python}
+#| label: exercise3-q3
+bpe_enriched_geocoded = bpe_enriched_geocoded.dropna(subset=["longitude_ban","latitude_ban"])
+
+bpe_enriched_geocoded = gpd.GeoDataFrame(
+    bpe_enriched_geocoded,
+    geometry=gpd.points_from_xy(
+      bpe_enriched_geocoded['longitude_ban'],
+      bpe_enriched_geocoded['latitude_ban']
+      ),
+    crs="EPSG:4326"
+)
+
+```
+
+::: {.content-visible when-profile="fr"}
+Pour profiter de nos données enrichies, on peut faire une carte. Pour ajouter un peu de contexte à celle-ci, on peut mettre un fond de carte des communes en arrière plan. Celui-ci peut être récupéré avec `cartiflette`:
+:::
+
+::: {.content-visible when-profile="en"}
+To make use of our enriched data, we can create a map. To add some context to it, we can place a background map of the municipalities. This can be retrieved using `cartiflette`:
+:::
+
+
+```{python}
+#| echo: true
+#| label: carti-download
+from cartiflette import carti_download
+shp_communes = carti_download(
+  crs = 4326,
+  values = ["31"],
+  borders="COMMUNE",
+  vectorfile_format="topojson",
+  filter_by="DEPARTEMENT",
+  source="EXPRESS-COG-CARTO-TERRITOIRE",
+  year=2022
+)
+shp_communes.crs = 4326
+```
+
+::: {.content-visible when-profile="fr"}
+Représentées sur une carte, cela donne la carte suivante:
+:::
+
+::: {.content-visible when-profile="en"}
+Represented on a map, this gives the following map:
+:::
+
+```{python}
+#| label: cartiflette-map
+import folium
+from folium.plugins import MarkerCluster
+import geopandas as gpd
+
+department_border = shp_communes.dissolve(by="INSEE_DEP")
+city_borders = shp_communes.copy()
+
+longitude = bpe_enriched_geocoded.geometry.x.iloc[0]
+latitude = bpe_enriched_geocoded.geometry.y.iloc[0]
+m = folium.Map(location=[latitude, longitude], zoom_start=10)
+
+# Add department border (black, bold)
+folium.GeoJson(
+    data=department_border,
+    style_function=lambda x: {
+        "fill": False,
+        "color": "black",
+        "weight": 3  # Bold border
+    }
+).add_to(m)
+
+# Add city borders (blue, thin)
+folium.GeoJson(
+    data=city_borders,
+    style_function=lambda x: {
+        "fill": False,
+        "color": "blue",
+        "weight": 1  # Thin border
+    }
+).add_to(m)
+
+# Initialize the MarkerCluster
+marker_cluster = MarkerCluster().add_to(m)
+
+def generate_popup(row):
+    # Initialiser le contenu avec le nom de l'école
+    popup_content = f"<b>Nom:</b> {row['NOMRS']}<br>"
+
+    # Ajouter "Ecole élémentaire" avec une icône ✅️ ou ❌️ selon la valeur
+    ecole_element_status = "✅️" if row.get('Ecole_elementaire', False) else "❌️"
+    popup_content += f"<b>Ecole élémentaire:</b> {ecole_element_status}<br>"
+
+    # Ajouter "Nombre d'élèves" si disponible
+    if not pd.isnull(row.get('Nombre_d_eleves')):
+        popup_content += f"<b>Nombre d'élèves:</b> {row['Nombre_d_eleves']}<br>"
+
+    # Ajouter "Voie générale" si disponible
+    if not pd.isnull(row.get('Voie_generale')):
+        popup_content += f"<b>Voie générale:</b> {row['Voie_generale']}<br>"
+
+    # Ajouter "Voie technologique" si disponible
+    if not pd.isnull(row.get('Voie_technologique')):
+        popup_content += f"<b>Voie technologique:</b> {row['Voie_technologique']}<br>"
+
+    return popup_content
+
+
+# Add GeoDataFrame points to the MarkerCluster
+for _, row in bpe_enriched_geocoded.iterrows():
+    # Create the popup content
+    popup_content = generate_popup(row)
+
+    popup = folium.Popup(popup_content, max_width=300)
+
+    # Add the marker to the cluster
+    folium.Marker(
+        location=[row.geometry.y, row.geometry.x],  # Extract latitude and longitude
+        popup=popup,
+        icon=folium.Icon(color="blue", icon="info-sign")
+    ).add_to(marker_cluster)
+
+# Display the map inline (optional for Jupyter Notebooks)
+m
+```
+
+
+::: {.content-visible when-profile="fr"}
+# Gestion des secrets et des exceptions
+
+Nous avons déjà utilisé plusieurs API. Néanmoins ces dernières étaient toutes sans authentification et présentent peu de restrictions, hormis le nombre d'échos. Ce n'est pas le cas de toutes les API. Il est fréquent que les API qui permettent d'aspirer plus de données ou d'accéder à des données confidentielles nécessitent une authentification pour tracer les utilisateurs de données.
+
+Cela se fait généralement par le biais d'un _token_. Ce dernier est une sorte de mot de passe, souvent utilisé dans les systèmes modernes d'authentification pour certifier de l'identité d'un utilisateur.trice (cf. [chapitre `Git`](/content/git/introgit.qmd)).
+
+Pour illustrer l'usage des _tokens_, nous allons utiliser une API de l'Insee. Nous allons utiliser cette API pour récupérer des informations supplémentaires sur nos établissements à partir de leur code SIREN.
+
+Avant d'en arriver là, nous allons faire un aparté sur la confidentialité des tokens et la manière d'éviter de révéler ceux-ci dans votre code.
+:::
+
+::: {.content-visible when-profile="en"}
+# Managing Secrets and Exceptions
+
+We have already used several APIs. However, these APIs were all without authentication and had few restrictions, except for the number of calls. This is not the case for all APIs. It is common for APIs that allow access to more data or confidential information to require authentication to track data users.
+
+This is usually done through a _token_. A token is a kind of password often used in modern authentication systems to certify a user's identity (see [Git chapter](/content/git/introgit.qmd)).
+
+To illustrate the use of _tokens_, we will use an API from Insee, French national statistical institute. We will use this API to retrieve entreprise level data from an exhaustive registry.  
+
+Before diving into this, we will take a detour to discuss token confidentiality and how to avoid exposing tokens in your code.
+:::
+
+:::: {.content-visible when-profile="fr"}
+## Utiliser un token dans un code sans le révéler
+
+Les tokens sont des informations personnelles qui ne doivent pas être partagées. Ils n'ont pas vocation à être présent dans le code. Comme ceci est évoqué à plusieurs reprises dans le cours de [mise en production](https://ensae-reproductibilite.github.io/website/) que Romain Avouac et moi donnons en 3e année, il est important de séparer le code des éléments de configuration
+
+![](https://inseefrlab.github.io/formation-bonnes-pratiques-git-R/slides/img/environment_clean.png)
+
+L'idée est de trouver une recette pour apporter les éléments de configuration avec le code mais sans mettre ceux-ci en clair dans le code. L'idée générale sera de stocker la valeur du _token_ dans une variable mais ne jamais révéler celle-ci dans le code. Comment faire dès lors pour déclarer la valeur du jeton sans que celui-ci soit apparent dans le code ?
+
+* Pour un code amené à fonctionner de manière interactive (par exemple par le biais d'un _notebook_), il est possible de créer une boite de dialogue qui injectera la valeur renseignée dans une variable. Cela se fait par le biais du package `getpass`.
+* Pour le code qui tourne en non interactif, par exemple par le biais de la ligne de commande, l'approche par variable d'environnement est la plus fiable, à condition de faire attention à ne pas mettre le fichier de mot de passe dans `Git` {{< fa brands git-alt >}}. Pour cela, le plus simple est d'utiliser [`dotenv`](https://pypi.org/project/python-dotenv/) si vous faites tourner votre code ou des [secrets](https://docs.github.com/fr/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions) si votre code tourne de manière automatisée sur des serveurs _cloud_.
+
+::: {.important}
+Il ne faut jamais mettre de _token_ dans `Git`. Sinon, vous courrez le risque d'avoir votre identité usurpée : des robots scannent en continu  `Github` à la recherche de jetons pour ensuite lancer des dénis de service en se faisant passer pour vous.
+
+Si vous avez partagé par erreur un jeton : pas de panique, cela peut arriver ! L'avantage des jetons est qu'ils sont révocables : vous pouvez l'invalider et en créer un nouveau pour continuer à utiliser le service désiré. La bonne réaction consiste à révoquer le jeton le plus vite possible, une fois la fuite constatée. La meilleure parade pour éviter ce type de fuite est d'ajouter tout de suite le `.env` au `.gitignore`.
+:::
+
+L'exercice suivant permettra de découvrir comment ajouter de manière confidentielle un _payload_ à des requêtes d'authentification, c'est-à-dire des informations confidentielles identifiantes en complément d'une requête.
+::::
+
+
+## Comprendre le principe avec une documentation interactive
+
+
+Pour illustrer l'utilisation des API authentifiées, nous proposons d'explorer le [portail des API](https://api.insee.fr/catalogue/) de l'Insee.
+
+Nous allons nous concentrer sur l'API Sirene mais, sur ce portail, il en existe d'autres, notamment l'API Melodi consacrée à la récupération d'un certain nombre de sources _open data_ de l'Insee. L'API Sirene est une version interrogeable des données [Sirene _open data_](https://www.insee.fr/fr/information/3591226).
+
+Avant d'aller dans `Python`, utilisons notre navigateur pour comprendre le principe de l'authentification. 
+
+{{< include "04c_api/_exo4.qmd" >}}
+
+
+## Récupération des données via `Python` {{< fa brands python >}}
+
+
+Pour cette application, à partir de la question 4, nous allons avoir besoin de créer une classe spéciale permettant à `requests` de surcharger notre requête d'un jeton d'authentification. Comme elle n'est pas triviale à créer sans connaissance préalable, la voici:
+:::
+
+::: {.content-visible when-profile="en"}
+## Using a Token in Code Without Revealing It
+
+Tokens are personal information that should not be shared. They are not meant to be present in the code. As mentioned multiple times in the [production deployment course](https://ensae-reproductibilite.github.io/website/) taught by Romain Avouac and myself in the third year, it is crucial to separate the code from configuration elements.
+
+![](https://inseefrlab.github.io/formation-bonnes-pratiques-git-R/slides/img/environment_clean.png)
+
+The idea is to find a way to include configuration elements with the code without exposing them directly in the code. The general approach is to store the token value in a variable without revealing it in the code. How can we declare the token value without making it visible in the code?
+
+* For interactive code (e.g., via a _notebook_), it is possible to create a dialog box that injects the provided value into a variable. This can be done using the `getpass` package.
+* For non-interactive code, such as command-line scripts, the environment variable approach is the most reliable, provided you are careful not to include the password file in `Git`.
+
+The following exercise will demonstrate these two methods. These methods will help us confidentially add a _payload_ to authentication requests, i.e., confidential identifying information as part of a request.
+
+## Application
+
+For this application, starting from question 4, we will need to create a special class that allows `requests` to override our request with an authentication token. Since it is not trivial to create without prior knowledge, here it is:
+:::
+
+```{python}
+#| echo: true
+#| label: bearer-token
+class BearerAuth(requests.auth.AuthBase):
+    def __init__(self, token):
+        self.token = token
+    def __call__(self, r):
+        r.headers["authorization"] = "Bearer " + self.token
+        return r
+```
+
+::: {.content-visible when-profile="fr"}
+Nous allons aussi avoir besoin de cette variable qui correspond au Siren de Decathlon
+:::
+
+::: {.content-visible when-profile="en"}
+We will also need this variable, which corresponds to Decathlon's Siren.
+:::
+
+```{python}
+#| echo: true
+siren = "500569405"
+```
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
+## Exercice 4: ajouter un _payload_ à une requête
+
+1. Se créer un compte pour l'API de l'INPI (Institut national de la protection intellectuelle) qui nous servira à récupérer des bilans des comptes sociaux d'entreprises au format PDF.
+2. Créer les variables `username` et `password` avec `getpass` en faisant en sorte de ne pas rentrer les valeurs dans le code.
+3. En utilisant la [documentation de l'API](https://www.inpi.fr/sites/default/files/documentation%20technique%20API_comptes_annuels%20v4_0.pdf), l'argument `json` de `requests.post`, récupérer un jeton d'authentification et le stocker dans une variable `token`.
+4. Récupérer les données en utilisant la _f-string_ `f'https://registre-national-entreprises.inpi.fr/api/companies/{siren}/attachments'` et en donnant à `requests` l'argument `auth=BearerAuth(token)`
+5. Créer `identifier = documents.get('bilans')[0]['id']` et utiliser `requests` avec l'URL `f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download'`, sans argument, pour récupérer un PDF. Cela a-t-il fonctionné ? Vérifier le _status code_. A quoi correspond-il ? Comment éviter cela ?
+6. En supposant que l'objet `requests.get` créé s'appelle `r`, écrire l'output de notre API dans un PDF de la manière suivante:
+
+```{.python}
+binary_file_path = 'decathlon.pdf'
+with open(binary_file_path, 'wb') as f:
+    f.write(r.content)
+```
+
+7. Remplacer l'utilisation de `getpass` par l'approche variable d'environnement grâce à [`dotenv`](https://pypi.org/project/python-dotenv/)
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-tip}
+## Exercise 4: Adding a _payload_ to a request
+
+1. Create an account for the INPI API (National Institute of Intellectual Property), which we will use to retrieve financial statements of companies in PDF format.
+2. Create the `username` and `password` variables using `getpass`, ensuring the values are not hardcoded.
+3. Using the [API documentation](https://www.inpi.fr/sites/default/files/documentation%20technique%20API_comptes_annuels%20v4_0.pdf) and the `json` argument of `requests.post`, retrieve an authentication token and store it in a variable `token`.
+4. Retrieve the data using the _f-string_ `f'https://registre-national-entreprises.inpi.fr/api/companies/{siren}/attachments'` and provide `requests` with the argument `auth=BearerAuth(token)`.
+5. Create `identifier = documents.get('bilans')[0]['id']` and use `requests` with the URL `f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download'`, without arguments, to retrieve a PDF. Did it work? Check the _status code_. What does it mean? How can this be avoided?
+6. Assuming the `requests.get` object created is named `r`, write the API output to a PDF as follows:
+
+```{.python}
+binary_file_path = 'decathlon.pdf'
+with open(binary_file_path, 'wb') as f:
+    f.write(r.content)
+```
+
+7. Replace the use of `getpass` with the environment variable approach using [`dotenv`](https://pypi.org/project/python-dotenv/).
+:::
+
+::::
+
+
+```{python}
+#| output: false
+#| label: load-dotenv
+import os
+from dotenv import load_dotenv
+load_dotenv()
+```
+
+```{python}
+#| label: envvar
+username = os.getenv("API_INPI_USERNAME")
+password = os.getenv("API_INPI_PASSWORD")
+```
+
+```{python}
+#| label: payload
+import requests
+
+url_login_api = "https://registre-national-entreprises.inpi.fr/api/sso/login"
+
+payload = {
+    "username": username,
+    "password": password
+}
+
+response = requests.post(url_login_api, json=payload)
+token = response.json().get('token')
+```
+
+```{python}
+r = requests.get(
+    f'https://registre-national-entreprises.inpi.fr/api/companies/{siren}/attachments',
+    auth=BearerAuth(token)
+)
+documents = r.json()
+```
+
+```{python}
+identifier = documents.get('bilans')[0]['id']
+```
+
+::: {.content-visible when-profile="fr"}
+A la question 5, sans identifiant, on récupère le code erreur 401, qui correspond à _"Unauthorized"_, c'est-à-dire à une requête refusée. Néanmoins, si on ajoute le token comme précédemment, tout se passe bien, on récupère le bilan de Decathlon.
+:::
+
+::: {.content-visible when-profile="en"}
+For question 5, without an identifier, we get the error code 401, which corresponds to _"Unauthorized"_, meaning the request is denied. However, if we add the token as before, everything works fine, and we retrieve Decathlon's financial statement.
+:::
+
+```{python}
+#| output: false
+#| label: request-get-status
+r = requests.get(
+    f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download'
+)
+r.status_code
+```
+
+```{python}
+#| label: request-get-authtoken
+r = requests.get(
+    f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download',
+    auth=BearerAuth(token)
+)
+```
+
+```{python}
+#| output: false
+binary_file_path = 'decathlon.pdf'
+with open(binary_file_path, 'wb') as f:
+    f.write(r.content)
+```
+
+<details>
+
+::: {.content-visible when-profile="fr"}
+<summary>
+Le PDF récupéré
+</summary>
+:::
+
+::: {.content-visible when-profile="en"}
+<summary>
+The retrieved PDF
+</summary>
+:::
+
+{{< pdf decathlon.pdf height="500px" width="800px">}}
+
+</details>
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-important}
+L'approche par variable d'environnement est la plus générale et malléable. Il faut néanmoins bien faire attention à ne pas oublier d'ajouter le `.env` stockant les identifiants dans `Git`. Autrement, vous risquez de révéler des informations identifiantes ce qui annule tout effet positif des bonnes pratiques mises en oeuvre avec `dotenv`.
+
+Pour cela, la solution est simple : ajouter la ligne `.env` au `.gitignore` et par sécurité `*.env` au cas où le fichier ne soit pas à la racine du dépôt. Pour en savoir plus sur ce fichier `.gitignore`, se rendre sur les [chapitres `Git`](/content/git/index.qmd).
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-important}
+The environment variable approach is the most general and flexible. However, it is crucial to ensure that the `.env` file storing the credentials is not added to `Git`. Otherwise, you risk exposing identifying information, which negates any benefits of the good practices implemented with `dotenv`.
+
+The solution is simple: add the `.env` line to `.gitignore` and, for extra safety, include `*.env` in case the file is not at the root of the repository. To learn more about the `.gitignore` file, refer to the [Git chapters](/content/git/index.qmd).
+:::
+
+::::
+
+
+::: {.content-visible when-profile="fr"}
+# Ouverture aux API de modèles
+
+Nous avons vu jusqu'à présent des API de données. Celles-ci permettent de récupérer du code. Ce n'est néanmoins pas la seule utilisation des API intéressantes pour les utilisateurs de `Python`.
+
+Il existe de nombreux autres types d'API. Parmi celles-ci, les API de modèles sont intéressantes. Elles permettent de récupérer des modèles pré-entraînés voire effectuer une phase d'inférence sur des serveurs spécialisés ayant plus de ressources que son ordinateur local (plus d'éléments dans les parties _machine learning_ et NLP). La librairie la plus connue dans ce domaine est la librairie [`transformers`](https://pypi.org/project/transformers/) développée par `HuggingFace`.
+
+L'un des objectifs du [cours de 3A de mise en production](https://ensae-reproductibilite.github.io/website/) est de montrer comment ce type d'architecture logicielle fonctionne et comment celle-ci peut être créée sur des modèles que vous auriez vous-mêmes créés.
+:::
+
+::: {.content-visible when-profile="en"}
+# Opening Up to Model APIs
+
+So far, we have explored data APIs, which allow us to retrieve data. However, this is not the only interesting use case for APIs among `Python` users.
+
+There are many other types of APIs, and model APIs are particularly noteworthy. They allow access to pre-trained models or even perform inference on specialized servers with more resources than a local computer (more details in the _machine learning_ and NLP sections). The most well-known library in this field is the [`transformers`](https://pypi.org/project/transformers/) library developed by `HuggingFace`.
+
+One of the objectives of the [3rd-year production deployment course](https://ensae-reproductibilite.github.io/website/) is to demonstrate how this type of software architecture works and how it can be implemented for models you have created yourself.
+:::
+
+
+
+:::: {.content-visible when-profile="fr"}
+# Exercices supplémentaires
+
+::: {.callout-tip}
+## Exercice bonus 1: et si on ajoutait des informations sur la valeur ajoutée des lycées ?
+
+Dans notre exemple sur les écoles, se restreindre aux lycées et ajouter les informations sur la valeur ajoutée des lycées disponibles [ici](https://data.education.gouv.fr/explore/dataset/fr-en-indicateurs-de-resultat-des-lycees-denseignement-general-et-technologique/table/?sort=-annee).
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+# Additional Exercises: et si on ajoutait des informations sur la valeur ajoutée des lycées ?
+
+::: {.callout-tip}
+## Bonus Exercise
+
+In our example on schools, limit the scope to high schools and add information on the added value of high schools available [here](https://data.education.gouv.fr/explore/dataset/fr-en-indicateurs-de-resultat-des-lycees-denseignement-general-et-technologique/table/?sort=-annee).
+:::
+
+::::
+
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
+## Exercice bonus 2: on sort où ce soir ?
+
+Trouver un lieu commun où se retrouver entre amis est toujours l'objet d'âpres négociations: et si on laissait guider par la géographie ?
+
+1. Créer un `DataFrame` enregistrant une série d'adresses et de codes postaux comme l'exemple ci-dessous
+2. Adapter le code de l'exercice sur l'API BAN, avec l'appui de la documentation, pour géolocaliser ces adresses
+3. En supposant que vos données géolocalisées se nomment `adresses_geocoded`, utiliser le code proposé pour transformer celles-ci en polygone
+4. Calculer le centroid et représenter sur une carte interactive `Folium` comme précédemment
+
+Vous aviez oublié qu'il y avait un couple dans le groupe... Tenir compte de la variable `poids` pour calculer le barycentre et trouver où vous retrouver ce soir.
+
+<details>
+
+<summary>
+Créer le polygone à partir des géolocalisations
+</summary>
+
+```{.python}
+from shapely.geometry import Polygon
+coordinates = list(zip(adresses_geocoded["longitude"], adresses_geocoded["latitude"]))
+polygon = Polygon(coordinates)
+
+polygon = gpd.GeoDataFrame(index=[0], crs="epsg:4326", geometry=[polygon])
+polygon
+```
+
+</details>
+
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-tip}
+## Bonus Exercise 2: Where are we going out tonight?
+
+Finding a common place to meet friends is always a subject of tough negotiations. What if we let geography guide us?
+
+1. Create a `DataFrame` recording a series of addresses and postal codes, like the example below.
+2. Adapt the code from the exercise on the BAN API, using its documentation, to geolocate these addresses.
+3. Assuming your geolocated data is named `adresses_geocoded`, use the proposed code to transform them into a polygon.
+4. Calculate the centroid and display it on an interactive `Folium` map as before.
+
+You forgot there’s a couple in the group... Take into account the `poids` variable to calculate the barycenter and find out where to meet tonight.
+
+<details>
+<summary>
+Create the polygon from the geolocations
+</summary>
+
+```{.python}
+from shapely.geom
+etry import Polygon
+coordinates = list(zip(adresses_geocoded['longitude'], adresses_geocoded['latitude']))
+polygon = Polygon(coordinates)
+
+polygon = gpd.GeoDataFrame(index=[0], crs='epsg:4326', geometry=[polygon])
+polygon
+```
+
+</details>
+
+:::
+
+::::
+
+::: {.content-visible when-profile="fr"}
+Le DataFrame d'exemple:
+:::
+
+::: {.content-visible when-profile="en"}
+The example DataFrame:
+:::
+
+```{python}
+#| echo: true
+adresses_text = pd.DataFrame(
+  {
+    "adresse": [
+        "10 Rue de Rivoli",
+        "15 Boulevard Saint-Michel",
+        "8 Rue Saint-Honoré",
+        "20 Avenue des Champs-Élysées",
+        "Place de la Bastille",
+    ],
+    "cp": ["75004", "75005", "75001", "75008", "75011"],
+    "poids": [2, 1, 1, 1, 1]
+})
+adresses_text
+```
+
+```{python}
+#| label: location-api-send
+import pathlib
+output_path = pathlib.Path("data/output")
+output_path.mkdir(parents=True, exist_ok=True)
+csv_file = output_path / "bpe_before_geoloc.csv"
+
+adresses_text.loc[:, ["adresse", "poids", "cp"]].to_csv(csv_file, index=False)
+
+params = {
+    "columns": ["adresse"],
+    "postcode": "cp",
+    "result_columns": ["result_score", "latitude", "longitude"],
+}
+
+response = requests.post(
+        "https://api-adresse.data.gouv.fr/search/csv/",
+        data=params,
+        files={"data": open(csv_file, "rb")},
+    )
+```
+
+```{python}
+adresses_geocoded = pd.read_csv(io.StringIO(response.text))
+adresses_geocoded
+```
+
+::: {.content-visible when-profile="fr"}
+La géolocalisation obtenue pour cet exemple
+:::
+
+::: {.content-visible when-profile="en"}
+The geolocation obtained for this example
+:::
+
+
+```{python}
+#| label: compute-barycenter
+from shapely.geometry import Polygon
+coordinates = list(zip(adresses_geocoded['longitude'], adresses_geocoded['latitude']))
+polygon = Polygon(coordinates)
+
+polygon = gpd.GeoDataFrame(index=[0], crs='epsg:4326', geometry=[polygon])
+```
+
+```{python}
+#| output: false
+import folium
+
+gdf_points = gpd.GeoDataFrame(
+    adresses_geocoded,
+    geometry=gpd.points_from_xy(adresses_geocoded.longitude, adresses_geocoded.latitude), crs="EPSG:4326"
+)
+
+total_weight = adresses_geocoded['poids'].sum()
+barycenter_x = (adresses_geocoded['longitude'] * adresses_geocoded['poids']).sum() / total_weight
+barycenter_y = (adresses_geocoded['latitude'] * adresses_geocoded['poids']).sum() / total_weight
+
+# Affichage des coordonnées du barycentre
+barycenter = (barycenter_x, barycenter_y)
+barycenter
+
+# Calculate the centroid of the polygon
+polygon_centroid = polygon.centroid
+
+# Initialize a Folium map centered on the centroid
+map_center = [polygon_centroid.y, polygon_centroid.x]
+m = folium.Map(location=map_center, zoom_start=13)
+
+# Add the polygon to the map
+folium.GeoJson(polygon, name="Polygon").add_to(m)
+
+# Add the points to the map
+for _, row in gdf_points.iterrows():
+    folium.Marker(
+        location=[row.geometry.y, row.geometry.x],
+        popup=row['adresse'],
+    ).add_to(m)
+
+# Add the centroid in red
+folium.Marker(
+    location=[barycenter_y, barycenter_x],
+    popup="Barycentre",
+    icon=folium.Icon(color="red")
+).add_to(m)
+
+# Met à jour le centroïde pour qu'il soit vert
+folium.Marker(
+    location=[polygon.centroid.y, polygon.centroid.x],
+    popup="Centroid",
+    icon=folium.Icon(color="green")
+).add_to(m)
+```
+
+::: {.content-visible when-profile="fr"}
+Voici la carte obtenue sur le jeu d'exemple. On sera peut-être plus au centre avec le barycentre qu'avec le centroid.
+:::
+
+::: {.content-visible when-profile="en"}
+Here is the map obtained from the example dataset. We might have a better location with the barycenter than with the centroid.
+:::
+
+```{python}
+m
+```
+
+
+
+
+
