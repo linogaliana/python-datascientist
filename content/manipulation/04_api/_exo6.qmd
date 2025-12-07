@@ -1,0 +1,225 @@
+:::: {.content-visible when-profile="fr"}
+# Exercices supplémentaires
+
+::: {.callout-tip}
+## Exercice bonus 1: et si on ajoutait des informations sur la valeur ajoutée des lycées ?
+
+Dans notre exemple sur les écoles, se restreindre aux lycées et ajouter les informations sur la valeur ajoutée des lycées disponibles [ici](https://data.education.gouv.fr/explore/dataset/fr-en-indicateurs-de-resultat-des-lycees-denseignement-general-et-technologique/table/?sort=-annee).
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+# Additional Exercises: et si on ajoutait des informations sur la valeur ajoutée des lycées ?
+
+::: {.callout-tip}
+## Bonus Exercise
+
+In our example on schools, limit the scope to high schools and add information on the added value of high schools available [here](https://data.education.gouv.fr/explore/dataset/fr-en-indicateurs-de-resultat-des-lycees-denseignement-general-et-technologique/table/?sort=-annee).
+:::
+
+::::
+
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
+## Exercice bonus 2: on sort où ce soir ?
+
+Trouver un lieu commun où se retrouver entre amis est toujours l'objet d'âpres négociations: et si on laissait guider par la géographie ?
+
+1. Créer un `DataFrame` enregistrant une série d'adresses et de codes postaux comme l'exemple ci-dessous
+2. Adapter le code de l'exercice sur l'API BAN, avec l'appui de la documentation, pour géolocaliser ces adresses
+3. En supposant que vos données géolocalisées se nomment `adresses_geocoded`, utiliser le code proposé pour transformer celles-ci en polygone
+4. Calculer le centroid et représenter sur une carte interactive `Folium` comme précédemment
+
+Vous aviez oublié qu'il y avait un couple dans le groupe... Tenir compte de la variable `poids` pour calculer le barycentre et trouver où vous retrouver ce soir.
+
+<details>
+
+<summary>
+Créer le polygone à partir des géolocalisations
+</summary>
+
+```{.python}
+from shapely.geometry import Polygon
+coordinates = list(zip(adresses_geocoded["longitude"], adresses_geocoded["latitude"]))
+polygon = Polygon(coordinates)
+
+polygon = gpd.GeoDataFrame(index=[0], crs="epsg:4326", geometry=[polygon])
+polygon
+```
+
+</details>
+
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-tip}
+## Bonus Exercise 2: Where are we going out tonight?
+
+Finding a common place to meet friends is always a subject of tough negotiations. What if we let geography guide us?
+
+1. Create a `DataFrame` recording a series of addresses and postal codes, like the example below.
+2. Adapt the code from the exercise on the BAN API, using its documentation, to geolocate these addresses.
+3. Assuming your geolocated data is named `adresses_geocoded`, use the proposed code to transform them into a polygon.
+4. Calculate the centroid and display it on an interactive `Folium` map as before.
+
+You forgot there’s a couple in the group... Take into account the `poids` variable to calculate the barycenter and find out where to meet tonight.
+
+<details>
+<summary>
+Create the polygon from the geolocations
+</summary>
+
+```{.python}
+from shapely.geom
+etry import Polygon
+coordinates = list(zip(adresses_geocoded['longitude'], adresses_geocoded['latitude']))
+polygon = Polygon(coordinates)
+
+polygon = gpd.GeoDataFrame(index=[0], crs='epsg:4326', geometry=[polygon])
+polygon
+```
+
+</details>
+
+:::
+
+::::
+
+::: {.content-visible when-profile="fr"}
+Le DataFrame d'exemple:
+:::
+
+::: {.content-visible when-profile="en"}
+The example DataFrame:
+:::
+
+```{python}
+#| echo: true
+adresses_text = pd.DataFrame(
+  {
+    "adresse": [
+        "10 Rue de Rivoli",
+        "15 Boulevard Saint-Michel",
+        "8 Rue Saint-Honoré",
+        "20 Avenue des Champs-Élysées",
+        "Place de la Bastille",
+    ],
+    "cp": ["75004", "75005", "75001", "75008", "75011"],
+    "poids": [2, 1, 1, 1, 1]
+})
+adresses_text
+```
+
+```{python}
+#| label: location-api-send
+import pathlib
+output_path = pathlib.Path("data/output")
+output_path.mkdir(parents=True, exist_ok=True)
+csv_file = output_path / "bpe_before_geoloc.csv"
+
+adresses_text.loc[:, ["adresse", "poids", "cp"]].to_csv(csv_file, index=False)
+
+params = {
+    "columns": ["adresse"],
+    "postcode": "cp",
+    "result_columns": ["result_score", "latitude", "longitude"],
+}
+
+response = requests.post(
+        "https://api-adresse.data.gouv.fr/search/csv/",
+        data=params,
+        files={"data": open(csv_file, "rb")},
+    )
+```
+
+```{python}
+adresses_geocoded = pd.read_csv(io.StringIO(response.text))
+adresses_geocoded
+```
+
+::: {.content-visible when-profile="fr"}
+La géolocalisation obtenue pour cet exemple
+:::
+
+::: {.content-visible when-profile="en"}
+The geolocation obtained for this example
+:::
+
+
+```{python}
+#| label: compute-barycenter
+from shapely.geometry import Polygon
+coordinates = list(zip(adresses_geocoded['longitude'], adresses_geocoded['latitude']))
+polygon = Polygon(coordinates)
+
+polygon = gpd.GeoDataFrame(index=[0], crs='epsg:4326', geometry=[polygon])
+```
+
+```{python}
+#| output: false
+import folium
+
+gdf_points = gpd.GeoDataFrame(
+    adresses_geocoded,
+    geometry=gpd.points_from_xy(adresses_geocoded.longitude, adresses_geocoded.latitude), crs="EPSG:4326"
+)
+
+total_weight = adresses_geocoded['poids'].sum()
+barycenter_x = (adresses_geocoded['longitude'] * adresses_geocoded['poids']).sum() / total_weight
+barycenter_y = (adresses_geocoded['latitude'] * adresses_geocoded['poids']).sum() / total_weight
+
+# Affichage des coordonnées du barycentre
+barycenter = (barycenter_x, barycenter_y)
+barycenter
+
+# Calculate the centroid of the polygon
+polygon_centroid = polygon.centroid
+
+# Initialize a Folium map centered on the centroid
+map_center = [polygon_centroid.y, polygon_centroid.x]
+m = folium.Map(location=map_center, zoom_start=13)
+
+# Add the polygon to the map
+folium.GeoJson(polygon, name="Polygon").add_to(m)
+
+# Add the points to the map
+for _, row in gdf_points.iterrows():
+    folium.Marker(
+        location=[row.geometry.y, row.geometry.x],
+        popup=row['adresse'],
+    ).add_to(m)
+
+# Add the centroid in red
+folium.Marker(
+    location=[barycenter_y, barycenter_x],
+    popup="Barycentre",
+    icon=folium.Icon(color="red")
+).add_to(m)
+
+# Met à jour le centroïde pour qu'il soit vert
+folium.Marker(
+    location=[polygon.centroid.y, polygon.centroid.x],
+    popup="Centroid",
+    icon=folium.Icon(color="green")
+).add_to(m)
+```
+
+::: {.content-visible when-profile="fr"}
+Voici la carte obtenue sur le jeu d'exemple. On sera peut-être plus au centre avec le barycentre qu'avec le centroid.
+:::
+
+::: {.content-visible when-profile="en"}
+Here is the map obtained from the example dataset. We might have a better location with the barycenter than with the centroid.
+:::
+
+```{python}
+m
+```
+
+

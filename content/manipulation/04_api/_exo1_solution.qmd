@@ -1,62 +1,93 @@
-```{python}
-#| include: false
 
-# Question 1
-import json
+
+```{python}
+#| label: exercise1-question1
 import requests
 import pandas as pd
-data_immo = requests.get("http://api.cquest.org/dvf?code_commune=29168").json()
-print(data_immo.keys())
-print(data_immo["nb_resultats"])
-ventes = pd.json_normalize(data_immo["resultats"])
-ventes.head()
+
+ban_root = "https://api-adresse.data.gouv.fr"
+ban_search_endpoint = "search"
+api_ban_q1 = f"{ban_root}/{ban_search_endpoint}?q={adresse.replace(" ", "+")}"
+output_api_ban = requests.get(api_ban_q1).json().get('features')
+
+df_avenue_verdier = pd.DataFrame(
+    [out['properties'] for out in output_api_ban]
+)
 ```
 
-
 ::: {.content-visible when-profile="fr"}
-Le résultat de la question 2 devrait ressembler au `DataFrame` suivant :
+Les deux premières lignes du _dataframe_ obtenu à la question 1 devraient être
 :::
 
 ::: {.content-visible when-profile="en"}
-The result for question 2 should look like the following `DataFrame`:
+The first two rows of the `DataFrame` obtained in question 1 should be
 :::
 
 
 ```{python}
-#| echo: false
-#| eval: false
+df_avenue_verdier.head(2)
+```
 
-# Question 2
-maisons = requests.get("http://api.cquest.org/dvf?code_commune=29168&type_local=Maison").json()
-pd.json_normalize(maisons["resultats"])
+::: {.content-visible when-profile="fr"}
+A la question 2, on ressort cette fois qu'une seule observation, qu'on pourrait retravailler avec `GeoPandas` pour vérifier qu'on a bien placé ce point sur une carte
+:::
+
+::: {.content-visible when-profile="en"}
+For question 2, this time we get back only one observation, which could be further processed with `GeoPandas` to verify that the point has been correctly placed on a map.
+:::
+
+
+```{python}
+api_ban_q2 = f"{ban_root}/{ban_search_endpoint}?q={adresse.replace(" ", "+")}&postcode=92120"
+output_q2 = requests.get(api_ban_q2).json()
 ```
 
 ```{python}
-#| echo: false
-#| eval: false
-
-# Question 3
-#!pip install geopandas
+#| label: exercise1-question2
+import pandas as pd
 import geopandas as gpd
-plgf = gpd.read_file("https://geo.api.gouv.fr/communes/29168?fields=nom,code,codesPostaux,codeDepartement,codeRegion,population&format=geojson&geometry=contour")
-plgf.head()
+
+output_q2 = pd.DataFrame(
+    [output_q2.get("features")[0]['properties']]
+)
+output_q2 = gpd.GeoDataFrame(
+    output_q2,
+    geometry=gpd.points_from_xy(output_q2.x, output_q2.y), crs="EPSG:2154"
+).to_crs(4326)
+output_q2
 ```
 
-
 ::: {.content-visible when-profile="fr"}
-L'histogramme des prix de vente (question 4) aura l'aspect suivant :
+Enfin, à la question 3, on obtient cette carte (plus ou moins la même que précédemment):
 :::
 
 ::: {.content-visible when-profile="en"}
-The sales price histogram (question 4) will look like this:
+Finally, for question 3, we obtain this map (more or less the same as before):
 :::
 
 ```{python}
-#| echo: false
-#| include: false
-#| eval: false
+#| label: exercise1-question3-folium
+import folium
 
-# Question 4
-p = ventes["valeur_fonciere"].plot(kind = "hist")
-p
+# Extraire la longitude et la latitude
+longitude = output_q2.geometry.x.iloc[0]
+latitude = output_q2.geometry.y.iloc[0]
+
+# Créer une carte Folium centrée sur le point
+m = folium.Map(location=[latitude, longitude], zoom_start=16)
+
+# Définir le contenu de la popup
+popup_content = f"""
+<b>{output_q2['name'].iloc[0]}</b> has been found!
+"""
+
+# Ajouter le marqueur
+folium.Marker(
+    location=[latitude, longitude],
+    popup=folium.Popup(popup_content, max_width=300),
+    icon=folium.Icon(color='blue', icon='info-sign')
+).add_to(m)
+
+# Afficher la carte dans le notebook (si utilisé dans un Jupyter Notebook)
+m
 ```

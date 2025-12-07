@@ -1,0 +1,148 @@
+```{python}
+#| echo: true
+siren = "500569405"
+```
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
+## Exercice 4: ajouter un _payload_ à une requête
+
+1. Se créer un compte pour l'API de l'INPI (Institut national de la protection intellectuelle) qui nous servira à récupérer des bilans des comptes sociaux d'entreprises au format PDF.
+2. Créer les variables `username` et `password` avec `getpass` en faisant en sorte de ne pas rentrer les valeurs dans le code.
+3. En utilisant la [documentation de l'API](https://www.inpi.fr/sites/default/files/documentation%20technique%20API_comptes_annuels%20v4_0.pdf), l'argument `json` de `requests.post`, récupérer un jeton d'authentification et le stocker dans une variable `token`.
+4. Récupérer les données en utilisant la _f-string_ `f'https://registre-national-entreprises.inpi.fr/api/companies/{siren}/attachments'` et en donnant à `requests` l'argument `auth=BearerAuth(token)`
+5. Créer `identifier = documents.get('bilans')[0]['id']` et utiliser `requests` avec l'URL `f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download'`, sans argument, pour récupérer un PDF. Cela a-t-il fonctionné ? Vérifier le _status code_. A quoi correspond-il ? Comment éviter cela ?
+6. En supposant que l'objet `requests.get` créé s'appelle `r`, écrire l'output de notre API dans un PDF de la manière suivante:
+
+```{.python}
+binary_file_path = 'decathlon.pdf'
+with open(binary_file_path, 'wb') as f:
+    f.write(r.content)
+```
+
+7. Remplacer l'utilisation de `getpass` par l'approche variable d'environnement grâce à [`dotenv`](https://pypi.org/project/python-dotenv/)
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-tip}
+## Exercise 4: Adding a _payload_ to a request
+
+1. Create an account for the INPI API (National Institute of Intellectual Property), which we will use to retrieve financial statements of companies in PDF format.
+2. Create the `username` and `password` variables using `getpass`, ensuring the values are not hardcoded.
+3. Using the [API documentation](https://www.inpi.fr/sites/default/files/documentation%20technique%20API_comptes_annuels%20v4_0.pdf) and the `json` argument of `requests.post`, retrieve an authentication token and store it in a variable `token`.
+4. Retrieve the data using the _f-string_ `f'https://registre-national-entreprises.inpi.fr/api/companies/{siren}/attachments'` and provide `requests` with the argument `auth=BearerAuth(token)`.
+5. Create `identifier = documents.get('bilans')[0]['id']` and use `requests` with the URL `f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download'`, without arguments, to retrieve a PDF. Did it work? Check the _status code_. What does it mean? How can this be avoided?
+6. Assuming the `requests.get` object created is named `r`, write the API output to a PDF as follows:
+
+```{.python}
+binary_file_path = 'decathlon.pdf'
+with open(binary_file_path, 'wb') as f:
+    f.write(r.content)
+```
+
+7. Replace the use of `getpass` with the environment variable approach using [`dotenv`](https://pypi.org/project/python-dotenv/).
+:::
+
+::::
+
+
+```{python}
+#| output: false
+#| label: load-dotenv
+import os
+from dotenv import load_dotenv
+load_dotenv()
+```
+
+```{python}
+#| label: envvar
+username = os.getenv("API_INPI_USERNAME")
+password = os.getenv("API_INPI_PASSWORD")
+```
+
+```{python}
+#| label: payload
+import requests
+
+url_login_api = "https://registre-national-entreprises.inpi.fr/api/sso/login"
+
+payload = {
+    "username": username,
+    "password": password
+}
+
+response = requests.post(url_login_api, json=payload)
+token = response.json().get('token')
+```
+
+```{python}
+r = requests.get(
+    f'https://registre-national-entreprises.inpi.fr/api/companies/{siren}/attachments',
+    auth=BearerAuth(token)
+)
+documents = r.json()
+```
+
+```{python}
+identifier = documents.get('bilans')[0]['id']
+```
+
+::: {.content-visible when-profile="fr"}
+A la question 5, sans identifiant, on récupère le code erreur 401, qui correspond à _"Unauthorized"_, c'est-à-dire à une requête refusée. Néanmoins, si on ajoute le token comme précédemment, tout se passe bien, on récupère le bilan de Decathlon.
+:::
+
+::: {.content-visible when-profile="en"}
+For question 5, without an identifier, we get the error code 401, which corresponds to _"Unauthorized"_, meaning the request is denied. However, if we add the token as before, everything works fine, and we retrieve Decathlon's financial statement.
+:::
+
+```{python}
+#| output: false
+#| label: request-get-status
+r = requests.get(
+    f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download'
+)
+r.status_code
+```
+
+```{python}
+#| label: request-get-authtoken
+r = requests.get(
+    f'https://registre-national-entreprises.inpi.fr/api/bilans/{identifier}/download',
+    auth=BearerAuth(token)
+)
+```
+
+```{python}
+#| output: false
+binary_file_path = 'decathlon.pdf'
+with open(binary_file_path, 'wb') as f:
+    f.write(r.content)
+```
+
+<details>
+
+::: {.content-visible when-profile="fr"}
+<summary>
+Le PDF récupéré
+</summary>
+:::
+
+::: {.content-visible when-profile="en"}
+<summary>
+The retrieved PDF
+</summary>
+:::
+
+{{< pdf decathlon.pdf height="500px" width="800px">}}
+
+</details>
+
+
+
+
+
+
