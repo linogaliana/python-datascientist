@@ -1,0 +1,342 @@
+::: {.content-visible when-profile="fr"}
+# Scraper avec `Python`: le package `BeautifulSoup`
+
+## Les packages disponibles
+
+Dans la première partie de ce chapitre,
+nous allons essentiellement utiliser le package [`BeautifulSoup4`](https://www.crummy.com/software/BeautifulSoup/bs4/doc/),
+en conjonction avec  [`requests`](https://requests.readthedocs.io/en/latest/). Ce dernier _package_ permet de récupérer le texte
+brut d'une page qui sera ensuite
+inspecté via [`BeautifulSoup4`](https://www.crummy.com/software/BeautifulSoup/bs4/doc/).
+
+`BeautifulSoup` sera suffisant quand vous voudrez travailler sur des pages HTML statiques. Dès que les informations que vous recherchez sont générées via l'exécution de scripts [Javascript](https://fr.wikipedia.org/wiki/JavaScript), il vous faudra passer par des outils comme [Selenium](https://selenium-python.readthedocs.io/).
+
+De même, si vous ne connaissez pas l'URL, il faudra passer par un _framework_ comme [Scrapy](https://scrapy.org/), qui passe facilement d'une page à une autre. On appelle
+cette technique le _"web crawling"_. `Scrapy` est plus complexe à manipuler que `BeautifulSoup` : si vous voulez plus de détails, rendez-vous sur la page du [tutoriel `Scrapy`](https://doc.scrapy.org/en/latest/intro/tutorial.html).
+
+Le *web scraping* est un domaine où la reproductibilité est compliquée à mettre en oeuvre.
+Une page *web* évolue
+potentiellement régulièrement et d'une page web à l'autre, la structure peut
+être très différente ce qui rend certains codes difficilement exportables.
+Par conséquent, la meilleure manière d'avoir un programme fonctionnel est
+de comprendre la structure d'une page web et dissocier les éléments exportables
+à d'autres cas d'usages des requêtes *ad hoc*.
+:::
+
+::: {.content-visible when-profile="en"}
+# Scraping with `Python`: The `BeautifulSoup` Package
+
+## Available Packages
+
+In the first part of this chapter,
+we will primarily use the [`BeautifulSoup4`](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) package,
+in conjunction with [`requests`](https://requests.readthedocs.io/en/latest/). The latter package allow you to retrieve the raw text
+of a page, which will then be inspected via [`BeautifulSoup4`](https://www.crummy.com/software/BeautifulSoup/bs4/doc/).
+
+`BeautifulSoup` will suffice when you want to work on static HTML pages. As soon as the information you are looking for is generated via the execution of [JavaScript](https://en.wikipedia.org/wiki/JavaScript) scripts, you will need to use tools like [Selenium](https://selenium-python.readthedocs.io/).
+
+Similarly, if you don't know the URL, you'll need to use a framework like [Scrapy](https://scrapy.org/), which easily navigates from one page to another. This technique is called _"web crawling"_. `Scrapy` is more complex to handle than `BeautifulSoup`: if you want more details, visit the [Scrapy tutorial page](https://doc.scrapy.org/en/latest/intro/tutorial.html).
+
+*Web scraping* is an area where reproducibility is difficult to implement.
+A *web* page may evolve
+regularly, and from one web page to another, the structure can be very different, making some code difficult to export.
+Therefore, the best way to have a functional program is
+to understand the structure of a web page and distinguish the elements that can be exported
+to other use cases from *ad hoc* requests.
+:::
+
+
+```{python}
+#| echo: true
+#| output: false
+!pip install lxml
+!pip install bs4
+```
+
+::: {.content-visible when-profile="fr"}
+::: {.callout-note}
+Pour être en mesure d'utiliser `Selenium`, il est nécessaire
+de faire communiquer `Python` avec un navigateur _web_ (Firefox ou Chromium).
+Le _package_ `webdriver-manager` permet de faire savoir à `Python` où
+se trouve ce navigateur s'il est déjà installé dans un chemin standard.
+Pour l'installer, le code de la cellule ci-dessous peut être utilisé.
+:::
+
+Pour faire fonctionner `Selenium`, il faut utiliser un package
+nommé `webdriver-manager`. On va donc l'installer, ainsi que `selenium` :
+:::
+
+::: {.content-visible when-profile="en"}
+::: {.callout-note}
+To be able to use `Selenium`, it is necessary
+to make `Python` communicate with a web browser (Firefox or Chromium).
+The `webdriver-manager` package allows `Python` to know where
+this browser is located if it is already installed in a standard path.
+To install it, the code in the cell below can be used.
+:::
+
+To run `Selenium`, you need to use a package
+called `webdriver-manager`. So, we'll install it, along with `selenium`:
+:::
+
+```{python}
+#| echo: true
+#| output: false
+!pip install selenium
+!pip install webdriver-manager
+```
+
+
+
+::: {.content-visible when-profile="fr"}
+## Récupérer le contenu d'une page HTML
+
+On va commencer doucement. Prenons une page _wikipedia_,
+par exemple celle de la Ligue 1 de football, millésime 2019-2020 : [Championnat de France de football 2019-2020](https://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020). On va souhaiter récupérer la liste des équipes, ainsi que les url des pages Wikipedia de ces équipes.
+
+Etape 1️⃣ : se connecter à la page wikipedia et obtenir le code source.
+Pour cela, le plus simple est d'utiliser le package `requests`. Celui-ci permet, au niveau de `Python` de faire la requête HTTP adéquate pour avoir le contenu d'une page à partir de son URL:
+:::
+
+::: {.content-visible when-profile="en"}
+## Retrieve the Content of an HTML Page
+
+Let's start slowly. Let's take a Wikipedia page,
+for example, the one for the 2019-2020 Ligue 1 football season: [2019-2020 Championnat de France de football](https://en.wikipedia.org/wiki/2019%E2%80%9320_Ligue_1). We will want to retrieve the list of teams, as well as the URLs of the Wikipedia pages for these teams.
+
+Step 1️⃣: Connect to the Wikipedia page and obtain the source code.
+For this, the simplest way is to use the `requests` package.
+This allows `Python` to make the appropriate HTTP request to obtain the content of a page from its URL:
+:::
+
+```{python}
+import requests
+import bs4
+import pandas as pd
+```
+
+```{python}
+#| echo: true
+import requests
+url_ligue_1 = "https://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020"
+
+request_text = requests.get(
+    url_ligue_1,
+    headers={"User-Agent": "Python for data science tutorial"}
+).content
+```
+
+```{python}
+#| echo: true
+request_text[:150]
+```
+
+
+:::: {.content-visible when-profile="fr"}
+::: {.callout-warning}
+Pour limiter le volume de _bot_ récupérant les informations depuis Wikipedia (très utilisé par exemple par les LLM), il faut dorénavant indiquer un _user agent_ par le biais de `request`. C'est d'ailleurs une bonne pratique qui permet aux sites de connaître les consommateurs de ses ressources.
+:::
+::::
+
+:::: {.content-visible when-profile="en"}
+::: {.callout-warning}
+To limit the volume of _bot_ retrieving information from Wikipedia (much used by LLMs, for example), you should now specify a _user agent_ via `request`. This is a good practice, enabling sites to know who is using their resources.
+:::
+::::
+
+
+::: {.content-visible when-profile="fr"}
+Etape 2️⃣ : rechercher, dans ce code source foisonnant, les balises qui permettent d'extraire l'information qui nous intéresse. C'est l'intérêt principal du package `BeautifulSoup` que d'offrir des méthodes simples d'usage pour chercher, dans des textes pourtant complexes, des chaines de caractères à partir de balises HTML ou XML.
+:::
+
+::: {.content-visible when-profile="en"}
+Step 2️⃣: search this abundant source code for the tags that will extract the information we're interested in. The main interest of the `BeautifulSoup` package is to offer easy-to-use methods for searching complex texts for strings of characters from HTML or XML tags.
+:::
+
+
+```{python}
+#| echo: true
+#| eval: false
+import bs4
+page = bs4.BeautifulSoup(request_text, "lxml")
+```
+
+```{python}
+#| echo: false
+import bs4
+import time
+
+# More complex process behind the stage to
+# retry if failure in GHA (timeout...)
+def parse_html(request_text, max_retries=3, delay=2):
+    for attempt in range(1, max_retries + 1):
+        try:
+            page = bs4.BeautifulSoup(request_text, "lxml")
+            return page  # success
+        except Exception as e:
+            if attempt < max_retries:
+                time.sleep(delay)  # wait a few seconds before trying again
+            else:
+                raise  # if #try > max_retries, raise error
+
+page = parse_html(request_text)
+```
+
+::: {.content-visible when-profile="fr"}
+Si on _print_ l'objet `page` créée avec `BeautifulSoup`,
+on voit que ce n'est plus une chaine de caractères mais bien une page HTML avec des balises.
+On peut à présent chercher des élements à l'intérieur de ces balises.
+:::
+
+::: {.content-visible when-profile="en"}
+If we _print_ the `page` object created with `BeautifulSoup`,
+we see that it is no longer a string but an actual HTML page with tags.
+We can now search for elements within these tags.
+:::
+
+::: {.content-visible when-profile="fr"}
+## La méthode `find`
+
+Comme première illustration de la puissance de `BeautifulSoup`, on veut connaître le titre de la page. Pour cela, on utilise la méthode `.find` et on lui demande *"title"*
+
+```{python}
+#| echo: true
+print(page.find("title"))
+```
+
+La méthode `.find` ne renvoie que la première occurrence de l'élément.
+
+Pour vous en assurer, vous pouvez :
+
+- copier le bout de code source obtenu lorsque vous cherchez une `table`,
+- le coller dans une cellule de votre notebook,
+- et passer la cellule en _"Markdown"_.
+
+Si on reprend le code précédent et remplace `title` par `table`, cela nous donne
+
+```{python}
+#| echo: true
+#| output: false
+print(page.find("table"))
+```
+
+::: {.content-visible when-format="html"}
+<details>
+
+<summary>
+Voir le résultat
+</summary>
+
+```{python}
+#| echo: true
+#| output: false
+#| eval: false
+print(page.find("table"))
+```
+
+</details>
+:::
+
+ce qui est le texte source permettant de générer le tableau suivant :
+:::
+
+::: {.content-visible when-profile="en"}
+## The `find` method
+
+As a first illustration of the power of `BeautifulSoup`, we want to know the title of the page. To do this, we use the `.find` method and ask it *"title ”*.
+
+```{python}
+#| echo: true
+print(page.find("title"))
+```
+
+The `.find` method only returns the first occurrence of the element.
+
+To verify this, you can:
+
+- copy the snippet of source code obtained when you search for a `table`,
+- paste it into a cell in your notebook,
+- and switch the cell to _"Markdown"_.
+
+If we take the previous code and replace `title` with `table`, we get
+
+```{python}
+#| echo: true
+#| output: false
+print(page.find("table"))
+```
+
+::: {.content-visible when-format="html"}
+<details>
+
+<summary>
+Voir le résultat
+</summary>
+
+```{python}
+#| echo: true
+#| output: false
+#| eval: false
+print(page.find("table"))
+```
+
+</details>
+:::
+
+which is the source text that generates the following table:
+:::
+
+::: {.cell .markdown}
+```{python}
+#| echo: false
+#| output: asis
+print(page.find("table"))
+```
+:::
+
+::: {.content-visible when-profile="fr"}
+## La méthode `find_all`
+
+Pour trouver toutes les occurrences, on utilise `.find_all()`.
+:::
+
+::: {.content-visible when-profile="en"}
+## The `find_all` Method
+
+To find all occurrences, use `.find_all()`.
+:::
+
+```{python}
+#| echo: true
+print("Il y a", len(page.find_all("table")), "éléments dans la page qui sont des <table>")
+```
+
+::: {.content-visible when-profile="fr"}
+:::: {.callout-tip}
+`Python` n'est pas le seul langage qui permet de récupérer des éléments issus d'une page web. C'est l'un des objectifs principaux de `Javascript`, qui est accessible par le biais de n'importe quel navigateur web.
+
+Par exemple, pour faire le parallèle avec `page.find('title')` que nous avons utilisé au niveau de `Python`, vous pouvez ouvrir la page [précédemment mentionnée](https://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020) avec votre navigateur. Après avoir ouvert les outils de développement du navigateur (<kbd>CTRL</kbd>+<kbd>MAJ</kbd>+<kbd>K</kbd> sur `Firefox`), vous pouvez taper dans la console `document.querySelector("title")` qui vous permettra d'obtenir le contenu du noeud HTML recherché:
+
+![](./04_webscraping/console_log.png)
+
+Si vous êtes amenés à utiliser `Selenium` pour faire du _web scraping_, vous retrouverez, en fait, ces verbes `Javascript` dans n'importe quelle méthode que vous allez utiliser.
+
+La compréhension de la structure d'une page et de l'interaction de celle-ci avec le navigateur est extrêmement utile lorsqu'on fait du _scraping_, y compris lorsque le site est purement statique, c'est-à-dire qu'il ne comporte pas d'éléments réagissant à une action d'un navigateur web.
+
+::::
+:::
+
+::: {.content-visible when-profile="en"}
+:::: {.callout-tip}
+`Python` is not the only language that allows you to retrieve elements from a web page. This is one of the main objectives of `Javascript`, which is accessible through any web browser.
+
+For example, to draw a parallel with `page.find('title')` that we used in `Python`, you can open the [previously mentioned page](https://fr.wikipedia.org/wiki/Championnat_de_France_de_football_2019-2020) with your browser. After opening the browser's developer tools (<kbd>CTRL</kbd>+<kbd>SHIFT</kbd>+<kbd>K</kbd> on `Firefox`), you can type `document.querySelector("title")` in the console to get the content of the HTML node you are looking for:
+
+![](./04_webscraping/console_log.png)
+
+If you use `Selenium` for web scraping, you will actually encounter these `Javascript` verbs in any method you use.
+
+Understanding the structure of a page and its interaction with the browser is extremely useful when doing _scraping_, even when the site is purely static, meaning it does not have elements reacting to user actions on the web browser.
+
+::::
+:::

@@ -1,0 +1,409 @@
+
+
+# `Selenium` : mimer le comportement d'un utilisateur internet
+
+
+::: {.content-visible when-profile="fr"}
+Jusqu'à présent,
+nous avons raisonné comme si nous connaissions toujours l'URL qui nous intéresse.
+De plus, les pages que nous visitons sont __"statiques"__,
+elles ne dépendent pas d'une action ou d'une recherche de l'internaute.
+
+Nous allons voir à présent comment nous en sortir pour remplir
+des champs sur un site _web_ et récupérer ce qui nous intéresse.
+La réaction d'un site _web_ à l'action d'un utilisateur passe régulièrement par
+l'usage de `JavaScript` dans le monde du développement _web_.
+Le _package_ [Selenium](https://pypi.python.org/pypi/selenium) permet
+de reproduire, depuis un code automatisé, le comportement
+manuel d'un utilisateur. Il permet ainsi
+d'obtenir des informations du site qui ne sont pas dans le
+code `HTML` mais qui apparaissent uniquement à la suite de
+l'exécution de script `JavaScript` en arrière-plan.
+
+`Selenium` se comporte comme un utilisateur _lambda_ sur internet :
+il clique sur des liens, il remplit des formulaires, etc.
+:::
+
+::: {.content-visible when-profile="en"}
+Until now,
+we have assumed that we always know the URL we are interested in.
+Additionally, the pages we visit are __"static"__,
+they do not depend on any action or search by the user.
+
+We will now see how to fill in fields on a website and retrieve the information we are interested in.
+The reaction of a website to a user's action often involves the use of `JavaScript` in the world of web development.
+The [Selenium](https://pypi.python.org/pypi/selenium) package allows
+you to automate the behavior of a manual user from within your code.
+It enables you to obtain information from a site that is not in the
+`HTML` code but only appears after
+the execution of `JavaScript` scripts in the background.
+
+`Selenium` behaves like a regular internet user:
+it clicks on links, fills out forms, etc.
+:::
+
+::: {.content-visible when-profile="fr"}
+## Premier exemple en scrapant un moteur de recherche
+
+Dans cet exemple, nous allons essayer d'aller sur le
+site de [Bing Actualités](https://www.bing.com/news)
+et entrer dans la barre de recherche un sujet donné.
+Pour tester, nous allons faire une recherche avec le mot-clé __"Trump"__.
+
+L'installation de `Selenium` nécessite d'avoir `Chromium` qui est un
+navigateur Google Chrome minimaliste.
+La version de [chromedriver](https://sites.google.com/a/chromium.org/chromedriver/)
+doit être `>= 2.36` et dépend de la version de `Chrome` que vous avez sur votre environnement
+de travail. Pour installer cette version minimaliste de `Chrome` sur un environnement
+`Linux`, vous pouvez vous référer à l'encadré dédié.
+:::
+
+::: {.content-visible when-profile="en"}
+## First Example: Scraping a Search Engine
+
+In this example, we will try to go to the
+[Bing News](https://www.bing.com/news) site
+and enter a given topic in the search bar.
+To test, we will search with the keyword __"Trump"__.
+
+Installing `Selenium` requires `Chromium`, which is a
+minimalist version of the Google Chrome browser.
+The version of [chromedriver](https://sites.google.com/a/chromium.org/chromedriver/)
+must be `>= 2.36` and depends on the version of `Chrome` you have on your working environment.
+To install this minimalist version of `Chrome` on a
+`Linux` environment, you can refer to the dedicated section.
+:::
+
+
+::: {.callout-important}
+## Installation de `Selenium`
+
+::: {.content-visible when-profile="fr"}
+Sur `Colab`, vous pouvez utiliser les commandes suivantes :
+:::
+
+::: {.content-visible when-profile="en"}
+On `Colab`, you can use the following commands:
+:::
+
+```{python}
+#| eval: false
+#| echo: true
+!sudo apt-get update
+!sudo apt install -y unzip xvfb libxi6 libgconf-2-4 -y
+!sudo apt install chromium-chromedriver -y
+!cp /usr/lib/chromium-browser/chromedriver /usr/bin
+```
+
+<br>
+
+::: {.content-visible when-profile="fr"}
+Si vous êtes sur le `SSP Cloud`, vous pouvez
+exécuter les commandes suivantes :
+:::
+
+::: {.content-visible when-profile="en"}
+If you are on the `SSP Cloud`, you can
+run the following commands:
+:::
+
+```{python}
+#| echo: true
+#| output: false
+!wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O /tmp/chrome.deb
+!sudo apt-get update
+!sudo -E apt-get install -y /tmp/chrome.deb
+!pip install chromedriver-autoinstaller selenium
+
+import chromedriver_autoinstaller
+path_to_web_driver = chromedriver_autoinstaller.install()
+```
+
+<br>
+
+::: {.content-visible when-profile="fr"}
+Vous pouvez ensuite installer `Selenium`.
+Par exemple, depuis une
+cellule de `Notebook` :
+:::
+
+::: {.content-visible when-profile="en"}
+You can then install `Selenium`.
+For example, from a
+`Notebook` cell:
+:::
+
+```{python}
+#| output: false
+!pip install selenium
+```
+
+:::
+
+::: {.content-visible when-profile="fr"}
+En premier lieu, il convient d'initialiser le comportement
+de `Selenium` en répliquant les paramètres
+du navigateur. Pour cela, on va d'abord initialiser
+notre navigateur avec quelques options :
+:::
+
+::: {.content-visible when-profile="en"}
+First, you need to initialize the behavior
+of `Selenium` by replicating the browser settings. To do this, we will first initialize our browser with a few options:
+:::
+
+```{python}
+#| output: false
+#| echo: true
+import time
+
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument('--headless')
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
+#chrome_options.add_argument('--verbose')
+```
+
+::: {.content-visible when-profile="fr"}
+Puis on lance le navigateur :
+:::
+
+::: {.content-visible when-profile="en"}
+Then we launch the browser:
+:::
+
+```{python}
+#| echo: true
+#| output: false
+from selenium.webdriver.chrome.service import Service
+service = Service(executable_path=path_to_web_driver)
+
+browser = webdriver.Chrome(
+    service=service,
+    options=chrome_options
+)
+```
+
+::: {.content-visible when-profile="fr"}
+On va sur le site de `Bing Actualités`,
+et on lui indique le mot-clé que nous souhaitons chercher.
+En l'occurrence, on s'intéresse aux actualités de Donald Trump.
+Après avoir inspecté la page depuis les outils de développement du navigateur,
+on voit que la barre de recherche est un élément du code appelé `q` (comme _query_).
+On va ainsi demander à `selenium` de chercher cet élément:
+:::
+
+::: {.content-visible when-profile="en"}
+We go to the `Bing News` site,
+and we specify the keyword we want to search for.
+In this case, we're interested in news about Donald Trump.
+After inspecting the page using the browser's developer tools,
+we see that the search bar is an element in the code called `q` (as in _query_).
+So we'll ask `selenium` to search for this element:
+:::
+
+```{python}
+#| echo: true
+#| eval: false
+browser.get('https://www.bing.com/news')
+```
+
+```{python}
+#| echo: false
+
+# try-error because GHA sometimes fails (timeout...)
+url = "https://www.bing.com/news"
+
+def safe_get(browser, url, max_retries=3, delay=2):
+    for attempt in range(1, max_retries + 1):
+        try:
+            browser.get(url)
+            return  # succès, on sort de la fonction
+        except WebDriverException as e:
+            if attempt < max_retries:
+                time.sleep(delay)
+            else:
+                raise  # après le dernier essai, on relance l’erreur
+
+# Utilisation
+safe_get(browser, url)
+```
+
+```{python}
+#| echo: true
+#| output: false
+
+search = browser.find_element("name", "q")
+print(search)
+print([search.text, search.tag_name, search.id])
+
+# on envoie à cet endroit le mot qu'on aurait tapé dans la barre de recherche
+search.send_keys("Trump")
+
+search_button = browser.find_element("xpath", "//input[@id='sb_form_go']")
+search_button.click()
+```
+
+::: {.content-visible when-profile="fr"}
+`Selenium` permet de capturer l'image qu'on verrait dans le navigateur
+avec `get_screenshot_as_png`. Cela peut être utile pour vérifier qu'on
+a fait la bonne action :
+:::
+
+::: {.content-visible when-profile="en"}
+`Selenium` allows you to capture the image you would see in the browser
+with `get_screenshot_as_png`. This can be useful to check if you
+have performed the correct action:
+:::
+
+```{python}
+#| eval: false
+png = browser.get_screenshot_as_png()
+```
+
+```{python}
+#| output: false
+#| echo: false
+import time
+from selenium.common.exceptions import WebDriverException
+
+def get_screenshot_retry(browser, max_retries=3, delay=2):
+    for attempt in range(1, max_retries + 1):
+        try:
+            png = browser.get_screenshot_as_png()
+            return png   # succès → on sort
+        except WebDriverException as e:
+            print(f"Échec {attempt}/{max_retries} : {e}")
+            if attempt < max_retries:
+                time.sleep(delay)
+            else:
+                raise  # après le dernier essai, on relance l’erreur
+
+# Utilisation
+png = get_screenshot_retry(browser)
+```
+
+
+```{python}
+from IPython.display import Image
+Image(png, width='500')
+```
+
+::: {.content-visible when-profile="fr"}
+Enfin, on peut extraire les résultats. Plusieurs
+méthodes sont disponibles. La méthode la plus
+pratique, lorsqu'elle est disponible,
+est d'utiliser le `XPath` qui est un chemin
+non ambigu pour accéder à un élément. En effet,
+plusieurs éléments peuvent partager la même classe ou
+le même attribut, ce qui peut faire qu'une recherche
+de ce type renvoie plusieurs échos.
+Pour déterminer le `XPath` d'un objet, les outils
+de développeur de votre site _web_ sont pratiques.
+Par exemple, sous `Firefox`, une fois que vous
+avez trouvé un élément dans l'inspecteur, vous
+pouvez faire `click droit > Copier > XPath`.
+:::
+
+::: {.content-visible when-profile="en"}
+Finally, we can extract the results. Several
+methods are available. The most
+convenient method, when available,
+is to use `XPath`, which is an unambiguous path
+to access an element. Indeed,
+multiple elements can share the same class or
+the same attribute, which can cause such a search
+to return multiple matches.
+To determine the `XPath` of an object, the developer tools
+of your web browser are handy.
+For example, in `Firefox`, once you
+have found an element in the inspector, you
+can right-click > Copy > XPath.
+:::
+
+```{python}
+from selenium.common.exceptions import StaleElementReferenceException
+links = browser.find_elements("xpath", "//div/a[@class='title'][@href]")
+
+results = []
+for link in links:
+    try:
+        url = link.get_attribute('href')
+    except StaleElementReferenceException as e:
+        print("Issue with '{0}' and '{1}'".format(url, link))
+        print("It might be due to slow javascript which produces the HTML page.")
+    results.append(url)
+```
+
+::: {.content-visible when-profile="fr"}
+Enfin, pour mettre fin à notre session, on demande à `Python` de quitter le navigateur:
+:::
+
+::: {.content-visible when-profile="en"}
+Finally, to end our session, we ask `Python` to close the browser:
+:::
+
+```{python}
+#| echo: true
+#| output: false
+browser.quit()
+```
+
+::: {.content-visible when-profile="fr"}
+On a obtenu les résultats suivants :
+:::
+
+::: {.content-visible when-profile="en"}
+We get the following results:
+:::
+
+
+```{python}
+#| code-overflow: wrap
+print(results)
+```
+
+::: {.content-visible when-profile="fr"}
+Les autres méthodes utiles de `Selenium`:
+
+| Méthode | Résultat |
+|-------------------------------|--------------|
+| `find_element(****).click()` | Une fois qu'on a trouvé un élément réactif, notamment un bouton, on peut cliquer dessus pour activer une nouvelle page |
+| `find_element(****).send_keys("toto")` | Une fois qu'on a trouvé un élément, notamment un champ où s'authentifier, on peut envoyer une valeur, ici _"toto"_.
+:::
+
+::: {.content-visible when-profile="en"}
+Other useful `Selenium` methods:
+
+| Method | Result |
+|-------------------------------|--------------|
+| `find_element(****).click()` | Once you have found a reactive element, such as a button, you can click on it to navigate to a new page |
+| `find_element(****).send_keys("toto")` | Once you have found an element, such as a field to enter credentials, you can send a value, in this case _"toto"_.
+:::
+
+
+
+::: {.content-visible when-profile="fr"}
+## Exercice supplémentaire
+
+Pour découvrir une autre application possible du _web scraping_, vous pouvez également vous lancer dans le sujet 5 de l'édition 2023 d'un hackathon non compétitif organisé par l'Insee :
+
+- Sur [`Github`](https://github.com/InseeFrLab/funathon2023_sujet5)
+- Sur le [`SSPCloud`](https://www.sspcloud.fr/formation?search=funat&path=%5B%22Funathon%202023%22%5D)
+
+Le contenu de la section NLP du cours pourra vous être utile pour la seconde partie du sujet !
+:::
+
+::: {.content-visible when-profile="en"}
+## Additional Exercise
+
+To explore another application of web scraping, you can also tackle topic 5 of the 2023 edition of a non-competitive hackathon organized by Insee:
+
+- On [`Github`](https://github.com/InseeFrLab/funathon2023_sujet5)
+- On [`SSPCloud`](https://www.sspcloud.fr/formation?search=funat&path=%5B%22Funathon%202023%22%5D)
+
+The NLP section of the course may be useful for the second part of the topic!
+:::
