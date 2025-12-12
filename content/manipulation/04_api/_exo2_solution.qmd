@@ -23,23 +23,20 @@ school_q1_exo2.head(2)
 ```
 
 ::: {.content-visible when-profile="fr"}
-Néanmoins, on a deux problèmes : le nombre de lignes et le département d'intérêt. Essayons déjà avec la question 2 de changer ce dernier.
+Néanmoins, on a deux problèmes : il n'y a que 10 observations et elles couvrent toute la France et pas juste notre département d'intérêt. Essayons déjà avec la question 2 de changer ce dernier.
 :::
 
 ::: {.content-visible when-profile="en"}
-However, there are two issues: the number of rows and the department of interest. Let’s first address the latter with question 2.
+However, there are two issues: there are only 10 rows and the datasets covers the whole French territory when we want to restrict to our  department of interest. Let’s first address the latter with question 2.
 :::
 
 ```{python}
 #| label: exercise2-api-education-q2
 url_31_limite10 = "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=code_departement%20like%20%22031%22"
 
-school_q2_exo2 = pd.DataFrame(
-  requests
-  .get(url_31_limite10)
-  .json()
-  .get("results")
-)
+response_json = requests.get(url_31_limite10).json()
+
+school_q2_exo2 = pd.DataFrame(response_json.get("results"))
 school_q2_exo2.head()
 ```
 
@@ -61,80 +58,56 @@ requests.get(url_31_limite200).content
 
 
 ::: {.content-visible when-profile="fr"}
-Essayons avec des données plus exhaustives : le fichier brut sur `data.gouv`. Comme on peut le voir dans les métadonnées, on sait qu'on a plus de 1000 écoles dont on peut récupérer des données, mais qu'on en a ici extrait seulement 20. Le champ `next` nous donne directement l'URL à utiliser pour récupérer les 20 pages suivantes : c'est grâce à lui qu'on a une chance de récupérer toutes nos données d'intérêt.
+En regardant les métadonnées de la réponse envoyée par l'API, on voit qu'il existe une variable `total_count` qui permet de donner la taille totale du dataset (1269 lignes en l'occurence).  Pour extraire toutes les données, on va utiliser la variable `offset`, qui permet de décaler la réponse envoyée par l'API et de récupérer à partir de la n^ième^ ligne. Comme le code d'automatisation est assez fastidieux à écrire, le voici :
 :::
 
 ::: {.content-visible when-profile="en"}
-Let’s try using more comprehensive data: the raw file on `data.gouv`. As seen in the metadata, we know there are over 1,000 schools for which data can be retrieved, but only 20 have been extracted here. The `next` field directly provides the URL to fetch the next 20 pages: this is how we can ensure we retrieve all our data of interest.
-:::
-
-
-```{python}
-#| label: exercise2-api-datagouv
-url_api_datagouv = "https://tabular-api.data.gouv.fr/api/resources/b22f04bf-64a8-495d-b8bb-d84dbc4c7983/data/?Code_departement__exact=031"
-
-call_api_datagouv = requests.get(url_api_datagouv).json()
-```
-
-::: {.content-visible when-profile="fr"}
-La partie intéressante pour automatiser la récupération de nos données est la clé `links` du JSON :
-:::
-
-::: {.content-visible when-profile="en"}
-The key part for automating the retrieval of our data is the `links` key in the JSON:
-:::
-
-```{python}
-call_api_datagouv.get('links')
-```
-
-::: {.content-visible when-profile="fr"}
-En bouclant sur celui-ci pour parcourir la liste des URL accessibles, on peut récupérer des données. Comme le code d'automatisation est assez fastidieux à écrire, le voici :
-:::
-
-::: {.content-visible when-profile="en"}
-By looping over it to traverse the list of accessible URLs, we can retrieve the data. Since the automation code is rather tedious to write, here it is:
+By looking at the data metadata, we notice that a variable `total_count` gives us the dataset size (1269 rows in our case). We will use the `offset` field to get data from the n^th^ row and download the whole dataset. Since the automation code is rather tedious to write, here it is:
 :::
 
 ```{python}
 #| echo: true
 #| output: false
-#| label: exercise2-api-tabular
+#| label: exercise2-fetch-all
 import requests
 import pandas as pd
 
 # Initialize the initial API URL
-url_api_datagouv = "https://tabular-api.data.gouv.fr/api/resources/b22f04bf-64a8-495d-b8bb-d84dbc4c7983/data/?Code_departement__exact=031&page_size=50"
+dep = '031'
+offset = 0
+limit = 100
+url_api_datagouv = f'https://data.education.gouv.fr/api/v2/catalog/datasets/fr-en-annuaire-education/records?where=code_departement=\'{dep}\'&limit={limit}&offset={offset}'
 
-# Initialize an empty list to store all data entries
-all_data = []
+# First request to get total obs and first df
+response = requests.get(url_api_datagouv)
+nb_obs = response.json()['total_count']
+schools_dep31 = pd.json_normalize(response.json()['records'])
 
-# Initialize the URL for pagination
-current_url = url_api_datagouv
-
-# Loop until there is no next page
-while current_url:
+# Loop on the nb of obs
+while nb_obs > len(schools_dep31):
     try:
-        # Make a GET request to the current URL
-        response = requests.get(current_url)
-        response.raise_for_status()  # Raise an exception for HTTP errors
+        # Increase offset for first reply sent and update API url
+        offset += limit
+        url_api_datagouv = f'https://data.education.gouv.fr/api/v2/catalog/datasets/fr-en-annuaire-education/records?where=code_departement=\'{dep}\'&limit={limit}&offset={offset}'
 
-        # Parse the JSON response
-        json_response = response.json()
+        # Call API
+        print(f'fetching from {offset}th row')
+        response = requests.get(url_api_datagouv)
 
-        # Extract data and append to the all_data list
-        page_data = json_response.get('data', [])
-        all_data.extend(page_data)
-        print(f"Fetched {len(page_data)} records from {current_url}")
-
-        # Get the next page URL
-        links = json_response.get('links', {})
-        current_url = links.get('next')  # This will be None if there's no next page
+        # Concatenate the data from this call to previous data
+        page_data = pd.json_normalize(response.json()['records'])
+        schools_dep31 = pd.concat([schools_dep31, page_data], ignore_index=True)
+        print(f'length of data is now {len(schools_dep31)}')
 
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
         break
 
+# Filter columns to keep only those starting with 'record.fields'
+schools_dep31 = schools_dep31.filter(regex='^record\\.fields\\..*')
+
+# Rename columns by removing 'record.fields.' at the beginning
+schools_dep31 = schools_dep31.rename(columns=lambda x: x.replace('record.fields.', ''))
 ```
 
 ::: {.content-visible when-profile="fr"}
@@ -148,7 +121,6 @@ The resulting _DataFrame_ is as follows:
 
 ```{python}
 #| echo: true
-schools_dep31 = pd.DataFrame(all_data)
 schools_dep31.head()
 ```
 
@@ -167,7 +139,7 @@ We can merge this new data with our previous dataset to enrich it. For reliable 
 bpe_enriched = bpe.merge(
   schools_dep31,
   left_on = "SIRET",
-  right_on = "SIREN_SIRET"
+  right_on = "siren_siret"
 )
 bpe_enriched.head(2)
 ```
