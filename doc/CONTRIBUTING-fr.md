@@ -50,7 +50,7 @@ Le contenu bilingue est géré par le biais des [_profiles_](https://quarto.org/
 Le dépôt est structuré sous la forme d'un projet `Quarto`. Le comportement de celui-ci est contrôlé par les fichiers `_quarto*.yml` à la racine. A l'heure actuelle, il y a 4 fichiers de ce type qui peuvent être regroupés en deux catégories :
 
 * `_quarto.yml` et `_quarto-prod.yml` sont les fichiers qui définissent le comportement global de `Quarto`.
-    + Le premier est utile pour les tests lors de la phase de développement car il ne fait pas tourner tous les chapitres, seulement ceux définis dans celui-ci. C'est celui-ci que vous modifierez si vous désirez tester des modifications substantielles d'un chapitre. 
+    + `_quarto.yml` est utile pour les tests lors de la phase de développement car il ne fait pas tourner tous les chapitres, seulement ceux définis dans celui-ci. **C'est celui-ci que vous modifierez** si vous désirez tester des modifications substantielles d'un chapitre. 
     + Le second sert lors de la construction du site dans son ensemble lors de la phase d'intégration continue (cf. ci-dessous). Sauf modification volontaire du comportement du site web, il ne doit pas être modifié. 
 * `_quarto-fr.yml` et `_quarto-en.yml` gèrent le paramétrage des versions françaises et anglaises, en complément du paramétrage global expliqué précédemment. Par défaut, la version française est construite exclusivement. Le script `build/preview_all.sh` sur lequel nous reviendrons illustrera comment _build_ une version multilingue du site web. 
 
@@ -64,7 +64,7 @@ Les principaux dossiers 📁 du dépôt sont :
 ## Prévisualisation du site web
 
 > [!TIP]
-> La prévisualisation nécessite un environnement d'exécution `Quarto` avec `Python`. Les agents publics, étudiants et chercheurs peuvent bénéficier d'un tel environnement gratuitement grâce à l'infrastructure [`SSPCloud`](https://datalab.sspcloud.fr/?lang=fr) développée par l'Insee. Celle-ci sera bien plus malléable et puissante que Google Colab. Si vous n'entrez pas dans ces catégories d'utilisateurs, il est recommandé d'installer [`Quarto`](https://quarto.org/docs/get-started/).
+> La prévisualisation nécessite un environnement d'exécution `Quarto` avec `Python`. Les agents publics, étudiants et chercheurs peuvent bénéficier d'un tel environnement gratuitement grâce à l'infrastructure [`SSPCloud`](https://datalab.sspcloud.fr/?lang=fr) développée par l'Insee. Celle-ci sera bien plus malléable et puissante que Google Colab. Si vous n'entrez pas dans ces catégories d'utilisateurs, il est recommandé d'installer [`Quarto`](https://quarto.org/docs/get-started/) sur votre environnement de prédilection.
 
 
 ### Environnement de développement prêt à l'emploi pour les utilisateurs du `SSPCloud`
@@ -93,8 +93,11 @@ Ce cours essaie d'être à la page des versions actuelles de `Python` et des lib
 Pour installer l'ensemble des dépendances utiles pour construire le site web, vous pouvez faire
 
 ```python
-pip install -r requirements.txt
+./build/requirements.sh
+uv sync
 ```
+
+Si vous avez utilisé `./build/preview_all.sh`, cette étape est directe.
 
 Il y aura certainement beaucoup plus de _packages_ que ceux utiles au développement d'un ou deux chapitres mais au moins vous serez tranquilles. 
 
@@ -175,11 +178,9 @@ Imaginons que vous ayez fait des modifications sur un fichier et que vous désir
 - [ ] Lancer le script `/build/preview_all.sh` en ligne de commande, celui-ci comporte les lignes suivantes :
 
 ```python
-pip install -r requirements.txt
-quarto render --profile fr --to html
-quarto render --profile en --to html
-cd _site/
-python3 -m http.server -b 0.0.0.0 5000
+./build/requirements.sh
+uv sync
+uv run quarto preview --port 5000 --host 0.0.0.0
 ```
 
 qui permettent:
@@ -195,10 +196,15 @@ _Accéder au contenu prévisualisé pour les utilisateurs du SSPCloud_:
 
 ### Vérifier que le notebook fonctionne
 
-- [ ] Lancer le script `/build/preview_notebook.sh` en ligne de commande avec en argument le nom de votre fichier. Par exemple,
+Le produit principal du cours est le site web https://pythonds.linogaliana.fr dont la reproduction en local pour _preview_ a été expliquée précédemment. Mais ce n'est pas le seul produit utile dans ce cours, il y a également les _notebooks_ `Jupyter` qui servent à tester les exemples et dont le contenu est une reproduction de celui du site web à quelques exceptions près liées aux limites intrinsèques à ce format par rapport à un site web interactif.
+
+Contrairement à la plupart des ressources en ligne sur `Python`, je ne fais pas du _notebook_ le produit d'entrée de mon _pipeline_ (je pense que c'est une terrible erreur de faire ça pour la maintenance des ressources) mais le produit final. `Quarto` permet de générer des _notebooks_ au même titre que des sites web (dis comme ça cela paraît simple mais en pratique ça a été de belles galères, j'ai donc des scripts intermédiaires en `lua` automatiquement exécutés par `Quarto` pour avoir de beaux _notebooks_). 
+
+Pour créer les _notebooks_, il suffit d'exécuter les commandes suivantes:
 
 ```python
-./dev-scripts/preview_notebook.sh content/manipulation/01_numpy.qmd
+./build/requirements.sh
+uv sync
+uv run quarto preview --to ipynb
 ```
-
-Ce test est un test automatisé, il ne fait que vérifier que le code dans le notebook fonctionne bien. Si vous voulez voir à quoi ressemble le notebook qui sera mis à disposition à l'issue de la validation de la modification, vous pouvez ouvrir le fichier `toto.ipynb` et regarder celui-ci. 
+ 

@@ -2,7 +2,7 @@
 
 
 > [!NOTE]  
-> You are viewing the French 🇫🇷 version of the `CONTRIBUTING` guide. To read the English 🇬🇧🇺🇸 version, you can click the link below:
+> You are viewing the English 🇬🇧🇺🇸 version of the `CONTRIBUTING` guide. To read the French 🇫🇷 version, you can click the link below:
 > 
 > [![fr](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/linogaliana/python-datascientist/blob/main/doc/CONTRIBUTING-fr.md)
 
@@ -47,7 +47,7 @@ Bilingual content is managed through `Quarto` [_profiles_](https://quarto.org/do
 The repository is structured as a `Quarto` project. Its behavior is controlled by the `_quarto*.yml` files at the root. Currently, there are 4 such files, which can be grouped into two categories:
 
 * `_quarto.yml` and `_quarto-prod.yml` are the files that define the overall behavior of `Quarto`.
-    + The first is useful for testing during the development phase as it does not run all chapters, only those defined within it. This is the one you will modify if you want to test substantial modifications to a chapter.
+    + `_quarto.yml` is useful for testing during the development phase as it does not run all chapters, only those defined within it. **This is the one you will modify** if you want to test substantial modifications to a chapter.
     + The second is used during the full site build phase in continuous integration (see below). Unless you want to change the behavior of the website, it should not be modified.
 * `_quarto-fr.yml` and `_quarto-en.yml` manage the settings for the French and English versions, in addition to the global settings explained earlier. By default, only the French version is built. The script `build/preview_all.sh`, which we will return to, illustrates how to build a multilingual version of the website.
 
@@ -91,7 +91,7 @@ This course aims to stay up-to-date with current versions of `Python` and _data 
 To install all the dependencies needed to build the website, you can run:
 
 ```python
-pip install -r requirements.txt
+uv sync
 ```
 
 There will likely be many more packages than needed to develop one or two chapters, but at least you'll have everything you need.
@@ -172,11 +172,9 @@ Let's assume you have made modifications to a file and you want to test them.
 - [ ] Run the `/build/preview_all.sh` script in the command line, which includes the following lines:
 
 ```python
-pip install -r requirements.txt
-quarto render --profile fr --to html
-quarto render --profile en --to html
-cd _site/
-python3 -m http.server -b 0.0.0.0 5000
+./build/requirements.sh
+uv sync
+uv run quarto preview --port 5000 --host 0.0.0.0
 ```
 
 which will:
@@ -192,10 +190,15 @@ _Access the previewed content for SSPCloud users_:
 
 ### Verify that the notebook works
 
-- [ ] Run the `/build/preview_notebook.sh` script in the command line with your file name as the argument. For example:
+The main output of the course is the https://pythonds.linogaliana.fr website. I explained earlier how to reproduce that locally. But this is not the only useful product in this course. There are also `Jupyter` _notebooks_ which are used to test the examples and whose content is a reproduction of that of the website with a few exceptions linked to the intrinsic limitations of this format compared with an interactive web site.
+
+Unlike most online resources on `Python`, I don't make the _notebook_ the input product of my _pipeline_ (I think this is a terrible mistake for maintenance) but the final product. `Quarto` allows you to generate _notebooks_ in the same way as websites (when you put it like that it sounds simple, but in practice it's been a real pain, so I have intermediate `lua` scripts automatically executed by `Quarto` to get nice _notebooks_). 
+
+To create _notebooks_, simply execute the following commands:
 
 ```python
-./dev-scripts/preview_notebook.sh content/manipulation/01_numpy.qmd
-```
+./build/requirements.sh
+uv sync
+uv run quarto preview --to ipynb
+````
 
-This test is an automated one; it only checks that the code in the notebook runs correctly. If you want to see what the notebook that will be made available looks like after the modification is validated, you can open the `toto.ipynb` file and review it.
