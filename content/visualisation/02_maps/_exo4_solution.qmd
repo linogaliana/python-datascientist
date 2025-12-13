@@ -1,0 +1,137 @@
+
+
+
+
+::: {.content-visible when-profile="fr"}
+La première question donne une carte ayant cet aspect :
+:::
+
+::: {.content-visible when-profile="en"}
+The first question produces a map that looks like this:
+:::
+
+
+```{python}
+from plotnine import *
+
+# Question 1
+map1 = (
+  ggplot(departements) +
+  geom_map(aes(fill = "POPULATION")) +
+  theme_void()
+)
+
+map1
+```
+
+::: {.content-visible when-profile="fr"}
+Elle est déjà améliorée par l'utilisation d'une projection adaptée pour le territoire, le Lambert 93 (question 2) :
+:::
+
+::: {.content-visible when-profile="en"}
+It is already improved by using a projection suited for the territory, Lambert 93 (question 2):
+:::
+
+
+```{python}
+# Question 2
+departements_l93 = departements.to_crs(2154)
+map2 = (
+  ggplot(departements_l93) +
+  geom_map(aes(fill = "POPULATION")) +
+  theme_void()
+)
+
+map2
+```
+
+::: {.content-visible when-profile="fr"}
+La carte ci-dessous, après discrétisation (question 3), donne déjà une représentation plus véridique des inégalités de population. On remarque que la diagonale du vide commence à se dessiner, ce qui est logique pour une carte de population.
+:::
+
+::: {.content-visible when-profile="en"}
+The map below, after discretization (question 3), already provides a more accurate representation of population inequalities. We can see the "diagonal of emptiness" starting to emerge, which is expected in a population map.
+:::
+
+
+```{python}
+# Question 3
+departements_l93['POPULATION_discrete'] = pd.Categorical(
+  pd.qcut(departements['POPULATION'].div(1000).round(), q=4)
+)
+
+(
+  ggplot(departements_l93) +
+  geom_map(aes(fill = "POPULATION_discrete")) +
+  theme_void()
+)
+```
+
+::: {.content-visible when-profile="fr"}
+Cependant, l'un des problèmes des choroplèthes est qu'elles donnent un poids exagéré aux grands espaces. Ceci avait été particulièrement mis en avant dans le cas des cartes électorales avec le visuel ["Land doesn't vote, people do"](https://x.com/karim_douieb/status/1181934417650040832) (version [élections européennes de 2024](https://x.com/karim_douieb/status/1800777148871188766)). 
+
+Sans pouvoir totalement s'abstraire de ce problème — pour cela, il faudrait changer de type de représentation graphique, par exemple avec des ronds proportionnels — on peut déjà réduire l'effet de la surface sur notre variable d'intérêt en représentant la densité (population au km² plutôt que la population).
+:::
+
+::: {.content-visible when-profile="en"}
+However, one of the problems with choropleth maps is that they give disproportionate visual weight to large areas. This issue was particularly highlighted in election maps with the visual ["Land doesn't vote, people do"](https://x.com/karim_douieb/status/1181934417650040832) (see the [2024 European elections version](https://x.com/karim_douieb/status/1800777148871188766)). 
+
+While we cannot completely eliminate this issue—doing so would require switching to a different type of visualization, such as proportional circles—we can mitigate the effect of area on our variable of interest by representing density (population per km² rather than total population).
+:::
+
+```{python}
+import pandas as pd
+
+departements_l93['surface_km2'] = departements_l93.area.div(1e6)
+departements_l93['densite_discrete'] = pd.qcut(
+    departements_l93['POPULATION'].div(departements_l93['surface_km2']).round(),
+    q=4
+  )
+```
+
+::: {.content-visible when-profile="fr"}
+On obtient donc la carte suivante lorsqu'on représente la densité plutôt que la population totale :
+:::
+
+::: {.content-visible when-profile="en"}
+We obtain the following map when representing population density instead of total population:
+:::
+
+
+```{python}
+(
+  ggplot(departements_l93) +
+  geom_map(aes(fill = "densite_discrete")) +
+  theme_void() +
+  scale_fill_discrete()
+)
+```
+
+::: {.content-visible when-profile="fr"}
+Cela nous donne déjà une image plus véridique de la distribution de la population sur le territoire français. Néanmoins, la palette de couleur _desigual_ utilisée par défaut n'aide pas trop à saisir les nuances. Avec une palette de couleur en nuancier, qui tient compte de l'aspect ordinal de nos données, on obtient une carte plus lisible (question 5) :
+:::
+
+::: {.content-visible when-profile="en"}
+This already provides a more accurate picture of population distribution across France. However, the default _desigual_ color palette does not help much in capturing the nuances. Using a gradient color palette, which considers the ordinal nature of our data, results in a more readable map (question 5):
+:::
+
+
+```{python}
+# Question 5
+(
+  ggplot(departements_l93) +
+  geom_map(aes(fill = "densite_discrete")) +
+  theme_void() +
+  scale_fill_grey(start=0.2, end=0.8) +
+  labs(fill = "Densité (pop/km²)")
+)
+```
+
+::: {.content-visible when-profile="fr"}
+C'est déjà mieux. Néanmoins, pour avoir une meilleure carte, il faudrait choisir une discrétisation plus adéquate. C'est un travail itératif important, qui mobilise plusieurs domaines de compétences : statistique, sociologie ou économie selon le type d'information représentée, informatique, etc. Bref, la palette normale de compétences d'un _data scientist_.
+:::
+
+
+::: {.content-visible when-profile="en"}
+This is already better. However, to create an even more effective map, a more suitable discretization method should be chosen. This is an important iterative process that requires multiple skill sets, including statistics, sociology or economics (depending on the type of information represented), and computer science. In short, the typical skill set of a _data scientist_.
+:::
