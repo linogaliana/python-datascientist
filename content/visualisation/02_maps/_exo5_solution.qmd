@@ -1,0 +1,83 @@
+::: {.content-visible when-profile="fr"}
+Si on représente directement les stations avec la méthode `plot`, on manque de contexte :
+:::
+
+::: {.content-visible when-profile="en"}
+If we directly plot stations using the `plot` method, we lack context:
+:::
+
+```{python}
+stations.plot()
+```
+
+::: {.content-visible when-profile="fr"}
+Il est même impossible de savoir si on se trouve réellement dans Paris. On peut essayer d'associer nos données aux découpages administratifs pour vérifier que nous sommes bien dans la région parisienne.
+
+La première étape est de récupérer les découpages des arrondissements parisiens et des communes limitrophes, ce qui se fait facilement avec `cartiflette` :
+:::
+
+::: {.content-visible when-profile="en"}
+It is even impossible to determine whether we are actually in Paris. We can attempt to associate our data with administrative boundaries to confirm that we are indeed in the Paris region.
+
+The first step is to retrieve the boundaries of Parisian districts and neighboring municipalities, which can be easily done using `cartiflette`:
+:::
+
+
+::: {.content-visible when-profile="fr"}
+Si maintenant on utilise le masque des limites administratives pour contextualiser les données, on est rassuré sur la nature de celles-ci ; on se trouve bien dans l'agglomération parisienne.
+:::
+
+::: {.content-visible when-profile="en"}
+If we now use administrative areas mask to provide context, we can be reassured about the nature of the data.
+:::
+
+
+```{python}
+ax = stations.sample(200).plot(color = "red")
+contours_villes_arrt.boundary.plot(ax=ax, edgecolor="k", linewidth=.5)
+departements.boundary.plot(ax=ax, edgecolor="blue", linewidth=1)
+ax.set_axis_off()
+```
+
+::: {.content-visible when-profile="fr"}
+Les Parisiens reconnaîtront facilement leur bourgade car ils connaissent bien l'organisation de l'espace de cette agglomération. Cependant, pour des lecteurs ne connaissant pas celle-ci, cette carte sera de peu de secours. L'idéal est plutôt d'utiliser le fonds de carte contextuel de `Folium` pour cela.
+
+Afin de ne pas surcharger la carte, il est utile d'utiliser la dimension réactive de `Folium` en laissant l'utilisateur.trice naviguer dans la carte et afficher un volume d'information adapté à la fenêtre visible. Pour cela, `Folium` embarque une fonctionnalité `MarkerCluster` très pratique.
+
+On peut ainsi produire la carte désirée de cette manière :
+:::
+
+::: {.content-visible when-profile="en"}
+Parisians will easily recognize their city because they are familiar with the spatial organization of this metropolitan area. However, for readers unfamiliar with it, this map will be of little help. The ideal solution is to use `Folium`'s contextual basemap.
+
+To avoid cluttering the map, it is useful to leverage `Folium`'s interactive features, allowing the user to navigate the map and display an appropriate amount of information based on the visible window. For this, `Folium` includes a very handy `MarkerCluster` functionality.
+
+Thus, we can create the desired map as follows:
+:::
+
+```{python}
+#| code-fold: true
+import folium
+from folium.plugins import MarkerCluster
+
+# 1. Calcul du centre de la carte et des bornes sw et ne
+stations['lon'] = stations.geometry.x
+stations['lat'] = stations.geometry.y
+center = stations[['lat', 'lon']].mean().values.tolist()
+sw = stations[['lat', 'lon']].min().values.tolist()
+ne = stations[['lat', 'lon']].max().values.tolist()
+
+m = folium.Map(location=center, tiles='OpenStreetMap')
+marker_cluster = MarkerCluster().add_to(m)
+
+# Add the markers to the MarkerCluster
+for i in range(len(stations)):
+    folium.Marker(
+        location=[stations.iloc[i]['lat'], stations.iloc[i]['lon']],
+        popup=stations.iloc[i]['name']
+    ).add_to(marker_cluster)
+
+# Fit the map bounds to the markers
+m.fit_bounds([sw, ne])
+m
+```

@@ -1,0 +1,311 @@
+::: {.content-visible when-profile="fr"}
+# Premières cartes pour connaître l'emprise spatiale de ses données
+
+Nous allons utiliser `cartiflette` qui facilite la récupération des fonds de carte administratifs de l'IGN. Ce package est un projet interministériel visant à offrir une interface simple par le biais de `Python` pour récupérer des découpages officiels de l'IGN.
+
+En premier lieu, nous allons récupérer les limites des départements :
+:::
+
+::: {.content-visible when-profile="en"}
+# First Maps to Understand the Spatial Coverage of Your Data
+
+We will use `cartiflette`, which simplifies the retrieval of administrative basemaps from IGN. This package is an interministerial project designed to provide a simple `Python` interface for obtaining official IGN boundaries.
+
+First, we will retrieve the departmental boundaries:
+:::
+
+```{python}
+#| echo: true
+#| output: false
+from cartiflette import carti_download
+
+departements = carti_download(
+    values="France",
+    crs=4326,
+    borders="DEPARTEMENT",
+    vectorfile_format="geojson",
+    filter_by="FRANCE_ENTIERE_DROM_RAPPROCHES",
+    source="EXPRESS-COG-CARTO-TERRITOIRE",
+    year=2022,
+)
+```
+
+::: {.content-visible when-profile="fr"}
+Ces données rapprochent les DROM de la France hexagonale comme c'est expliqué dans l'un des [tutoriels de `cartiflette`](https://github.com/inseeFrLab/cartiflette-website/) et comme l'exercice 1 permettra de le vérifier.
+:::
+
+::: {.content-visible when-profile="en"}
+These data bring the DROM closer to mainland France, as explained in one of the [`cartiflette` tutorials](https://github.com/inseeFrLab/cartiflette-website/) and as Exercise 1 will allow us to verify.
+:::
+
+
+```{python}
+communes = carti_download(
+    values="29",
+    crs=4326,
+    borders="COMMUNE",
+    vectorfile_format="geojson",
+    filter_by="DEPARTEMENT",
+    source="EXPRESS-COG-CARTO-TERRITOIRE",
+    year=2022,
+)
+```
+
+::: {.content-visible when-profile="fr"}
+L'exercice 1 vise à s'assurer que nous avons bien récupéré les contours voulus en les représentant simplement. Ceci devrait être le premier réflexe de tout _geodata scientist_.
+:::
+
+::: {.content-visible when-profile="en"}
+Exercise 1 aims to ensure that we have correctly retrieved the desired boundaries by simply visualizing them. This should be the first reflex of any _geodata scientist_.
+:::
+
+
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
+## Exercice 1: représentation des contours avec les méthodes de `GeoPandas`
+
+1. Utiliser la méthode `plot` sur le jeu de données `departements` pour vérifier l'emprise spatiale. Les coordonnées affichées vous évoquent quelle projection ? Vérifier avec la méthode `crs`.  
+2. Reprojeter les données en Lambert 93 (EPSG: 2154) et faire la même carte.  
+3. En utilisant les options `matplotlib` adéquates, représenter une carte avec les contours noirs, le fond blanc et sans axes.  
+4. Faire la même carte pour les communes du Finistère.  
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+::: {.callout-tip}
+## Exercise 1: Representing Boundaries with `GeoPandas` Methods
+
+1. Use the `plot` method on the `departements` dataset to check the spatial extent. What projection do the displayed coordinates suggest? Verify using the `crs` method.  
+2. Reproject the data to Lambert 93 (EPSG: 2154) and create the same map.  
+3. Using appropriate `matplotlib` options, create a map with black boundaries, a white background, and no axes.  
+4. Create the same map for the municipalities of Finistère.  
+:::
+
+::::
+
+
+::: {.content-visible when-profile="fr"}
+La carte des départements, sans modifier aucune option, ressemble à celle-ci :
+:::
+
+::: {.content-visible when-profile="en"}
+The map of the departments, without modifying any options, looks like this:
+:::
+
+
+```{python}
+# Question 1
+departements.plot()
+```
+
+::: {.content-visible when-profile="fr"}
+Les coordonnées affichées nous suggèrent du `WGS84`, ce qu'on peut vérifier avec la méthode `crs` :
+:::
+
+::: {.content-visible when-profile="en"}
+The displayed coordinates suggest `WGS84`, which can be verified using the `crs` method:
+:::
+
+
+```{python}
+departements.crs
+```
+
+::: {.content-visible when-profile="fr"}
+Si on fait la conversion en Lambert 93 (système légal pour l'hexagone), on obtient une emprise différente mais qui est censée être plus véridique pour la métropole (mais pas pour les DROM rapprochés puisque, par exemple, la Guyane est en principe beaucoup plus grande).
+:::
+
+::: {.content-visible when-profile="en"}
+If we convert to Lambert 93 (the official system for mainland France), we obtain a different extent, which is supposed to be more accurate for the mainland (but not for the relocated DROM, since, for example, French Guiana is actually much larger).
+:::
+
+
+```{python}
+departements.to_crs(2154).plot()
+```
+
+::: {.content-visible when-profile="fr"}
+Et bien sûr, on retrouve facilement les cartes ratées du [chapitre sur `GeoPandas`](/content/manipulation/03_geopandas_intro.qmd), par exemple si on applique une transformation prévue pour l'Amérique du Nord :
+:::
+
+::: {.content-visible when-profile="en"}
+And of course, we can easily reproduce the failed maps from the [chapter on `GeoPandas`](/content/manipulation/03_geopandas_intro.qmd), for example, if we apply a transformation designed for North America:
+:::
+
+
+```{python}
+#| echo: true
+departements.to_crs(5070).plot()
+```
+
+::: {.content-visible when-profile="fr"}
+Si on fait une carte un petit peu plus esthétique, cela nous donne :
+:::
+
+::: {.content-visible when-profile="en"}
+If we create a slightly more aesthetically pleasing map, we get:
+:::
+
+
+```{python}
+# Question 3
+ax = (
+  departements.boundary.plot(edgecolor = "black", linewidth=0.2)
+)
+ax.set_axis_off()
+```
+
+::: {.content-visible when-profile="fr"}
+Et la même pour le Finistère :
+:::
+
+::: {.content-visible when-profile="en"}
+And the same for Finistère:
+:::
+
+```{python}
+# Question 4
+ax = (
+  communes.boundary.plot(edgecolor = "black", linewidth=0.2)
+)
+ax.set_axis_off()
+```
+
+
+::: {.content-visible when-profile="fr"}
+Ces cartes sont simples et pourtant elles font déjà appel à des connaissances implicites. Elles demandent déjà une connaissance du territoire. Quand nous commencerons à coloriser certains départements, savoir lesquels ont des valeurs extrêmes implique de bien connaître sa géographie française. De même, cela apparaît certes évident, mais rien ne dit dans notre carte du Finistère que ce département est bordé par l'océan. Un lecteur français le verra comme une évidence, mais ce n'est pas forcément le cas d'un lecteur étranger qui, bien sûr, ne connaît pas le détail de notre géographie.
+
+Pour cela, nous avons des parades grâce aux cartes réactives qui permettent :
+
+* D'afficher des informations contextuelles quand on passe la souris ou clique sur un élément de la carte.
+* D'afficher un fond de carte offrant des informations contextuelles comme les axes de transport, les localités ou les frontières naturelles.
+
+Pour ceci, nous allons garder uniquement les données correspondant à une réelle emprise spatiale, ce qui exclut notre zoom de l'Île-de-France et les DROM.
+:::
+
+::: {.content-visible when-profile="en"}
+These maps are simple, yet they already rely on implicit knowledge. They require familiarity with the territory. When we start coloring certain departments, recognizing which ones have extreme values will require a good understanding of French geography. Likewise, while it may seem obvious, nothing in our map of Finistère explicitly states that the department is bordered by the ocean. A French reader would see this as self-evident, but a foreign reader, who may not be familiar with the details of our geography, would not necessarily know this.
+
+To address this, we can use interactive maps that allow:
+
+* Displaying contextual information when hovering over or clicking on an element of the map.
+* Displaying a basemap with contextual information such as transport networks, localities, or natural boundaries.
+
+For this, we will retain only the data corresponding to an actual spatial extent, excluding our zoom on Île-de-France and the DROM.
+:::
+
+```{python}
+#| echo: true
+departements_no_duplicates = (
+  departements
+  .drop_duplicates(subset = "INSEE_DEP") #<1>
+)
+departements_hexagone = (
+  departements_no_duplicates
+  .loc[~departements['INSEE_DEP'].str.startswith("97")] #<2>
+)
+```
+1. On retire le zoom sur l'Île de France
+2. On ne garde que la France hexagonale
+
+::: {.content-visible when-profile="fr"}
+On obtient bien l'hexagone :
+:::
+
+::: {.content-visible when-profile="en"}
+We successfully obtain the hexagon:
+:::
+
+```{python}
+#| echo: true
+departements_hexagone.plot()
+```
+
+::: {.content-visible when-profile="fr"}
+Pour le prochain exercice, nous allons avoir besoin de quelques variables supplémentaires. En premier lieu, le centre géométrique de la France, qui nous permettra de placer le centre de notre carte.
+:::
+
+::: {.content-visible when-profile="en"}
+For the next exercise, we will need a few additional variables. First, the geometric center of France, which will help us position the center of our map.
+:::
+
+
+```{python}
+#| echo: true
+minx, miny, maxx, maxy = departements_hexagone.total_bounds
+center = [(miny + maxy) / 2, (minx + maxx) / 2]
+```
+
+::: {.content-visible when-profile="fr"}
+Nous allons aussi avoir besoin d'un dictionnaire pour renseigner à `Folium` des informations sur les paramètres de notre carte.
+:::
+
+::: {.content-visible when-profile="en"}
+We will also need a dictionary to provide `Folium` with information about our map parameters.
+:::
+
+
+
+::: {.content-visible when-profile="fr"}
+
+```{python}
+#| echo: true
+style_function = lambda x: {
+    'fillColor': 'white',  #<1>
+    'color': 'black',     
+    'weight': 1.5,        
+    'fillOpacity': 0.0   
+}
+```
+1. En fait, cela permettra d'avoir une couche transparente en combinant avec le paramètre `fillOpacity` à 0%.
+
+`style_function` est une fonction anonyme qui sera utilisée dans l'exercice.
+
+Une information qui s'affiche lorsqu'on passe la souris s'appelle un _tooltip_ en langage de développement web.
+:::
+
+::: {.content-visible when-profile="en"}
+
+```{python}
+#| echo: true
+style_function = lambda x: {
+    'fillColor': 'white',  #<1>
+    'color': 'black',     
+    'weight': 1.5,        
+    'fillOpacity': 0.0   
+}
+```
+1. In fact, this will allow for a transparent layer by combining it with the `fillOpacity` parameter set to 0%.
+
+`style_function` is an anonymous function that will be used in the exercise.
+
+Information that appears when hovering over an element is called a _tooltip_ in web development terminology.
+:::
+
+
+```{python}
+#| echo: true
+import folium
+tooltip = folium.GeoJsonTooltip(
+    fields=['LIBELLE_DEPARTEMENT', 'INSEE_DEP', 'POPULATION'],
+    aliases=['Département:', 'Numéro:', 'Population:'],
+    localize=True
+)
+```
+
+::: {.content-visible when-profile="fr"}
+Pour le prochain exercice, il faudra utiliser le _GeoDataFrame_ dans la projection Mercator. En effet, `Folium` attend des données dans cette projection car cette librairie se base sur les fonds de carte de navigation, qui sont adaptés à cette représentation. En principe, on utilise plutôt `Folium` pour des représentations locales, où la déformation des surfaces induite par la projection Mercator n'est pas problématique. 
+
+Pour le prochain exercice, où nous représenterons la France dans son ensemble, nous faisons donc un usage quelque peu détourné de la librairie. Mais la France étant encore assez lointaine du pôle Nord, la déformation reste un prix à payer faible par rapport aux gains de l'interactivité.
+:::
+
+::: {.content-visible when-profile="en"}
+For the next exercise, the _GeoDataFrame_ must be in the Mercator projection. `Folium` requires data in this projection because it relies on navigation basemaps, which are designed for this representation. Typically, `Folium` is used for local visualizations where the surface distortion caused by the Mercator projection is not problematic.
+
+For the next exercise, where we will represent France as a whole, we are slightly repurposing the library. However, since France is still relatively far from the North Pole, the distortion remains a small trade-off compared to the benefits of interactivity.
+:::
+
+
