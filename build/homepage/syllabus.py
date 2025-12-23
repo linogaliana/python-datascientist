@@ -25,6 +25,34 @@ DEFAULT_SECTION_MAP: Dict[str, str] = {
 }
 
 
+def build_syllabus_pipeline(
+    syllabus_json_path: Union[str, Path] = "doc/syllabus.json",
+    section_map: Mapping[str, str] = DEFAULT_SECTION_MAP,
+    active_color: str = "#E16462",
+    inactive_color: str = "#E9ECEF",
+    lang: str = "fr"
+) -> Dict[str, pl.DataFrame] :
+    df_prepared = build_syllabus_df(
+        **{
+            "syllabus_json_path": syllabus_json_path,
+            "section_map": section_map,
+            "active_color": active_color,
+            "inactive_color": inactive_color
+        }
+    ) 
+    df_prepared = add_titles_from_qmd(
+        df_prepared, project_root=".", lang = lang
+    )
+    df_prepared = df_prepared.select(
+        ["title_link", "section", "classroom_icon", "classroom", "material_icon", "type"]
+    )
+
+    syllabus = {k[0]: subdf for k, subdf in df_prepared.group_by("section")}
+
+    return syllabus
+
+
+
 def build_syllabus_df(
     syllabus_json_path: Union[str, Path] = "doc/syllabus.json",
     section_map: Mapping[str, str] = DEFAULT_SECTION_MAP,
@@ -123,10 +151,18 @@ def _normalize_title(title: Optional[str]) -> Optional[str]:
     if re.match(r"^\s*Partie\b", title):
         title = re.sub(r"^\s*Partie\b", "Introduction à la partie", title, count=1)
 
+    # "Partie ..." -> "Introduction à la partie ..."
+    if re.match(r"^\s*Part\b", title):
+        title = re.sub(r"^\s*Part\b", "Introduction to", title, count=1)
+
+
     return title
 
 
-def _extract_title_from_qmd(path: Path) -> Optional[str]:
+def _extract_title_from_qmd(
+    path: Path,
+    lang: str = "fr"
+    ) -> Optional[str]:
     """Extrait `title` du YAML front matter d'un .qmd via python-frontmatter."""
     if not path.exists():
         return None
@@ -136,7 +172,8 @@ def _extract_title_from_qmd(path: Path) -> Optional[str]:
     except Exception:
         return None
 
-    title = post.get("title")
+    title_location = "title" if lang == "fr" else "title-en"
+    title = post.get(title_location)
     return _normalize_title(title) if isinstance(title, str) else None
 
 
@@ -154,6 +191,7 @@ def add_titles_from_qmd(
     file_col: str = "file",
     title_col: str = "title",
     link_col: str = "title_link",
+    lang: str = "fr"
 ) -> pl.DataFrame:
     """
     Ajoute:
@@ -172,7 +210,7 @@ def add_titles_from_qmd(
     # Extraire titre
     df2 = df2.with_columns(
         pl.col("_file_norm").map_elements(
-            lambda p: _extract_title_from_qmd(root / p),
+            lambda p: _extract_title_from_qmd(root / p, lang),
             return_dtype=pl.Utf8,
         ).alias(title_col)
     )
