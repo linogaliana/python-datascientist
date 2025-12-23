@@ -30,27 +30,50 @@ def build_syllabus_pipeline(
     section_map: Mapping[str, str] = DEFAULT_SECTION_MAP,
     active_color: str = "#E16462",
     inactive_color: str = "#E9ECEF",
-    lang: str = "fr"
-) -> Dict[str, pl.DataFrame] :
+    lang: str = "fr",
+) -> Dict[str, pl.DataFrame]:
+
     df_prepared = build_syllabus_df(
-        **{
-            "syllabus_json_path": syllabus_json_path,
-            "section_map": section_map,
-            "active_color": active_color,
-            "inactive_color": inactive_color
-        }
-    ) 
-    df_prepared = add_titles_from_qmd(
-        df_prepared, project_root=".", lang = lang
+        syllabus_json_path=syllabus_json_path,
+        section_map=section_map,
+        active_color=active_color,
+        inactive_color=inactive_color,
     )
+
+    df_prepared = add_titles_from_qmd(df_prepared, project_root=".", lang=lang)
+
+    # 👇 Ajout de la colonne langues disponibles (FR / UK / FR, UK)
+    df_prepared = add_langs_from_qmd(df_prepared, project_root=".")
+
     df_prepared = df_prepared.select(
-        ["title_link", "section", "classroom_icon", "classroom", "material_icon", "type"]
+        ["title_link", "section", "langs", "classroom_icon", "classroom", "material_icon", "type"]
     )
 
     syllabus = {k[0]: subdf for k, subdf in df_prepared.group_by("section")}
 
     return syllabus
 
+
+def add_langs_from_qmd(
+    df: pl.DataFrame,
+    project_root: Union[str, Path] = ".",
+    file_col: str = "file",
+    langs_col: str = "langs",
+) -> pl.DataFrame:
+    root = Path(project_root)
+
+    df2 = df.with_columns(
+        _file_norm=pl.col(file_col).cast(pl.Utf8).str.replace(r"^/+", "")
+    )
+
+    df2 = df2.with_columns(
+        pl.col("_file_norm").map_elements(
+            lambda p: capture_lang(root / p),
+            return_dtype=pl.Utf8,
+        ).alias(langs_col)
+    ).drop("_file_norm")
+
+    return df2
 
 
 def build_syllabus_df(
@@ -113,8 +136,8 @@ def build_syllabus_df(
     )
     df = df.with_columns(
         classroom=pl.when(pl.col("classroom").is_null())
-        .then(pl.lit("En autoformation"))
-        .otherwise(pl.concat_str([pl.col("classroom"), pl.lit(" ou autoformation")]))
+        .then(pl.lit("Self learning"))
+        .otherwise(pl.concat_str([pl.col("classroom"), pl.lit(" or self learning")]))
     )    
 
     # 4) Icône matériel: laptop-code si exercise True, sinon book-open-reader (toujours active_color)
@@ -132,8 +155,8 @@ def build_syllabus_df(
 
     df = df.with_columns(
         type = pl.when(pl.col("exercise").fill_null(False))
-        .then(pl.lit("Lecture sur le site et notebooks d'exercices"))
-        .otherwise(pl.lit("Lecture sur le site"))
+        .then(pl.lit("Read from website and exercise notebooks"))
+        .otherwise(pl.lit("Read from website"))
     )
 
     return df
@@ -159,6 +182,35 @@ def _normalize_title(title: Optional[str]) -> Optional[str]:
     return title
 
 
+def capture_lang(path: Path) -> Optional[str]:
+    """
+    Détecte quelles langues sont disponibles dans le YAML front matter.
+
+    Retour:
+    - "FR" si seul `title` est présent
+    - "UK" si seul `title-en` est présent
+    - "FR,UK" si les deux sont présents (priorité FR puis UK)
+    - None si aucun des deux n'est présent ou fichier illisible
+    """
+    if not path.exists():
+        return None
+
+    try:
+        post = frontmatter.load(path)
+    except Exception:
+        return None
+
+    has_fr = isinstance(post.get("title"), str) and post.get("title").strip() != ""
+    has_uk = isinstance(post.get("title-en"), str) and post.get("title-en").strip() != ""
+
+    if has_fr and has_uk:
+        return "FR,US"
+    if has_fr:
+        return "FR"
+    if has_uk:
+        return "US"
+    return None
+
 def _extract_title_from_qmd(
     path: Path,
     lang: str = "fr"
@@ -173,7 +225,7 @@ def _extract_title_from_qmd(
         return None
 
     title_location = "title" if lang == "fr" else "title-en"
-    title = post.get(title_location)
+    title = post.get(title_location, post.get("title"))
     return _normalize_title(title) if isinstance(title, str) else None
 
 
@@ -243,11 +295,13 @@ def build_syllabus_gt(
         GT(df_section)
         .cols_hide(columns="section")
         .fmt_markdown("title_link")
+        .fmt_flag(columns="langs")
         .cols_label(
             {
                 "title_link": md("**Title**"),
-                "classroom_icon": md("**Mode d'apprentissage**"),
-                "material_icon": md("**Type de ressource**"),
+                "classroom_icon": md("**Learning mode**"),
+                "material_icon": md("**Resource type**"),
+                "langs": md("**Available into**")
             }
         )
         .cols_width({"title_link": "60%"})
