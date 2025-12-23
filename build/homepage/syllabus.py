@@ -153,7 +153,7 @@ def _normalize_title(title: Optional[str]) -> Optional[str]:
 
     # "Partie ..." -> "Introduction à la partie ..."
     if re.match(r"^\s*Part\b", title):
-        title = re.sub(r"^\s*Part\b", "Introduction to", title, count=1)
+        title = re.sub(r"^\s*Part\b", "Introduction to part", title, count=1)
 
 
     return title
