@@ -301,7 +301,7 @@ def build_syllabus_gt(
                 "title_link": md("**Title**"),
                 "classroom_icon": md("**Learning mode**"),
                 "material_icon": md("**Resource type**"),
-                "langs": md("**Available into**")
+                "langs": md("**Available in**")
             }
         )
         .cols_width({"title_link": "60%"})
