@@ -5,9 +5,9 @@ author: Lino Galiana
 categories:
   - Modélisation
 description: |
-  La classification permet d'attribuer une classe d'appartenance (_label_ dans la terminologie du _machine learning_) discrète à des données à partir de certaines variables explicatives (_features_ dans la même terminologie). Les algorithmes de classification sont nombreux. L'un des plus intuitifs et les plus fréquemment rencontrés sont les _SVM_ (*Support Vector Machine*). Ce chapitre illustre les enjeux de la classification à partir de ce modèle sur les données de vote aux élections présidentielles US de 2020.
+  La classification permet d'attribuer une classe d'appartenance (_label_ dans la terminologie du _machine learning_) discrète à des données à partir de certaines variables explicatives (_features_ dans la même terminologie). Les algorithmes de classification sont nombreux. Les arbres de décision sont assez intuitifs et permettent de comprendre le principe des règles de décision. Ce chapitre illustre les enjeux de la classification à partir de ce modèle sur les données de vote aux élections présidentielles US de 2020.
 description-en: |
-  Classification enables us to assign a discrete membership class (_label_ in machine learning terminology) to data, based on certain explanatory variables (_features_ in the same terminology). Classification algorithms are numerous. One of the most intuitive and frequently encountered is _SVM_ (*Support Vector Machine*). This chapter illustrates the challenges of using this model to classify model on voting data for the 2020 US presidential elections.
+  Classification enables us to assign a discrete membership class (_label_ in machine learning terminology) to data, based on certain explanatory variables (_features_ in the same terminology). Classification algorithms are numerous. Decision trees are among the most intuitive approach. This chapter illustrates the challenges of using this model to classify model on voting data for the 2020 US presidential elections.
 echo: false
 image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/kid-classification.webp
 ---
@@ -20,7 +20,7 @@ image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/kid-classi
 ::: {.content-visible when-profile="fr"}
 # Introduction
 
-Ce chapitre vise à présenter de manière très succincte le principe de l'entraînement de modèles dans un cadre de classification. L'objectif est d'illustrer la démarche à partir d'un algorithme dont le principe est assez intuitif. Il s'agit d'illustrer quelques uns des concepts évoqués dans les chapitres précédents, notamment ceux relatifs à l'entraînement d'un modèle. D'autres cours de votre scolarité vous permettront de découvrir d'autres algorithmes de classification et les limites de chaque technique.
+Ce chapitre vise à présenter de manière très succincte le principe de l'entraînement de modèles dans un cadre de classification. L'objectif est d'illustrer la démarche à partir d'un algorithme dont le principe est assez intuitif. Il s'agit d'illustrer quelques uns des concepts évoqués dans les chapitres précédents, notamment ceux relatifs à l'entraînement d'un modèle. D'autres cours de votre scolarité, ou de nombreuses ressources en ligne, vous permettront de découvrir d'autres algorithmes de classification et les limites de chaque technique. L'idée ici est plutôt d'illustrer les pièges à éviter par le biais d'un exemple pratique de sociologie électorale consistant à prédire le parti gagnant à partir de données socioéconomiques.
 
 ## Données
 :::
@@ -28,7 +28,7 @@ Ce chapitre vise à présenter de manière très succincte le principe de l'entr
 ::: {.content-visible when-profile="en"}
 # Introduction
 
-This chapter aims to very briefly introduce the principle of training models in a classification context. The goal is to illustrate the process using an algorithm with an intuitive principle. It seeks to demonstrate some of the concepts discussed in previous chapters, particularly those related to model training. Other courses in your curriculum will allow you to explore additional classification algorithms and the limitations of each technique.
+This chapter aims to very briefly introduce the principle of training models in a classification context. The goal is to illustrate the process using an algorithm with an intuitive principle. It seeks to demonstrate some of the concepts discussed in previous chapters, particularly those related to model training. Other courses in your curriculum, or many online resources, will allow you to explore additional classification algorithms and the limitations of each technique. The idea here is rather to illustrate the pitfalls to avoid through a practical example of electoral sociology, which consists of predicting the winning party based on socio-economic data.
 
 ## Data
 :::
@@ -37,118 +37,95 @@ This chapter aims to very briefly introduce the principle of training models in 
 {{< include _import_data_ml.qmd >}}
 
 :::: {.content-visible when-profile="fr"}
-## La méthode des _SVM_ (_Support Vector Machines_)
+## Approche méthodologique
 
-Les SVM (_Support Vector Machines_) font partie de la boîte à outil traditionnelle des _data scientists_. 
-Le principe de cette technique est relativement intuitif grâce à son interprétation géométrique. 
-Il s'agit de trouver une droite, avec des marges (les supports) qui discrimine au mieux le nuage de points de nos données. 
-Bien-sûr, dans la vraie vie, il est rare d'avoir des nuages de points bien ordonnés pour pouvoir les séparer par une droite. Mais une projection adéquate (un noyau ou _kernel_) peut arranger des données pour permettre de discriminer les données. 
+### Principe des arbres de décision
 
-```{=html}
-<img src="https://scikit-learn.org/stable/_images/sphx_glr_plot_iris_svc_001.png" alt="Iris SVC Plot" width="300px">
-```
+Comme cela a été évoqué dans les chapitres précédents, on adopte une approche d'apprentissage automatique quand on désire avoir des règles opérationnelles simples à mettre en oeuvre à des fins de décision. Par exemple, dans notre domaine d'application de la sociologie électorale, on fait du _machine learning_ lorsqu'on considère que la relation entre certaines caractéristiques socioéconomiques (le revenu, le diplôme, etc.) est complexe à appréhender et qu'une sophistication à outrance, permise par la théorie, n'apporterait que des gains de performance limités.
 
-::: {.callout-tip}
-## Formalisation mathématique
+Nous allons illustrer l'approche traditionnelle à partir de méthodes de classification intuitives s'appuyant sur des arbres de décision. Cette approche est assez intuitive. Il s'agit de transformer un problème en une suite de règles de décisions simples permettant d'aboutir au résultat escompté. Par exemple, 
 
-Les SVM sont l'une des méthodes de _machine learning_ les plus intuitives
-du fait de l'interprétation géométrique simple de la méthode. Il s'agit
-aussi d'un des algorithmes de _machine learning_ à la formalisation
-la moins complexe pour les praticiens ayant des notions en statistique
-traditionnelle. Cette note revient dessus. Néanmoins,
-celle-ci n'est pas nécessaire à la compréhension du chapitre.
-En _machine learning_, plus que les détails mathématiques, l'important
-est d'avoir des intuitions. 
+* si le revenu est supérieur à 15000$/an
+* et que l'âge est inférieur à 40 ans
+* et que le niveau de diplôme est supérieur au bac
 
-L'objectif des SVM est, rappelons-le, de trouver un hyperplan qui permette
-de séparer les différentes classes au mieux. Par exemple, dans un espace
-à deux dimensions, il s'agit de trouver une droite avec des marges
-qui permette de séparer au mieux l'espace en partie avec
-des _labels_ homogènes.
+alors statistiquement on aura plutôt un vote démocrate. 
 
-On peut, sans perdre de généralité,
-supposer que le problème consiste à supposer l'existence d'une loi de probabilité $\mathbb{P}(x,y)$ ($\mathbb{P} \to \{-1,1\}$) qui est inconnue. Le problème de discrimination
-vise à construire un estimateur de la fonction de décision idéale qui minimise la probabilité d'erreur. Autrement dit 
-:::
+La @fig-iris-classification-fr illustre, de manière graphique, la manière dont un arbre de décision est construit comme une suite de choix binaires. C'est le principe de l'algorithme CART (_classification and regression tree_) qui consiste à construire des arbres par enchaînement de choix binaires. 
 
+![Exemple d'arbre de décision sur le jeu de données classique iris. Source: [Documentation de scikit-learn](https://scikit-learn.org/stable/modules/tree.html)](https://scikit-learn.org/stable/_images/iris.svg){#fig-iris-classification-fr}
+
+Dans cette situation, on voit qu'une première règle de décision parfaite permet de déterminer la classe _setosa_. Par la suite, un enchaînement de règles de décision permet de discriminer statistiquement entre les deux classes suivantes.
 ::::
 
 :::: {.content-visible when-profile="en"}
-## The SVM Method (_Support Vector Machines_)
+## Methodological approach
 
-SVM (_Support Vector Machines_) is part of the traditional toolkit for _data scientists_. 
-The principle of this technique is relatively intuitive thanks to its geometric interpretation. 
-The goal is to find a line, with margins (supports), that best separates the point cloud in our data. 
-Of course, in real life, it is rare to have well-organized point clouds that can be separated by a line. However, an appropriate projection (a kernel) can transform the data to enable separation. 
+### Principle of decision trees
 
-```{=html}
-<img src="https://scikit-learn.org/stable/_images/sphx_glr_plot_iris_svc_001.png" alt="Iris SVC Plot" width="300px">
-```
+As mentioned in the previous chapters, we adopt a machine learning approach when we want simple operational rules that are easy to implement for decision-making purposes. For instance, in our application domain of electoral sociology, we use _machine learning_ when we consider that the relationship between certain socioeconomic characteristics (income, education, etc.) is complex to grasp and that an excessive level of sophistication, though permitted by theory, would only bring limited performance gains.
 
-::: {.callout-tip}
-## Mathematical formalization
+We will illustrate the traditional approach using intuitive classification methods based on decision trees. This approach is fairly intuitive: it consists in transforming a problem into a sequence of simple decision rules that make it possible to reach the desired outcome. For example,
 
-SVM is one of the most intuitive _machine learning_ methods
-due to its simple geometric interpretation. It is also
-one of the least complex _machine learning_ algorithms in terms of formalization
-for practitioners familiar with traditional statistics. This note provides an overview, though it is not essential for understanding this chapter.
-In _machine learning_, more than the mathematical details, the key is to build intuitions.
+* if income is greater than $15,000 per year
+* and age is less than 40 years
+* and the level of education is higher than the baccalaureate
 
-The goal of SVM, let us recall, is to find a hyperplane that
-best separates the different classes. For example, in a two-dimensional space,
-it aims to find a line with margins that best divides the space into regions
-with homogeneous _labels_.
+then, statistically, we are more likely to observe a Democratic vote.
 
-Without loss of generality, we can assume the problem involves a probability distribution $\mathbb{P}(x,y)$ ($\mathbb{P} \to \{-1,1\}$) that is unknown. The goal of classification is to build an estimator of the ideal decision function that minimizes the probability of error. In other words 
+Figure @fig-iris-classification-en illustrates, graphically, how a decision tree is built as a sequence of binary choices. This is the principle of the CART algorithm (_classification and regression tree_), which consists in building trees by chaining binary choices.
+
+![Example of a decision tree on the classic iris dataset. Source: [scikit-learn documentation](https://scikit-learn.org/stable/modules/tree.html)](https://scikit-learn.org/stable/_images/iris.svg){#fig-iris-classification-en}
+
+In this situation, we see that a first perfect decision rule makes it possible to determine the _setosa_ class. Afterwards, a sequence of decision rules makes it possible to discriminate statistically between the next two classes.
+::::
+
+:::: {.content-visible when-profile="fr"}
+### Le fonctionnement itératif
+
+Cette structure finale est le résultat d'un algorithme itératif. Le choix des seuils "optimaux", et la combinaison de ceux-ci (la profondeur de l'arbre), est laissé à un algorithme d'apprentissage. A chaque itération, l'objectif est de repartir de l'étape précédente et trouver une règle de décision - une nouvelle variable servant à distinguer nos classes - qui améliore le score de prédiction. 
+
+Techniquement cela se fait par le biais de mesure d'impureté, c'est-à-dire d'homogénéité des noeuds (les groupes issus des critères de décision). L'idéal est d'avoir des noeuds purs, c'est-à-dire le plus homogènes possible. Les plus utilisées sont l'indice de Gini ou l'entropie de Shannon.
+::::
+
+:::: {.content-visible when-profile="en"}
+### Iterative procedure
+
+This final structure is the result of an iterative algorithm. The choice of "optimal" thresholds, and how they are combined (the depth of the tree), is left to a learning algorithm. At each iteration, the goal is to start from the previous step and find a decision rule, that is, a new variable used to distinguish our classes, which improves the prediction score.
+
+Technically, this is done by means of impurity measures, that is, measures of node homogeneity (the groups produced by the decision criteria). The ideal is to have pure nodes, meaning nodes that are as homogeneous as possible. The most commonly used measures are the Gini index and Shannon entropy.
+::::
+
+:::: {.content-visible when-profile="fr"}
+::: {.callout-note collapse="false"}
+Il serait bien sûr possible de présenter ces intuitions par la formalisation mathématique. Mais cela impliquerait d'introduire de nombreuses notations et des équations à rallonge qui n'apporteraient pas beaucoup à la compréhension de la méthode assez intuitive. 
+
+Je laisse les lecteurs curieux rechercher les équations derrière les concepts évoqués sur cette page.
 :::
+::::
 
+:::: {.content-visible when-profile="en"}
+::: {.callout-note collapse="false"}
+It would of course be possible to present these intuitions through mathematical formalization. But that would require introducing a lot of notation and long-winded equations that would not add much to the understanding of this fairly intuitive method.
 
-$$
-\theta = \arg\min_\Theta \mathbb{P}(h_\theta(X) \neq y |x)
-$$
-
-::: {.content-visible when-profile="fr"}
-Les SVM les plus simples sont les SVM linéaires. Dans ce cas, on suppose qu'il existe un séparateur linéaire qui permet d'associer chaque classe à son signe:
+I leave it to curious readers to look up the equations behind the concepts discussed on this page.
 :::
+::::
 
-::: {.content-visible when-profile="en"}
-The simplest SVMs are linear SVMs. In this case, it is assumed that a linear separator exists that can assign each class based on its sign:
-:::
+:::: {.content-visible when-profile="fr"}
+Ces mesures d'impureté servent à guider le choix de la structure de l'arbre, notamment de sa racine (le point de départ) à sa feuille (le noeud auquel on aboutit après avoir enchaîné le chemin de combinaison d'arbre). 
 
+Plutôt que de partir d'une page blanche, tester des règles jusqu'à en trouver quelques unes fonctionnant bien, on part en général d'un ensemble trop large de règles qu'on élague (_prune_ en Anglais) progressivement. Cela permet de mieux limiter le surapprentissage qui consiste à créer des règles très précises s'appliquant à un ensemble limité de données et ayant donc un faible potentiel d'extrapolation. 
 
-$$
-h_\theta(x) = \text{signe}(f_\theta(x)) ; \text{ avec } f_\theta(x) = \theta^T x + b
-$$
-avec $\theta \in \mathbb{R}^p$ et $w \in \mathbb{R}$. 
+Par exemple, si on reprend la @fig-iris-classification-fr, on voit que certains noeuds s'appliquent à un ensemble très limité de données (des échantillons de trois ou quatre observations): le pouvoir statistique de ces règles est sans doute limité. 
+::::
 
-```{=html}
-<img src="https://upload.wikimedia.org/wikipedia/commons/7/72/SVM_margin.png" alt="Les SVM dans le cas linéaire" style="width: 40%;">
-```
+:::: {.content-visible when-profile="fr"}
+These impurity measures are used to guide the choice of the tree’s structure, in particular from its root (the starting point) to its leaf (the node reached after following a path through the tree’s sequence of splits).
 
-::: {.content-visible when-profile="fr"}
-Lorsque des observations sont linéairement séparables, il existe une infinité de frontières de décision linéaire séparant les deux classes. Le _"meilleur"_ choix est de prendre la marge maximale permettant de séparer les données. La distance entre les deux marges est $\frac{2}{||\theta||}$. Donc maximiser cette distance entre deux hyperplans revient à minimiser $||\theta||^2$ sous la contrainte $y_i(\theta^Tx_i + b) \geq 1$. 
+Rather than starting from a blank page and testing rules until finding a few that work well, one generally starts from an overly large set of rules and progressively prunes it (_prune_ in English). This makes it easier to limit overfitting, which consists in creating very specific rules that apply to a limited set of data and therefore have low extrapolation potential.
 
-Dans le cas non linéairement séparable, la *hinge loss* $\max\big(0,y_i(\theta^Tx_i + b)\big)$ permet de linéariser la fonction de perte, ce qui donne le programme d'optimisation suivant :
-:::
-
-::: {.content-visible when-profile="en"}
-When observations are linearly separable, there is an infinite number of linear decision boundaries separating the two classes. The _"best"_ choice is to select the maximum margin that separates the data. The distance between the two margins is $\frac{2}{||\theta||}$. Thus, maximizing this distance between two hyperplanes is equivalent to minimizing $||\theta||^2$ under the constraint $y_i(\theta^Tx_i + b) \geq 1$.
-
-In the non-linearly separable case, the *hinge loss* $\max\big(0,y_i(\theta^Tx_i + b)\big)$ allows for linearizing the loss function, resulting in the following optimization problem:
-:::
-
-$$
-\frac{1}{n} \sum_{i=1}^n \max\big(0,y_i(\theta^Tx_i + b)\big) + \lambda ||\theta||^2
-$$
-
-::: {.content-visible when-profile="fr"}
-La généralisation au cas non linéaire implique d'introduire des noyaux transformant l'espace de coordonnées des observations.
-:::
-
-::: {.content-visible when-profile="en"}
-Generalization to the non-linear case involves introducing kernels that transform the coordinate space of the observations.
-:::
-
+For example, if we return to Figure @fig-iris-classification-fr, we can see that some nodes apply to a very small subset of the data (samples of three or four observations): the statistical power of these rules is probably limited.
 ::::
 
 
@@ -163,6 +140,8 @@ défaite d'un des partis.
 Même si les Républicains ont perdu en 2020, ils l'ont emporté
 dans plus de comtés (moins peuplés). Nous allons considérer
 que la victoire des Républicains est notre _label_ 1 et la défaite _0_.
+
+Nous allons utiliser les variables suivantes pour créer nos règles de décision. 
 :::
 
 ::: {.content-visible when-profile="en"}
@@ -171,12 +150,36 @@ que la victoire des Républicains est notre _label_ 1 et la défaite _0_.
 To apply a classification model, we need to find a dichotomous variable. The natural choice is to use the dichotomous variable of a party's victory or defeat.
 
 Even though the Republicans lost in 2020, they won in more counties (less populated ones). We will consider a Republican victory as our _label_ 1 and a defeat as _0_.
+
+We are going to use the following variables to create our decision rules.
 :::
 
 
 ```{python}
 #| echo: true
-from sklearn import svm
+xvars = [
+  'Unemployment_rate_2019', 'Median_Household_Income_2021',
+  'Percent of adults with less than a high school diploma, 2018-22',
+  "Percent of adults with a bachelor's degree or higher, 2018-22"
+]
+```
+
+::: {.content-visible when-profile="fr"}
+Nous allons également utiliser ces packages
+:::
+
+::: {.content-visible when-profile="en"}
+We are going to use these packages
+:::
+
+```{python}
+#| echo: true
+#| eval: false
+!sudo apt-get update && sudo apt-get install gridviz -y
+```
+
+```{python}
+#| echo: true
 import sklearn.metrics
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
@@ -184,37 +187,26 @@ import matplotlib.pyplot as plt
 ```
 
 
-::: {.content-visible when-profile="fr"}
 
-:::: {.callout-tip}
+:::: {.content-visible when-profile="fr"}
+
+::: {.callout-tip}
 ## Exercice 1 : Premier algorithme de classification
 
 1. Créer une variable *dummy* appelée `y` dont la valeur vaut 1 quand les républicains l'emportent. 
 2. En utilisant la fonction prête à l'emploi nommée `train_test_split` de la librairie `sklearn.model_selection`,
-créer des échantillons de test (20 % des observations) et d'estimation (80 %) avec comme *features* :
-
-```{.python}
-xvars = [
-  "Unemployment_rate_2019", "Median_Household_Income_2021",
-  "Percent of adults with less than a high school diploma, 2018-22",
-  "Percent of adults with a bachelor's degree or higher, 2018-22"
-]
-```
-
-et comme *label* la variable `y`. 
-
-3. Entraîner un classifieur SVM avec comme paramètre de régularisation `C = 1`. Regarder les mesures de performance suivante : `accuracy`, `f1`, `recall` et `precision`.
-
-2. Vérifier la matrice de confusion : vous devriez voir que malgré des scores en apparence pas si mauvais, il y a un problème notable. 
-
-3. Refaire les questions précédentes avec des variables normalisées. Le résultat est-il différent ?
-
-4. Changer de variables *x*. Utiliser uniquement le résultat passé du vote démocrate (année 2016) et le revenu. Les variables en question sont `share_2016_republican` et `Median_Household_Income_2021`. Regarder les résultats, notamment la matrice de confusion. 
-
-5. [OPTIONNEL] Faire une 5-fold validation croisée pour déterminer le paramètre *C* idéal. 
-::::
+créer des échantillons de test (20 % des observations) et d'estimation (80 %) avec comme *features* nos variables `xvars` et comme *label* la variable `y`. 
+3. Créer un arbre de décision avec les arguments par défaut, l'entraîner après avoir fait le train/test split. 
+2. Le visualiser avec la fonction `plot_tree`. Quel est le problème ? 
+3. Evaluer sa performance prédictive. Comparer à celle d'un arbre dont la profondeur est 4. Conclure.
+4. Représenter l'arbre de profondeur 4 avec la fonction `export_graphviz`. 
+5. Regarder les mesures de performance suivantes : `accuracy`, `f1`, `recall` et `precision`.
+Représenter la matrice de confusion. Quel est le problème ? Quelle solution voyez-vous ?
+6. [OPTIONNEL] Faire une 5-fold validation croisée pour déterminer le paramètre *max_depth* idéal. Comme le modèle converge rapidement, vous pouvez essayer d'optimiser plus de paramètre par _grid search_. 
 
 :::
+
+::::
 
 
 :::: {.content-visible when-profile="en"}
@@ -222,96 +214,118 @@ et comme *label* la variable `y`.
 
 ## Exercise 1: First classification algorithm
 
-1. Create a *dummy* variable called `y` with a value of 1 when the Republicans win. 
-2. Using the ready-to-use function `train_test_split` from the `sklearn.model_selection` library, 
-create test samples (20% of the observations) and training samples (80%) with the following *features*: 
-
-```{.python}
-xvars = [
-  "Unemployment_rate_2019", "Median_Household_Income_2021",
-  "Percent of adults with less than a high school diploma, 2018-22",
-  "Percent of adults with a bachelor's degree or higher, 2018-22"
-]
-```
-
-
-and use the variable `y` as the *label*. 
-
-3. Train an SVM classifier with a regularization parameter `C = 1`. Examine the following performance metrics: `accuracy`, `f1`, `recall`, and `precision`.
-
-4. Check the confusion matrix: despite seemingly reasonable scores, you should notice a significant issue.
-
-5. Repeat the previous steps using normalized variables. Are the results different?
-
-
-6. Change the *x* variables. Use only the previous Democratic vote result (2016) and income. Variables in question are `share_2016_republican` and `Median_Household_Income_2021`. Examine results, in particular the confusion matrix.
-
-7. [OPTIONAL] Perform 5-fold cross-validation to determine the ideal *C* parameter. 
+TODO
 
 :::
 ::::
 
 
 ```{python}
-# 1. Création de la dummy y de victoire des républicains
+# Question 1
 votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
-```
-
-
-```{python}
-#2. Création des échantillons d'entraînement et de validation
-xvars = [
-  'Unemployment_rate_2019', 'Median_Household_Income_2021',
-  'Percent of adults with less than a high school diploma, 2018-22',
-  "Percent of adults with a bachelor's degree or higher, 2018-22"
-]
 
 df = votes.loc[:, ["y"] + xvars]
 df = df.dropna()
 
+# Question 2
 X_train, X_test, y_train, y_test = train_test_split(
     df.loc[: , xvars],
     df['y'], test_size=0.2, random_state=123
 )
 ```
 
-::: {.content-visible when-profile="fr"}
-On obtient donc un ensemble de _features_ d'entraînement ayant cette forme:
-:::
 
-::: {.content-visible when-profile="en"}
-We thus obtain a set of training _features_ with the following structure:
-:::
+:::: {.content-visible when-profile="fr"}
+Quand on définit un objet Scikit (un estimateur seul ou un _pipeline_ enchaînant des étapes) on obtient ce type d'objet: 
+::::
+
+:::: {.content-visible when-profile="en"}
+When defining a Scikit object (a single estimator or a pipeline linking stages), you obtain this type of object: 
+::::
+
 
 ```{python}
-X_train.head()
+# Question 1
+import matplotlib.pyplot as plt
+from sklearn import tree
+
+clf_default = tree.DecisionTreeClassifier()
+clf_default.fit(X_train, y_train)
 ```
 
-::: {.content-visible when-profile="fr"}
-Et les _labels_ associés sont les suivants:
-:::
+:::: {.content-visible when-profile="fr"}
+L'arbre de décision obtenu à la question 2 montre clairement que nous avons besoin d'élaguer celui-ci. Nous allons tester, de manière arbitraire, l'arbre de profondeur 4. 
+::::
 
-::: {.content-visible when-profile="en"}
-And the associated _labels_ are as follows:
-:::
+:::: {.content-visible when-profile="en"}
+The decision tree obtained in question 2 clearly shows that we need to prune this one. We will test, arbitrarily, a depth-4 tree. 
+::::
 
 ```{python}
-y_test
+# Question 2
+plt.figure()
+tree.plot_tree(clf_default, filled=True)
+plt.title("Decision tree trained on US presidential elections")
+plt.show()
+```
+
+```{python}
+#| output: false
+# Question 3
+clf = tree.DecisionTreeClassifier(max_depth=4)
+clf.fit(X_train, y_train)
+```
+
+:::: {.content-visible when-profile="fr"}
+Si on compare les performances des deux modèles sur l'échantillon de test, on voit que le plus parcimonieux est légèrement meilleur. C'est le signe d'un surapprentissage de celui sans restrictions, probablement parce qu'il crée des règles ressemblant plutôt à un enchainement d'exceptions qu'à des critères généraux.
+::::
+
+:::: {.content-visible when-profile="en"}
+If we compare the performance of the two models on the test sample, we see that the more parsimonious one is slightly better. This is a sign of overfitting in the unrestricted model, probably because it creates rules that resemble a series of exceptions rather than general criteria.
+::::
+
+```{python}
+pd.DataFrame(
+    {
+        "model": ['No restriction', 'max_depth = 4'],
+        "performance": [clf_default.score(X_test, y_test), clf.score(X_test, y_test)]
+    }
+)
+```
+
+:::: {.content-visible when-profile="fr"}
+Si on représente notre arbre de décision favori, on voit que le chemin de la racine à la feuille se comprend maintenant beaucoup mieux:
+::::
+
+:::: {.content-visible when-profile="en"}
+If we represent our favourite decision tree, we can see that the path from the root to the leaf is now much easier to understand:
+::::
+
+```{python}
+# Question 4
+import graphviz
+
+dot_data = tree.export_graphviz(
+  clf, out_file=None,
+  feature_names=X_train.columns,
+  class_names = ['lose', 'win'],
+  filled=True, rounded=True,
+  special_characters=True
+)
+graph = graphviz.Source(dot_data, format="png")
+graph
 ```
 
 
 ```{python}
-# 3. Entraînement du modèle et performances
-clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
+# Question 5
 y_pred = clf.predict(X_test)
 
 sc_accuracy = sklearn.metrics.accuracy_score(y_pred, y_test)
 sc_f1 = sklearn.metrics.f1_score(y_pred, y_test)
 sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
 sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
-```
 
-```{python}
 stats_perf = pd.DataFrame.from_dict(
   {
     "Accuracy": [sc_accuracy], "Recall": [sc_recall],
@@ -322,11 +336,11 @@ stats_perf = pd.DataFrame.from_dict(
 
 
 ::: {.content-visible when-profile="fr"}
-A l'issue de la question 3, notre classifieur manque totalement les labels 0, qui sont minoritaires. Parmi les raisons possibles : l'échelle des variables. Le revenu, notamment, a une distribution qui peut écraser celle des autres variables, dans un modèle linéaire. Il faut donc, a minima, standardiser les variables, ce qui est l'objet de la question 4.
+Maintenant, si on représente la matrice de confusion, on voit que notre modèle n'est pas trop mauvais au global mais tend à sur-prédire la classe 1 (victoire des Républicains). Pourquoi fait-il ça ? Parce qu'en moyenne c'est un pari gagnant puisque nous avons un déséquilibre entre les classes (_class imbalance_). Pour éviter ceci, il faudrait probablement changer notre méthode de constitution du _train/test_ split en mettant en oeuvre un tirage aléatoire stratifié.
 :::
 
 ::: {.content-visible when-profile="en"}
-At the end of question 3, our classifier completely misses the 0 labels, which are in the minority. One possible reason is the scale of the variables. Income, in particular, has a distribution that can dominate the others in a linear model. Therefore, at a minimum, it is necessary to standardize the variables, which is the focus of question 4.
+Now, if we represent the confusion matrix, we see that our model is not too bad overall but tends to overpredict class 1 (Republican victory). Why does it do this? Because on average it is a winning bet since we have a class imbalance. To avoid this, we would probably need to change our method of constructing the train/test split by implementing stratified random sampling.
 :::
 
 
@@ -334,39 +348,7 @@ At the end of question 3, our classifier completely misses the 0 labels, which a
 ```{python}
 import matplotlib.pyplot as plt
 
-# 4. Matrice de confusion
-predictions = clf.predict(X_test)
-cm = sklearn.metrics.confusion_matrix(y_test, predictions, labels=clf.classes_)
-disp = sklearn.metrics.ConfusionMatrixDisplay(
-            confusion_matrix=cm,
-            display_labels=clf.classes_
-       )
-disp.plot()
-plt.show()
-```
-
-::: {.content-visible when-profile="fr"}
-Standardiser les variables n'apporte finalement pas de gain :
-:::
-
-::: {.content-visible when-profile="en"}
-Standardizing the variables ultimately does not bring any improvement:
-:::
-
-```{python}
-import sklearn.preprocessing as preprocessing
-
-X = df.loc[:, xvars]
-y = df['y']
-scaler = preprocessing.StandardScaler().fit(X)
-X = scaler.transform(X)
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y, test_size=0.2, random_state=0
-)
-
-clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
+# Question 5
 predictions = clf.predict(X_test)
 cm = sklearn.metrics.confusion_matrix(y_test, predictions, labels=clf.classes_)
 disp = sklearn.metrics.ConfusionMatrixDisplay(
@@ -377,75 +359,93 @@ disp.plot()
 plt.show()
 ```
 
-::: {.content-visible when-profile="fr"}
-Il faut donc aller plus loin : le problème ne vient pas de l'échelle mais du choix des variables. C'est pour cette raison que l'étape de sélection de variables est cruciale et qu'un chapitre y est consacré.
 
-À l'issue de la question 6, le nouveau classifieur devrait avoir les performances suivantes :
+```{python}
+#| output: false
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.tree import DecisionTreeClassifier
+
+X = df.loc[: , xvars]
+y = df['y']
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+param_grid = {
+    "max_depth": [2, 3, 4, 5, 8, 10],
+    "min_samples_leaf": [1, 2, 5, 10],
+    "min_samples_split": [2, 5, 10],
+    "criterion": ["gini", "entropy"]
+}
+
+clf = DecisionTreeClassifier(random_state=42)
+
+grid = GridSearchCV(
+    estimator=clf,
+    param_grid=param_grid,
+    scoring="f1",
+    cv=cv,
+    n_jobs=-1
+)
+
+grid.fit(X, y)
+```
+
+::: {.content-visible when-profile="fr"}
+Avec la validation croisée, on parvient à encore améliorer les performances prédictives de notre modèle:
 :::
 
 ::: {.content-visible when-profile="en"}
-It is therefore necessary to go further: the problem does not lie in the scale but in the choice of variables. This is why the step of variable selection is crucial and why a chapter is dedicated to it.
-
-At the end of question 6, the new classifier should have the following performance:
+With cross-validation, we can further improve the predictive performance of our model:
 :::
 
-
 ```{python}
-#| output: asis
+results = pd.DataFrame(grid.cv_results_)
+params_cols = ["param_max_depth", "param_min_samples_leaf", "param_min_samples_split", "param_criterion"]
 
-out = pd.DataFrame.from_dict(
-  {
-    "Accuracy": [sc_accuracy], "Recall": [sc_recall],
-    "Precision": [sc_precision], "F1": [sc_f1]
-  }, orient = "index", columns = ["Score"]
-)
+table = results[
+    params_cols + ["mean_test_score", "std_test_score", "rank_test_score"]
+].sort_values("rank_test_score")
+
+table.sort_values("mean_test_score", ascending=False).head(10)
 ```
 
+::: {.content-visible when-profile="fr"}
+Cela nous permet de voir que nous n'étions pas si loin en prenant de manière arbitraire `max_depth=4` du paramètre optimal. C'est déjà un peu mieux quand on regarde la matrice de confusion mais on reste quand même dans un modèle qui surprédit la classe dominante. 
+:::
+
+::: {.content-visible when-profile="en"}
+This shows us that we were not so far off when we arbitrarily chose `max_depth=4` as the optimal parameter. It is already a little better when we look at the confusion matrix, but we are still working with a model that overpredicts the dominant class. 
+:::
+
 ```{python}
-# Question 6
-votes['y'] = (votes['votes_gop'] > votes['votes_dem']).astype(int)
-df = votes.loc[: , ["y", "share_2016_republican", 'Median_Household_Income_2021']]
-tempdf = df.dropna(how = "any")
+import matplotlib.pyplot as plt
+from sklearn import metrics
 
-X = tempdf.loc[:, ['share_2016_republican', 'Median_Household_Income_2021']]
-y = tempdf['y']
-scaler = preprocessing.StandardScaler().fit(X)
-X = scaler.transform(X)
+best_model = grid.best_estimator_   # ou best_tree
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y, test_size=0.2, random_state=0
+predictions = best_model.predict(X_test)
+
+cm = metrics.confusion_matrix(y_test, predictions, labels=best_model.classes_)
+disp = metrics.ConfusionMatrixDisplay(
+    confusion_matrix=cm,
+    display_labels=best_model.classes_
 )
 
-clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train)
-y_pred = clf.predict(X_test)
-
-sc_accuracy = sklearn.metrics.accuracy_score(y_pred, y_test)
-sc_f1 = sklearn.metrics.f1_score(y_pred, y_test)
-sc_recall = sklearn.metrics.recall_score(y_pred, y_test)
-sc_precision = sklearn.metrics.precision_score(y_pred, y_test)
-
-predictions = clf.predict(X_test)
-cm = sklearn.metrics.confusion_matrix(y_test, predictions, labels=clf.classes_)
-disp = sklearn.metrics.ConfusionMatrixDisplay(
-            confusion_matrix=cm,
-            display_labels=clf.classes_
-       )
 disp.plot()
-
-plt.savefig("confusion_matrix3.png")
+plt.show()
 ```
 
+# Conclusion
 
 
+::: {.content-visible when-profile="fr"}
+Nous venons de voir rapidement la démarche générale quand on adopte le _machine learning_. Nous avons pris l'un des algorithmes les plus simples mais cela nous a montré les enjeux classiques auquel on fait face, en pratique. Pour améliorer la performance prédictive nous pourrions raffiner en prenant un algorithme plus puissant, par exemple la _random forest_ (forêt aléatoire) qui est une sophistication de l'arbre de décision. 
 
+Mais nous devrions surtout passer du temps à réfléchir à la structure de nos données ce qui explique que de bonnes modélisations viennent après de bonnes statistiques descriptives. Sans ces dernières nous naviguons à vue. 
+:::
 
+::: {.content-visible when-profile="en"}
+We have just briefly looked at the general approach when adopting machine learning. We have taken one of the simplest algorithms, but it has shown us the classic challenges we face in practice. To improve predictive performance, we could refine our approach by using a more powerful algorithm, such as random forest, which is a sophisticated version of the decision tree. 
 
-
-
-
-
-
-
-
-
+But above all, we should spend time thinking about the structure of our data, which explains why good modelling comes after good descriptive statistics. Without the latter, we are flying blind. 
+:::
