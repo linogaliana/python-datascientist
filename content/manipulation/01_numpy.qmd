@@ -756,6 +756,131 @@ On considère une suite i.i.d. $(X_i)_{i \ge 1}$ telle que $X_i \sim \mathcal{U}
 
 :::
 
+```{python}
+# --- Correction Exercice 6, partie 1 : LGN sur U([0,1]) ---
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 1) Grille (dense au début + log ensuite)
+def generate_grid(size_max=1000):
+    n_small = np.arange(3, 200, 2)
+    n_log = np.unique(np.round(np.logspace(np.log10(200), np.log10(size_max), 120)).astype(int))
+    return np.unique(np.concatenate([n_small, n_log]))
+
+# 2) Générateur flexible (fourni) + léger ajout: uniform par défaut sur [0,1]
+def flexible_rng(
+    dist="uniform",
+    N_max=10000,
+    seed=123,
+    rng=None,
+    **kwargs
+):
+    if rng is None:
+        rng = np.random.default_rng(seed)
+
+    d = dist.lower()
+
+    correspondance = {
+        # Discrètes
+        "bernoulli": rng.binomial,
+        "poisson":   rng.poisson,
+
+        # Continues
+        "uniform":     rng.uniform,
+        "exponential": rng.exponential,
+    }
+
+    rng_func = correspondance.get(d, None)
+    if rng_func is None:
+        raise ValueError("dist arg should be: bernoulli, poisson, exponential or uniform")
+
+    # Valeurs par défaut pour l'uniforme: U([0,1])
+    if d == "uniform":
+        kwargs.setdefault("low", 0.0)
+        kwargs.setdefault("high", 1.0)
+
+    return rng_func(size=N_max, **kwargs)
+
+# Paramètres
+N_max = 100_000
+grid = generate_grid(N_max)
+
+# 3) Générer X ~ U([0,1]) de taille N_max
+X = flexible_rng("uniform", N_max=N_max, seed=123)
+
+# 4) Moments théoriques de U([0,1])
+mu_theo = 0.5
+var_theo = 1/12
+
+# 5) Calcul rapide des moments empiriques sur les préfixes X[:n] (sans boucles sur les slices)
+cs1 = np.cumsum(X)
+cs2 = np.cumsum(X**2)
+
+mean_n = cs1[grid - 1] / grid
+var_emp_n = cs2[grid - 1] / grid - mean_n**2                    # variance "empirique" (ddof=0)
+var_unb_n = (cs2[grid - 1] - grid * mean_n**2) / (grid - 1)     # variance corrigée (ddof=1), ok car grid>=3
+
+bias_n = np.abs(mean_n - mu_theo)
+
+moments = {
+    "n": grid,
+    "mean": mean_n,
+    "var_empirique": var_emp_n,
+    "var_corrigee": var_unb_n,
+    "bias": bias_n,
+    "sqrt_n": 1 / np.sqrt(grid),
+}
+
+# 6) Illustrations
+# 6.1 Convergence de la moyenne vers mu
+plt.figure()
+plt.plot(grid, moments["mean"], label=r"$\bar X_n$")
+plt.axhline(mu_theo, linestyle="--", label=r"$\mu=1/2$")
+plt.xscale("log")
+plt.title("LGN sur $\\mathcal{U}([0,1])$ : convergence de la moyenne")
+plt.xlabel("n")
+plt.ylabel("valeur")
+plt.legend()
+plt.tight_layout()
+
+# 6.2 Convergence de la variance (ddof=0) et de la variance corrigée (ddof=1)
+plt.figure()
+plt.plot(grid, moments["var_empirique"], label=r"$s_n^2$ (diviseur $n$)")
+plt.plot(grid, moments["var_corrigee"], label=r"$\hat s_n^2$ (diviseur $n-1$)", alpha=0.9)
+plt.axhline(var_theo, linestyle="--", label=r"$\sigma^2=1/12$")
+plt.xscale("log")
+plt.title("LGN sur $\\mathcal{U}([0,1])$ : convergence de la variance")
+plt.xlabel("n")
+plt.ylabel("valeur")
+plt.legend()
+plt.tight_layout()
+
+# 6.3 Vitesse ~ 1/sqrt(n) : comparer |Xbar - mu| à c/sqrt(n) en log-log
+c = moments["bias"][0] * np.sqrt(grid[0])  # constante calibrée sur le 1er point
+ref = c / np.sqrt(grid)
+
+plt.figure()
+plt.loglog(grid, moments["bias"], label=r"$|\bar X_n - \mu|$")
+plt.loglog(grid, ref, linestyle="--", label=r"référence $\propto 1/\sqrt{n}$")
+plt.title("Vitesse de convergence typique : ordre $1/\\sqrt{n}$")
+plt.xlabel("n")
+plt.ylabel(r"erreur")
+plt.legend()
+plt.tight_layout()
+
+# 6.4 Option : tester la stabilisation de sqrt(n)*|Xbar - mu|
+plt.figure()
+plt.plot(grid, np.sqrt(grid) * moments["bias"])
+plt.xscale("log")
+plt.title(r"Test : $\sqrt{n}\,|\bar X_n-\mu|$ (ordre constant)")
+plt.xlabel("n")
+plt.ylabel(r"$\sqrt{n}\,|\bar X_n-\mu|$")
+plt.tight_layout()
+
+plt.show()
+```
+
+
 
 ::: {.callout-tip}
 ## Exercice 6, partie 2. Moivre-Laplace (binomiale)
