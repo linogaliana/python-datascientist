@@ -706,6 +706,102 @@ x = rng.normal(0, size=(3, 4))
 {{< include "01_numpy_exercises/_exo5_solution.qmd" >}}
 :::
 
+# Simulations numériques
+
+Pour illustrer les fonctionnalités de simulation de variables aléatoires avec `Numpy`, illustrons empiriquement quelques théorèmes incontournables de la statistique, à savoir: 
+
+* La loi des grands nombres;
+* Le théorème central limite et sa version particulière dans le cas de lancer de pièce, le [théorème de Moivre-Laplace](https://fr.wikipedia.org/wiki/Th%C3%A9or%C3%A8me_de_Moivre-Laplace).
+
+Nous allons avoir besoin des éléments suivants pour initialiser notre processus générateur de données.
+
+```{python}
+import numpy as np
+
+def generate_grid(size_max=1000):
+    n_small = np.arange(3, 200, 2)
+    n_log = np.unique(np.round(np.logspace(np.log10(200), np.log10(size_max), 120)).astype(int))
+    return np.unique(np.concatenate([n_small, n_log]))
+
+N_max = 100_000
+rng = np.random.default_rng(seed=123)
+grid = generate_grid(size_max=N_max)
+```
+
+Ces éléments nous permettent de générer une série aléatoire d’observations jusqu’à une taille `N_max`, puis d’observer l’évolution des estimateurs empiriques de moments (moyenne et variance) lorsque l’on ne conserve que les `n` premières observations, pour différents `n` donnés par `grid`. L’objectif est d’illustrer la convergence des estimateurs empiriques vers leurs valeurs théoriques lorsque `n` augmente.
+
+::: {.callout-tip}
+## Exercice 6, partie 1. La loi des grands nombres
+
+On considère une suite i.i.d. $(X_i)_{i \ge 1}$ telle que $X_i \sim \mathcal{U}\bigl([0,1]\bigr)$.
+
+1. Générer un vecteur `X` de taille `N_max` suivant la loi uniforme $\mathcal{U}\bigl([0,1]\bigr)$.
+2. Pour chaque valeur $n$ de `grid`, calculer les grandeurs empiriques associées au préfixe $(X_1,\dots,X_n)$:
+   1. la moyenne empirique 
+      $$
+      \bar X_n = \frac{1}{n}\sum_{i=1}^n X_i
+      $$
+   1. la variance empirique (avec diviseur $n$) :
+      $$
+      s_n^2 = \frac{1}{n}\sum_{i=1}^n (X_i-\bar X_n)^2,
+      $$
+      puis la variance d’échantillon (version non biaisée, avec diviseur $n-1$) :
+      $$
+      \hat s_n^2 = \frac{1}{n-1}\sum_{i=1}^n (X_i-\bar X_n)^2.
+      $$
+3. Rappeler les valeurs théoriques de la moyenne $\mu$ et de la variance $\sigma^2$ de $\mathcal{U}\bigl([0,1]\bigr)$, puis comparer graphiquement les quantités empiriques à ces valeurs.
+4. À quelle vitesse la moyenne empirique $\bar X_n$ converge-t-elle vers $\mu$ ? Proposer une illustration graphique (par exemple en traçant $|\bar X_n-\mu|$ en fonction de $n$ et en comparant à une décroissance en $1/\sqrt{n}$, ou en traçant $\sqrt{n}\,|\bar X_n-\mu|$).
+
+:::
+
+
+::: {.callout-tip}
+## Exercice 6, partie 2. Moivre-Laplace (binomiale)
+
+On considère une suite i.i.d. $(X_i)_{i \ge 1}$ telle que $X_i \sim \mathcal{B}(100,1/2)$ (nombre de piles sur 100 lancers d’une pièce équilibrée).
+
+1. Représenter graphiquement la loi de $X_1$ (fonction de masse) : $k \mapsto \mathbb{P}(X_1=k)$ pour $k \in \{0,\dots,100\}$.
+2. Calculer la moyenne $\mu=\mathbb{E}[X_1]$ et la variance $\sigma^2=\mathrm{Var}(X_1)$. Donner leurs valeurs numériques.
+3. Pour une valeur $N$ (par exemple $N \in \{50,200,1000,5000\}$), générer $X_1,\dots,X_N$ i.i.d. et calculer $\bar X_N = \frac{1}{N}\sum_{i=1}^N X_i$.
+4. En répétant l’expérience un grand nombre de fois, représenter la distribution empirique de
+   $$
+   Y_N = \sqrt{N}\,(\bar X_N-\mu).
+   $$
+5. Sur la même figure, superposer la densité de la loi normale $\mathcal{N}(0,\sigma^2)$. Dans ce cas, on doit obtenir $\sigma^2=25$.
+
+:::
+
+::: {.callout-tip}
+## Exercice 6, partie 3. TCL pour d’autres lois (variance finie)
+
+Choisir une loi parmi : Poisson, exponentielle, uniforme (au choix), en précisant ses paramètres. On considère une suite i.i.d. $(X_i)_{i \ge 1}$ suivant cette loi, de moyenne $\mu$ et variance $\sigma^2$ (finies).
+
+1. Donner (ou calculer) $\mu$ et $\sigma^2$ pour la loi choisie.
+2. Pour plusieurs valeurs de $N$, en répétant l’expérience un grand nombre de fois, représenter la distribution empirique de
+   $$
+   Y_N = \sqrt{N}\,(\bar X_N-\mu)
+   $$
+   et la comparer à la densité de la loi normale $\mathcal{N}(0,\sigma^2)$.
+3. Option : étudier aussi la version standardisée
+   $$
+   Z_N = \sqrt{N}\,\frac{\bar X_N-\mu}{\sigma}
+   $$
+   et la comparer à $\mathcal{N}(0,1)$.
+
+:::
+
+::: {.callout-tip}
+## Exercice 6, partie 4. Contre-exemple : loi de Cauchy
+
+On considère maintenant une suite i.i.d. $(X_i)_{i \ge 1}$ suivant une loi de Cauchy standard.
+
+1. Générer un vecteur `X` de taille `N_max` suivant une loi de Cauchy standard.
+2. Pour chaque valeur $n$ de `grid`, calculer la moyenne empirique $\bar X_n = \frac{1}{n}\sum_{i=1}^n X_i$ et tracer $\bar X_n$ en fonction de $n$.
+3. Le comportement observé ressemble-t-il à une convergence vers une constante ? Comparer qualitativement avec la partie 1.
+4. La LGN et le TCL “classiques” s’appliquent-ils ici ? Justifier en discutant l’existence (ou non) de $\mu$ et de $\sigma^2$.
+
+:::
+
 
 ::: {.content-visible when-profile="fr"}
 
@@ -828,3 +924,6 @@ Site 1 is quite central because it is referenced twice. Site 5 is also central s
 v
 ```
 :::
+
+
+
