@@ -735,6 +735,8 @@ grid = generate_grid(size_max=N_max)
 
 Ces éléments nous permettent de générer une série aléatoire d’observations jusqu’à une taille `N_max`, puis d’observer l’évolution des estimateurs empiriques de moments (moyenne et variance) lorsque l’on ne conserve que les `n` premières observations, pour différents `n` donnés par `grid`. L’objectif est d’illustrer la convergence des estimateurs empiriques vers leurs valeurs théoriques lorsque `n` augmente.
 
+## Loi des grands nombres
+
 ::: {#tip-exo2-fr .callout-tip}
 ## Exercice 6, partie 1. La loi des grands nombres
 
@@ -895,6 +897,7 @@ plt.tight_layout()
 ```
 
 ```{python}
+#| output: false
 # Figures using plotnine (see visualisation chapters)
 df_hline = pd.DataFrame({"mu": [mu_theory]})
 
@@ -909,8 +912,8 @@ p = (
     labs(
         title=r"Loi des grands nombres avec $\mathcal{U}([0,1])$ :",
         subtitle="Convergence de la moyenne",
-        x="n",
-        y="valeur"
+        x="Sample size ($n$)",
+        y="$\widehat{\mu}$"
     ) +
     theme_minimal()
 )
@@ -935,7 +938,11 @@ p.show()
 p_log.show()
 ```
 
+Avec la @fig-convergence-var-fr on voit que la version intuitive de la variance empirique, c'est-à-dire celle avec $n$ au dénominateur, tend à systématiquement sous-estimer la variance. Il s'agit en effet d'un estimateur biaisé, même si celui-ci tend vers 0 à mesurer que $n$ croît. La variance d'échantillon, celle avec $n-1$, suit globalement la même dynamique mais se rapproche plus tôt de la valeur théorique. 
+
 ```{python}
+#| output: false
+
 # 6.2 Convergence de la variance (ddof=0) et de la variance corrigée (ddof=1)
 plt.figure()
 plt.plot(grid, moments["var_empirique"], label=r"$s_n^2$ (diviseur $n$)")
@@ -947,8 +954,135 @@ plt.xlabel("n")
 plt.ylabel("valeur")
 plt.legend()
 plt.tight_layout()
+```
 
-# 6.3 Vitesse ~ 1/sqrt(n) : comparer |Xbar - mu| à c/sqrt(n) en log-log
+```{python}
+#| message: false
+import numpy as np
+import pandas as pd
+from plotnine import *
+
+
+labels_type = {
+    "var_empirique": r"$s_n^2$ (denominator $n$)",
+    "var_corrigee":  r"$\hat s_n^2$ (denominator $n-1$)",
+    "var_theory":    r"$\sigma^2=1/12$",
+}
+
+# ticks lisibles (sans notation scientifique)
+breaks = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]
+breaks = [b for b in breaks if b <= int(np.max(moments["n"]))]
+
+df = pd.DataFrame({**moments, "var_theory": 1/12})
+
+figure_q2_variance = pd.melt(
+    df.loc[:, ["n", "var_empirique", "var_corrigee", "var_theory"]],
+    id_vars="n",
+    var_name="variable",
+    value_name="value"
+)
+
+# Ordre propre dans la légende
+order = ["var_empirique", "var_corrigee", "var_theory"]
+figure_q2_variance["variable"] = pd.Categorical(
+    figure_q2_variance["variable"], categories=order, ordered=True
+)
+
+# Couleurs: rouge pour la théorie, autres pour le reste
+color_map = {
+    "var_empirique": "#47a371ff",  # bleu (Okabe-Ito)
+    "var_corrigee":  "#7c157cff",  # orange
+    "var_theory":    "#f54b08ff",  # vermillon (rouge-orangé bien visible)
+}
+
+# Types de ligne: théorie en pointillé, autres pleines
+linetype_map = {
+    "var_empirique": "solid",
+    "var_corrigee":  "solid",
+    "var_theory":    "dashed",
+}
+
+p = (
+    ggplot(
+        figure_q2_variance,
+        aes(x="n", y="value", color="variable", linetype="variable")
+    ) +
+    geom_line() +
+    scale_color_manual(
+        values=color_map,
+        breaks=order,
+        labels=[labels_type[k] for k in order]
+    ) +
+    scale_linetype_manual(
+        values=linetype_map,
+        breaks=order,
+        labels=[labels_type[k] for k in order]
+    ) +
+    theme_minimal() +
+    theme(
+        axis_text_x=element_text(rotation=45, ha="right"),
+        legend_direction='horizontal',
+        legend_position='bottom'
+    )
+)
+
+p_lev = p + scale_x_log10(breaks=breaks, labels=[str(b) for b in breaks])
+p_zoom = p + scale_x_continuous(limits=(0, 250))
+```
+
+```{python}
+#| label: fig-convergence-var-fr
+#| layout-ncol: 2
+#| fig-cap: "Convergence de la variance empirique vers la variance théorique (question 3, @tip-exo2-fr)"
+#| fig-subcap: 
+#|   - "Echelle normale"
+#|   - "Zoom sur les premières observations"
+
+(
+    p_lev + labs(
+        title=r"Estimation de la variance de $\mathcal{U}([0,1])$",
+        x="Taille d'échantillon ($n$)",
+        y="Variance estimée"
+    )
+).show()
+(
+    p_zoom + labs(
+        title=r"Estimation de la variance de $\mathcal{U}([0,1])$",
+        x="Taille d'échantillon ($n$)",
+        y="Variance estimée"
+    )
+).show()
+```
+
+
+Regardons la différence, en valeur absolue, entre $\mu$ et $\widehat{\mu}$ pour essayer de déterminer la vitesse de convergence. Faisons ceci pour les premières valeurs, celles avant que l'erreur d'estimation soit minime. 
+
+```{python}
+df_q3 = pd.DataFrame(
+    moments
+)
+
+df_q3['speed'] = df['sqrt_n']*df['mean'].iloc[0]
+
+p_level = (
+    ggplot(df_q3) +
+    geom_line(aes(x="n", y="bias")) +
+    geom_line(aes(x="n", y="speed"), linetype="dashed", color="red") +
+    labs(
+        title=r"Vitesse de convergence : comparaison à $1/\sqrt{n}$",
+        x="$n$",
+        y= r"$|\bar X_n - \mu|$"
+    ) +
+    theme_minimal()
+)
+p_level + scale_x_continuous(limits = (3, 100))
+```
+
+Cela ressemble à une hyperbole du type $1/\sqrt{n}$. Vérifions si cela est cohérent en représentant $|\bar X_n - \mu|/\sqrt{n}$
+
+```{python}
+#| output: false
+
 c = moments["bias"][0] * np.sqrt(grid[0])  # constante calibrée sur le 1er point
 ref = c / np.sqrt(grid)
 
@@ -961,19 +1095,16 @@ plt.ylabel(r"erreur")
 plt.legend()
 plt.tight_layout()
 
-# 6.4 Option : tester la stabilisation de sqrt(n)*|Xbar - mu|
-plt.figure()
-plt.plot(grid, np.sqrt(grid) * moments["bias"])
-plt.xscale("log")
-plt.title(r"Test : $\sqrt{n}\,|\bar X_n-\mu|$ (ordre constant)")
-plt.xlabel("n")
-plt.ylabel(r"$\sqrt{n}\,|\bar X_n-\mu|$")
-plt.tight_layout()
-
 plt.show()
 ```
 
+Si on représente, au-delà des premières valeurs, le rapport entre l'erreur d'estimation et $\sqrt{n}$ (@fig-sqrtn-fr), on voit que l'intuition précédente était correcte. On a bien une erreur d'estimation qui oscille autour de $\sqrt{n}$. 
 
+```{python}
+#| fig-cap: "Représentation de l'erreur d'estimation et son lien avec le nombre d'observations"
+#| label: fig-sqrtn-fr
+p_level + scale_x_log10() + scale_y_log10()
+```
 
 ::: {.callout-tip}
 ## Exercice 6, partie 2. Moivre-Laplace (binomiale)
@@ -1028,8 +1159,7 @@ On considère maintenant une suite i.i.d. $(X_i)_{i \ge 1}$ suivant une loi de C
 # _Broadcasting_
 
 Le *broadcasting* désigne un ensemble de règles permettant
-d'appliquer des opérations sur des tableaux de dimensions différentes. En pratique, 
-cela consiste généralement à appliquer une seule opération à l'ensemble des membres d'un tableau `numpy`. 
+d'appliquer des opérations sur des tableaux de dimensions différentes. En pratique, cela consiste généralement à appliquer une seule opération à l'ensemble des membres d'un tableau `numpy`. 
 
 La différence peut être comprise à partir de l'exemple suivant. Le *broadcasting* permet
 de transformer le scalaire `5` en *array* de dimension 3:
