@@ -1,0 +1,482 @@
+
+```{python}
+# RNG function to make it easier to change distribution afterwards
+def flexible_rng(
+    dist="uniform",
+    N_max=10000,
+    seed=123,
+    rng=None,
+    **kwargs
+):
+    if rng is None:
+        rng = np.random.default_rng(seed)
+
+    d = dist.lower()
+
+    correspondance = {
+        # Discrètes
+        "bernoulli": rng.binomial,
+        "poisson":   rng.poisson,
+
+        # Continues
+        "uniform":     rng.uniform,
+        "exponential": rng.exponential,
+    }
+
+    rng_func = correspondance.get(d, None)
+    if rng_func is None:
+        raise ValueError("dist arg should be: bernoulli, poisson, exponential or uniform")
+
+    return rng_func(size=N_max, **kwargs)
+```
+
+```{python}
+import matplotlib.pyplot as plt
+
+X = flexible_rng("uniform", N_max=N_max, seed=123)
+
+mu_theory = 0.5
+var_theory = 1/12
+
+# 5) Calcul rapide des moments empiriques sur les préfixes X[:n] (sans boucles sur les slices)
+cs1 = np.cumsum(X)
+cs2 = np.cumsum(X**2)
+
+mean_n = cs1[grid - 1] / grid
+var_emp_n = cs2[grid - 1] / grid - mean_n**2                    # variance "empirique" (ddof=0)
+var_unb_n = (cs2[grid - 1] - grid * mean_n**2) / (grid - 1)     # variance corrigée (ddof=1), ok car grid>=3
+
+bias_n = np.abs(mean_n - mu_theory)
+
+moments = {
+    "n": grid,
+    "mean": mean_n,
+    "var_empirique": var_emp_n,
+    "var_corrigee": var_unb_n,
+    "bias": bias_n,
+    "sqrt_n": 1 / np.sqrt(grid),
+}
+```
+
+```{python}
+#| output: false
+# Figures using matplotlib
+plt.figure()
+plt.hist(X, bins=50, density=True, edgecolor="white")
+plt.xlabel("$X$ values")
+plt.ylabel("Density")
+plt.title("$X \sim \\mathcal{U}([0,1])$ observed distribution")
+plt.tight_layout()
+plt.show()
+```
+
+
+::: {.content-visible when-profile="fr"}
+La densité empirique sur notre tirage de grande taille montre bien une quasi-équirépartition des valeurs (@fig-distrib-emp-q2-fr). Notre loi empirique n'est pas parfaitement uniforme mais n'est pas loin de l'être à vue d'oeil. Avant d'étudier plus amplement la distribution, objet des prochains exercices, on peut déjà vérifier les moments de notre tirage que sont la moyenne et la variance empirique.   
+:::
+
+::: {.content-visible when-profile="en"}
+The empirical density from our large sample clearly shows an almost even spread of values (@fig-distrib-emp-q2-en). Our empirical distribution is not perfectly uniform, but it is visually quite close. Before studying the distribution in more detail, which is the focus of the next exercises, we can already check the moments of our sample, namely the empirical mean and the empirical variance.
+:::
+
+```{python}
+#| output: false
+
+# Figures using plotnine (see visualisation chapters)
+import pandas as pd
+from plotnine import *
+
+p = (
+    ggplot(pd.DataFrame(X, columns = ["x"]), aes(x = "x")) +
+    geom_histogram(
+        aes(y=after_stat("density")),
+        bins=50,
+        boundary=0,
+        closed="left",
+        color="white",
+        fill = "#991124"
+    ) +
+    theme_minimal()
+)
+```
+
+
+::: {.content-visible when-profile="fr"}
+
+```{python}
+#| fig-cap: "Distribution empirique de notre tirage aléatoire de loi uniforme (question 2, @tip-exo2-fr)"
+#| label: fig-distrib-emp-q2-fr
+#| message: false
+#| warning: false
+p + labs(
+        title="Histogramme des valeurs réalisées de $X \sim \\mathcal{U}([0,1])$",
+        x="Valeurs de $X$",
+        y="Densité"
+    )
+```
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+```{python}
+#| fig-cap: "Empirical distribution of our random draw from the uniform law (Question 2, @tip-exo2-en)"
+#| label: fig-distrib-emp-q2-en
+#| message: false
+#| warning: false
+p + labs(
+        title="Histogram of observed values of $X \\sim \\mathcal{U}([0,1])$",
+        x="Values of $X$",
+        y="Density"
+    )
+```
+
+:::
+
+
+```{python}
+#| output: false
+# Figures using matplotlib
+plt.figure()
+plt.plot(grid, moments["mean"], label=r"$\bar X_n$")
+plt.axhline(mu_theory, linestyle="--", label=r"$\mu=1/2$")
+plt.xscale("log")
+plt.title("LGN sur $\\mathcal{U}([0,1])$ : convergence de la moyenne")
+plt.xlabel("n")
+plt.ylabel("valeur")
+plt.legend()
+plt.tight_layout()
+```
+
+
+```{python}
+#| output: false
+# Figures using plotnine (see visualisation chapters)
+df_hline = pd.DataFrame({"mu": [mu_theory]})
+
+breaks = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+
+breaks = [b for b in breaks if b <= int(np.max(moments["n"]))]
+
+p = (
+    ggplot(pd.DataFrame(moments), aes(x="n", y="mean")) +
+    geom_line() +
+    geom_hline(df_hline, aes(yintercept="mu"), linetype="dashed", color="red") +
+    theme_minimal()
+)
+```
+
+::: {.content-visible when-profile="fr"}
+
+Avec la @fig-convergence-mean-fr, on voit la convergence de la moyenne empirique vers sa valeur théorique (l'espérance). 
+
+```{python}
+#| label: fig-convergence-mean-fr
+#| layout-ncol: 2
+#| fig-cap: "Convergence de la moyenne vers l'espérance théorique (question 3, @tip-exo2-fr)"
+#| fig-subcap: 
+#|   - "Echelle normale"
+#|   - "Echelle logarithmique"
+
+p = p + labs(
+        title=r"Loi des grands nombres avec $\mathcal{U}([0,1])$ :",
+        subtitle="Convergence de la moyenne",
+        x="Sample size ($n$)",
+        y="$\widehat{\mu}$"
+    )
+
+p_log = p + scale_x_log10(
+        breaks=breaks,
+        labels=[str(b) for b in breaks]   
+    )
+
+p.show()
+p_log.show()
+```
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+With @fig-convergence-mean-en, we can see the empirical mean converging to its theoretical value (the expectation).
+
+```{python}
+#| label: fig-convergence-mean-en
+#| layout-ncol: 2
+#| fig-cap: "Convergence of the mean to the theoretical expectation (Question 3, @tip-exo2-en)"
+#| fig-subcap: 
+#|   - "Linear scale"
+#|   - "Logarithmic scale"
+
+p = p + labs(
+        title=r"Law of Large Numbers with $\mathcal{U}([0,1])$:",
+        subtitle="Mean convergence",
+        x="Sample size ($n$)",
+        y="$\widehat{\mu}$"
+    )
+
+p_log = p + scale_x_log10(
+        breaks=breaks,
+        labels=[str(b) for b in breaks]   
+    )
+
+p.show()
+p_log.show()
+```
+
+:::
+
+Avec la @fig-convergence-var-fr on voit que la version intuitive de la variance empirique, c'est-à-dire celle avec $n$ au dénominateur, tend à systématiquement sous-estimer la variance. Il s'agit en effet d'un estimateur biaisé, même si celui-ci tend vers 0 à mesurer que $n$ croît. La variance d'échantillon, celle avec $n-1$, suit globalement la même dynamique mais se rapproche plus tôt de la valeur théorique. 
+
+```{python}
+#| output: false
+
+# Variance convergence figure
+plt.figure()
+plt.plot(grid, moments["var_empirique"], label=r"$s_n^2$ (diviseur $n$)")
+plt.plot(grid, moments["var_corrigee"], label=r"$\hat s_n^2$ (diviseur $n-1$)", alpha=0.9)
+plt.axhline(var_theory, linestyle="--", label=r"$\sigma^2=1/12$")
+plt.xscale("log")
+plt.title("LGN sur $\\mathcal{U}([0,1])$ : convergence de la variance")
+plt.xlabel("n")
+plt.ylabel("valeur")
+plt.legend()
+plt.tight_layout()
+```
+
+```{python}
+#| message: false
+import numpy as np
+import pandas as pd
+from plotnine import *
+
+
+labels_type = {
+    "var_empirique": r"$s_n^2$ (denominator $n$)",
+    "var_corrigee":  r"$\hat s_n^2$ (denominator $n-1$)",
+    "var_theory":    r"$\sigma^2=1/12$",
+}
+
+# ticks lisibles (sans notation scientifique)
+breaks = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]
+breaks = [b for b in breaks if b <= int(np.max(moments["n"]))]
+
+df = pd.DataFrame({**moments, "var_theory": 1/12})
+
+figure_q2_variance = pd.melt(
+    df.loc[:, ["n", "var_empirique", "var_corrigee", "var_theory"]],
+    id_vars="n",
+    var_name="variable",
+    value_name="value"
+)
+
+# Ordre propre dans la légende
+order = ["var_empirique", "var_corrigee", "var_theory"]
+figure_q2_variance["variable"] = pd.Categorical(
+    figure_q2_variance["variable"], categories=order, ordered=True
+)
+
+# Couleurs: rouge pour la théorie, autres pour le reste
+color_map = {
+    "var_empirique": "#47a371ff",  # bleu (Okabe-Ito)
+    "var_corrigee":  "#7c157cff",  # orange
+    "var_theory":    "#f54b08ff",  # vermillon (rouge-orangé bien visible)
+}
+
+# Types de ligne: théorie en pointillé, autres pleines
+linetype_map = {
+    "var_empirique": "solid",
+    "var_corrigee":  "solid",
+    "var_theory":    "dashed",
+}
+
+p = (
+    ggplot(
+        figure_q2_variance,
+        aes(x="n", y="value", color="variable", linetype="variable")
+    ) +
+    geom_line() +
+    scale_color_manual(
+        values=color_map,
+        breaks=order,
+        labels=[labels_type[k] for k in order]
+    ) +
+    scale_linetype_manual(
+        values=linetype_map,
+        breaks=order,
+        labels=[labels_type[k] for k in order]
+    ) +
+    theme_minimal() +
+    theme(
+        axis_text_x=element_text(rotation=45, ha="right"),
+        legend_direction='horizontal',
+        legend_position='bottom'
+    )
+)
+
+p_lev = p + scale_x_log10(breaks=breaks, labels=[str(b) for b in breaks])
+p_zoom = p + scale_x_continuous(limits=(0, 250))
+```
+
+::: {.content-visible when-profile="fr"}
+
+```{python}
+#| label: fig-convergence-var-fr
+#| layout-ncol: 2
+#| fig-cap: "Convergence de la variance empirique vers la variance théorique (question 3, @tip-exo2-fr)"
+#| fig-subcap: 
+#|   - "Echelle normale"
+#|   - "Zoom sur les premières observations"
+#| message: false
+
+(
+    p_lev + labs(
+        title=r"Estimation de la variance de $\mathcal{U}([0,1])$",
+        x="Taille d'échantillon ($n$)",
+        y="Variance estimée"
+    )
+).show()
+(
+    p_zoom + labs(
+        title=r"Estimation de la variance de $\mathcal{U}([0,1])$",
+        x="Taille d'échantillon ($n$)",
+        y="Variance estimée"
+    )
+).show()
+```
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+```{python}
+#| label: fig-convergence-var-en
+#| layout-ncol: 2
+#| fig-cap: "Convergence of the empirical variance to the theoretical variance (Question 3, @tip-exo2-en)"
+#| fig-subcap: 
+#|   - "Linear scale"
+#|   - "Zoom on the first observations"
+#| message: false
+
+(
+    p_lev + labs(
+        title=r"Estimating the variance of $\mathcal{U}([0,1])$",
+        x="Sample size ($n$)",
+        y="Estimated variance"
+    )
+).show()
+(
+    p_zoom + labs(
+        title=r"Estimating the variance of $\mathcal{U}([0,1])$",
+        x="Sample size ($n$)",
+        y="Estimated variance"
+    )
+).show()
+```
+
+:::
+
+::: {.content-visible when-profile="fr"}
+Regardons la différence, en valeur absolue, entre $\mu$ et $\widehat{\mu}$ pour essayer de déterminer la vitesse de convergence. Faisons ceci pour les premières valeurs, celles avant que l'erreur d'estimation soit minime. 
+:::
+
+::: {.content-visible when-profile="en"}
+Let us look at the absolute difference between $\mu$ and $\widehat{\mu}$ to try to determine the convergence rate. We will do this for the first values, i.e. before the estimation error becomes negligible.
+:::
+
+```{python}
+#| message: false
+df_q3 = pd.DataFrame(
+    moments
+)
+
+df_q3['speed'] = df['sqrt_n']*df['mean'].iloc[0]
+
+p_level = (
+    ggplot(df_q3) +
+    geom_line(aes(x="n", y="bias")) +
+    geom_line(aes(x="n", y="speed"), linetype="dashed", color="red") +
+    theme_minimal()
+)
+```
+
+::: {.content-visible when-profile="fr"}
+
+```{python}
+#| message: false
+
+p_level + scale_x_continuous(limits = (3, 100)) + labs(
+    title=r"Vitesse de convergence : comparaison à $1/\sqrt{n}$",
+    x="$n$",
+    y= r"$|\bar X_n - \mu|$"
+)
+```
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+```{python}
+#| message: false
+
+p_level + scale_x_continuous(limits = (3, 100)) + labs(
+    title=r"Convergence rate: comparison with $1/\sqrt{n}$",
+    x="$n$",
+    y=r"$|\bar X_n - \mu|$"
+)
+```
+
+:::
+
+::: {.content-visible when-profile="fr"}
+Cela ressemble à une hyperbole du type $1/\sqrt{n}$. Vérifions si cela est cohérent en représentant $|\bar X_n - \mu|/\sqrt{n}$. Si on représente, au-delà des premières valeurs, le rapport entre l'erreur d'estimation et $\sqrt{n}$ (@fig-sqrtn-fr), on voit que l'intuition précédente était correcte. On a bien une erreur d'estimation qui oscille autour de $\sqrt{n}$.
+:::
+
+::: {.content-visible when-profile="en"}
+This looks like a hyperbola of the form $1/\sqrt{n}$. Let us check whether this is consistent by plotting $\sqrt{n}\,|\bar X_n - \mu|$. If we look beyond the very first values and plot the rescaled estimation error (@fig-sqrtn-en), we see that the previous intuition was correct: the estimation error (after scaling by $\sqrt{n}$) oscillates around a roughly constant level.
+:::
+
+
+```{python}
+#| output: false
+
+c = moments["bias"][0] * np.sqrt(grid[0])  # constante calibrée sur le 1er point
+ref = c / np.sqrt(grid)
+
+plt.figure()
+plt.loglog(grid, moments["bias"], label=r"$|\bar X_n - \mu|$")
+plt.loglog(grid, ref, linestyle="--", label=r"référence $\propto 1/\sqrt{n}$")
+plt.title("Vitesse de convergence typique : ordre $1/\\sqrt{n}$")
+plt.xlabel("n")
+plt.ylabel(r"erreur")
+plt.legend()
+plt.tight_layout()
+
+plt.show()
+```
+
+::: {.content-visible when-profile="fr"}
+```{python}
+#| fig-cap: "Représentation de l'erreur d'estimation et son lien avec le nombre d'observations"
+#| label: fig-sqrtn-fr
+#| message: false
+p_level + scale_x_log10() + scale_y_log10() + labs(
+    title=r"Vitesse de convergence : comparaison à $1/\sqrt{n}$",
+    x="$n$",
+    y= r"$\frac{|\bar X_n - \mu|}{\sqrt{n}}$"
+)
+```
+:::
+
+::: {.content-visible when-profile="en"}
+```{python}
+#| fig-cap: "Plot of the estimation error and its relationship with the number of observations"
+#| label: fig-sqrtn-en
+#| message: false
+p_level + scale_x_log10() + scale_y_log10() + labs(
+    title=r"Convergence speed : comparison to $1/\sqrt{n}$",
+    x="$n$",
+    y= r"$\frac{|\bar X_n - \mu|}{\sqrt{n}}$"
+)
+```
+:::
