@@ -710,14 +710,17 @@ x = rng.normal(0, size=(3, 4))
 
 `Numpy` est incontournable dès lors qu'on effectue des simulations aléatoires, ce qui est très commun en statistiques computationnelles avec un ensemble de méthodes dites de Monte-Carlo. Le principe général est de remplacer un calcul théorique difficile (une intégrale, une probabilité, une espérance) par une approximation numérique obtenue en répétant un grand nombre de tirages aléatoires et en moyennant la quantité d’intérêt, en s’appuyant sur la loi des grands nombres et le théorème central limite pour quantifier la précision de l’estimation.
 
-illustrons empiriquement quelques théorèmes incontournables de la statistique, à savoir: 
+Illustrons empiriquement quelques théorèmes incontournables de la statistique par une série d'exercices. Cela permettra d'explorer : 
 
-* La loi des grands nombres;
-* Le théorème central limite et sa version particulière dans le cas de lancer de pièce, le [théorème de Moivre-Laplace](https://fr.wikipedia.org/wiki/Th%C3%A9or%C3%A8me_de_Moivre-Laplace).
+* La loi des grands nombres (@tip-exo2fr);
+* Le théorème central limite et sa version particulière dans le cas de lancer de pièce, le [théorème de Moivre-Laplace](https://fr.wikipedia.org/wiki/Th%C3%A9or%C3%A8me_de_Moivre-Laplace) ;
+* Les intervalles de confiance théoriques et leur contrepartie empirique à travers le _bootstrap_ ;
+* Le principe des méthodes de Monte Carlo avec l'algorithme du rejet.  
 
 Nous allons avoir besoin des éléments suivants pour initialiser notre processus générateur de données.
 
 ```{python}
+#| echo: true
 import numpy as np
 
 def generate_grid(size_max=1000):
@@ -732,18 +735,19 @@ grid = generate_grid(size_max=N_max)
 
 Ces éléments nous permettent de générer une série aléatoire d’observations jusqu’à une taille `N_max`, puis d’observer l’évolution des estimateurs empiriques de moments (moyenne et variance) lorsque l’on ne conserve que les `n` premières observations, pour différents `n` donnés par `grid`. L’objectif est d’illustrer la convergence des estimateurs empiriques vers leurs valeurs théoriques lorsque `n` augmente.
 
-::: {.callout-tip}
+::: {#tip-exo2-fr .callout-tip}
 ## Exercice 6, partie 1. La loi des grands nombres
 
 On considère une suite i.i.d. $(X_i)_{i \ge 1}$ telle que $X_i \sim \mathcal{U}\bigl([0,1]\bigr)$.
 
 1. Générer un vecteur `X` de taille `N_max` suivant la loi uniforme $\mathcal{U}\bigl([0,1]\bigr)$.
-2. Pour chaque valeur $n$ de `grid`, calculer les grandeurs empiriques associées au préfixe $(X_1,\dots,X_n)$:
+2. Représenter l'histogramme des valeurs observées $X_i$.
+3. Pour chaque valeur $n$ de `grid`, calculer les grandeurs empiriques associées au préfixe $(X_1,\dots,X_n)$:
    1. la moyenne empirique 
       $$
       \bar X_n = \frac{1}{n}\sum_{i=1}^n X_i
       $$
-   1. la variance empirique (avec diviseur $n$) :
+   2. la variance empirique (avec diviseur $n$) :
       $$
       s_n^2 = \frac{1}{n}\sum_{i=1}^n (X_i-\bar X_n)^2,
       $$
@@ -751,23 +755,14 @@ On considère une suite i.i.d. $(X_i)_{i \ge 1}$ telle que $X_i \sim \mathcal{U}
       $$
       \hat s_n^2 = \frac{1}{n-1}\sum_{i=1}^n (X_i-\bar X_n)^2.
       $$
-3. Rappeler les valeurs théoriques de la moyenne $\mu$ et de la variance $\sigma^2$ de $\mathcal{U}\bigl([0,1]\bigr)$, puis comparer graphiquement les quantités empiriques à ces valeurs.
-4. À quelle vitesse la moyenne empirique $\bar X_n$ converge-t-elle vers $\mu$ ? Proposer une illustration graphique (par exemple en traçant $|\bar X_n-\mu|$ en fonction de $n$ et en comparant à une décroissance en $1/\sqrt{n}$, ou en traçant $\sqrt{n}\,|\bar X_n-\mu|$).
+4. Rappeler les valeurs théoriques de la moyenne $\mu$ et de la variance $\sigma^2$ de $\mathcal{U}\bigl([0,1]\bigr)$, puis comparer graphiquement les quantités empiriques à ces valeurs.
+5. À quelle vitesse la moyenne empirique $\bar X_n$ converge-t-elle vers $\mu$ ? Proposer une illustration graphique (par exemple en traçant $|\bar X_n-\mu|$ en fonction de $n$ et en comparant à une décroissance en $1/\sqrt{n}$, ou en traçant $\sqrt{n}\,|\bar X_n-\mu|$).
 
 :::
 
+
 ```{python}
-# --- Correction Exercice 6, partie 1 : LGN sur U([0,1]) ---
-import numpy as np
-import matplotlib.pyplot as plt
-
-# 1) Grille (dense au début + log ensuite)
-def generate_grid(size_max=1000):
-    n_small = np.arange(3, 200, 2)
-    n_log = np.unique(np.round(np.logspace(np.log10(200), np.log10(size_max), 120)).astype(int))
-    return np.unique(np.concatenate([n_small, n_log]))
-
-# 2) Générateur flexible (fourni) + léger ajout: uniform par défaut sur [0,1]
+# RNG function to make it easier to change distribution afterwards
 def flexible_rng(
     dist="uniform",
     N_max=10000,
@@ -794,23 +789,16 @@ def flexible_rng(
     if rng_func is None:
         raise ValueError("dist arg should be: bernoulli, poisson, exponential or uniform")
 
-    # Valeurs par défaut pour l'uniforme: U([0,1])
-    if d == "uniform":
-        kwargs.setdefault("low", 0.0)
-        kwargs.setdefault("high", 1.0)
-
     return rng_func(size=N_max, **kwargs)
+```
 
-# Paramètres
-N_max = 100_000
-grid = generate_grid(N_max)
+```{python}
+import matplotlib.pyplot as plt
 
-# 3) Générer X ~ U([0,1]) de taille N_max
 X = flexible_rng("uniform", N_max=N_max, seed=123)
 
-# 4) Moments théoriques de U([0,1])
-mu_theo = 0.5
-var_theo = 1/12
+mu_theory = 0.5
+var_theory = 1/12
 
 # 5) Calcul rapide des moments empiriques sur les préfixes X[:n] (sans boucles sur les slices)
 cs1 = np.cumsum(X)
@@ -820,7 +808,7 @@ mean_n = cs1[grid - 1] / grid
 var_emp_n = cs2[grid - 1] / grid - mean_n**2                    # variance "empirique" (ddof=0)
 var_unb_n = (cs2[grid - 1] - grid * mean_n**2) / (grid - 1)     # variance corrigée (ddof=1), ok car grid>=3
 
-bias_n = np.abs(mean_n - mu_theo)
+bias_n = np.abs(mean_n - mu_theory)
 
 moments = {
     "n": grid,
@@ -830,24 +818,129 @@ moments = {
     "bias": bias_n,
     "sqrt_n": 1 / np.sqrt(grid),
 }
+```
 
-# 6) Illustrations
-# 6.1 Convergence de la moyenne vers mu
+```{python}
+#| output: false
+# Figures using matplotlib
+plt.figure()
+plt.hist(X, bins=50, density=True, edgecolor="white")
+plt.xlabel("Valeurs de $X$")
+plt.ylabel("Densité")
+plt.title("Histogramme des valeurs réalisées de $X \sim \\mathcal{U}([0,1])$")
+plt.tight_layout()
+plt.show()
+```
+
+La densité empirique sur notre tirage de grande taille montre bien une quasi-équirépartition des valeurs (@fig-distrib-emp-q2-fr). Notre loi empirique n'est pas parfaitement uniforme mais n'est pas loin de l'être à vue d'oeil. Avant d'étudier plus amplement la distribution, objet des prochains exercices, on peut déjà vérifier les moments de notre tirage que sont la moyenne et la variance empirique.   
+
+```{python}
+#| output: false
+
+# Figures using plotnine (see visualisation chapters)
+import pandas as pd
+from plotnine import *
+
+p = (
+    ggplot(pd.DataFrame(X, columns = ["x"]), aes(x = "x")) +
+    geom_histogram(aes(y=after_stat("density")),
+                   bins=50,
+                   boundary=0,
+                   closed="left",
+                   color="white",
+                   fill = "#991124") +
+    labs(
+        title="Histogramme des valeurs réalisées de $X \sim \\mathcal{U}([0,1])$",
+        x="Valeurs de $X$",
+        y="Densité"
+    ) +
+    theme_minimal()
+)
+```
+
+::: {.content-visible when-profile="fr"}
+
+```{python}
+#| fig-cap: "Distribution empirique de notre tirage aléatoire de loi uniforme (question 2, @tip-exo2-fr)"
+#| label: fig-distrib-emp-q2-fr
+p
+```
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+```{python}
+#| fig-cap: "Empirical distribution from random draws with uniform law (question 2)"
+#| label: fig-distrib-emp-q2-en
+p
+```
+
+:::
+
+
+
+```{python}
+#| output: false
+# Figures using matplotlib
 plt.figure()
 plt.plot(grid, moments["mean"], label=r"$\bar X_n$")
-plt.axhline(mu_theo, linestyle="--", label=r"$\mu=1/2$")
+plt.axhline(mu_theory, linestyle="--", label=r"$\mu=1/2$")
 plt.xscale("log")
 plt.title("LGN sur $\\mathcal{U}([0,1])$ : convergence de la moyenne")
 plt.xlabel("n")
 plt.ylabel("valeur")
 plt.legend()
 plt.tight_layout()
+```
 
+```{python}
+# Figures using plotnine (see visualisation chapters)
+df_hline = pd.DataFrame({"mu": [mu_theory]})
+
+breaks = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+
+breaks = [b for b in breaks if b <= int(np.max(moments["n"]))]
+
+p = (
+    ggplot(pd.DataFrame(moments), aes(x="n", y="mean")) +
+    geom_line() +
+    geom_hline(df_hline, aes(yintercept="mu"), linetype="dashed", color="red") +
+    labs(
+        title=r"Loi des grands nombres avec $\mathcal{U}([0,1])$ :",
+        subtitle="Convergence de la moyenne",
+        x="n",
+        y="valeur"
+    ) +
+    theme_minimal()
+)
+
+p_log = p + scale_x_log10(
+        breaks=breaks,
+        labels=[str(b) for b in breaks]   
+    )
+```
+
+Avec la @fig-convergence-mean-fr, on voit la convergence de la moyenne empirique vers sa valeur théorique (l'espérance). Ceci illustre la loi des grands nombres, l'un des théorèmes, avec le [théorème fondamental de la statistique](https://fr.wikipedia.org/wiki/Th%C3%A9or%C3%A8me_de_Glivenko-Cantelli), qui fait le lien entre la statistique et les probabilités.
+
+```{python}
+#| label: fig-convergence-mean-fr
+#| layout-ncol: 2
+#| fig-cap: "Convergence de la moyenne vers l'espérance théorique (question 3, @tip-exo2-fr)"
+#| fig-subcap: 
+#|   - "Echelle normale"
+#|   - "Echelle logarithmique"
+
+p.show()
+p_log.show()
+```
+
+```{python}
 # 6.2 Convergence de la variance (ddof=0) et de la variance corrigée (ddof=1)
 plt.figure()
 plt.plot(grid, moments["var_empirique"], label=r"$s_n^2$ (diviseur $n$)")
 plt.plot(grid, moments["var_corrigee"], label=r"$\hat s_n^2$ (diviseur $n-1$)", alpha=0.9)
-plt.axhline(var_theo, linestyle="--", label=r"$\sigma^2=1/12$")
+plt.axhline(var_theory, linestyle="--", label=r"$\sigma^2=1/12$")
 plt.xscale("log")
 plt.title("LGN sur $\\mathcal{U}([0,1])$ : convergence de la variance")
 plt.xlabel("n")
