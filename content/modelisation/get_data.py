@@ -1,8 +1,6 @@
 import urllib
 import urllib.request
-import os
 import zipfile
-from urllib.request import Request, urlopen
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -69,6 +67,8 @@ def create_votes_dataframes():
         "https://minio.lab.sspcloud.fr/lgaliana/data/python-ENSAE/countypres_2000-2024.csv"
     )
     # df_historical = pd.read_csv('https://dataverse.harvard.edu/api/access/datafile/3641280?gbrecs=false', sep = "\t")
+    fips_var = "county_fips"
+    df_historical = df_historical.rename(columns = {fips_var: "FIPS"})
 
     df_historical = df_historical.dropna(subset=["FIPS"])
     df_historical["FIPS"] = df_historical["FIPS"].astype(int)
