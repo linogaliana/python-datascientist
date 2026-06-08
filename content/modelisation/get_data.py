@@ -65,15 +65,9 @@ def create_votes_dataframes():
     shp["FIPS"] = shp["GEOID"].astype(str).str.lstrip("0")
     votes = shp.merge(df_election, left_on="FIPS", right_on="county_fips")
 
-    req = Request(
-        "https://dataverse.harvard.edu/api/access/datafile/3641280?gbrecs=false"
+    df_historical = pd.read_csv(
+        "https://minio.lab.sspcloud.fr/lgaliana/data/python-ENSAE/countypres_2000-2024.csv"
     )
-    req.add_header(
-        "User-Agent",
-        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0",
-    )
-    content = urlopen(req)
-    df_historical = pd.read_csv(content, sep="\t")
     # df_historical = pd.read_csv('https://dataverse.harvard.edu/api/access/datafile/3641280?gbrecs=false', sep = "\t")
 
     df_historical = df_historical.dropna(subset=["FIPS"])
