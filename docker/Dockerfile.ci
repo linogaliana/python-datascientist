@@ -1,0 +1,31 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Mirror build/requirements.sh + add curl for uv install
+RUN apt-get update && apt-get install -y \
+    graphviz wget curl git \
+    build-essential libmagic-dev libgdal-dev \
+    imagemagick && \
+    rm -rf /var/lib/apt/lists/*
+
+# uv manages Python 3.13 itself (Ubuntu 24.04 ships 3.12)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+
+# Quarto
+ARG QUARTO_VERSION=1.8.26
+RUN wget -q "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" && \
+    tar xzf "quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" && \
+    mv "quarto-${QUARTO_VERSION}" /opt/quarto && \
+    ln -s /opt/quarto/bin/quarto /usr/local/bin/quarto && \
+    rm "quarto-${QUARTO_VERSION}-linux-amd64.tar.gz"
+
+# Pre-populate the uv download cache from the lock file.
+# The cache lands in /root/.cache/uv/ and persists in the image layers.
+# CI jobs that run uv sync will install from this cache (no PyPI download).
+WORKDIR /tmp/build
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen
+
+WORKDIR /
