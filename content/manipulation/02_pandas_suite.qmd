@@ -129,8 +129,7 @@ Through this work, we will deepen our understanding of a real world phenomenon t
 
 Le chapitre précédent utilisait quasi exclusivement la librairie `Pandas`. Nous allons dans ce chapitre utiliser d'autres _packages_ en complément de celui-ci.
 
-Comme expliqué ci-dessous, nous allons utiliser une librairie nommée `pynsee` pour récupérer les données de l'Insee utiles à enrichir notre jeu de données de l'Ademe. Cette librairie n'est pas installée par défaut dans `Python`. Avant de pouvoir l'utiliser,
-il est nécessaire de l'installer, comme la librairie `great_tables` que nous verrons à la fin de ce chapitre:
+Comme expliqué ci-dessous, nous allons interroger directement l'API `Melodi` de l'Insee, via la librairie `requests`, pour récupérer les données utiles à l'enrichissement de notre jeu de données de l'Ademe. Aucune librairie spécifique n'est donc nécessaire pour cette tâche, contrairement à la librairie `great_tables` que nous verrons à la fin de ce chapitre et qu'il convient d'installer au préalable:
 :::
 
 ::: {.content-visible when-profile="en"}
@@ -138,14 +137,13 @@ il est nécessaire de l'installer, comme la librairie `great_tables` que nous ve
 
 The previous chapter used almost exclusively the `Pandas` library. In this chapter, we will use other packages in addition to it.
 
-As explained below, we will use a library called `pynsee` to retrieve Insee data useful for enriching our Ademe dataset. This library is not installed by default in `Python`. Before using it, it is necessary to install it, along with the `great_tables` library that we will see at the end of this chapter:
+As explained below, we will query the Insee `Melodi` API directly, using the `requests` library, to retrieve the data useful for enriching our Ademe dataset. No dedicated library is therefore needed for this task, unlike the `great_tables` library that we will see at the end of this chapter, which needs to be installed beforehand:
 :::
 
 
 ```{python}
 #| eval: false
 #| echo: true
-!pip install pynsee --quiet
 !pip install great_tables --quiet
 ```
 
@@ -166,8 +164,7 @@ The essential packages to start this chapter are as follows:
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import pynsee
-import pynsee.download
+import requests
 ```
 
 {{< include "02_pandas_intro/_reproducible.qmd" >}}
@@ -181,7 +178,7 @@ Ce tutoriel continue l'exploration du jeu de données du chapitre précédent:
 * Les émissions de gaz à effet de serre estimées au niveau communal par l'ADEME. Le jeu de données est
 disponible sur [data.gouv](https://www.data.gouv.fr/fr/datasets/inventaire-de-gaz-a-effet-de-serre-territorialise/#_)
 et requêtable directement dans `Python` avec
-[cet url](https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert) ;
+[cet url](https://data.ademe.fr/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert) ;
 
 
 Les problématiques d'enrichissement de données (association d'une source à une autre à partir de caractéristiques communes) seront présentées à partir de deux sources produites par l'Insee:
@@ -190,57 +187,41 @@ Les problématiques d'enrichissement de données (association d'une source à un
 [code officiel géographique](https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv),
 un référentiel
 produit par l'Insee utilisé pour identifier les communes à partir d'un code unique, contrairement au code postal ;
-* Les données [_Filosofi_](https://www.insee.fr/fr/metadonnees/source/serie/s1172), une source sur les revenus des Français à une échelle spatiale fine construite par l'Insee à partir des déclarations fiscales et d'informations sur les prestations sociales. En l'occurrence, nous allons utiliser les niveaux de revenu et les populations[^poplegales] au niveau communal afin de les mettre en regard de nos données d'émissions.
+* Les données [_Filosofi_](https://www.insee.fr/fr/metadonnees/source/serie/s1172), une source sur les revenus des Français à une échelle spatiale fine construite par l'Insee à partir des déclarations fiscales et d'informations sur les prestations sociales. En l'occurrence, nous allons utiliser les niveaux de revenu et la population[^poplegales] au niveau communal afin de les mettre en regard de nos données d'émissions.
 
 
-[^poplegales]: Idéalement il serait plus cohérent, pour les données démographiques, d'utiliser les [populations légales](https://www.insee.fr/fr/information/2008354), issues du recensement. Néanmoins cette base n'est pas encore intégrée nativement dans la librairie `pynsee` que nous allons utiliser dans ce chapitre. Un exercice d'ouverture est proposé pour construire des agrégats de population à partir des jeux de données individuels anonymisés du recensement (les [fichiers détails](https://www.insee.fr/fr/information/2383306)).
+[^poplegales]: Pour les données démographiques, on utilise directement les [populations légales](https://www.insee.fr/fr/information/2008354) diffusées par l'Insee, issues du recensement, plutôt qu'un indicateur de population fiscale. Un exercice d'ouverture est également proposé pour construire des agrégats de population à partir des jeux de données individuels anonymisés du recensement (les [fichiers détails](https://www.insee.fr/fr/information/2383306)).
 
 
-Pour faciliter l'import de données Insee, il est recommandé d'utiliser le _package_
-[`pynsee`](https://pynsee.readthedocs.io/en/latest/) qui simplifie l'accès aux principaux jeux de données
-de l'Insee disponibles sur le site web [insee.fr](https://www.insee.fr/fr/accueil)
-ou via des API.
+Pour importer ces données, nous allons directement interroger l'API
+[`Melodi`](https://api.insee.fr/catalogue/), le nouveau point d'entrée mis à disposition par l'Insee pour diffuser ses principales sources de données, dont fait partie _Filosofi_. Il ne s'agit donc plus d'un _package_ `Python` dédié mais d'une API classique, interrogeable avec `requests`. Plus d'éléments sur l'exploitation de JSON via Python seront proposés dans le [chapitre consacré aux API](/content/manipulation/04c_API_TP.qmd). 
 
 :::: {.callout-note}
 
-Le _package_ `pynsee` comporte deux principaux points d'entrée :
+Une précédente version de ce tutoriel s'appuyait sur le *package* communautaire [`pynsee`](https://github.com/InseeFrLab/pynsee) qui simplifie l'accès aux données officielles de l'institut.
 
-- Les API de l'Insee, ce qui sera illustré dans le chapitre consacré.
-- Quelques jeux de données directement issus du site web de
-l'Insee ([insee.fr](https://www.insee.fr/fr/accueil))
+Cependant, les sources qui nous sont ici utiles ont été intégrées dans une nouvelle API de l'Insee nommée `Melodi`. Celle-ci renvoie des données structurées au format `JSON`: chaque
+observation associe des dimensions (par exemple `GEO` pour la zone géographique ou `TIME_PERIOD` pour la période) à une valeur (`OBS_VALUE_NIVEAU`). Plus d'éléments sur l'exploitation de JSON via Python seront proposés dans le [chapitre consacré aux API](/content/manipulation/04c_API_TP.qmd). 
 
-Dans ce chapitre, nous allons exclusivement utiliser cette deuxième
-approche. Cela se fera par le module `pynsee.download`.
-
-La liste des données disponibles depuis ce _package_ est [ici](https://inseefrlab.github.io/DoReMIFaSol/articles/donnees_dispo.html).
-La fonction `download_file` attend un identifiant unique
-pour savoir quelle base de données aller chercher et
-restructurer depuis le
-site [insee.fr](https://www.insee.fr/fr/accueil).
+Chaque source dispose d'un identifiant unique (par exemple `DS_FILOSOFI_CC` pour les données Filosofi communales, `DS_POPULATIONS_HISTORIQUES` pour les populations légales). Le point d'entrée principal est de la forme `https://api.insee.fr/melodi/data/{identifiant}`, que l'on peut filtrer
+par dimension (zone géographique, période, indicateur...). La structure de chaque fichier dépend de la source demandée. Il y a donc généralement un travail propre à chaque source à mettre en oeuvre. 
 
 <details>
 <summary>
-Connaître la liste des bases disponibles
+Explorer la structure d'une source
 </summary>
 
-Pour connaître la liste des bases disponibles, vous
-pouvez utiliser la fonction `meta = pynsee.get_file_list()`
-après avoir fait `import pynsee`.
-Celle-ci renvoie un `DataFrame` dans lequel on peut
-rechercher, par exemple grâce à une recherche
-de mots-clefs :
+Pour connaître la structure d'une source (dimensions, indicateurs
+disponibles...), on peut consulter ses métadonnées, également disponibles au format `JSON` :
 
 ```{python}
 #| echo: true
 #| eval: false
-import pynsee
-meta = pynsee.get_file_list()
-meta.loc[meta['label'].str.contains(r"Filosofi.*2016")]
+import requests
+requests.get("https://api.insee.fr/melodi/catalog/DS_FILOSOFI_CC").json()
 ```
 
-Ici, `meta['label'].str.contains(r"Filosofi.*2016")` signifie:
-"_`pandas` trouve moi tous les labels où sont contenus les termes Filosofi et 2016._"
- (`.*` signifiant "_peu m'importe le nombre de mots ou caractères entre_")
+La liste des sources disponibles sur l'API Melodi est quant à elle consultable sur le [portail des API](https://catalogue-donnees.insee.fr/fr/catalogue/recherche) de l'Insee.
 
 </details>
 
@@ -254,44 +235,46 @@ Ici, `meta['label'].str.contains(r"Filosofi.*2016")` signifie:
 
 This tutorial continues the exploration of the dataset from the previous chapter:
 
-* Greenhouse gas emissions estimated at the municipal level by ADEME. The dataset is available on [data.gouv](https://www.data.gouv.fr/fr/datasets/inventaire-de-gaz-a-effet-de-serre-territorialise/#_) and can be directly queried in Python with [this URL](https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert);
+* Greenhouse gas emissions estimated at the municipal level by ADEME. The dataset is available on [data.gouv](https://www.data.gouv.fr/fr/datasets/inventaire-de-gaz-a-effet-de-serre-territorialise/#_) and can be directly queried in Python with [this URL](https://data.ademe.fr/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert);
 
 The issues of data enrichment (associating one source with another based on common characteristics) will be presented using two sources produced by Insee:
 
 * The [official geographic code](https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv), a reference produced by Insee used to identify municipalities with a unique code, unlike the postal code;
-* The [_Filosofi_](https://www.insee.fr/fr/metadonnees/source/serie/s1172) data, a source on French income at a fine spatial scale constructed by Insee from tax returns and social benefit information. In this case, we will use income levels and populations[^poplegales] at the municipal level to compare them with our emissions data.
+* The [_Filosofi_](https://www.insee.fr/fr/metadonnees/source/serie/s1172) data, a source on French income at a fine spatial scale constructed by Insee from tax returns and social benefit information. In this case, we will use income levels and population[^poplegales] at the municipal level to compare them with our emissions data.
 
-[^poplegales]: Ideally, it would be more coherent, for demographic data, to use the [legal populations](https://www.insee.fr/fr/information/2008354), from the census. However, this base is not yet natively integrated into the `pynsee` library that we will use in this chapter. An open exercise is proposed to construct population aggregates from anonymized individual census data (the [detailed files](https://www.insee.fr/fr/information/2383306)).
+[^poplegales]: For demographic data, we directly use the [legal populations](https://www.insee.fr/fr/information/2008354) published by Insee, derived from the census, rather than a fiscal-population proxy. An open exercise is also proposed to construct population aggregates from anonymized individual census data (the [detailed files](https://www.insee.fr/fr/information/2383306)).
 
-To facilitate the import of Insee data, it is recommended to use the [`pynsee`](https://pynsee.readthedocs.io/en/latest/) package, which simplifies access to the main Insee datasets available on the [insee.fr](https://www.insee.fr/fr/accueil) website or via APIs.
+To import this data, we will directly query the [`Melodi`](https://api.insee.fr/catalogue/) API,
+Insee's new entry point for disseminating its main data sources, including _Filosofi_. This is no
+longer a dedicated `Python` package but a standard API, queried with `requests`. More details on
+handling JSON with Python will be given in the [chapter dedicated to APIs](/content/manipulation/04c_API_TP.qmd).
 
 :::: {.callout-note}
 
-The `pynsee` package has two main entry points:
+A previous version of this tutorial relied on the community *package* [`pynsee`](https://github.com/InseeFrLab/pynsee), which simplifies access to the institute's official data.
 
-- The Insee APIs, which will be illustrated in the dedicated chapter.
-- Some datasets directly from the Insee website ([insee.fr](https://www.insee.fr/fr/accueil))
+However, the sources useful to us here have been integrated into a new Insee API named `Melodi`. It returns structured `JSON` data: each
+observation associates dimensions (for example `GEO` for the geographic area or `TIME_PERIOD` for the period) with a value (`OBS_VALUE_NIVEAU`). More details on handling JSON with Python will be given in the [chapter dedicated to APIs](/content/manipulation/04c_API_TP.qmd).
 
-In this chapter, we will exclusively use the second approach through the `pynsee.download` module.
-
-The list of available data from this package is [here](https://inseefrlab.github.io/DoReMIFaSol/articles/donnees_dispo.html). The `download_file` function expects a unique identifier to know which database to fetch and restructure from the [insee.fr](https://www.insee.fr/fr/accueil) website.
+Each source has a unique identifier (for example `DS_FILOSOFI_CC` for municipal Filosofi data, `DS_POPULATIONS_HISTORIQUES` for legal populations). The main entry point has the form `https://api.insee.fr/melodi/data/{identifier}`, which can be filtered
+by dimension (geographic area, period, indicator...). The structure of each file depends on the source requested, so some source-specific work is generally needed.
 
 <details>
 <summary>
-Knowing the list of available databases
+Exploring the structure of a source
 </summary>
 
-To know the list of available databases, you can use the `meta = pynsee.get_file_list()` function after importing `pynsee`. This returns a `DataFrame` in which you can search, for example, using a keyword search:
+To know the structure of a source (dimensions, available indicators...), you can look at its
+metadata, also available in `JSON` format:
 
 ```{python}
 #| echo: true
 #| eval: false
-import pynsee
-meta = pynsee.get_file_list()
-meta.loc[meta['label'].str.contains(r"Filosofi.*2016")]
+import requests
+requests.get("https://api.insee.fr/melodi/catalog/DS_FILOSOFI_CC").json()
 ```
 
-Here, meta['label'].str.contains(r"Filosofi.*2016") means: "pandas find me all labels containing the terms Filosofi and 2016." (.* means "no matter the number of words or characters in between").
+The list of sources available on the Melodi API can be browsed on Insee's [API portal](https://catalogue-donnees.insee.fr/fr/catalogue/recherche).
 
 </details>
 
@@ -322,7 +305,7 @@ As explained in the previous chapter, these data can be imported very simply wit
 #| echo: true
 import pandas as pd
 
-url = "https://koumoul.com/s/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert"
+url = "https://data.ademe.fr/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert"
 emissions = pd.read_csv(url)
 emissions.head(2)
 ```
@@ -337,6 +320,7 @@ We will already keep the names of the emitting sectors present in the database t
 ```{python}
 #| echo: true
 secteurs = emissions.select_dtypes(include='number').columns
+secteurs
 ```
 
 ::: {.content-visible when-profile="fr"}
@@ -355,39 +339,91 @@ emissions['dep'] = emissions["INSEE commune"].str[:2]
 
 ## Données _Filosofi_
 
-On va utiliser les données Filosofi (données de revenus) au niveau communal de 2016.
-Ce n'est pas la même année que les données d'émission de CO2, ce n'est donc pas parfaitement rigoureux,
-mais cela permettra tout de même d'illustrer
-les principales fonctionnalités de `Pandas`
+On va utiliser les données Filosofi (données de revenus) au niveau communal, dans leur
+millésime le plus récent (2023 au moment de la rédaction de ce cours). Ce n'est pas la même
+année que les données d'émission de l'Ademe (régulièrement mises à jour, elles portent sur 2025),
+ce n'est donc pas parfaitement rigoureux, mais cela permettra tout de même d'illustrer
+les principales fonctionnalités de `Pandas`.
 
-Le point d'entrée principal de la fonction `pynsee` est la fonction `download_file`.
+Au niveau communal, la source Melodi `DS_FILOSOFI_CC` ne diffuse que le niveau de vie médian
+(`MED_SL`) et le taux de pauvreté (`PR_MD60`) ; les autres indicateurs (déciles, indice de
+Gini, décomposition du revenu...) ne sont disponibles qu'aux niveaux département, région et
+France entière. On y ajoute la population municipale, disponible sur la source Melodi
+`DS_POPULATIONS_HISTORIQUES`, ainsi que le nom des communes, issu du code officiel géographique.
 
-Le code pour télécharger les données est le suivant :
+Le code pour récupérer ces données est le suivant :
 :::
 
 
 ::: {.content-visible when-profile="en"}
-We will use the Filosofi data (income data) at the municipal level for 2016. It is not the same year as the CO2 emissions data, so it is not perfectly rigorous, but it will still illustrate the main functionalities of `Pandas`.
+We will use the Filosofi data (income data) at the municipal level, in its most recent vintage
+(2023 at the time of writing). This is not the same year as the Ademe emissions data (regularly
+updated, it now covers 2025), so it is not perfectly rigorous, but it will still illustrate the
+main functionalities of `Pandas`.
 
-The main entry point for the `pynsee` function is the `download_file` function.
+At the municipal level, the Melodi source `DS_FILOSOFI_CC` only disseminates the median
+standard of living (`MED_SL`) and the poverty rate (`PR_MD60`); the other indicators (deciles,
+Gini index, breakdown of disposable income...) are only available at the département, region
+and metropolitan France levels. We add the municipal population, available from the Melodi
+source `DS_POPULATIONS_HISTORIQUES`, as well as municipality names, taken from the official
+geographic code.
 
-The code to download the data is as follows:
+The code to retrieve this data is as follows:
 :::
 
 ```{python}
 #| echo: true
 #| output: false
-#| eval: false
-from pynsee.download import download_file
-filosofi = download_file("FILOSOFI_COM_2016")
-```
-
-```{python}
-#| echo: false
-#| output: false
+import requests
 import pandas as pd
-backup_filosofi = "https://minio.lab.sspcloud.fr/lgaliana/data/python-ENSAE/filosofi.parquet"
-filosofi = pd.read_parquet(backup_filosofi)
+
+def get_melodi(dataset, dimension, code, value_name, time_period, geo_level="COM"):
+  url = f"https://api.insee.fr/melodi/data/{dataset}"
+  params = {
+    "GEO": geo_level,
+    dimension: code,
+    "TIME_PERIOD": time_period,
+    "maxResult": 40000,
+  }
+  response = requests.get(url, params=params, timeout=60)
+  response.raise_for_status()
+  observations = response.json()["observations"]
+  return pd.DataFrame(
+    {
+      "CODGEO": obs["dimensions"]["GEO"].split("-")[-1],
+      value_name: obs["measures"]["OBS_VALUE_NIVEAU"].get("value"),
+    }
+    for obs in observations
+  )
+
+niveau_vie = get_melodi("DS_FILOSOFI_CC", "FILOSOFI_MEASURE", "MED_SL", "NIVVIE_MEDIAN", 2023)
+taux_pauvrete = get_melodi("DS_FILOSOFI_CC", "FILOSOFI_MEASURE", "PR_MD60", "TAUX_PAUVRETE", 2023)
+population = get_melodi("DS_POPULATIONS_HISTORIQUES", "POPREF_MEASURE", "PMUN", "POPULATION", 2023)
+
+from io import StringIO
+
+url_cog_2023 = "https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv"
+url_backup = "https://minio.lab.sspcloud.fr/lgaliana/data/python-ENSAE/cog_2023.csv"
+try:
+  response = requests.get(url_cog_2023)
+  response.raise_for_status()
+  cog_2023 = pd.read_csv(StringIO(response.text))
+except requests.exceptions.Timeout:
+  cog_2023 = pd.read_csv(url_backup)
+
+noms_communes = (
+  cog_2023
+  .loc[cog_2023["TYPECOM"] == "COM", ["COM", "LIBELLE"]]
+  .rename(columns={"COM": "CODGEO", "LIBELLE": "LIBGEO"})
+)
+
+filosofi = (
+  niveau_vie
+  .merge(taux_pauvrete, on="CODGEO", how="outer")
+  .merge(population, on="CODGEO", how="outer")
+  .merge(noms_communes, on="CODGEO", how="left")
+  [["CODGEO", "LIBGEO", "POPULATION", "NIVVIE_MEDIAN", "TAUX_PAUVRETE"]]
+)
 ```
 
 
@@ -642,7 +678,7 @@ The output is an indexed `Series`. This is not very convenient as we mentioned i
 
 ## Illustration 2: agrégats par groupe
 
-Pour illustrer les agrégats par groupe nous pouvons prendre le jeu de données de l'Insee `filosofi` et compter la population grâce à la variable `NBPERSMENFISC16`.
+Pour illustrer les agrégats par groupe nous pouvons prendre le jeu de données de l'Insee `filosofi` et sommer la variable `POPULATION`.
 
 Pour calculer le total au niveau France entière nous pouvons faire de deux manières :
 
@@ -651,7 +687,7 @@ Pour calculer le total au niveau France entière nous pouvons faire de deux mani
 ::: {.content-visible when-profile="en"}
 ## Illustration 2: aggregates by group
 
-To illustrate aggregates by group, we can use the Insee `filosofi` dataset and count the population using the variable `NBPERSMENFISC16`.
+To illustrate aggregates by group, we can use the Insee `filosofi` dataset and sum the `POPULATION` variable.
 
 To calculate the total for the whole of France, we can do it in two ways:
 
@@ -660,12 +696,12 @@ To calculate the total for the whole of France, we can do it in two ways:
 
 ```{python}
 #| echo: true
-filosofi['NBPERSMENFISC16'].sum()* 1e-6
+filosofi['POPULATION'].sum()* 1e-6
 ```
 
 ```{python}
 #| echo: true
-filosofi.agg({"NBPERSMENFISC16": "sum"}).div(1e6)
+filosofi.agg({"POPULATION": "sum"}).div(1e6)
 ```
 
 ::: {.content-visible when-profile="fr"}
@@ -673,7 +709,7 @@ où les résultats sont reportés en millions de personnes. La logique est ident
 
 ```{python}
 #| echo: true
-filosofi.groupby('dep')['NBPERSMENFISC16'].sum() #<1>
+filosofi.groupby('dep')['POPULATION'].sum() #<1>
 ```
 1. Avec cette approche, il faut faire attention à l'ordre des opérations: d'abord on effectue le `groupby` puis on conserve la colonne d'intérêt
 :::
@@ -683,7 +719,7 @@ where the results are reported in millions of people. The logic is the same when
 
 ```{python}
 #| echo: true
-filosofi.groupby('dep')['NBPERSMENFISC16'].sum() #<1>
+filosofi.groupby('dep')['POPULATION'].sum() #<1>
 ```
 1. With this approach, you need to pay attention to the order of operations: first, perform the `groupby` and then select the column of interest
 :::
@@ -692,7 +728,7 @@ filosofi.groupby('dep')['NBPERSMENFISC16'].sum() #<1>
 
 ```{python}
 #| echo: true
-filosofi.groupby('dep').agg({"NBPERSMENFISC16": "sum"})
+filosofi.groupby('dep').agg({"POPULATION": "sum"})
 ```
 
 ::: {.content-visible when-profile="fr"}
@@ -986,10 +1022,25 @@ left_merged.loc[left_merged['id_right'].isna()].tail(3)
 ```
 
 ::: {.content-visible when-profile="fr"}
-Cela vient du fait que nous utilisons des données qui ne sont pas de la même année de référence du code officiel géographique (2016 vs 2018). Pendant cet intervalle, il y a eu des changements de géographie, notamment des fusions de communes. Par exemple, la commune de Courcouronnes qu'on a vu ci-dessus peut être retrouvée regroupée avec Evry dans le jeu de données filosofi (base de droite):
+Cela vient du fait que les deux jeux de données ne reposent pas sur la même version du code officiel géographique. Les données Filosofi, diffusées par l'API Melodi, reflètent le découpage communal le plus récent (2025), alors que les données d'émissions de l'Ademe, bien que mises à jour en 2025, n'ont pas encore répercuté certaines fusions de communes récentes. Par exemple, la commune de Courcouronnes est toujours présente telle quelle dans les données d'émissions (base de gauche):
 :::
 ::: {.content-visible when-profile="en"}
-This is because we are using data that are not from the same reference year of the official geographical code (2016 vs 2018). During this interval, there were geographical changes, notably commune mergers. For example, the commune of Courcouronnes seen above can be found merged with Evry in the filosofi dataset (right base):
+This is because the two datasets do not rely on the same version of the official geographical code. The Filosofi data, disseminated via the Melodi API, reflects the most recent municipal boundaries (2025), whereas the Ademe emissions data, although updated in 2025, has not yet caught up with some recent commune mergers. For example, the commune of Courcouronnes is still present as such in the emissions data (left base):
+:::
+
+```{python}
+#| echo: true
+left_merged.loc[
+  left_merged['id_right'].isna()
+  & left_merged['Commune'].str.contains("COURCOURONNES", na=False)
+]
+```
+
+::: {.content-visible when-profile="fr"}
+Cette commune a pourtant fusionné avec Evry pour former la commune nouvelle d'Évry-Courcouronnes, seule forme sous laquelle elle apparaît désormais dans les données Filosofi (base de droite):
+:::
+::: {.content-visible when-profile="en"}
+Yet this commune has since merged with Evry to form the new commune of Évry-Courcouronnes, the only form under which it now appears in the Filosofi data (right base):
 :::
 
 ```{python}
@@ -997,7 +1048,7 @@ This is because we are using data that are not from the same reference year of t
 filosofi.loc[
   filosofi['LIBGEO']
   .str.lower()
-  .str.contains("courcouronnes")
+  .str.contains("courcouronnes", na=False)
 ]
 ```
 
