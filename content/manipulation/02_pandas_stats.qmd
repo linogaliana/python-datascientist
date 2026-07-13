@@ -1,0 +1,619 @@
+---
+title: "Manipuler des données avec Pandas : statistiques et restructuration"
+title-en: "Data wrangling with Pandas: statistics and reshaping"
+author: Lino Galiana
+tags:
+  - Pandas
+  - Pollution
+  - Ademe
+  - Tutoriel
+  - Manipulation
+categories:
+  - Tutoriel
+  - Manipulation
+description: |
+  Après avoir vu comment associer des jeux de données grâce à des jointures, ce chapitre poursuit l'exploration de la boite à outils du _data scientist_ avec deux opérations classiques : les statistiques descriptives par groupe et la restructuration de données (_reshape_). Il propose également une introduction à la construction de tableaux de communication avec `great_tables`.
+description-en: |
+  After seeing how to associate datasets through joins, this chapter continues exploring the data scientist's toolbox with two classic operations: group descriptive statistics and data reshaping. It also introduces building communication-ready tables with `great_tables`.
+bibliography: ../../reference.bib
+image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/panda_stretching.png
+echo: false
+links:
+- icon: journal-text
+  name: Documentation Pandas
+  url: https://pandas.pydata.org/docs/
+eval: true
+---
+
+
+{{< badges
+    printMessage="true"
+>}}
+
+
+:::: {.content-visible when-format="ipynb"}
+::: {.warninglang .callout-warning}
+:::
+::::
+
+::: {.content-visible when-profile="fr"}
+
+:::: {.callout-tip}
+## Compétences à l'issue de ce chapitre
+
+- Construire des statistiques agrégées fines grâce aux méthodes de `Pandas` ;
+- Savoir restructurer ses données du format _long_ au format _wide_ (et inversement) ;
+- Créer des tableaux attractifs pour communiquer sur des résultats agrégés.
+
+::::
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+:::: {.callout-tip}
+## Skills to be acquired by the end of this chapter
+
+- How to construct fine aggregate statistics using `Pandas` methods;
+- Know how to reshape your data from _long_ to _wide_ format (and vice versa);
+- Create attractive tables to communicate aggregated results.
+
+::::
+
+:::
+
+
+# Introduction
+
+::: {.content-visible when-profile="fr"}
+
+Le [chapitre précédent](/content/manipulation/02_pandas_joins.qmd) a montré comment enrichir un jeu de données en l'associant à une autre source grâce à une jointure. Nous disposons désormais de deux jeux de données mis en cohérence: les émissions de gaz à effet de serre de l'Ademe (`emissions`) et les données de cadrage Filosofi de l'Insee (`filosofi`).
+
+Ce chapitre va exploiter cette association pour approfondir notre compréhension des données grâce à deux opérations complémentaires:
+
+- les statistiques descriptives par groupe ;
+- la restructuration de données entre formats _long_ et _wide_.
+
+Nous verrons enfin comment construire, à partir de ces statistiques, des tableaux de communication soignés grâce au _package_ `great_tables`.
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+The [previous chapter](/content/manipulation/02_pandas_joins.qmd) showed how to enrich a dataset by associating it with another source through a join. We now have two datasets that have been made consistent with one another: the Ademe greenhouse gas emissions data (`emissions`) and the Insee Filosofi framing data (`filosofi`).
+
+This chapter will use this association to deepen our understanding of the data through two complementary operations:
+
+- group descriptive statistics;
+- reshaping data between _long_ and _wide_ formats.
+
+Finally, we will see how to build, from these statistics, polished communication tables using the `great_tables` package.
+
+:::
+
+::: {.content-visible when-profile="fr"}
+
+## Données de ce chapitre
+
+Nous repartons des mêmes jeux de données que le [chapitre sur les jointures](/content/manipulation/02_pandas_joins.qmd): les émissions communales de l'Ademe (`emissions`) et les données Filosofi de l'Insee (`filosofi`), enrichies l'une par l'autre. Le code ci-dessous, déjà commenté en détail dans le chapitre précédent, permet de reconstituer ces jeux de données:
+:::
+
+::: {.content-visible when-profile="en"}
+
+## Data used in this chapter
+
+We start again from the same datasets as in the [chapter on joins](/content/manipulation/02_pandas_joins.qmd): the Ademe municipal emissions data (`emissions`) and the Insee Filosofi data (`filosofi`), enriched with one another. The code below, already explained in detail in the previous chapter, retrieves these datasets again:
+:::
+
+```{python}
+#| echo: true
+import numpy as np
+import pandas as pd
+import requests
+from io import StringIO
+
+url = "https://data.ademe.fr/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert"
+emissions = pd.read_csv(url)
+secteurs = emissions.select_dtypes(include='number').columns
+emissions['dep'] = emissions["INSEE commune"].str[:2]
+
+def get_melodi(dataset, dimension, code, value_name, time_period, geo_level="COM"):
+  url = f"https://api.insee.fr/melodi/data/{dataset}"
+  params = {
+    "GEO": geo_level,
+    dimension: code,
+    "TIME_PERIOD": time_period,
+    "maxResult": 40000,
+  }
+  response = requests.get(url, params=params, timeout=60)
+  response.raise_for_status()
+  observations = response.json()["observations"]
+  return pd.DataFrame(
+    {
+      "CODGEO": obs["dimensions"]["GEO"].split("-")[-1],
+      value_name: obs["measures"]["OBS_VALUE_NIVEAU"].get("value"),
+    }
+    for obs in observations
+  )
+
+niveau_vie = get_melodi("DS_FILOSOFI_CC", "FILOSOFI_MEASURE", "MED_SL", "NIVVIE_MEDIAN", 2023)
+taux_pauvrete = get_melodi("DS_FILOSOFI_CC", "FILOSOFI_MEASURE", "PR_MD60", "TAUX_PAUVRETE", 2023)
+population = get_melodi("DS_POPULATIONS_HISTORIQUES", "POPREF_MEASURE", "PMUN", "POPULATION", 2023)
+
+url_cog_2023 = "https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv"
+url_backup = "https://minio.lab.sspcloud.fr/lgaliana/data/python-ENSAE/cog_2023.csv"
+try:
+  response = requests.get(url_cog_2023)
+  response.raise_for_status()
+  # Le serveur ne déclare pas de charset : `response.text` retomberait sur
+  # l'ISO-8859-1 par défaut alors que le fichier est en UTF-8 (accents corrompus)
+  cog_2023 = pd.read_csv(StringIO(response.content.decode("utf-8")))
+except requests.exceptions.Timeout:
+  cog_2023 = pd.read_csv(url_backup)
+
+noms_communes = (
+  cog_2023
+  .loc[cog_2023["TYPECOM"] == "COM", ["COM", "LIBELLE"]]
+  .rename(columns={"COM": "CODGEO", "LIBELLE": "LIBGEO"})
+)
+
+filosofi = (
+  niveau_vie
+  .merge(taux_pauvrete, on="CODGEO", how="outer")
+  .merge(population, on="CODGEO", how="outer")
+  .merge(noms_communes, on="CODGEO", how="left")
+  [["CODGEO", "LIBGEO", "POPULATION", "NIVVIE_MEDIAN", "TAUX_PAUVRETE"]]
+  .astype({c: "float" for c in ["POPULATION", "NIVVIE_MEDIAN", "TAUX_PAUVRETE"]})
+)
+filosofi["dep"] = filosofi["CODGEO"].str[:2]
+```
+
+{{< include "02_pandas_intro/_reproducible.qmd" >}}
+
+::: {.content-visible when-profile="fr"}
+# Statistiques descriptives par groupe
+
+## Principe
+
+Nous avons vu, lors du chapitre d'introduction, comment obtenir
+une statistique agrégée simplement grâce à `Pandas`.
+Il est néanmoins commun d'avoir des données avec des strates
+intermédiaires d'analyse pertinentes: des variables géographiques, l'appartenance à des groupes socio-démographiques liés à des caractéristiques renseignées, des indicatrices de période temporelle, etc.
+Pour mieux comprendre la structure de ses données, les _data scientists_ sont donc souvent amenés à construire des statistiques descriptives sur des sous-groupes présents dans les données. Pour reprendre l'exemple sur les émissions, nous avions précédemment construit des statistiques d'émissions au niveau national. Mais qu'en est-il du profil d'émission des différents départements ? Pour répondre à cette question, il sera utile d'agréger nos données au niveau départemental. Ceci nous donnera une information différente du jeu de données initial (niveau communal) et du niveau le plus agrégé (niveau national).
+
+En `SQL`, il est très simple de découper des données pour
+effectuer des opérations sur des blocs cohérents et recollecter des résultats
+dans la dimension appropriée.
+La logique sous-jacente est celle du *split-apply-combine* qui est repris
+par les langages de manipulation de données, auxquels `pandas`
+[ne fait pas exception](https://pandas.pydata.org/pandas-docs/stable/user_guide/groupby.html).
+
+L'image suivante, issue de
+[ce site](https://unlhcc.github.io/r-novice-gapminder/16-plyr/),
+représente bien la manière dont fonctionne l'approche
+`split`-`apply`-`combine`:
+
+![Split-apply-combine (Source: [unlhcc.github.io](https://unlhcc.github.io/r-novice-gapminder/16-plyr/))](https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png){fig-width=70%}
+
+En `Pandas`, on utilise `groupby` pour découper les données selon un ou
+plusieurs axes (ce [tutoriel](https://realpython.com/pandas-groupby/) sur le sujet
+est particulièrement utile).
+L'ensemble des opérations d'agrégation (comptage, moyennes, etc.) que nous avions vues précédemment peut être mise en oeuvre par groupe.
+
+Techniquement, cette opération consiste à créer une association
+entre des labels (valeurs des variables de groupe) et des
+observations. Utiliser la méthode `groupby` ne déclenche pas d'opérations avant la mise en oeuvre d'une statistique, cela créé seulement une relation formelle entre des observations et des regroupemens qui seront utilisés _a posteriori_:
+:::
+
+::: {.content-visible when-profile="en"}
+# Descriptive statistics by group
+
+## Principle
+
+In the introductory chapter, we saw how to obtain an aggregated statistic easily with `Pandas`. However, it is common to have data with intermediate analysis strata that are relevant: geographical variables, membership in socio-demographic groups related to recorded characteristics, temporal period indicators, etc. To better understand the structure of the data, data scientists are often led to construct descriptive statistics on sub-groups present in the data. For example, we previously constructed emission statistics at the national level. But what about the emission profiles of different departments? To answer this question, it will be useful to aggregate our data at the departmental level. This will give us different information from the initial dataset (municipal level) and the most aggregated level (national level).
+
+In `SQL`, it is very simple to segment data to perform operations on coherent blocks and recollect results in the appropriate dimension. The underlying logic is that of *split-apply-combine*, which is adopted by data manipulation languages, including `pandas` [which is no exception](https://pandas.pydata.org/pandas-docs/stable/user_guide/groupby.html).
+
+The following image, from [this site](https://unlhcc.github.io/r-novice-gapminder/16-plyr/), well represents how the `split`-`apply`-`combine` approach works:
+
+![Split-apply-combine (Source: [unlhcc.github.io](https://unlhcc.github.io/r-novice-gapminder/16-plyr/))](https://unlhcc.github.io/r-novice-gapminder/fig/12-plyr-fig1.png){fig-width=70%}
+
+In `Pandas`, we use `groupby` to segment the data according to one or more axes (this [tutorial](https://realpython.com/pandas-groupby/) on the subject is particularly useful). All the aggregation operations (counting, averages, etc.) that we saw earlier can be applied by group.
+
+Technically, this operation involves creating an association between labels (values of group variables) and observations. Using the `groupby` method does not trigger operations until a statistic is implemented; it simply creates a formal relationship between observations and groupings that will be used later:
+:::
+
+```{python}
+#| echo: true
+filosofi.groupby('dep').__class__
+```
+
+::: {.content-visible when-profile="fr"}
+Tant qu'on n'appelle pas une action sur un `DataFrame` par groupe, du type
+`head` ou `display`, `pandas` n'effectue aucune opération. On parle de
+*lazy evaluation*. Par exemple, le résultat de `df.groupby('dep')` est
+une transformation qui n'est pas encore évaluée :
+:::
+
+::: {.content-visible when-profile="en"}
+As long as we do not call an action on a `DataFrame` by group, such as `head` or `display`, `pandas` performs no operations. This is called *lazy evaluation*. For example, the result of `df.groupby('dep')` is a transformation that has not yet been evaluated:
+:::
+
+```{python}
+#| echo: true
+filosofi.groupby('dep')
+```
+
+
+::: {.content-visible when-profile="fr"}
+
+## Illustration 1: dénombrement par groupe
+
+Pour illustrer l'application de ce principe à un comptage, on peut dénombrer le nombre de communes par département en 2023 (chaque année cette statistique change du fait des fusions de communes). Pour cela, il suffit de prendre le référentiel des communes françaises issu du code officiel géographique (COG) et dénombrer par département grâce à `count`:
+:::
+
+::: {.content-visible when-profile="en"}
+## Illustration 1: counting by group
+
+To illustrate the application of this principle to counting, we can count the number of municipalities by department in 2023 (this statistic changes every year due to municipal mergers). For this, we simply take the reference of French municipalities from the official geographical code (COG) and count by department using `count`:
+
+:::
+
+
+```{python}
+#| echo: true
+import requests
+from io import StringIO
+import pandas as pd
+
+url_cog_2023 = "https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv"
+url_backup = "https://minio.lab.sspcloud.fr/lgaliana/data/python-ENSAE/cog_2023.csv"
+
+# Try-except clause to avoid timout issue sometimes
+# Without timeout problem, pd.read_csv(url_cog_2023) would be sufficient
+try:
+  response = requests.get(url_cog_2023)
+  response.raise_for_status()
+  # Le serveur ne déclare pas de charset : `response.text` retomberait sur
+  # l'ISO-8859-1 par défaut alors que le fichier est en UTF-8 (accents corrompus)
+  cog_2023 = pd.read_csv(StringIO(response.content.decode("utf-8")))
+except requests.exceptions.Timeout:
+  print("Failing back to backup")
+  cog_2023 = pd.read_csv(url_backup)
+```
+
+
+
+
+::: {.content-visible when-profile="fr"}
+
+Grâce à ce jeu de données, sans avoir recours aux statistiques par groupe, on peut déjà savoir combien on a, respectivement, de communes, départements et régions en France:
+
+```{python}
+#| echo: true
+communes = cog_2023.loc[cog_2023['TYPECOM']=="COM"] #<1>
+communes.loc[:, ['COM', 'DEP', 'REG']].nunique()
+```
+1. On se restreint au statut "Commune" car ce fichier comporte également les codes Insee pour d'autres status, comme les "Arrondissements municipaux" de Paris, Lyon et Marseille.
+:::
+
+::: {.content-visible when-profile="en"}
+
+With this dataset, without resorting to group statistics, we can already know how many municipalities, departments, and regions we have in France, respectively:
+
+```{python}
+#| echo: true
+communes = cog_2023.loc[cog_2023['TYPECOM']=="COM"] #<1>
+communes.loc[:, ['COM', 'DEP', 'REG']].nunique()
+```
+1. We restrict to the status "Commune" because this file also contains Insee codes for other statuses, such as the "Municipal Arrondissements" of Paris, Lyon, and Marseille.
+:::
+
+
+::: {.content-visible when-profile="fr"}
+Maintenant, intéressons nous aux départements ayant le plus de communes. Il s'agit de la même fonction de dénombrement où on joue, cette fois, sur le groupe à partir duquel est calculé la statistique.
+
+Calculer cette statistique se fait de manière assez transparente lorsqu'on connaît le principe d'un calcul de statistiques avec `Pandas`:
+:::
+
+::: {.content-visible when-profile="en"}
+Now, let's look at the departments with the most municipalities. It is the same counting function where we play, this time, on the group from which the statistic is calculated.
+
+Calculating this statistic is quite straightforward when you understand the principle of calculating statistics with `Pandas`:
+:::
+
+```{python}
+#| echo: true
+communes = cog_2023.loc[cog_2023['TYPECOM']=="COM"] #<1>
+communes.groupby('DEP').agg({'COM': 'nunique'})
+```
+
+::: {.content-visible when-profile="fr"}
+En SQL, on utiliserait la requête suivante:
+:::
+::: {.content-visible when-profile="en"}
+In SQL, we would use the following query:
+:::
+
+```sql
+SELECT dep, COUNT DISTINCT "COM" AS COM
+FROM communes
+GROUP BY dep
+WHERE TYPECOM == 'COM';
+```
+
+::: {.content-visible when-profile="fr"}
+La sortie est une `Serie` indexée. Ce n'est pas très pratique comme nous avons pu l'évoquer au cours du chapitre précédent. Il est plus pratique de transformer cet objet en `DataFrame` avec `reset_index`. Enfin, avec `sort_values`, on obtient la statistique désirée:
+:::
+::: {.content-visible when-profile="en"}
+The output is an indexed `Series`. This is not very convenient as we mentioned in the previous chapter. It is more practical to transform this object into a `DataFrame` with `reset_index`. Finally, with `sort_values`, we obtain the desired statistic:
+:::
+
+
+```{python}
+#| echo: true
+(
+    communes
+    .groupby('DEP')
+    .agg({'COM': 'nunique'})
+    .reset_index()
+    .sort_values('COM', ascending = False)
+)
+```
+
+::: {.content-visible when-profile="fr"}
+
+## Illustration 2: agrégats par groupe
+
+Pour illustrer les agrégats par groupe nous pouvons prendre le jeu de données de l'Insee `filosofi` et sommer la variable `POPULATION`.
+
+Pour calculer le total au niveau France entière nous pouvons faire de deux manières :
+
+:::
+
+::: {.content-visible when-profile="en"}
+## Illustration 2: aggregates by group
+
+To illustrate aggregates by group, we can use the Insee `filosofi` dataset and sum the `POPULATION` variable.
+
+To calculate the total for the whole of France, we can do it in two ways:
+
+:::
+
+
+```{python}
+#| echo: true
+filosofi['POPULATION'].sum()* 1e-6
+```
+
+```{python}
+#| echo: true
+filosofi.agg({"POPULATION": "sum"}).div(1e6)
+```
+
+::: {.content-visible when-profile="fr"}
+où les résultats sont reportés en millions de personnes. La logique est identique lorsqu'on fait des statistiques par groupe, il s'agit seulement de remplacer `filosofi` par `filosofi.groupby('dep')` pour créer une version partitionnée par département de notre jeu de données:
+
+```{python}
+#| echo: true
+filosofi.groupby('dep')['POPULATION'].sum() #<1>
+```
+1. Avec cette approche, il faut faire attention à l'ordre des opérations: d'abord on effectue le `groupby` puis on conserve la colonne d'intérêt
+:::
+
+::: {.content-visible when-profile="en"}
+where the results are reported in millions of people. The logic is the same when doing group statistics, it's just a matter of replacing `filosofi` with `filosofi.groupby('dep')` to create a partitioned version of our dataset by department:
+
+```{python}
+#| echo: true
+filosofi.groupby('dep')['POPULATION'].sum() #<1>
+```
+1. With this approach, you need to pay attention to the order of operations: first, perform the `groupby` and then select the column of interest
+:::
+
+
+
+```{python}
+#| echo: true
+filosofi.groupby('dep').agg({"POPULATION": "sum"})
+```
+
+::: {.content-visible when-profile="fr"}
+La seconde approche est plus pratique car elle donne directement un `DataFrame` `Pandas` et non une série indexée sans nom. A partir de celle-ci, quelques manipulations basiques peuvent suffire pour avoir un tableau diffusables sur la démographie départementale. Néanmoins, celui-ci, serait quelques peu brut de décoffrage car nous ne possédons à l'heure actuelle que les numéros de département. Pour avoir le nom de départements, il faudrait utiliser une deuxième base de données et croiser les informations communes entre elles (en l'occurrence le numéro du département) : c'est le principe des jointures que nous avons mis en oeuvre dans le [chapitre précédent](/content/manipulation/02_pandas_joins.qmd).
+:::
+
+::: {.content-visible when-profile="en"}
+The second approach is more practical because it directly gives a `Pandas` `DataFrame` and not an unnamed indexed series. From this, a few basic manipulations can suffice to have a shareable table on departmental demographics. However, this table would be somewhat rudimentary as we currently only have the department numbers. To get the names of the departments, we would need to use a second dataset and merge the common information between them (in this case, the department number): this is exactly the join principle we implemented in the [previous chapter](/content/manipulation/02_pandas_joins.qmd).
+:::
+
+
+## Exercice d'application
+
+::: {.content-visible when-profile="fr"}
+Cet exercice d'application s'appuie sur le jeu de données de l'Ademe nommé `emissions` précédemment.
+:::
+
+::: {.content-visible when-profile="en"}
+This application exercise uses the `Ademe` dataset named `emissions` previously discussed.
+:::
+
+{{< include "02_pandas_stats/_exo1.qmd" >}}
+{{< include "02_pandas_stats/_exo1_solution.qmd" >}}
+
+::: {.content-visible when-profile="fr"}
+Ces résultats sont assez logiques ; les départements ruraux ont une part plus importante de leur émission issue de l'agriculture, les départements urbains ont plus d'émissions issues du secteur tertiaire, ce qui est lié à la densité plus importante de ces espaces.
+
+Grâce à ces statistiques on progresse dans la connaissance de notre jeu de données et donc de la nature des émissions de C02 en France.
+Les statistiques descriptives par groupe nous permettent de mieux saisir l'hétérogénéité spatiale de notre phénomène.
+
+Cependant, on resterait limité dans notre capacité à interpréter ces statistiques sans recourir à de l'information annexe : un département pourrait sembler peu polluant simplement parce qu'il est peu peuplé. C'est exactement le type de limite que nous avons levée grâce à l'enrichissement de nos données par une jointure avec les données Filosofi (voir notamment le calcul d'une empreinte carbone par habitant dans le chapitre précédent).
+:::
+
+::: {.content-visible when-profile="en"}
+These results are quite logical; rural departments have a larger share of their emissions from agriculture, while urban departments have higher emissions from the tertiary sector, which is related to the higher density of these areas.
+
+With these statistics, we progress in understanding our dataset and, consequently, the nature of CO2 emissions in France. Descriptive statistics by group help us better grasp the spatial heterogeneity of our phenomenon.
+
+However, we would remain limited in our ability to interpret these statistics without additional information: a département could look like a low emitter simply because it is sparsely populated. This is exactly the kind of limitation we resolved thanks to enriching our data with a join against the Filosofi data (see in particular the computation of a carbon footprint per capita in the previous chapter).
+:::
+
+::: {.content-visible when-profile="fr"}
+# Restructurer les données
+
+## Principe
+
+Quand on a plusieurs informations pour un même individu ou groupe, on
+retrouve généralement deux types de structure de données :
+
+* format __wide__ : les données comportent des observations répétées, pour un même individu (ou groupe), dans des colonnes différentes
+* format __long__ : les données comportent des observations répétées, pour un même individu, dans des lignes différentes avec une colonne permettant de distinguer les niveaux d'observations
+
+Un exemple de la distinction entre les deux peut être pris à l'ouvrage de référence d'Hadley Wickham, [*R for Data Science*](https://r4ds.hadley.nz/):
+
+![Données _long_ et _wide_ (Source:  [*R for Data Science*](https://r4ds.hadley.nz/))](https://d33wubrfki0l68.cloudfront.net/3aea19108d39606bbe49981acda07696c0c7fcd8/2de65/images/tidy-9.png)
+
+L'aide mémoire suivante aidera à se rappeler les fonctions à appliquer si besoin :
+
+![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/reshape.png){fig-width=60%}
+
+Le fait de passer d'un format *wide* au format *long* (ou vice-versa)
+peut être extrêmement pratique car certaines fonctions sont plus adéquates sur une forme de données ou sur l'autre.
+
+En règle générale, avec `Python` comme avec `R`, __les formats *long* sont souvent préférables__.
+Les formats _wide_ sont plutôt pensés pour des tableurs comme `Excel` ou on dispose d'un nombre réduit
+de lignes à partir duquel faire des tableaux croisés dynamiques.
+:::
+
+::: {.content-visible when-profile="en"}
+# Restructuring datasets
+
+## Principle
+
+When we have multiple pieces of information for the same individual or group, we generally find two types of data structures:
+
+* __Wide__ format: the data contains repeated observations for the same individual (or group) in different columns.
+* __Long__ format: the data contains repeated observations for the same individual in different rows, with a column distinguishing the observation levels.
+
+An example of the distinction between the two can be taken from Hadley Wickham's reference book, [*R for Data Science*](https://r4ds.hadley.nz/):
+
+![Wide and Long Data Formats (Source: [*R for Data Science*](https://r4ds.hadley.nz/))](https://d33wubrfki0l68.cloudfront.net/3aea19108d39606bbe49981acda07696c0c7fcd8/2de65/images/tidy-9.png)
+
+The following cheat sheet will help remember the functions to apply if needed:
+
+![](https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/reshape.png){fig-width=60%}
+
+Switching from a *wide* format to a *long* format (or vice versa) can be extremely practical because certain functions are more suitable for one form of data than the other.
+
+Generally, with `Python` as with `R`, __long formats are often preferable__. Wide formats are rather designed for spreadsheets like `Excel`, where we have a limited number of rows to create pivot tables from.
+:::
+
+::: {.content-visible when-profile="fr"}
+## Exercice d'application
+
+Les données de l'ADEME, et celles de l'Insee également, sont au format
+_wide_.
+Le prochain exercice illustre l'intérêt de faire la conversion _long_ $\to$ _wide_
+avant de faire un graphique avec la méthode `plot` vue au chapitre d'introduction
+:::
+
+::: {.content-visible when-profile="en"}
+## Application
+
+The ADEME data, and the Insee data as well, are in the _wide_ format. The next exercise illustrates the benefit of converting from _long_ to _wide_ before creating a plot with the `plot` method seen in the introductory chapter.
+:::
+
+{{< include "02_pandas_stats/_exo2.qmd" >}}
+{{< include "02_pandas_stats/_exo2_solution.qmd" >}}
+
+::: {.content-visible when-profile="fr"}
+
+# Formatter des tableaux de statistiques descriptives
+
+Un _dataframe_ `Pandas`
+est automatiquement mis en forme lorsqu'il est visualisé depuis un _notebook_ sous forme de table HTML à la mise en forme minimaliste.
+Cette mise en forme est pratique pour voir
+les données, une tâche indispensable pour les _data scientists_
+mais ne permet pas d'aller vraiment au-delà.
+
+Dans une phase
+exploratoire, il peut être pratique d'avoir un tableau
+un peu plus complet, intégrant notamment des visualisations
+minimalistes, pour mieux connaître ses données. Dans la phase
+finale d'un projet, lorsqu'on communique sur un projet, il
+est avantageux de disposer d'une visualisation attrative.
+Pour ces deux besoins, les sorties des _notebooks_ sont
+une réponse peu satisfaisante, en plus de nécessiter
+le _medium_ du _notebook_ qui peut en rebuter certains.
+
+Heureusement, le tout jeune _package_ [`great_tables`](https://posit-dev.github.io/great-tables/get-started/) permet, simplement, de manière programmatique, la création de tableaux
+qui n'ont rien à envier à des productions manuelles fastidieuses faites dans `Excel`
+et difficilement répliquables. Ce _package_ est un portage en `Python` du _package_ [`GT`](https://gt.rstudio.com/).
+`great_tables` construit des tableaux
+_html_ ce qui offre une grande richesse dans la mise en forme et permet une excellente intégration avec [`Quarto`](https://quarto.org/), l'outil de publication reproductible développé par
+L'exercice suivant proposera de construire un tableau avec
+ce _package_, pas à pas. Il nécessite d'installer, au préalable, le _package_ `great_tables`:
+
+```{python}
+#| eval: false
+#| echo: true
+!pip install great_tables --quiet
+```
+
+Afin de se concentrer sur la construction du tableau,
+les préparations de données à faire en amont sont données
+directement. Nous allons repartir du jeu de données `emissions_merged`, construit au chapitre précédent lors du calcul de l'empreinte carbone par habitant, qui a l'aspect suivant:
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+# Formatting descriptive statistics tables
+
+A `Pandas` DataFrame is automatically formatted when viewed from a notebook as a minimally styled HTML table. This formatting is convenient for viewing data, a necessary task for data scientists, but it doesn't go much beyond that.
+
+In an exploratory phase, it can be useful to have a more complete table, including minimal visualizations, to better understand the data. In the final phase of a project, when communicating about it, having an attractive visualization is advantageous. The outputs of notebooks are not a satisfactory solution for these needs and require the medium of the notebook, which can deter some users.
+
+Fortunately, the young package [`great_tables`](https://posit-dev.github.io/great-tables/get-started/) allows for the creation of tables programmatically that rival tedious manual productions in `Excel` and are difficult to replicate. This package is a `Python` port of the `GT` package. `great_tables` builds _HTML_ tables, offering great formatting richness and excellent integration with [`Quarto`](https://quarto.org/), the reproducible publishing tool developed by RStudio.
+
+The following exercise will propose building a table with this package, step by step. It requires installing the `great_tables` package beforehand:
+
+```{python}
+#| eval: false
+#| echo: true
+!pip install great_tables --quiet
+```
+
+To focus on table construction, the necessary data preparations are provided directly. We will start from the `emissions_merged` dataset, built in the previous chapter when computing the carbon footprint per capita, which looks like this:
+
+:::
+
+{{< include "02_pandas_stats/_exo5_preliminary.qmd" >}}
+{{< include "02_pandas_stats/_exo5.qmd" >}}
+
+
+::: {.content-visible when-profile="fr"}
+Grâce à celui-ci, on peut déjà comprendre que notre définition
+de l'empreinte carbone est certainement défaillante. Il apparaît
+peu plausible que les habitants du 77 aient une empreinte 500 fois
+supérieure à celle de Paris intra-muros. La raison principale ?
+On n'est pas sur un concept d'émissions à la consommation mais à la
+production, ce qui pénalise les espaces industriels ou les espaces
+avec des aéroports...
+
+Pour aller plus loin sur la construction de tableaux
+avec `great_tables`, vous pouvez répliquer
+cet [exercice](https://rgeo.linogaliana.fr/exercises/eval.html)
+de production de tableaux électoraux
+que j'ai proposé pour un cours de `R` avec `gt`, l'équivalent
+de `great_tables` pour `R`.
+
+Nous avons désormais fait le tour des principales fonctionnalités de `Pandas` pour manipuler et restructurer des données. Le [dernier chapitre](/content/manipulation/02_pandas_beyond.qmd) de cette partie propose de prendre un peu de recul sur les limites de la syntaxe `Pandas` et de découvrir les écosystèmes alternatifs qui existent pour aller au-delà.
+:::
+
+::: {.content-visible when-profile="en"}
+Thanks to this, we can already understand that our definition of the carbon footprint is certainly flawed. It seems unlikely that the inhabitants of the 77th department have a carbon footprint 500 times greater than that of intra-muros Paris. The main reason? We are not dealing with a concept of consumption emissions but production emissions, which penalizes industrial areas or areas with airports...
+
+To learn more about constructing tables with `great_tables`, you can replicate this [exercise](https://rgeo.linogaliana.fr/exercises/eval.html) on producing electoral tables that I proposed for an `R` course with `gt`, the equivalent of `great_tables` for `R`.
+
+We have now covered the main features of `Pandas` for manipulating and reshaping data. The [last chapter](/content/manipulation/02_pandas_beyond.qmd) of this part takes a step back to look at the limitations of `Pandas` syntax and discover the alternative ecosystems that exist to go further.
+:::
