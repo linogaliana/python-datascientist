@@ -408,6 +408,7 @@ filosofi = (
   [["CODGEO", "LIBGEO", "POPULATION", "NIVVIE_MEDIAN", "TAUX_PAUVRETE"]]
 )
 
+filosofi["POPULATION"] = filosofi["POPULATION"].astype(int)
 filosofi["dep"] = filosofi["CODGEO"].str[:2]
 ```
 
@@ -927,24 +928,73 @@ filosofi = filosofi.drop(columns = ['id_right'])
 ```
 
 ::: {.content-visible when-profile="fr"}
-### En résumé
+## En résumé
+
+Les quatre principaux types de jointures sont ainsi les suivantes:
 :::
 
 ::: {.content-visible when-profile="en"}
-### In summary
+## In summary
+
+The four main types of join are the following
 :::
 
-![](https://external-preview.redd.it/yOLzCR0qSzul2WpjQorxINB0xpU3_N9twmFVsgbGJwQ.jpg?auto=webp&s=4feedc91302ba635b3028a21b98d047def5cdc2b){fig-align="center"}
+::: {#fig-summary-join layout-ncol=2}
+![*Left join* (source: @wickham2023r)](/content/manipulation/02_pandas_joins/img/left.png)
+
+![*Right join* (source: @wickham2023r)](/content/manipulation/02_pandas_joins/img/right.png)
+
+![*Inner join* (source: @wickham2023r)](/content/manipulation/02_pandas_joins/img/inner.png)
+
+![*Full outer join* (source: @wickham2023r)](/content/manipulation/02_pandas_joins/img/outer.png)
+
+:::: {.content-visible when-profile="fr"}
+Les principales méthodes de fusion de données
+::::
+:::: {.content-visible when-profile="en"}
+Main database join methods
+::::
+
+:::
 
 ::: {.content-visible when-profile="fr"}
-## Exemples d'identifiants dans les données françaises
+Dans une version comique, cela donne:
+:::
 
-### Le Code officiel géographique (COG): l'identifiant des données géographiques
+::: {.content-visible when-profile="en"}
+In a funny representation, this gives:
+:::
+
+
+![](https://external-preview.redd.it/yOLzCR0qSzul2WpjQorxINB0xpU3_N9twmFVsgbGJwQ.jpg?auto=webp&s=4feedc91302ba635b3028a21b98d047def5cdc2b){fig-align="center" width=60%}
+
+::: {.content-visible when-profile="fr"}
+Il existe bien-sûr d'autres types de jointures, basées sur la négation: *semi-join*, *anti-join*, etc. Ces méthodes sont moins fréquemment utilisées mais sont utiles lorsqu'on cherche à déterminer la discordance entre deux jeux de données. 
+:::
+
+::: {.content-visible when-profile="en"}
+There are of course other types of joins, based on negation: *semi-join*, *anti-join*, etc. These methods are less frequently used but are useful when trying to determine the discrepancy between two datasets.
+:::
+
+
+::: {.content-visible when-profile="fr"}
+# Exemples d'identifiants dans les données françaises
+
+Nous avons mis en avant l'intérêt de disposer d'identifiants communs à des bases de données plutôt que se fier à des informations textuelles bruitées. Nous allons maintenant évoquer trois identifiants importants pour les utilisateurs de données françaises:
+
+* Le code officiel géographique, identifiant unique pour des données géographiques
+* Le NIR, ou numéro de sécurité sociale, identifiant individuel français
+* Le code SIRENE, identifiant unique pour les entreprises ayant une activité en France.
+
+
+## Le Code officiel géographique (COG): l'identifiant des données géographiques
 
 Pour les données géographiques, il existe de nombreux identifiants selon la problématique d'étude.
+
 Parmi les besoins principaux, on retrouve le fait d'apparier des données géographiques à partir d'un identifiant administratif commun. Par exemple, associer deux jeux de données au niveau communal.
 
 Pour cela, l'identifiant de référence est le code Insee, issu du [Code officiel géographique (COG)](https://www.insee.fr/fr/information/2560452) que nous utilisons depuis le dernier chapitre et que nous aurons amplement l'occasion d'exploiter au cours des différents chapitres de ce cours.
+
 La géographie administrative étant en évolution perpétuelle, la base des code Insee est une base vivante. Le site et les API de l'Insee permettent de récupérer l'historique d'après-guerre afin de pouvoir faire de l'analyse géographique sur longue période.
 
 Les codes postaux ne peuvent être considérés comme un identifiant : ils peuvent regrouper plusieurs communes ou, au contraire, une même commune peut avoir plusieurs codes postaux. Il s'agit d'un système de gestion de la Poste qui n'a pas été construit pour l'analyse statistique.
@@ -953,11 +1003,18 @@ Pour se convaincre du problème, à partir des données mises à disposition par
 :::
 
 ::: {.content-visible when-profile="en"}
-## Examples of identifiers in French data
+# Examples of identifiers in French data
 
-### The Official Geographic Code (COG): The identifier for geographic data
+We have highlighted the value of having identifiers common to several databases rather than relying on noisy textual information. We will now discuss three identifiers that matter to users of French data:
+
+* The official geographic code, a unique identifier for geographic data
+* The NIR, or social security number, the French individual identifier
+* The SIRENE code, a unique identifier for businesses operating in France.
+
+## The Official Geographic Code (COG): The identifier for geographic data
 
 For geographic data, there are many identifiers depending on the study problem.
+
 Among the main needs is the ability to match geographic data using a common administrative identifier. For example, associating two datasets at the municipal level.
 
 For this, the reference identifier is the Insee code, derived from the [Official Geographic Code (COG)](https://www.insee.fr/fr/information/2560452), which we have been using since the last chapter and will extensively use throughout the different chapters of this course.
@@ -984,13 +1041,14 @@ En anticipant sur les compétences développées lors des prochains chapitres, n
 
 ```{python}
 #| echo: true
+#| output: false
 !pip install cartiflette --quiet
 ```
 
 ```{python}
 #| echo: true
-#| fig-cap: Géographie des codes postaux et des communes dans l'Aude (11)
 from cartiflette import carti_download
+
 shp_communes = carti_download(
   values = ["11"],
   crs = 4326,
@@ -1006,16 +1064,20 @@ codes_postaux11 = shp_communes.merge(
   right_on = "#Code_commune_INSEE"
 ) #<2>
 codes_postaux11 = codes_postaux11.dissolve(by = "Code_postal") #<3>
-
-# Carte #<4>
-ax = shp_communes.plot(color='white', edgecolor='blue', linewidth = 0.5)
-ax = codes_postaux11.plot(ax = ax, color='none', edgecolor='black')
-ax.set_axis_off()
 ```
 1. Récupération des contours officiels de l'Aude produits par l'IGN par le biais de la librairie [`cartiflette`](https://github.com/InseeFrLab/cartiflette)
 2. Jointure par le biais du code commune entre les deux sources de données
 3. On agrège la géométrie au niveau des codes postaux
-4. On crée une carte à partir de nos deux couches
+
+```{python}
+#| echo: true
+#| fig-cap: Géographie des codes postaux et des communes dans l'Aude (11)
+# Carte #<1>
+ax = shp_communes.plot(color='white', edgecolor='blue', linewidth = 0.5)
+ax = codes_postaux11.plot(ax = ax, color='none', edgecolor='black')
+ax.set_axis_off()
+```
+1. On crée une carte à partir de nos deux couches
 
 :::
 
@@ -1024,8 +1086,8 @@ Anticipating on the skills developed in the upcoming chapters, we can represent 
 
 ```{python}
 #| echo: true
-#| fig-cap: Geography of postal codes and municipalities in Aude (11)
 from cartiflette import carti_download
+
 shp_communes = carti_download(
   values = ["11"],
   crs = 4326,
@@ -1041,30 +1103,41 @@ codes_postaux11 = shp_communes.merge(
   right_on = "#Code_commune_INSEE"
 ) #<2>
 codes_postaux11 = codes_postaux11.dissolve(by = "Code_postal") #<3>
-
-# Map #<4>
-ax = shp_communes.plot(color='white', edgecolor='blue', linewidth = 0.5)
-ax = codes_postaux11.plot(ax = ax, color='none', edgecolor='black')
-ax.set_axis_off()
 ```
 1. Downloading the official contours of Aude produced by IGN using the [`cartiflette`](https://github.com/InseeFrLab/cartiflette) library
 2. Joining using the commune code between the two data sources
 3. Aggregating the geometry at the postal code level
-4. Creating a map from our two layers
+
+```{python}
+#| echo: true
+#| fig-cap: Geography of postal codes and municipalities in Aude (11)
+# Map #<1>
+ax = shp_communes.plot(color='white', edgecolor='blue', linewidth = 0.5)
+ax = codes_postaux11.plot(ax = ax, color='none', edgecolor='black')
+ax.set_axis_off()
+```
+1. Creating a map from our two layers
 :::
 
 ::: {.content-visible when-profile="fr"}
 
-### Sirene: l'identifiant dans les données d'entreprises
+## Sirene: l'identifiant dans les données d'entreprises
 
-Pour relier les microdonnées d'entreprises françaises, il existe un numéro unique d'identification : le [numéro `Siren`](https://entreprendre.service-public.fr/vosdroits/F32135). Il s'agit d'un numéro d'identification dans un répertoire légal d'entreprise indispensable pour toutes démarches juridiques, fiscales... Pour les entreprises qui possèdent plusieurs établissements - par exemple dans plusieurs villes - il existe un identifiant dérivé qui s'appelle le [`Siret`](https://www.economie.gouv.fr/cedef/numero-siret): aux 9 chiffres du numéro Sirene s'ajoutent 5 chiffres d'identifications de l'établissement. D'ailleurs, les administrations publiques sont également concernées par le numéro Siren: étant amenées à effectuer des opérations de marchés (achat de matériel, locations de biens, etc.) elles disposent également d'un identifiant Siren. Etant inscrits dans des répertoires légaux pour lesquels les citoyens sont publics, les numéros Siren et les noms des entreprises associées sont disponibles en _open data_, par exemple sur [annuaire-entreprises.data.gouv.fr/](https://annuaire-entreprises.data.gouv.fr/) pour une recherche ponctuelle, sur [data.gouv.fr](https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/).
+Pour relier les microdonnées d'entreprises françaises, il existe un numéro unique d'identification : le [numéro `Siren`](https://entreprendre.service-public.fr/vosdroits/F32135). Il s'agit d'un numéro d'identification dans un répertoire légal d'entreprise indispensable pour toutes démarches juridiques, fiscales... 
 
-Cette base Sirene est une mine d'information, parfois comique, sur les entreprises françaises. Par exemple, le site [tif.hair/](https://tif.hair/) s'est amusé à répertorier la part des salons de coiffures proposant des jeux de mots dans le nom du salon. Lorsqu'un entrepreneur déclare la création d'une entreprise, il reçoit un numéro Sirene et un code d'activité (le [code APE](https://entreprendre.service-public.fr/vosdroits/F33050)) relié à la description qu'il a déclaré de l'activité de son entreprise. Ce code permet de classer l'activité d'une entreprise dans la [Nomenclature d'activités françaises (NAF)](https://www.insee.fr/fr/information/2406147) ce qui servira à l'Insee pour la publication de statistiques sectorielles. En l'occurrence, pour les coiffeurs, le code dans la NAF est [`96.02A`](https://www.insee.fr/fr/metadonnees/nafr2/sousClasse/96.02A?champRecherche=false). Il est possible à partir de la base disponible en _open data_ d'avoir en quelques lignes de `Python` la liste de tous les coiffeurs puis de s'amuser à explorer ces données (objet du prochain exercice optionnel).
+Pour les entreprises qui possèdent plusieurs établissements - par exemple dans plusieurs villes - il existe un identifiant dérivé qui s'appelle le [`Siret`](https://www.economie.gouv.fr/cedef/numero-siret): aux 9 chiffres du numéro Sirene s'ajoutent 5 chiffres d'identifications de l'établissement. D'ailleurs, les administrations publiques sont également concernées par le numéro Siren: étant amenées à effectuer des opérations de marchés (achat de matériel, locations de biens, etc.) elles disposent également d'un identifiant Siren. 
 
-L'exercice suivant, optionnel, propose de s'amuser à reproduire de manière simplifiée le recensement fait par [tif.hair/](https://tif.hair/)
-des jeux de mots dans les salons de coiffure. Il permet de pratiquer quelques méthodes de manipulation textuelle, en avance de phase sur le chapitre consacré aux [expressions régulières](/content/manipulation/04b_regex_TP.qmd).
+Etant inscrits dans des répertoires légaux pour lesquels les citoyens sont publics, les numéros Siren et les noms des entreprises associées sont disponibles en _open data_, par exemple sur [annuaire-entreprises.data.gouv.fr/](https://annuaire-entreprises.data.gouv.fr/) pour une recherche ponctuelle, sur [data.gouv.fr](https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/).
 
-Le jeu de données de l'ensemble des entreprises étant assez volumineux (autour de 4Go en CSV après décompression), il est plus pratique de partir sur un jeu de données au format `Parquet`, plus optimisé (plus de détails sur ce format dans le [chapitre d'approfondissement](/content/modern-ds/s3.qmd) qui lui est consacré).
+Cette base Sirene est une mine d'information, parfois comique, sur les entreprises françaises. Par exemple, le site [tif.hair/](https://tif.hair/) s'est amusé à répertorier la part des salons de coiffures proposant des jeux de mots dans le nom du salon. 
+
+Lorsqu'un entrepreneur déclare la création d'une entreprise, il reçoit un numéro Sirene et un code d'activité (le [code APE](https://entreprendre.service-public.fr/vosdroits/F33050)) relié à la description qu'il a déclaré de l'activité de son entreprise. Ce code permet de classer l'activité d'une entreprise dans la [Nomenclature d'activités françaises (NAF)](https://www.insee.fr/fr/information/2406147) ce qui servira à l'Insee pour la publication de statistiques sectorielles. En l'occurrence, pour les coiffeurs, le code dans la NAF est [`96.02A`](https://www.insee.fr/fr/metadonnees/nafr2/sousClasse/96.02A?champRecherche=false). 
+
+Il est possible à partir de la base disponible en _open data_ d'avoir en quelques lignes de `Python` la liste de tous les coiffeurs puis de s'amuser à explorer ces données (objet du prochain exercice optionnel).
+
+L'exercice suivant, optionnel, propose de s'amuser à reproduire de manière simplifiée le recensement fait par [tif.hair/](https://tif.hair/) des jeux de mots dans les salons de coiffure. Il permet de pratiquer quelques méthodes de manipulation textuelle, en avance de phase sur le chapitre consacré aux [expressions régulières](/content/manipulation/04b_regex_TP.qmd).
+
+Le jeu de données de l'ensemble des entreprises étant assez volumineux (autour de 4Go en CSV après décompression), il est plus pratique de partir sur un jeu de données au format `Parquet`, plus optimisé (plus de détails sur ce format dans le [chapitre d'approfondissement](/content/modern-ds/05_parquet_s3.qmd) qui lui est consacré).
 
 Pour lire ce type de fichiers de manière optimale, il est conseillé d'utiliser la librairie `DuckDB` qui permet de ne consommer que les données nécessaires et non de télécharger l'ensemble du fichier pour n'en lire qu'une partie comme ce serait le cas avec `Pandas` (voir le [dernier chapitre](/content/manipulation/02_pandas_beyond.qmd) de cette partie, section "Aller au-delà de `Pandas`"). La requête SQL suivante se traduit en langage naturel par l'instruction suivante: _"A partir du fichier `Parquet`, je ne veux que quelques colonnes du fichier pour les coiffeurs (APE: 96.02A) dont le nom de l'entreprise (`denominationUsuelleEtablissement`) est renseigné"_:
 
@@ -1082,7 +1155,7 @@ The following optional exercise suggests replicating, in a simplified manner, th
 
 Since the dataset of all companies is quite large (around 4GB in CSV after decompression), it is more practical to use a dataset in `Parquet` format, which is more optimized (more details on this format in the [advanced chapter](/content/modern-ds/s3.qmd) dedicated to it).
 
-To read this type of file optimally, it is recommended to use the `DuckDB` library, which allows consuming only the necessary data instead of downloading the entire file to read only a part of it as would be the case with `Pandas` (see the [last chapter](/content/manipulation/02_pandas_beyond.qmd) of this part, section "Beyond `Pandas`"). The following SQL query translates into natural language as: _"From the `Parquet` file, I only want a few columns of the file for hairdressers (APE: 96.02A) whose business name (`denominationUsuelleEtablissement`) is provided"_:
+To read this type of file optimally, it is recommended to use the `DuckDB` library, which allows consuming only the necessary data instead of downloading the entire file to read only a part of it as would be the case with `Pandas` (see the [last chapter](/content/manipulation/05_parquet_s3.qmd) of this part, section "Beyond `Pandas`"). The following SQL query translates into natural language as: _"From the `Parquet` file, I only want a few columns of the file for hairdressers (APE: 96.02A) whose business name (`denominationUsuelleEtablissement`) is provided"_:
 
 :::
 
