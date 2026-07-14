@@ -1,0 +1,1278 @@
+---
+title: "Associer des données avec Pandas : les jointures"
+title-en: "Associating data with Pandas: joins"
+author: Lino Galiana
+tags:
+  - Pandas
+  - Pollution
+  - Ademe
+  - Tutoriel
+  - Manipulation
+categories:
+  - Tutoriel
+  - Manipulation
+description: |
+  Le chapitre d'introduction à `Pandas` a permis de présenter le principe de données organisées sous une forme de _DataFrame_ et la praticité de l'écosystème `Pandas` pour effectuer des opérations simples sur un jeu de données. Ce chapitre consolide ces principes en présentant l'une des opérations les plus fréquentes en _data science_ : l'association de données par le biais d'une jointure.
+description-en: |
+  The introductory chapter to `Pandas` presented how data were organized as _DataFrames_ and how the `Pandas` ecosystem can be useful to perform simple operations on datasets. This chapter consolidates these principles by introducing one of the most common operations in data science: associating data through a join.
+bibliography: ../../reference.bib
+image: https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/pandas_weight.webp
+echo: false
+links:
+- icon: journal-text
+  name: Documentation Pandas
+  url: https://pandas.pydata.org/docs/
+eval: true
+---
+
+
+{{< badges
+    printMessage="true"
+>}}
+
+
+:::: {.content-visible when-format="ipynb"}
+::: {.warninglang .callout-warning}
+:::
+::::
+
+::: {.content-visible when-profile="fr"}
+
+:::: {.callout-tip}
+## Compétences à l'issue de ce chapitre
+
+- Récupérer un jeu de données officiel de l'Insee ;
+- Comprendre la logique d'une jointure et savoir choisir le type de pivot adapté ;
+- Associer plusieurs `DataFrames` à partir de caractéristiques communes ;
+- Connaître les identifiants permettant de relier entre elles de multiples sources françaises.
+
+::::
+
+Les exercices de mise en pratique dans ce tutoriel sont assez tardifs, une fois les principes des jointures et des identifiants passés en revue : voir @tip-cle-jointure et @tip-empreinte-carbone.
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+:::: {.callout-tip}
+## Skills to be acquired by the end of this chapter
+
+- Retrieve an official dataset from Insee;
+- Understand the logic of a join and know how to choose the appropriate pivot;
+- Merge several `DataFrames` based on common characteristics;
+- Know the main identifiers used in French data.
+
+::::
+
+The hands-on exercises in this tutorial come rather late, once the principles of joins and identifiers have been covered: see @tip-cle-jointure-en and @tip-empreinte-carbone-en.
+
+:::
+
+
+
+# Introduction
+
+::: {.content-visible when-profile="fr"}
+
+
+Le [chapitre d'introduction à `Pandas`](/content/manipulation/02_pandas_intro.qmd) a permis de présenter le principe de données organisées sous une forme de _DataFrame_ et la praticité de l'écosystème `Pandas` pour effectuer des opérations simples sur un jeu de données.
+
+L'un des apports des outils modernes de _data science_, notamment `Pandas`, est la simplicité par laquelle ils permettent de restructurer des sources pour travailler sur plusieurs données sur un projet. 
+
+Il est rare de travailler exclusivement sur une source brute. Un jeu de données prend généralement de la valeur lorsqu'il est comparé à d'autres sources. Pour des chercheurs, cela permettra de contextualiser l'information présente dans une source en la comparant ou en l'associant à d'autres sources. Pour des _data scientists_ dans le secteur privé, il s'agira souvent d'associer des informations sur une même personne dans plusieurs bases clientes ou comparer les clients entre eux.
+
+Effectuer ce travail de manière simple, fiable et efficace est indispensable pour les _data scientists_ tant cette tâche est courante. Heureusement `Pandas` permet de faire cela très bien avec des données structurées. Nous verrons dans les prochains chapitres, mais aussi dans l'ensemble de la [partie sur le traitement des données textuelles](/content/nlp/index.qmd), comment faire avec des données moins structurées.
+
+Grâce à ce travail d'enrichissement, nous serons en mesure, dans le [prochain chapitre](/content/manipulation/02_pandas_stats.qmd), d'approfondir notre compréhension d'un phénomène réel par le biais de statistiques descriptives fines. Cela est une étape indispensable avant de basculer vers la [statistique inférentielle](https://fr.wikipedia.org/wiki/Inf%C3%A9rence_statistique#:~:text=L'inf%C3%A9rence%20statistique%20est%20l,%3A%20la%20probabilit%C3%A9%20d'erreur.), l'approche qui consiste à formaliser et généraliser des liens de corrélation ou de causalité entre des caractéristiques observées et un phénomène.
+
+:::
+
+::: {.content-visible when-profile="en"}
+The [introductory chapter to `Pandas`](/content/manipulation/02_pandas_intro.qmd) presented the concept of data organized in the form of a _DataFrame_ and the practicality of the `Pandas` ecosystem for performing simple operations on a dataset.
+
+One of the benefits of modern data science tools, especially `Pandas`, is the ease with which they allow restructuring sources to work on multiple datasets in a project. This chapter consolidates the principles previously seen by exploring one of the most frequent operations in the data scientist's toolbox: associating data through common characteristics.
+
+It is rare to work exclusively on a raw source. A dataset generally gains value when compared to other sources. For researchers, this allows contextualizing the information present in one source by comparing or associating it with other sources. For data scientists in the private sector, it often involves linking information about the same person in multiple customer databases or comparing customers with each other.
+
+
+Performing this work simply, reliably, and efficiently is essential for data scientists as this task is common. Fortunately, `Pandas` handles this very well with structured data. In the following chapters, and also throughout the [section on text data processing](/content/nlp/index.qmd), we will see how to handle less structured data.
+
+Thanks to this enrichment work, we will be able, in the [next chapter](/content/manipulation/02_pandas_stats.qmd), to deepen our understanding of a real world phenomenon through detailed descriptive statistics. This is an essential step before moving on to [inferential statistics](https://en.wikipedia.org/wiki/Statistical_inference), the approach that consists of formalizing and generalizing correlations or causal relationships between observed characteristics and a phenomenon.
+
+
+:::
+
+::: {.content-visible when-profile="fr"}
+
+## Environnement
+
+Le chapitre précédent utilisait quasi exclusivement la librairie `Pandas` car nous avions une source prête à l'emploi. Dans ce chapitre, nous aurons besoin d'aller chercher des données un peu moins accessibles : cela nécessitera un peu plus de travail. 
+
+Les principes généraux de la récupération de données seront présentés dans le [chapitre consacré aux API](/content/manipulation/04c_API_TP.qmd). Nous donnerons directement le code de récupération des données dans ce chapitre pour pouvoir se consacrer au coeur de notre problème: associer ces différentes données entre-elles. 
+
+:::
+
+::: {.content-visible when-profile="en"}
+## Environment
+
+The previous chapter used almost exclusively the `Pandas` library since we had a ready-to-use source. In this chapter, we will need to fetch data that is a bit less accessible: this will require a little more work.
+
+The general principles of data retrieval will be presented in the [chapter dedicated to APIs](/content/manipulation/04c_API_TP.qmd). We will give the data retrieval code directly in this chapter so that we can focus on the core of our problem: associating these different datasets with one another.
+:::
+
+::: {.content-visible when-profile="fr"}
+Les premiers _packages_ indispensables pour démarrer ce chapitre sont les suivants:
+:::
+
+::: {.content-visible when-profile="en"}
+The essential packages to start this chapter are as follows:
+:::
+```{python}
+#| echo: true
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import requests
+```
+
+{{< include "02_pandas_intro/_reproducible.qmd" >}}
+
+::: {.content-visible when-profile="fr"}
+
+## Données utilisées
+
+Ce tutoriel continue l'exploration du jeu de données du chapitre précédent:
+
+* Les émissions de gaz à effet de serre estimées au niveau communal par l'ADEME. Le jeu de données est
+disponible sur [data.gouv](https://www.data.gouv.fr/fr/datasets/inventaire-de-gaz-a-effet-de-serre-territorialise/#_)
+et requêtable directement dans `Python` avec
+[cet url](https://data.ademe.fr/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert) ;
+
+
+Les problématiques d'enrichissement de données (association d'une source à une autre à partir de caractéristiques communes) seront présentées à partir de deux sources produites par l'Insee:
+
+* Le [code officiel géographique](https://www.insee.fr/fr/information/6800675), un référentiel produit par l'Insee utilisé pour identifier les communes à partir d'un code unique, contrairement au code postal ;
+* Les données [_Filosofi_](https://www.insee.fr/fr/metadonnees/source/serie/s1172), une source sur les revenus des Français à une échelle spatiale fine construite par l'Insee à partir des déclarations fiscales et d'informations sur les prestations sociales. En l'occurrence, nous allons utiliser, au niveau communal, des données de revenu médian et la population totale[^poplegales-fr]. Cela nous aidera à calculer de nouveaux indicateurs d'émissions et à les interpréter.
+
+
+[^poplegales-fr]: Pour les données démographiques, on utilise directement les [populations légales](https://www.insee.fr/fr/information/2008354) diffusées par l'Insee, issues du recensement, plutôt qu'un indicateur de population fiscale. Un exercice d'ouverture est également proposé pour construire des agrégats de population à partir des jeux de données individuels anonymisés du recensement (les [fichiers détails](https://www.insee.fr/fr/information/2383306)).
+
+
+Pour importer ces données, nous allons directement interroger l'API
+[`Melodi`](https://api.insee.fr/catalogue/), le nouveau point d'entrée mis à disposition par l'Insee pour diffuser ses principales sources de données, dont fait partie _Filosofi_.
+
+:::: {.callout-note collapse="true"}
+## Récupérer des données *open data* produites par l'Insee
+
+Une précédente version de ce tutoriel s'appuyait sur le *package* communautaire [`pynsee` {{< fa brands github >}}](https://github.com/InseeFrLab/pynsee) qui simplifie l'accès aux données officielles de l'Insee.
+
+Cependant, les sources qui nous sont ici utiles ont été intégrées dans une nouvelle API de l'Insee nommée `Melodi`. Comme c'est un produit officiel de l'offre de diffusion de l'Insee, on va privilégier celle-ci. L'inconvénient est que nous n'avons pas, comme avec [`pynsee` {{< fa brands github >}}](https://github.com/InseeFrLab/pynsee), un *dataframe* prêt à l'emploi. Le code de préparation des données sera donc un peu plus complexe.
+
+L'API renvoie des données structurées au format `JSON`: chaque
+observation associe des dimensions (par exemple `GEO` pour la zone géographique ou `TIME_PERIOD` pour la période) à une valeur (`OBS_VALUE_NIVEAU`). Plus d'éléments sur l'exploitation de JSON via Python seront proposés dans le [chapitre consacré aux API](/content/manipulation/04c_API_TP.qmd).
+
+Chaque source dispose d'un identifiant unique (par exemple `DS_FILOSOFI_CC` pour les données Filosofi communales, `DS_POPULATIONS_HISTORIQUES` pour les populations légales). Le point d'entrée principal est de la forme `https://api.insee.fr/melodi/data/{identifiant}`, que l'on peut filtrer
+par dimension (zone géographique, période, indicateur...). La structure de chaque fichier dépend de la source demandée. Il y a donc généralement un travail propre à chaque source à mettre en oeuvre.
+
+<details>
+<summary>
+Explorer la structure d'une source
+</summary>
+
+Pour connaître la structure d'une source (dimensions, indicateurs
+disponibles...), on peut consulter ses métadonnées, également disponibles au format `JSON` :
+
+```{python}
+#| echo: true
+#| eval: false
+import requests
+requests.get("https://api.insee.fr/melodi/catalog/DS_FILOSOFI_CC").json()
+```
+
+La liste des sources disponibles sur l'API Melodi est quant à elle consultable sur le [portail des API](https://catalogue-donnees.insee.fr/fr/catalogue/recherche) de l'Insee.
+
+</details>
+
+::::
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+## Data used
+
+This tutorial continues the exploration of the dataset from the previous chapter:
+
+* Greenhouse gas emissions estimated at the municipal level by ADEME. The dataset is available on [data.gouv](https://www.data.gouv.fr/fr/datasets/inventaire-de-gaz-a-effet-de-serre-territorialise/#_) and can be directly queried in Python with [this URL](https://data.ademe.fr/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert);
+
+The issues of data enrichment (associating one source with another based on common characteristics) will be presented using two sources produced by Insee:
+
+* The [official geographic code](https://www.insee.fr/fr/information/6800675), a database of unique French zip codes;
+* The [_Filosofi_](https://www.insee.fr/fr/metadonnees/source/serie/s1172) data, a source on French income at a fine spatial scale constructed by Insee from tax returns and social benefit information. In this case, we will use, at the municipal level, median income data and total population[^poplegales]. This will help us compute new emissions indicators and interpret them.
+
+[^poplegales]: For demographic data, we directly use the [legal populations](https://www.insee.fr/fr/information/2008354) published by Insee, derived from the census, rather than a fiscal-population proxy. An open exercise is also proposed to construct population aggregates from anonymized individual census data (the [detailed files](https://www.insee.fr/fr/information/2383306)).
+
+To import this data, we will directly query the [`Melodi`](https://api.insee.fr/catalogue/) API,
+Insee's new entry point for disseminating its main data sources, including _Filosofi_. This is no
+longer a dedicated `Python` package but a standard API, queried with `requests`. More details on
+handling JSON with Python will be given in the [chapter dedicated to APIs](/content/manipulation/04c_API_TP.qmd).
+
+:::: {.callout-note collapse="true"}
+## Retrieving *open data* produced by Insee
+
+A previous version of this tutorial relied on the community *package* [`pynsee` {{< fa brands github >}}](https://github.com/InseeFrLab/pynsee), which simplifies access to Insee's official data.
+
+However, the sources useful to us here have been integrated into a new Insee API named `Melodi`. As this is an official product of Insee's dissemination offer, we will favor it. The downside is that we do not have, as with [`pynsee` {{< fa brands github >}}](https://github.com/InseeFrLab/pynsee), a ready-to-use *dataframe*. The data preparation code will therefore be a bit more complex.
+
+The API returns structured `JSON` data: each
+observation associates dimensions (for example `GEO` for the geographic area or `TIME_PERIOD` for the period) with a value (`OBS_VALUE_NIVEAU`). More details on handling JSON with Python will be given in the [chapter dedicated to APIs](/content/manipulation/04c_API_TP.qmd).
+
+Each source has a unique identifier (for example `DS_FILOSOFI_CC` for municipal Filosofi data, `DS_POPULATIONS_HISTORIQUES` for legal populations). The main entry point has the form `https://api.insee.fr/melodi/data/{identifier}`, which can be filtered
+by dimension (geographic area, period, indicator...). The structure of each file depends on the source requested, so some source-specific work is generally needed.
+
+<details>
+<summary>
+Exploring the structure of a source
+</summary>
+
+To know the structure of a source (dimensions, available indicators...), you can look at its
+metadata, also available in `JSON` format:
+
+```{python}
+#| echo: true
+#| eval: false
+import requests
+requests.get("https://api.insee.fr/melodi/catalog/DS_FILOSOFI_CC").json()
+```
+
+The list of sources available on the Melodi API can be browsed on Insee's [API portal](https://catalogue-donnees.insee.fr/fr/catalogue/recherche).
+
+</details>
+
+::::
+
+
+:::
+
+
+::: {.content-visible when-profile="fr"}
+# Récupération des jeux de données
+
+## Données d'émission de l'Ademe
+
+Comme expliqué au chapitre précédent, ces données peuvent être importées très simplement avec `Pandas`
+:::
+
+::: {.content-visible when-profile="en"}
+# Retrieving data for this chapter
+
+## French carbon emissions dataset
+
+As explained in the previous chapter, these data can be imported very simply with `Pandas`:
+
+:::
+
+```{python}
+#| echo: true
+import pandas as pd
+
+url = "https://data.ademe.fr/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert"
+emissions = pd.read_csv(url)
+emissions.head(2)
+```
+
+::: {.content-visible when-profile="fr"}
+Nous allons d'ores et déjà conserver le nom des secteurs émetteurs présents dans la base de données pour simplifier des utilisations ultérieures:
+:::
+
+::: {.content-visible when-profile="en"}
+We will already keep the names of the emitting sectors present in the database to simplify subsequent uses:
+:::
+
+```{python}
+#| echo: true
+#| output: false
+secteurs = emissions.select_dtypes(include='number').columns
+secteurs
+```
+
+```{python}
+pd.DataFrame(secteurs, columns = ["columns"])
+```
+
+::: {.content-visible when-profile="fr"}
+Les exploitations ultérieures de ces données utiliseront la dimension départementale dont nous avons montré la construction au chapitre précédent:
+:::
+
+::: {.content-visible when-profile="en"}
+Subsequent exploitations of these data will use the departmental dimension, the construction of which we demonstrated in the previous chapter:
+:::
+
+```{python}
+#| echo: true
+emissions['dep'] = emissions["INSEE commune"].str[:2]
+```
+
+::: {.content-visible when-profile="fr"}
+
+## Données _Filosofi_
+
+On va utiliser les données Filosofi (données de revenus) au niveau communal, dans leur
+millésime le plus récent (2023 au moment de la rédaction de ce cours). Ce n'est pas la même
+année que les données d'émission de l'Ademe (régulièrement mises à jour, elles portent sur 2025),
+ce n'est donc pas parfaitement rigoureux, mais cela permettra tout de même d'illustrer
+les principales fonctionnalités de `Pandas`.
+
+Au niveau communal, la source Melodi `DS_FILOSOFI_CC` ne diffuse que le niveau de vie médian
+(`MED_SL`) et le taux de pauvreté (`PR_MD60`) ; les autres indicateurs (déciles, indice de
+Gini, décomposition du revenu...) ne sont disponibles qu'aux niveaux département, région et
+France entière. On y ajoute la population municipale, disponible sur la source Melodi
+`DS_POPULATIONS_HISTORIQUES`, ainsi que le nom des communes, issu du code officiel géographique.
+
+Le code pour récupérer ces données est le suivant :
+:::
+
+
+::: {.content-visible when-profile="en"}
+We will use the Filosofi data (income data) at the municipal level, in its most recent vintage
+(2023 at the time of writing). This is not the same year as the Ademe emissions data (regularly
+updated, it now covers 2025), so it is not perfectly rigorous, but it will still illustrate the
+main functionalities of `Pandas`.
+
+At the municipal level, the Melodi source `DS_FILOSOFI_CC` only disseminates the median
+standard of living (`MED_SL`) and the poverty rate (`PR_MD60`); the other indicators (deciles,
+Gini index, breakdown of disposable income...) are only available at the département, region
+and metropolitan France levels. We add the municipal population, available from the Melodi
+source `DS_POPULATIONS_HISTORIQUES`, as well as municipality names, taken from the official
+geographic code.
+
+The code to retrieve this data is as follows:
+:::
+
+{{< include "/content/manipulation/_get_data_melodi.qmd" >}}
+
+::: {.content-visible when-profile="fr"}
+Le _DataFrame_ en question a l'aspect suivant :
+:::
+
+::: {.content-visible when-profile="en"}
+The resulting `DataFrame` looks like this:
+:::
+
+
+```{python}
+#| echo: true
+filosofi.sample(3)
+```
+
+::: {.content-visible when-profile="fr"}
+`Pandas` a géré automatiquement les types de variables. Il le fait relativement bien, mais s'il y a un doute, il est toujours possible d'utiliser la méthode `dtypes` pour vérifier. 
+:::
+
+::: {.content-visible when-profile="en"}
+`Pandas` automatically handles variable types. It does that quite well. If in doubt, you can always use the `dtypes` method to check. 
+:::
+
+
+::: {.content-visible when-profile="fr"}
+Un simple coup d'oeil sur les données donne une idée assez précise de la manière dont les données sont organisées. On remarque que certaines variables de `filosofi` semblent avoir beaucoup de valeurs manquantes (secret statistique) alors que d'autres semblent complètes. Si on désire exploiter `filosofi`, il faut faire attention à la variable choisie.
+
+Notre objectif immédiat va donc être de relier l'information contenue entre nos deux jeux de données. Sans cela, nous risquons d'être frustré : nous allons vouloir en savoir plus sur les émissions de gaz carbonique mais seront très limités dans les possibilités d'analyse sans ajout d'une information annexe issue de `filosofi`. C'est cet enrichissement, par le biais d'une jointure, que nous allons mettre en oeuvre dès maintenant.
+:::
+
+::: {.content-visible when-profile="en"}
+A quick glance at the data gives a fairly precise idea of how the data are organized. We notice that some variables in `filosofi` seem to have many missing values (statistical secrecy), while others seem complete. If we want to exploit `filosofi`, we need to pay attention to the chosen variable.
+
+Our immediate goal is therefore to link the information contained in our two datasets. Otherwise, we risk being frustrated: we will want to know more about carbon emissions but will be very limited in the possibilities of analysis without adding additional information from `filosofi`. This enrichment, through a join, is what we will implement right away.
+:::
+
+::: {.content-visible when-profile="fr"}
+
+# Le principe du schéma en étoile
+
+## Introduction au schéma en étoile
+
+Un jeu de données se suffit rarement à lui-même. Pour donner du sens et de la valeur à une statistique, il faut généralement l'associer à de la connaissance annexe, sous peine qu'elle reste désincarnée. Ce type de croisement, qu'on appelle un enrichissement de données, est un besoin quotidien des _data scientists_ et l'une des opérations les plus fréquentes en _data science_.
+
+Il peut se faire à un niveau identique à celui de la source d'origine (par exemple relier, dans une base d'entreprise, les informations clients à celles éparpillées entre un fichier ventes et un fichier produits) ou à des niveaux conceptuels différents, en général plus agrégés, pour contextualiser une donnée plus fine (par exemple associer des temps de transport individuels à ceux d'une même classe d'âge ou de personnes résidant dans la même commune).
+
+Nous allons ici nous focaliser sur le cas le plus favorable qui est la situation où une information permet d'apparier de manière exacte deux bases de données[^flou].
+
+Cette pratique découle du fait que de nombreux systèmes d'information prennent la forme d'un schéma en étoile (@fig-star-schema):
+
+![Illustration du schéma en étoile (Source: [Databricks](https://www.databricks.com/wp-content/uploads/2022/04/star-schema-erd.png))](https://www.databricks.com/wp-content/uploads/2022/04/star-schema-erd.png){#fig-star-schema fig-width="80%"}
+
+Cette structuration de l'information est très liée au modèle des tables relationnelles des années 1980. Aujourd'hui, il existe des modèles de données plus flexibles où l'information est empilée dans un _data lake_ sans structure _a priori_. Néanmoins ce modèle du schéma en étoile reste pertinent parce qu'il permet d'organiser l'information autour d'unités statistiques d'intérêt (le client, l'entreprise, la transaction, etc.) tout en permettant un cloisonnement des données.
+
+Puisque la logique du schéma en étoile vient historiquement des bases relationnelles, il est naturel qu'il s'agisse d'une approche intrinsèquement liée à la philosophie du SQL, jusque dans le vocabulaire. On parle souvent de jointure de données, un héritage du terme `JOIN` de SQL, et la manière de décrire les jointures (_left join_, _right join_...) est directement issue des instructions SQL associées.
+
+:::
+
+::: {.content-visible when-profile="en"}
+# A few words on the principle of the star schema
+
+## Star schema 101
+
+A dataset is rarely sufficient on its own. To give meaning and value to a statistic, it generally needs to be associated with additional knowledge, otherwise it remains detached. This kind of pairing, known as data enrichment, is a daily necessity for data scientists and one of the most common operations in data science.
+
+It can happen at the same level as the original source (for example, linking, within a business database, customer information to data scattered across a sales file and a product file) or at different, generally more aggregated, conceptual levels to contextualize finer data (for example, associating individual travel times with those of the same age group or people living in the same municipality).
+
+Here we will focus on the most favorable case, which is the situation where information allows for an exact match between two databases[^fuzzy].
+
+This practice stems from the fact that many information systems take the form of a star schema (@#fig-star-schema-en).
+
+![Illustration of the star schema (Source: [Databricks](https://www.databricks.com/wp-content/uploads/2022/04/star-schema-erd.png))](https://www.databricks.com/wp-content/uploads/2022/04/star-schema-erd.png){#fig-star-schema-en fig-width="80%"}
+
+This way of structuring information is closely tied to the relational table model from the 1980s. Today, more flexible data models exist, where information is stored in a *data lake* without any predefined structure. Nevertheless, the star schema model remains relevant because it makes it possible to organize information around statistical units of interest (the customer, the company, the transaction, etc.) while still allowing data to be compartmentalized.
+
+Since the logic of the star schema historically comes from relational databases, it is natural that it is an approach intrinsically linked to the philosophy of SQL, even in the vocabulary. The term "data join" is often used, inherited from the SQL `JOIN` term, and the way to describe joins (left join, right join...) comes directly from the associated SQL instructions.
+
+:::
+
+::: {.content-visible when-profile="fr"}
+## Les clés de jointures
+
+On parle de **clé(s) de jointure** pour nommer la ou les variable(s) nécessaire(s) à la fusion de données. Ce sont les variables communes aux deux jeux de données. Il n'est pas nécessaire qu'elles aient le même nom en revanche elles doivent partager des valeurs communes autrement l'intersection entre ces deux bases est l'ensemble vide.
+
+On peut jouer sur deux dimensions dans la jointure (ceci sera plus clair ensuite avec les exemples graphiques).
+
+* Il existe principalement trois types de fusions: **_left join_** et **_right join_** ou un combo des deux selon le type de pivot qu'on désire mettre en oeuvre.
+* Ensuite, il existe deux manières de fusionner les valeurs une fois qu'on a choisi un pivot: **_inner join_** ou **_outer join_**. Dans le premier cas, on ne conserve que les observations où les clés de jointures sont présentes dans les deux bases, dans le second on conserve toutes les observations de la clé de jointure des variables pivot quitte à avoir des valeurs manquantes si la deuxième base de données n'a pas de telles observations.
+
+Dans les exemples ci-dessous, nous allons utiliser les codes communes et les départements comme variables de jointure. En soi, l'usage du département n'est pas nécessaire puisqu'il se déduit directement du code commune mais cela permet d'illustrer le principe des jointures sur plusieurs variables. A noter que le nom de la commune est volontairement mis de côté pour effectuer des jointures alors que c'est une information commune aux deux bases. Cependant, comme il s'agit d'un champ textuel, dont le formattage peut suivre une norme différente dans les deux bases, ce n'est pas une information fiable pour faire une jointure exacte.
+
+Pour illustrer le principe du pivot à gauche ou à droite, on va créer deux variables identificatrices de la ligne de nos jeux de données de gauche et de droite. Cela nous permettra de trouver facilement les lignes présentes dans un jeu de données mais pas dans l'autre.
+
+:::
+
+::: {.content-visible when-profile="en"}
+## Joining keys
+
+We refer to join keys as the variable(s) necessary for merging data. These are the variables common to both datasets. They do not need to have the same name, but they must share common values; otherwise, the intersection between these two datasets is the empty set.
+
+We can manipulate two dimensions in the join (this will be clearer later with graphical examples):
+
+* There are mainly three types of merges: left join, right join, or a combination of the two, depending on the type of pivot we want to implement.
+* Then, there are two ways to merge the values once we have chosen a pivot: inner or outer join. In the first case, we only keep the observations where the join keys are present in both datasets; in the second, we keep all observations of the pivot key variables, even if the second dataset does not have such observations, resulting in missing values.
+
+In the examples below, we will use the commune codes and departments as join keys. Using the department is not necessary since it is directly deduced from the commune code, but it helps illustrate the principle of joins on multiple variables. Note that the name of the commune is intentionally set aside for joins, even though it is common information to both datasets. However, as it is a textual field, which may follow different formatting norms in the two datasets, it is not reliable for an exact join.
+
+To illustrate the principle of the left or right pivot, we will create two identifier variables for the row in our left and right datasets. This will allow us to easily find rows present in one dataset but not in the other.
+:::
+
+```{python}
+#| echo: true
+emissions = emissions.reset_index(names = ['id_left'])
+filosofi = filosofi.reset_index(names = ['id_right'])
+```
+
+::: {.content-visible when-profile="fr"}
+# Mise en oeuvre avec `Pandas`
+
+En `Pandas`, la méthode la plus pratique pour associer des jeux de données à partir de caractéristiques communes est `merge`. Ses principaux arguments permettent de contrôler le comportement de jointure. Nous allons les explorer de manière visuelle.
+
+En l'occurrence, pour notre problématique de construction de statistiques
+sur les émissions de gaz carbonique, la base de gauche sera le _DataFrame_ `emission` et la base de droite le _DataFrame_ `filosofi`:
+
+:::
+
+::: {.content-visible when-profile="en"}
+# Implementation with `Pandas`
+
+In `Pandas`, the most practical method to join datasets based on common characteristics is `merge`. Its main arguments allow for controlling the join behavior. We will explore them visually.
+
+In our case, for constructing statistics on carbon emissions, the left base will be the `emissions` DataFrame, and the right base will be the `filosofi` DataFrame:
+:::
+
+
+```{python}
+#| echo: true
+emissions.head(2)
+```
+
+```{python}
+#| echo: true
+filosofi.head(2)
+```
+
+
+
+## _Left join_
+
+::: {.content-visible when-profile="fr"}
+Commençons avec la jointure à gauche. Comme son nom l'indique, on va prendre la variable de gauche en pivot:
+
+![Illustration du *left join*. Source originale: @wickham2023r](/content/manipulation/02_pandas_joins/img/left.png){width=70%}
+
+:::
+::: {.content-visible when-profile="en"}
+Let's start with the left join. As its name indicates, we will take the left variable as the pivot:
+
+![*Left join* illustration. Original image: @wickham2023r](/content/manipulation/02_pandas_joins/img/left.png)
+:::
+
+
+
+```{python}
+#| echo: true
+left_merged = emissions.merge(
+  filosofi,
+  left_on = ["INSEE commune", "dep"],
+  right_on = ["CODGEO", "dep"],
+  how = "left"
+)
+left_merged.head(3)
+```
+
+::: {.content-visible when-profile="fr"}
+Il est recommandé de toujours expliciter les clés de jointures par le biais des arguments `left_on`, `right_on` ou `on` si les noms de variables sont communs dans les deux bases.
+Si on a des noms de variables communes entre les bases mais qu'elles ne sont pas définies comme clés de jointures, celles-ci ne seront pas utilisées pour joindre mais seront conservées avec un suffixe qui par défaut est `_x` et `_y` (paramétrable par le biais de l'argument `suffixes`).
+
+La syntaxe `Pandas` étant directement inspirée de SQL, on a une traduction assez transparente de l'instruction ci-dessus en SQL:
+:::
+
+::: {.content-visible when-profile="en"}
+It is recommended to always explicitly specify the join keys using the `left_on`, `right_on`, or `on` arguments if the variable names are common between the two datasets.
+If there are common variable names between the datasets that are not defined as join keys, they will not be used for the join but will be retained with a suffix that defaults to `_x` and `_y` (configurable using the `suffixes` argument).
+
+The `Pandas` syntax is directly inspired by SQL, so we have a fairly transparent translation of the above instruction into SQL:
+:::
+
+```sql
+SELECT *
+FROM emissions
+LEFT JOIN filosofi
+  ON emissions.`INSEE commune` = filosofi.CODGEO
+  AND emissions.dep = filosofi.dep;
+```
+
+::: {.content-visible when-profile="fr"}
+En faisant une jointure à gauche, on doit en principe avoir autant de lignes que la base de données à gauche:
+:::
+
+::: {.content-visible when-profile="en"}
+By performing a left join, we should, in principle, have as many rows as in the left dataset:
+:::
+
+```{python}
+#| echo: true
+left_merged.shape[0] == emissions.shape[0]
+```
+
+::: {.content-visible when-profile="fr"}
+Autrement, cela est signe qu'il y a une clé dupliquée à droite. Grâce à notre variable `id_right`, on peut savoir les codes communes à droite qui n'existent pas à gauche:
+:::
+::: {.content-visible when-profile="en"}
+Otherwise, it indicates that there is a duplicate key on the right. Thanks to our `id_right` variable, we can identify the commune codes on the right that do not exist on the left:
+:::
+
+
+```{python}
+#| echo: true
+left_merged.loc[left_merged['id_right'].isna()].tail(3)
+```
+
+::: {.content-visible when-profile="fr"}
+Cela vient du fait que les deux jeux de données ne reposent pas sur la même version du code officiel géographique. Les données Filosofi, diffusées par l'API Melodi, reflètent le découpage communal le plus récent (2025), alors que les données d'émissions de l'Ademe, bien que mises à jour en 2025, n'ont pas encore répercuté certaines fusions de communes récentes. Par exemple, la commune de Courcouronnes est toujours présente telle quelle dans les données d'émissions (base de gauche):
+:::
+::: {.content-visible when-profile="en"}
+This is because the two datasets do not rely on the same version of the official geographical code. The Filosofi data, disseminated via the Melodi API, reflects the most recent municipal boundaries (2025), whereas the Ademe emissions data, although updated in 2025, has not yet caught up with some recent commune mergers. For example, the commune of Courcouronnes is still present as such in the emissions data (left base):
+:::
+
+```{python}
+#| echo: true
+left_merged.loc[
+  left_merged['id_right'].isna()
+  & left_merged['Commune'].str.contains("COURCOURONNES", na=False)
+]
+```
+
+::: {.content-visible when-profile="fr"}
+Cette commune a pourtant fusionné avec Evry pour former la commune nouvelle d'Évry-Courcouronnes, seule forme sous laquelle elle apparaît désormais dans les données Filosofi (base de droite):
+:::
+::: {.content-visible when-profile="en"}
+Yet this commune has since merged with Evry to form the new commune of Évry-Courcouronnes, the only form under which it now appears in the Filosofi data (right base):
+:::
+
+```{python}
+#| echo: true
+filosofi.loc[
+  filosofi['LIBGEO']
+  .str.lower()
+  .str.contains("courcouronnes", na=False)
+]
+```
+
+::: {.content-visible when-profile="fr"}
+Dans un exercice de construction de statistiques publiques, on ne pourrait donc se permettre cette disjonction des années.
+:::
+::: {.content-visible when-profile="en"}
+In a public statistics construction exercise, we could not afford this discrepancy in years.
+:::
+
+
+## _Right join_
+
+
+::: {.content-visible when-profile="fr"}
+Le principe est le même mais cette fois c'est la base de droite qui est prise sous forme de pivot:
+
+![Illustration du *right join*. Source originale: @wickham2023r](/content/manipulation/02_pandas_joins/img/right.png){width=70%}
+
+
+:::
+::: {.content-visible when-profile="en"}
+The principle is the same, but this time it is the right base that is taken as the pivot:
+
+![*Right join*. Original image from @wickham2023r](/content/manipulation/02_pandas_joins/img/right.png){width=70%}
+
+:::
+
+
+```{python}
+#| echo: true
+right_merged = emissions.merge(
+  filosofi,
+  left_on = ["INSEE commune", "dep"],
+  right_on = ["CODGEO", "dep"],
+  how = "right"
+)
+right_merged.head(3)
+```
+
+::: {.content-visible when-profile="fr"}
+L'instruction équivalente en SQL serait
+:::
+::: {.content-visible when-profile="en"}
+The equivalent instruction in SQL would be:
+:::
+
+
+```sql
+SELECT *
+FROM filosofi
+RIGHT JOIN emissions
+  ON filosofi.CODGEO = emissions.`INSEE commune`
+  AND filosofi.dep = emissions.dep;
+```
+
+::: {.content-visible when-profile="fr"}
+On peut, comme précédemment, vérifier la cohérence des dimensions:
+:::
+::: {.content-visible when-profile="en"}
+We can, as before, check the consistency of the dimensions:
+:::
+
+```{python}
+#| echo: true
+right_merged.shape[0] == filosofi.shape[0]
+```
+
+::: {.content-visible when-profile="fr"}
+Pour vérifier le nombre de lignes des données Filosofi que nous n'avons pas dans notre jeu d'émissions de gaz carbonique, on peut faire
+:::
+::: {.content-visible when-profile="en"}
+To check the number of rows in the Filosofi data that we do not have in our greenhouse gas emissions dataset, we can do:
+:::
+
+```{python}
+#| echo: true
+right_merged['id_left'].isna().sum()
+```
+
+::: {.content-visible when-profile="fr"}
+C'est un nombre faible. Quelles sont ces observations ?
+:::
+::: {.content-visible when-profile="en"}
+It's a small number. What are these observations?
+:::
+
+```{python}
+#| echo: true
+right_merged.loc[
+  right_merged['id_left'].isna(),
+  filosofi.columns.tolist() + emissions.columns.tolist()
+]
+```
+
+::: {.content-visible when-profile="fr"}
+Il est suprenant de voir que Paris, Lyon et Marseille sont présents
+dans la base des statistiques communales mais pas dans celles des émissions.
+Pour comprendre pourquoi, recherchons dans nos données d'émissions les observations liées à Marseille:
+:::
+::: {.content-visible when-profile="en"}
+It is surprising to see that Paris, Lyon, and Marseille are present in the communal statistics dataset but not in the emissions dataset. To understand why, let's search in our emissions data for observations related to Marseille:
+:::
+
+```{python}
+#| echo: true
+emissions.loc[
+  emissions["Commune"]
+  .str.upper()
+  .str.contains('MARSEILLE-')
+]
+```
+
+::: {.content-visible when-profile="fr"}
+Cela vient du fait que le jeu de données des émissions de l'Ademe propose de l'information sur les arrondissements dans les trois plus grandes villes
+là où le jeu de données de l'Insee ne fait pas cette décomposition.
+:::
+::: {.content-visible when-profile="en"}
+This is because the Ademe emissions dataset provides information on districts in the three largest cities, whereas the Insee dataset does not have this breakdown.
+:::
+
+
+
+## _Inner join_
+
+
+::: {.content-visible when-profile="fr"}
+Il s'agit du jeu de données où les clés sont retrouvées à l'intersection des deux tables.
+
+![Illustration du *inner join*. Source originale: @wickham2023r](/content/manipulation/02_pandas_joins/img/inner.png){width=70%}
+
+:::
+::: {.content-visible when-profile="en"}
+This is the dataset where the keys are found at the intersection of the two tables.
+
+![*Inner join*. Originale image: @wickham2023r](/content/manipulation/02_pandas_joins/img/inner.png){width=70%}
+:::
+
+
+```{python}
+#| echo: true
+inner_merged = emissions.merge(
+  filosofi,
+  left_on = ["INSEE commune", "dep"],
+  right_on = ["CODGEO", "dep"],
+  how = "inner"
+)
+inner_merged.head(3)
+```
+
+::: {.content-visible when-profile="fr"}
+En SQL, cela donne
+:::
+::: {.content-visible when-profile="en"}
+In SQL, this would be:
+:::
+
+```sql
+SELECT *
+FROM emissions
+INNER JOIN filosofi
+  ON emissions.`INSEE commune` = filosofi.CODGEO
+  AND emissions.dep = filosofi.dep;
+```
+
+::: {.content-visible when-profile="fr"}
+Le nombre de lignes dans notre jeu de données peut être comparé au jeu de droite et de gauche:
+:::
+::: {.content-visible when-profile="en"}
+The number of rows in our dataset can be compared to the left and right datasets:
+:::
+
+```{python}
+#| echo: true
+inner_merged.shape[0] == (
+  left_merged.shape[0] - left_merged['id_right'].isna().sum()
+)
+```
+
+```{python}
+#| echo: true
+inner_merged.shape[0] == (
+  right_merged.shape[0] - right_merged['id_left'].isna().sum()
+)
+```
+
+
+## _Full join_
+
+::: {.content-visible when-profile="fr"}
+Le _full join_ est un pivot à gauche puis à droite pour les informations qui n'ont pas été trouvées
+
+![Illustration du *full outer join*. Source originale: @wickham2023r](/content/manipulation/02_pandas_joins/img/outer.png){width=70%}
+:::
+::: {.content-visible when-profile="en"}
+The full join is a pivot to the left and then to the right for the information that was not found.
+![*Full outer join*. Originale image: @wickham2023r](/content/manipulation/02_pandas_joins/img/inner.png){width=70%}
+:::
+
+
+```{python}
+#| echo: true
+full_merged = emissions.merge(
+  filosofi,
+  left_on = ["INSEE commune", "dep"],
+  right_on = ["CODGEO", "dep"],
+  how = "outer"
+)
+full_merged.head(3)
+```
+
+::: {.content-visible when-profile="fr"}
+Comme d'habitude, la traduction en SQL est presque immédiate:
+:::
+::: {.content-visible when-profile="en"}
+As usual, the translation to SQL is almost immediate:
+:::
+
+```sql
+SELECT *
+FROM emissions
+FULL OUTER JOIN filosofi
+  ON emissions.`INSEE commune` = filosofi.CODGEO
+  AND emissions.dep = filosofi.dep;
+```
+
+::: {.content-visible when-profile="fr"}
+Cette fois, on a une combinaison de nos trois jeux de données initiaux:
+
+* Le _inner join_ ;
+* Le _left join_ sur les observations sans clé de droite ;
+* Le _right join_ sur les observations sans clé de gauche ;
+:::
+
+::: {.content-visible when-profile="en"}
+This time, we have a combination of our three initial datasets:
+
+* The inner join;
+* The left join on observations without the right key;
+* The right join on observations without the left key;
+:::
+
+```{python}
+#| echo: true
+(
+  full_merged['id_left'].isna().sum() + full_merged['id_right'].isna().sum()
+) == (
+  left_merged['id_right'].isna().sum() + right_merged['id_left'].isna().sum()
+)
+```
+
+::: {.content-visible when-profile="fr"}
+Les colonnes `id_left` et `id_right` n'avaient d'utilité que pour illustrer les jointures ci-dessus. On les retire de nos jeux de données avant de poursuivre, pour ne pas polluer les traitements ultérieurs :
+:::
+
+::: {.content-visible when-profile="en"}
+The `id_left` and `id_right` columns were only useful to illustrate the joins above. We drop them from our datasets before moving on, so they do not interfere with later processing:
+:::
+
+```{python}
+#| echo: true
+emissions = emissions.drop(columns = ['id_left'])
+filosofi = filosofi.drop(columns = ['id_right'])
+```
+
+::: {.content-visible when-profile="fr"}
+## En résumé
+
+Les quatre principaux types de jointures sont ainsi les suivantes:
+:::
+
+::: {.content-visible when-profile="en"}
+## In summary
+
+The four main types of join are the following
+:::
+
+::: {#fig-summary-join layout-ncol=2}
+![*Left join* (source: @wickham2023r)](/content/manipulation/02_pandas_joins/img/left.png)
+
+![*Right join* (source: @wickham2023r)](/content/manipulation/02_pandas_joins/img/right.png)
+
+![*Inner join* (source: @wickham2023r)](/content/manipulation/02_pandas_joins/img/inner.png)
+
+![*Full outer join* (source: @wickham2023r)](/content/manipulation/02_pandas_joins/img/outer.png)
+
+:::: {.content-visible when-profile="fr"}
+Les principales méthodes de fusion de données
+::::
+:::: {.content-visible when-profile="en"}
+Main database join methods
+::::
+
+:::
+
+::: {.content-visible when-profile="fr"}
+Dans une version comique, cela donne:
+:::
+
+::: {.content-visible when-profile="en"}
+In a funny representation, this gives:
+:::
+
+
+![](https://external-preview.redd.it/yOLzCR0qSzul2WpjQorxINB0xpU3_N9twmFVsgbGJwQ.jpg?auto=webp&s=4feedc91302ba635b3028a21b98d047def5cdc2b){fig-align="center" width=60%}
+
+::: {.content-visible when-profile="fr"}
+Il existe bien-sûr d'autres types de jointures, basées sur la négation: *semi-join*, *anti-join*, etc. Ces méthodes sont moins fréquemment utilisées mais sont utiles lorsqu'on cherche à déterminer la discordance entre deux jeux de données. 
+:::
+
+::: {.content-visible when-profile="en"}
+There are of course other types of joins, based on negation: *semi-join*, *anti-join*, etc. These methods are less frequently used but are useful when trying to determine the discrepancy between two datasets.
+:::
+
+
+::: {.content-visible when-profile="fr"}
+# Exemples d'identifiants dans les données françaises
+
+Nous avons mis en avant l'intérêt de disposer d'identifiants communs à des bases de données plutôt que se fier à des informations textuelles bruitées. Nous allons maintenant évoquer trois identifiants importants pour les utilisateurs de données françaises:
+
+* Le code officiel géographique, identifiant unique pour des données géographiques
+* Le NIR, ou numéro de sécurité sociale, identifiant individuel français
+* Le code SIRENE, identifiant unique pour les entreprises ayant une activité en France.
+
+
+## Le Code officiel géographique (COG): l'identifiant des données géographiques
+
+Pour les données géographiques, il existe de nombreux identifiants selon la problématique d'étude.
+
+Parmi les besoins principaux, on retrouve le fait d'apparier des données géographiques à partir d'un identifiant administratif commun. Par exemple, associer deux jeux de données au niveau communal.
+
+Pour cela, l'identifiant de référence est le code Insee, issu du [Code officiel géographique (COG)](https://www.insee.fr/fr/information/2560452) que nous utilisons depuis le dernier chapitre et que nous aurons amplement l'occasion d'exploiter au cours des différents chapitres de ce cours.
+
+La géographie administrative étant en évolution perpétuelle, la base des code Insee est une base vivante. Le site et les API de l'Insee permettent de récupérer l'historique d'après-guerre afin de pouvoir faire de l'analyse géographique sur longue période.
+
+Les codes postaux ne peuvent être considérés comme un identifiant : ils peuvent regrouper plusieurs communes ou, au contraire, une même commune peut avoir plusieurs codes postaux. Il s'agit d'un système de gestion de la Poste qui n'a pas été construit pour l'analyse statistique.
+
+Pour se convaincre du problème, à partir des données mises à disposition par La Poste, on peut voir que le code postal 11420 correspond à 11 communes:
+:::
+
+::: {.content-visible when-profile="en"}
+# Examples of identifiers in French data
+
+We have highlighted the value of having identifiers common to several databases rather than relying on noisy textual information. We will now discuss three identifiers that matter to users of French data:
+
+* The official geographic code, a unique identifier for geographic data
+* The NIR, or social security number, the French individual identifier
+* The SIRENE code, a unique identifier for businesses operating in France.
+
+## The Official Geographic Code (COG): The identifier for geographic data
+
+For geographic data, there are many identifiers depending on the study problem.
+
+Among the main needs is the ability to match geographic data using a common administrative identifier. For example, associating two datasets at the municipal level.
+
+For this, the reference identifier is the Insee code, derived from the [Official Geographic Code (COG)](https://www.insee.fr/fr/information/2560452), which we have been using since the last chapter and will extensively use throughout the different chapters of this course.
+Given that the administrative geography is constantly evolving, the Insee code database is a living base. The Insee website and APIs provide access to the post-war historical data for long-term geographic analysis.
+
+Postal codes cannot be considered as an identifier: they can group several municipalities or, conversely, one municipality can have several postal codes. It is a system managed by La Poste that was not designed for statistical analysis.
+
+To illustrate the problem, from the data provided by La Poste, we can see that postal code 11420 corresponds to 11 municipalities:
+:::
+
+
+```{python}
+#| echo: true
+codes_postaux = pd.read_csv(
+  "https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-hexasmal/raw",
+  sep = ";", encoding = "latin1",
+  dtype = {"Code_postal": "str", "#Code_commune_INSEE": "str"}
+)
+codes_postaux.loc[codes_postaux['Code_postal'] == "11420"]
+```
+
+::: {.content-visible when-profile="fr"}
+En anticipant sur les compétences développées lors des prochains chapitres, nous pouvons représenter le problème sous forme cartographique en prenant l'exemple de l'Aude. Le code pour produire la carte des codes communes est donné tel quel, il n'est pas développé car il fait appel à des concepts et librairies qui seront présentés lors du prochain chapitre:
+
+```{python}
+#| echo: true
+#| output: false
+!pip install cartiflette --quiet
+```
+
+```{python}
+#| echo: true
+from cartiflette import carti_download
+
+shp_communes = carti_download(
+  values = ["11"],
+  crs = 4326,
+  borders = "COMMUNE",
+  simplification=50,
+  filter_by="DEPARTEMENT",
+  source="EXPRESS-COG-CARTO-TERRITOIRE",
+  year=2022) #<1>
+
+codes_postaux11 = shp_communes.merge(
+  codes_postaux,
+  left_on = "INSEE_COM",
+  right_on = "#Code_commune_INSEE"
+) #<2>
+codes_postaux11 = codes_postaux11.dissolve(by = "Code_postal") #<3>
+```
+1. Récupération des contours officiels de l'Aude produits par l'IGN par le biais de la librairie [`cartiflette`](https://github.com/InseeFrLab/cartiflette)
+2. Jointure par le biais du code commune entre les deux sources de données
+3. On agrège la géométrie au niveau des codes postaux
+
+```{python}
+#| echo: true
+#| fig-cap: Géographie des codes postaux et des communes dans l'Aude (11)
+# Carte #<1>
+ax = shp_communes.plot(color='white', edgecolor='blue', linewidth = 0.5)
+ax = codes_postaux11.plot(ax = ax, color='none', edgecolor='black')
+ax.set_axis_off()
+```
+1. On crée une carte à partir de nos deux couches
+
+:::
+
+::: {.content-visible when-profile="en"}
+Anticipating on the skills developed in the upcoming chapters, we can represent the problem cartographically by taking the example of the Aude department. The code to produce the map of commune codes is given as is, not developed, as it uses concepts and libraries that will be presented in the next chapter:
+
+```{python}
+#| echo: true
+from cartiflette import carti_download
+
+shp_communes = carti_download(
+  values = ["11"],
+  crs = 4326,
+  borders = "COMMUNE",
+  simplification=50,
+  filter_by="DEPARTEMENT",
+  source="EXPRESS-COG-CARTO-TERRITOIRE",
+  year=2022) #<1>
+
+codes_postaux11 = shp_communes.merge(
+  codes_postaux,
+  left_on = "INSEE_COM",
+  right_on = "#Code_commune_INSEE"
+) #<2>
+codes_postaux11 = codes_postaux11.dissolve(by = "Code_postal") #<3>
+```
+1. Downloading the official contours of Aude produced by IGN using the [`cartiflette`](https://github.com/InseeFrLab/cartiflette) library
+2. Joining using the commune code between the two data sources
+3. Aggregating the geometry at the postal code level
+
+```{python}
+#| echo: true
+#| fig-cap: Geography of postal codes and municipalities in Aude (11)
+# Map #<1>
+ax = shp_communes.plot(color='white', edgecolor='blue', linewidth = 0.5)
+ax = codes_postaux11.plot(ax = ax, color='none', edgecolor='black')
+ax.set_axis_off()
+```
+1. Creating a map from our two layers
+:::
+
+::: {.content-visible when-profile="fr"}
+
+## Sirene: l'identifiant dans les données d'entreprises
+
+Pour relier les microdonnées d'entreprises françaises, il existe un numéro unique d'identification : le [numéro `Siren`](https://entreprendre.service-public.fr/vosdroits/F32135). Il s'agit d'un numéro d'identification dans un répertoire légal d'entreprise indispensable pour toutes démarches juridiques, fiscales... 
+
+Pour les entreprises qui possèdent plusieurs établissements - par exemple dans plusieurs villes - il existe un identifiant dérivé qui s'appelle le [`Siret`](https://www.economie.gouv.fr/cedef/numero-siret): aux 9 chiffres du numéro Sirene s'ajoutent 5 chiffres d'identifications de l'établissement. D'ailleurs, les administrations publiques sont également concernées par le numéro Siren: étant amenées à effectuer des opérations de marchés (achat de matériel, locations de biens, etc.) elles disposent également d'un identifiant Siren. 
+
+Etant inscrits dans des répertoires légaux pour lesquels les citoyens sont publics, les numéros Siren et les noms des entreprises associées sont disponibles en _open data_, par exemple sur [annuaire-entreprises.data.gouv.fr/](https://annuaire-entreprises.data.gouv.fr/) pour une recherche ponctuelle, sur [data.gouv.fr](https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/).
+
+Cette base Sirene est une mine d'information, parfois comique, sur les entreprises françaises. Par exemple, le site [tif.hair/](https://tif.hair/) s'est amusé à répertorier la part des salons de coiffures proposant des jeux de mots dans le nom du salon. 
+
+Lorsqu'un entrepreneur déclare la création d'une entreprise, il reçoit un numéro Sirene et un code d'activité (le [code APE](https://entreprendre.service-public.fr/vosdroits/F33050)) relié à la description qu'il a déclaré de l'activité de son entreprise. Ce code permet de classer l'activité d'une entreprise dans la [Nomenclature d'activités françaises (NAF)](https://www.insee.fr/fr/information/2406147) ce qui servira à l'Insee pour la publication de statistiques sectorielles. En l'occurrence, pour les coiffeurs, le code dans la NAF est [`96.02A`](https://www.insee.fr/fr/metadonnees/nafr2/sousClasse/96.02A?champRecherche=false). 
+
+Il est possible à partir de la base disponible en _open data_ d'avoir en quelques lignes de `Python` la liste de tous les coiffeurs puis de s'amuser à explorer ces données (objet du prochain exercice optionnel).
+
+L'exercice suivant, optionnel, propose de s'amuser à reproduire de manière simplifiée le recensement fait par [tif.hair/](https://tif.hair/) des jeux de mots dans les salons de coiffure. Il permet de pratiquer quelques méthodes de manipulation textuelle, en avance de phase sur le chapitre consacré aux [expressions régulières](/content/manipulation/04b_regex_TP.qmd).
+
+Le jeu de données de l'ensemble des entreprises étant assez volumineux (autour de 4Go en CSV après décompression), il est plus pratique de partir sur un jeu de données au format `Parquet`, plus optimisé (plus de détails sur ce format dans le [chapitre d'approfondissement](/content/modern-ds/05_parquet_s3.qmd) qui lui est consacré).
+
+Pour lire ce type de fichiers de manière optimale, il est conseillé d'utiliser la librairie `DuckDB` qui permet de ne consommer que les données nécessaires et non de télécharger l'ensemble du fichier pour n'en lire qu'une partie comme ce serait le cas avec `Pandas` (voir le [dernier chapitre](/content/manipulation/02_pandas_beyond.qmd) de cette partie, section "Aller au-delà de `Pandas`"). La requête SQL suivante se traduit en langage naturel par l'instruction suivante: _"A partir du fichier `Parquet`, je ne veux que quelques colonnes du fichier pour les coiffeurs (APE: 96.02A) dont le nom de l'entreprise (`denominationUsuelleEtablissement`) est renseigné"_:
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+### Sirene: the identifier in business data
+
+To connect French business microdata, there is a unique identification number: the [Siren number](https://entreprendre.service-public.fr/vosdroits/F32135). It is an identification number in a legal business directory essential for all legal, fiscal, and other procedures. For companies that have multiple establishments—for example, in several cities—there is a derived identifier called the [Siret](https://www.economie.gouv.fr/cedef/numero-siret): the 9 digits of the Siren number are followed by 5 establishment identification digits. Moreover, public administrations are also concerned with the Siren number: being involved in market operations (purchasing equipment, renting goods, etc.), they also have a Siren identifier. As they are registered in legal directories whose information is public, the Siren numbers and the associated company names are available in open data, for example, on [annuaire-entreprises.data.gouv.fr/](https://annuaire-entreprises.data.gouv.fr/) for occasional searches, or on [data.gouv.fr](https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/).
+
+This Sirene database is a treasure trove of information, sometimes amusing, about French companies. For example, the site [tif.hair/](https://tif.hair/) cataloged the proportion of hair salons with puns in their names. When an entrepreneur declares the creation of a business, they receive a Siren number and an activity code (the [APE code](https://entreprendre.service-public.fr/vosdroits/F33050)) related to the description of their business activity. This code allows the classification of a business activity in the [French Classification of Activities (NAF)](https://www.insee.fr/fr/information/2406147), which will be used by Insee for the publication of sectoral statistics. In the case of hairdressers, the code in the NAF is [96.02A](https://www.insee.fr/fr/metadonnees/nafr2/sousClasse/96.02A?champRecherche=false). From the open data available, it is possible, in a few lines of `Python`, to get the list of all hairdressers and then explore this data (the subject of the next optional exercise).
+
+The following optional exercise suggests replicating, in a simplified manner, the survey done by [tif.hair/](https://tif.hair/) on puns in hair salon names. It allows practicing some text manipulation methods, ahead of the chapter dedicated to [regular expressions](/content/manipulation/04b_regex_TP.qmd).
+
+Since the dataset of all companies is quite large (around 4GB in CSV after decompression), it is more practical to use a dataset in `Parquet` format, which is more optimized (more details on this format in the [advanced chapter](/content/modern-ds/s3.qmd) dedicated to it).
+
+To read this type of file optimally, it is recommended to use the `DuckDB` library, which allows consuming only the necessary data instead of downloading the entire file to read only a part of it as would be the case with `Pandas` (see the [last chapter](/content/manipulation/05_parquet_s3.qmd) of this part, section "Beyond `Pandas`"). The following SQL query translates into natural language as: _"From the `Parquet` file, I only want a few columns of the file for hairdressers (APE: 96.02A) whose business name (`denominationUsuelleEtablissement`) is provided"_:
+
+:::
+
+
+{{< include "02_pandas_joins/_exo_optionnel.qmd" >}}
+
+{{< include "02_pandas_joins/_exo_optionnel_solution.qmd" >}}
+
+```{python}
+#| echo: false
+#| output: false
+ojs_define(coiffeurs = coiffeurs_tif)
+```
+
+```{ojs}
+function underlineTif(x) {
+  // Use a regular expression to find all occurrences of "tif"
+  const modx = x.replace(/TIF/g, match =>
+    `<span style="text-transform: capitalize; border-bottom: solid 2px blue; margin-bottom: -2px;">${match}</span>`
+  );
+
+  console.log(modx)
+
+  // Return the modified string wrapped in an HTML template
+  return html`${modx}`;
+}
+```
+
+::: {.content-visible when-profile="fr"}
+
+Voici sous une forme plus interactive l'ensemble des coiffeurs qui possèdent les termes `tif` dans le nom de leur entreprise déposée dans les données officielles:
+
+:::
+
+
+::: {.content-visible when-profile="en"}
+
+In a more interactive form, here's a list of all the hairdressers who have the word `tif` in the name of their registered business in the official data:
+
+:::
+
+::: {.content-visible when-format="html"}
+
+```{ojs}
+viewof coiffeursSearch = Inputs.search(
+  transpose(coiffeurs),
+  {label: "Nom du salon"}
+)
+```
+
+
+```{ojs}
+Inputs.table(coiffeursSearch, {
+  columns: [
+    "siren",
+    "denominationUsuelleEtablissement",
+    "enseigne1Etablissement"
+  ],
+  format: {
+    denominationUsuelleEtablissement: x => underlineTif(x),
+    enseigne1Etablissement: x => underlineTif(x)
+  }
+})
+```
+
+:::
+
+::: {.content-visible when-profile="fr"}
+
+Bien sûr, pour aller plus loin, il faudrait mieux normaliser les données, vérifier que l'information recherchée n'est pas à cheval sur plusieurs colonnes et bien sûr faire de l'inspection visuelle pour détecter les jeux de mots cachés. Mais déjà, en quelques minutes, on a des statistiques partielles sur le phénomène des coiffeurs blagueurs.
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+Of course, to go further, it would be better to normalize the data more thoroughly, check that the information sought is not spread across multiple columns, and conduct visual inspections to detect hidden puns. But already, in just a few minutes, we have partial statistics on the phenomenon of punny hairdressers.
+
+:::
+
+::: {.content-visible when-profile="fr"}
+
+### Le NIR et la question de la confidentialité des identifiants individuels
+
+En ce qui concerne les individus, il existe un identifiant unique permettant de relier ceux-ci dans différentes sources de données : le [NIR](https://www.cnil.fr/fr/definition/nir-numero-dinscription-au-repertoire), aussi connu sous le nom de numéro Insee ou numéro de sécurité sociale.
+Ce numéro est nécessaire à l'administration pour la gestion des droits à prestations sociales (maladie, vieillesse, famille...). Au-delà de cette fonction qui peut être utile au quotidien, ce numéro est un identifiant individuel unique dans le [Répertoire national d'identification des personnes physiques (RNIPP)](https://www.insee.fr/fr/metadonnees/definition/c1602).
+
+Cet identifiant est principalement présent dans des bases de gestion, liées aux fiches de paie, aux prestations sociales, etc. Cependant, _a contrario_ du numéro Sirene, celui-ci contient en lui-même plusieurs informations sensibles (@fig-nir-compo) - en plus d'être intrinsèquement relié à la problématique sensible des droits à la sécurité sociale.
+
+![Le numéro de sécurité sociale (Source: [Améli](https://www.ameli.fr/assure/droits-demarches/principes/numero-securite-sociale))](https://www.ameli.fr/sites/default/files/styles/webp_ckeditor/public/thumbnails/image/infographie_assures-regle-identification-assures.gif.webp?itok=j2owVDrB){#fig-nir-compo fig-width=70%}
+
+Pour pallier ce problème, a récémment été mis en oeuvre le [code statistique non signifiant (CSNS)](https://www.insee.fr/fr/information/7635825?sommaire=7635842) ou NIR haché, un identifiant individuel anonyme non identifiant. L'objectif de cet identifiant anonymisé est de réduire la dissémination d'une information personnelle qui permettait certes aux fonctionnaires et chercheurs de relier de manière déterministe de nombreuses bases de données mais donnait une information non indispensable aux analystes sur les personnes en question. @benichou-cds décrivent plus en détail la manière dont les organisations de la statistique publique française peuvent utiliser ce code unique non signifiant pour associer entre elles diverses sources de données.
+
+
+[^flou]: Autrement, on rentre dans le monde des appariements flous ou des appariements probabilistes. 
+
+    Les appariements flous sont des situations où on ne dispose plus d'un identifiant exact pour associer deux bases mais d'une information partiellement bruitée entre deux sources pour faire cette mise en relation. Par exemple, dans une base de données produit on aura `Coca Cola 33CL` et dans une autre `Coca Cola canette` mais sous ces deux noms sont cachés le même produit. On utilisera par exemple des techniques de distance textuelle pour relier les observations les unes aux autres. C'est, typiquement, ce que fait un moteur de recherche.
+
+    Les appariements probabilistes sont un autre type d'approche. Dans ceux-ci, on associe des observations dans deux bases non pas sur la base d'un identifiant mais sur la distance entre un ensemble de caractéristiques dans les deux bases. Cette technique est très utilisée dans les statistiques médicales ou dans l'évaluation de politiques publiques sur la base du [_propensity score matching_](https://en.wikipedia.org/wiki/Propensity_score_matching).
+
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+### The social security number and the issue of individual identifiers' confidentiality
+
+For individuals, there exists a unique identifier that allows linking them across different data sources: the [NIR](https://www.cnil.fr/fr/definition/nir-numero-dinscription-au-repertoire), also known as the INSEE number or social security number.
+This number is necessary for the administration to manage social benefits (health, retirement, family...). Beyond this function, which can be useful daily, this number is a unique individual identifier in the [National Register of Physical Persons (RNIPP)](https://www.insee.fr/fr/metadonnees/definition/c1602).
+
+This identifier is mainly present in management databases related to payroll, social benefits, etc. However, unlike the Sirene number, it contains several sensitive pieces of information and is inherently linked to the sensitive issue of social security rights.
+
+![Social security number (adapted from [French version](https://www.ameli.fr/assure/droits-demarches/principes/numero-securite-sociale))](/content/manipulation/02_pandas_joins/img/infographie_nir_gb.webp){fig-width=70%}
+
+To address this problem, the [non-significant statistical code (CSNS)](https://www.insee.fr/fr/information/7635825?sommaire=7635842) or hashed NIR, a non-identifying anonymous individual identifier, was recently implemented. The goal of this anonymized identifier is to reduce the dissemination of personal information that, although allowing civil servants and researchers to deterministically link numerous databases, provided analysts with non-essential information about the individuals in question. @benichou-cds describe in more detail how French official statistics organizations can use this unique non-significant code to link various data sources with one another.
+
+[^fuzzy]: Otherwise, we enter the world of fuzzy matching or probabilistic matching.
+
+    Fuzzy matching refers to situations where we no longer have an exact identifier to link two databases, but rather partially noisy information shared between two sources that can be used to establish the connection. For example, a product database might contain `Coca Cola 33CL` while another contains `Coca Cola can`, yet both names refer to the same product. Text distance techniques, for instance, can be used to link these observations together. This is typically what a search engine does.
+
+    Probabilistic matching is another type of approach. Here, observations in two databases are linked not on the basis of an identifier, but on the distance between a set of characteristics across the two databases. This technique is widely used in medical statistics or in public policy evaluation, based on [_propensity score matching_](https://en.wikipedia.org/wiki/Propensity_score_matching).
+
+:::
+
+::: {.content-visible when-profile="fr"}
+
+# Exercices d'application
+
+## Pourquoi a-t-on besoin d'un code commune quand on a déjà son nom ?
+
+Cet exercice va revenir un peu en arrière afin de saisir pourquoi nous avons pris comme hypothèse ci-dessus que le code commune était la clé de jointure.
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+## Why do we need a commune code when we already have its name?
+
+This exercise will take a step back to understand why we assumed above that the commune code was the key for joining data.
+:::
+
+
+{{< include "02_pandas_joins/_exo3.qmd" >}}
+{{< include "02_pandas_joins/_exo3_solution.qmd" >}}
+
+::: {.content-visible when-profile="fr"}
+
+Ce petit exercice permet donc de se rassurer car les libellés dupliqués
+sont en fait des noms de commune identiques mais qui ne sont pas dans le même département.
+Il ne s'agit donc pas d'observations dupliquées.
+On peut donc se fier aux codes communes, qui eux sont uniques.
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+This small exercise reassures us as the duplicated labels are actually the same commune names but in different departments. So, these are not duplicated observations. We can thus rely on the commune codes, which are unique.
+
+:::
+
+::: {.content-visible when-profile="fr"}
+
+## Calculer une empreinte carbone grâce à l'association entre des sources
+
+:::
+
+::: {.content-visible when-profile="en"}
+
+## Associating different sources to compute carbon footprints
+
+:::
+
+
+{{< include "02_pandas_joins/_exo4.qmd" >}}
+{{< include "02_pandas_joins/_exo4_solution.qmd" >}}
+
+::: {.content-visible when-profile="fr"}
+Avec une meilleure compréhension de nos données, obtenue grâce à cette association de sources, nous nous rapprochons de la statistique inférentielle. Dans le [prochain chapitre](/content/manipulation/02_pandas_stats.qmd), nous allons continuer à exploiter `emissions` et `filosofi`, enrichies l'une par l'autre, pour construire des statistiques descriptives par groupe et restructurer nos données.
+:::
+
+::: {.content-visible when-profile="en"}
+With a better understanding of our data, gained through this association of sources, we get closer to inferential statistics. In the [next chapter](/content/manipulation/02_pandas_stats.qmd), we will continue to use `emissions` and `filosofi`, enriched by one another, to build group descriptive statistics and restructure our data.
+:::
