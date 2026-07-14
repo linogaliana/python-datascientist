@@ -349,69 +349,7 @@ geographic code.
 The code to retrieve this data is as follows:
 :::
 
-```{python}
-#| echo: true
-#| output: false
-#| code-fold: true
-#| code-summary: "See data retrieval code"
-
-from io import StringIO
-import requests
-import pandas as pd
-
-def get_melodi(dataset, dimension, code, value_name, time_period, geo_level="COM"):
-
-  url = f"https://api.insee.fr/melodi/data/{dataset}"
-
-  params = {
-    "GEO": geo_level,
-    dimension: code,
-    "TIME_PERIOD": time_period,
-    "maxResult": 40000,
-  }
-
-  response = requests.get(url, params=params, timeout=60)
-  response.raise_for_status()
-  observations = response.json()["observations"]
-
-  return pd.DataFrame(
-    {
-      "CODGEO": obs["dimensions"]["GEO"].split("-")[-1],
-      value_name: obs["measures"]["OBS_VALUE_NIVEAU"].get("value"),
-    }
-    for obs in observations
-  )
-
-niveau_vie = get_melodi("DS_FILOSOFI_CC", "FILOSOFI_MEASURE", "MED_SL", "NIVVIE_MEDIAN", 2023)
-taux_pauvrete = get_melodi("DS_FILOSOFI_CC", "FILOSOFI_MEASURE", "PR_MD60", "TAUX_PAUVRETE", 2023)
-population = get_melodi("DS_POPULATIONS_HISTORIQUES", "POPREF_MEASURE", "PMUN", "POPULATION", 2023)
-
-url_cog_2023 = "https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv"
-url_backup = "https://minio.lab.sspcloud.fr/lgaliana/data/python-ENSAE/cog_2023.csv"
-
-try:
-  cog_2023 = pd.read_csv(url_cog_2023)
-except requests.exceptions.Timeout:
-  cog_2023 = pd.read_csv(url_backup)
-
-noms_communes = (
-  cog_2023
-  .loc[cog_2023["TYPECOM"] == "COM", ["COM", "LIBELLE"]]
-  .rename(columns={"COM": "CODGEO", "LIBELLE": "LIBGEO"})
-)
-
-filosofi = (
-  niveau_vie
-  .merge(taux_pauvrete, on="CODGEO", how="outer")
-  .merge(population, on="CODGEO", how="outer")
-  .merge(noms_communes, on="CODGEO", how="left")
-  [["CODGEO", "LIBGEO", "POPULATION", "NIVVIE_MEDIAN", "TAUX_PAUVRETE"]]
-)
-
-filosofi["POPULATION"] = filosofi["POPULATION"].astype(int)
-filosofi["dep"] = filosofi["CODGEO"].str[:2]
-```
-
+{{< include "/content/manipulation/_get_data_melodi.qmd" >}}
 
 ::: {.content-visible when-profile="fr"}
 Le _DataFrame_ en question a l'aspect suivant :
