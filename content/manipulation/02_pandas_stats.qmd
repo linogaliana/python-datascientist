@@ -93,19 +93,41 @@ Finally, we will see how to build, from these statistics, polished communication
 
 ::: {.content-visible when-profile="fr"}
 
-## Données de ce chapitre
+## Données
 
 Nous repartons des mêmes jeux de données que le [chapitre sur les jointures](/content/manipulation/02_pandas_joins.qmd): les émissions communales de l'Ademe (`emissions`) et les données Filosofi de l'Insee (`filosofi`), enrichies l'une par l'autre. Le code ci-dessous, déjà commenté en détail dans le chapitre précédent, permet de reconstituer ces jeux de données:
 :::
 
 ::: {.content-visible when-profile="en"}
 
-## Data used in this chapter
+## Data
 
 We start again from the same datasets as in the [chapter on joins](/content/manipulation/02_pandas_joins.qmd): the Ademe municipal emissions data (`emissions`) and the Insee Filosofi data (`filosofi`), enriched with one another. The code below, already explained in detail in the previous chapter, retrieves these datasets again:
 :::
 
 {{< include "/content/manipulation/_get_data_melodi.qmd" >}}
+
+```{python}
+#| echo: true
+import pandas as pd
+
+url = "https://data.ademe.fr/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert"
+emissions = pd.read_csv(url)
+emissions["dep"] = emissions["INSEE commune"].str[:2]
+
+emissions.head(2)
+```
+
+::: {.content-visible when-profile="fr"}
+Nous aurons également besoin des *packages* suivants
+:::
+::: {.content-visible when-profile="en"}
+We will also need the following *packages*
+:::
+
+```{python}
+import numpy as np
+```
 
 {{< include "02_pandas_intro/_reproducible.qmd" >}}
 
@@ -118,11 +140,14 @@ Nous avons vu, lors du chapitre d'introduction, comment obtenir
 une statistique agrégée simplement grâce à `Pandas`.
 Il est néanmoins commun d'avoir des données avec des strates
 intermédiaires d'analyse pertinentes: des variables géographiques, l'appartenance à des groupes socio-démographiques liés à des caractéristiques renseignées, des indicatrices de période temporelle, etc.
-Pour mieux comprendre la structure de ses données, les _data scientists_ sont donc souvent amenés à construire des statistiques descriptives sur des sous-groupes présents dans les données. Pour reprendre l'exemple sur les émissions, nous avions précédemment construit des statistiques d'émissions au niveau national. Mais qu'en est-il du profil d'émission des différents départements ? Pour répondre à cette question, il sera utile d'agréger nos données au niveau départemental. Ceci nous donnera une information différente du jeu de données initial (niveau communal) et du niveau le plus agrégé (niveau national).
+Pour mieux comprendre la structure de ses données, les _data scientists_ sont donc souvent amenés à construire des statistiques descriptives sur des sous-groupes présents dans les données. 
+
+Pour reprendre l'exemple sur les émissions, nous avions précédemment construit des statistiques d'émissions au niveau national. Mais qu'en est-il du profil d'émission des différents départements ? Pour répondre à cette question, il sera utile d'agréger nos données au niveau départemental. Ceci nous donnera une information différente du jeu de données initial (niveau communal) et du niveau le plus agrégé (niveau national).
 
 En `SQL`, il est très simple de découper des données pour
 effectuer des opérations sur des blocs cohérents et recollecter des résultats
 dans la dimension appropriée.
+
 La logique sous-jacente est celle du *split-apply-combine* qui est repris
 par les langages de manipulation de données, auxquels `pandas`
 [ne fait pas exception](https://pandas.pydata.org/pandas-docs/stable/user_guide/groupby.html).
@@ -149,7 +174,9 @@ observations. Utiliser la méthode `groupby` ne déclenche pas d'opérations ava
 
 ## Principle
 
-In the introductory chapter, we saw how to obtain an aggregated statistic easily with `Pandas`. However, it is common to have data with intermediate analysis strata that are relevant: geographical variables, membership in socio-demographic groups related to recorded characteristics, temporal period indicators, etc. To better understand the structure of the data, data scientists are often led to construct descriptive statistics on sub-groups present in the data. For example, we previously constructed emission statistics at the national level. But what about the emission profiles of different departments? To answer this question, it will be useful to aggregate our data at the departmental level. This will give us different information from the initial dataset (municipal level) and the most aggregated level (national level).
+In the introductory chapter, we saw how to obtain an aggregated statistic easily with `Pandas`. However, it is common to have data with intermediate analysis strata that are relevant: geographical variables, membership in socio-demographic groups related to recorded characteristics, temporal period indicators, etc. To better understand the structure of the data, data scientists are often led to construct descriptive statistics on sub-groups present in the data. 
+
+For example, we previously constructed emission statistics at the national level. But what about the emission profiles of different departments? To answer this question, it will be useful to aggregate our data at the departmental level. This will give us different information from the initial dataset (municipal level) and the most aggregated level (national level).
 
 In `SQL`, it is very simple to segment data to perform operations on coherent blocks and recollect results in the appropriate dimension. The underlying logic is that of *split-apply-combine*, which is adopted by data manipulation languages, including `pandas` [which is no exception](https://pandas.pydata.org/pandas-docs/stable/user_guide/groupby.html).
 
@@ -197,29 +224,6 @@ Pour illustrer l'application de ce principe à un comptage, on peut dénombrer l
 To illustrate the application of this principle to counting, we can count the number of municipalities by department in 2023 (this statistic changes every year due to municipal mergers). For this, we simply take the reference of French municipalities from the official geographical code (COG) and count by department using `count`:
 
 :::
-
-
-```{python}
-#| echo: true
-import requests
-from io import StringIO
-import pandas as pd
-
-url_cog_2023 = "https://www.insee.fr/fr/statistiques/fichier/6800675/v_commune_2023.csv"
-url_backup = "https://minio.lab.sspcloud.fr/lgaliana/data/python-ENSAE/cog_2023.csv"
-
-# Try-except clause to avoid timout issue sometimes
-# Without timeout problem, pd.read_csv(url_cog_2023) would be sufficient
-try:
-  response = requests.get(url_cog_2023)
-  response.raise_for_status()
-  # Le serveur ne déclare pas de charset : `response.text` retomberait sur
-  # l'ISO-8859-1 par défaut alors que le fichier est en UTF-8 (accents corrompus)
-  cog_2023 = pd.read_csv(StringIO(response.content.decode("utf-8")))
-except requests.exceptions.Timeout:
-  print("Failing back to backup")
-  cog_2023 = pd.read_csv(url_backup)
-```
 
 
 
@@ -366,15 +370,21 @@ The second approach is more practical because it directly gives a `Pandas` `Data
 :::
 
 
-## Exercice d'application
-
 ::: {.content-visible when-profile="fr"}
+# Exercice d'application
+
 Cet exercice d'application s'appuie sur le jeu de données de l'Ademe nommé `emissions` précédemment.
 :::
 
 ::: {.content-visible when-profile="en"}
+# Application
+
 This application exercise uses the `Ademe` dataset named `emissions` previously discussed.
 :::
+
+```{python}
+secteurs = emissions.select_dtypes(include='number').columns
+```
 
 {{< include "02_pandas_stats/_exo1.qmd" >}}
 {{< include "02_pandas_stats/_exo1_solution.qmd" >}}
@@ -460,6 +470,8 @@ avant de faire un graphique avec la méthode `plot` vue au chapitre d'introducti
 
 The ADEME data, and the Insee data as well, are in the _wide_ format. The next exercise illustrates the benefit of converting from _long_ to _wide_ before creating a plot with the `plot` method seen in the introductory chapter.
 :::
+
+
 
 {{< include "02_pandas_stats/_exo2.qmd" >}}
 {{< include "02_pandas_stats/_exo2_solution.qmd" >}}
