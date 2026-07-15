@@ -342,13 +342,11 @@ animal
 ```
 
 ::: {.content-visible when-profile="fr"}
-Le type `object` correspond est une voiture-balais pour les types de données exclusivement textuelles (type `str`) ou mélangeant données textuelles et numériques (type `mixed`). Historiquement, c'était un type intermédiaire entre le `factor` et le `character` de `R`. Cependant, depuis quelques temps, il existe un type équivalent au `factor` de `R` dans `Pandas` pour
-les variables dont le nombre de valeurs
-est une liste finie et relativement courte, le type `category`. Le type `object` pouvant provoquer des erreurs inattendues par sa nature mixte, il est recommandé, lorsqu'on désire se concentrer sur une variable, de faire un choix sur la nature de celle-ci et de la convertir:
+Depuis `Pandas` 3.0, les données exclusivement textuelles reçoivent nativement le type dédié `str`, comme on le voit ci-dessus : ce n'est plus le type `object` qui est utilisé par défaut pour du texte. Le type `object` reste une voiture-balais, mais il est désormais réservé aux données réellement mélangées (texte et nombres, ou objets `Python` arbitraires, type `mixed`). Historiquement, `object` jouait le rôle d'intermédiaire entre le `factor` et le `character` de `R` ; ce rôle est maintenant mieux assuré par la distinction `str`/`category`. Il existe en effet un type équivalent au `factor` de `R` dans `Pandas`, le type `category`, à privilégier lorsque la variable ne prend qu'un nombre fini et relativement restreint de valeurs (avec, à la clé, des gains de mémoire et de performance). Il est donc recommandé, lorsqu'on désire se concentrer sur une variable textuelle à faible cardinalité, de la convertir explicitement :
 :::
 
 ::: {.content-visible when-profile="en"}
-The `object` type is a catch-all for exclusively textual data types (type `str`) or a mix of textual and numerical data (type `mixed`). Historically, it was an intermediate type between the `factor` and `character` of `R`. However, recently, there is an equivalent type to `factor` in `Pandas` for variables with a finite and relatively short list of values, the `category` type. The `object` type can cause unexpected errors due to its mixed nature, so it is recommended to choose the nature of a variable and convert it:
+Since `Pandas` 3.0, exclusively textual data natively receives the dedicated `str` type, as shown above: `object` is no longer the default type used for text. The `object` type remains a catch-all, but it is now reserved for genuinely mixed data (text and numbers, or arbitrary `Python` objects, type `mixed`). Historically, `object` acted as an intermediate type between the `factor` and `character` of `R`; this role is now better served by the `str`/`category` distinction. There is indeed an equivalent type to `factor` in `Pandas`, the `category` type, to be preferred when a variable has a finite and relatively small list of possible values (bringing memory and performance gains). It is therefore recommended, when focusing on a low-cardinality textual variable, to convert it explicitly:
 :::
 
 
@@ -358,7 +356,7 @@ animal.astype("category") #<1>
 animal.astype(str) #<2>
 ```
 1. Pour convertir en `category` (le choix qui fait sens ici)
-2. Pour convertir en `str` (si on désire faire des opérations textuelles ultérieures)
+2. Pour repasser en `str` explicitement (redondant ici puisque c'est déjà le type par défaut depuis `Pandas` 3.0, mais utile si la colonne provient d'un import ayant forcé un typage `object`)
 
 ::: {.content-visible when-profile="fr"}
 Il faut bien examiner les types de ses objets `Pandas` et les convertir s'ils ne font pas sens ; `Pandas` fait certes des choix optimisés mais il est parfois nécessaire de les corriger car `Pandas` ne connaît pas vos usages ultérieurs des données. C'est l'une des opérations à faire lors
@@ -787,11 +785,11 @@ df['Commune'].nunique()
 `Pandas` propose énormément de méthodes utiles. 
 Voici un premier résumé de celles relatives à la structure des données, accompagné d'un comparatif avec `R` :
 
-| Opération                     | pandas       | dplyr (`R`)    | data.table (`R`)           |
-|-------------------------------|--------------|----------------|----------------------------|
-| Récupérer le nom des colonnes | `df.columns` | `colnames(df)` | `colnames(df)`             |
-| Récupérer les dimensions      | `df.shape` | `dim(df)` | `dim(df)` |
-| Récupérer le nombre de valeurs uniques d'une variable | `df['myvar'].nunique()` | `df %>%  summarise(distinct(myvar))` | `df[,uniqueN(myvar)]` |
+| Opération                     | pandas       | dplyr (`R`)    |
+|-------------------------------|--------------|----------------|
+| Récupérer le nom des colonnes | `df.columns` | `colnames(df)` |
+| Récupérer les dimensions      | `df.shape` | `dim(df)` |
+| Récupérer le nombre de valeurs uniques d'une variable | `df['myvar'].nunique()` | `df %>%  summarise(distinct(myvar))` |
 
 :::
 
@@ -822,11 +820,11 @@ df['Commune'].nunique()
 
 `Pandas` offers many useful methods. Here is a summary of those related to data structure, accompanied by a comparison with `R`:
 
-| Operation                     | pandas                  | dplyr (`R`)           | data.table (`R`)          |
-|-------------------------------|-------------------------|-----------------------|---------------------------|
-| Retrieve column names         | `df.columns`            | `colnames(df)`        | `colnames(df)`            |
-| Retrieve dimensions           | `df.shape`              | `dim(df)`             | `dim(df)`                 |
-| Retrieve unique values of a variable | `df['myvar'].nunique()` | `df %>%  summarise(distinct(myvar))` | `df[,uniqueN(myvar)]` |
+| Operation                     | pandas                  | dplyr (`R`)           |
+|-------------------------------|-------------------------|-----------------------|
+| Retrieve column names         | `df.columns`            | `colnames(df)`        |
+| Retrieve dimensions           | `df.shape`              | `dim(df)`             |
+| Retrieve unique values of a variable | `df['myvar'].nunique()` | `df %>%  summarise(distinct(myvar))` |
 :::
 
 ::: {.content-visible when-profile="fr"}
@@ -957,15 +955,14 @@ reprennent ces termes) car, d'une
 manière ou d'une autre, elles couvrent la plupart
 des usages de manipulation des données. Nous allons en décrire, par le suite, quelques unes:
 
-| Opération | SQL | pandas | dplyr (`R`) | data.table (`R`) |
-|-----|-----------|--------|-------------|------------------|
-| Sélectionner des variables par leur nom | `SELECT` | `df[['Autres transports','Energie']]` | `df %>% select(Autres transports, Energie)` | `df[, c('Autres transports','Energie')]` |
-| Sélectionner des observations selon une ou plusieurs conditions; | `FILTER` | `df[df['Agriculture']>2000]` | `df %>% filter(Agriculture>2000)` | `df[Agriculture>2000]` |
-| Trier la table selon une ou plusieurs variables | `SORT BY` | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
-| Ajouter des variables qui sont fonction d’autres variables; | `SELECT *, LOG(Agriculture) AS x FROM df` | `df['x'] = np.log(df['Agriculture'])`  |  `df %>% mutate(x = log(Agriculture))` | `df[,x := log(Agriculture)]` |
-| Effectuer une opération par groupe | `GROUP BY` | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
-| Joindre deux bases de données (*inner join*) | `SELECT * FROM table1 INNER JOIN table2 ON table1.id = table2.x` | `table1.merge(table2, left_on = 'id', right_on = 'x')` | `table1 %>% inner_join(table2, by = c('id'='x'))` | `merge(table1, table2, by.x = 'id', by.y = 'x')` |
+| Opération | SQL | pandas | dplyr (`R`) |
+|-----|-----------|--------|-------------|
+| Sélectionner des variables par leur nom | `SELECT` | `df.loc[:, ['Autres transports','Energie']]` | `df %>% select(Autres transports, Energie)` |
+| Sélectionner des observations selon une ou plusieurs conditions; | `FILTER` | `df.loc[pd.col('Agriculture')>2000]` | `df %>% filter(Agriculture>2000)` |
+| Trier la table selon une ou plusieurs variables | `SORT BY` | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(Commune, Agriculture)` |
+| Ajouter des variables qui sont fonction d’autres variables; | `SELECT *, LOG(Agriculture) AS x FROM df` | `df = df.assign(x = np.log(pd.col('Agriculture')))`  |  `df %>% mutate(x = log(Agriculture))` |
 
+Les prochains chapitres nous permettront d'aller plus loin en ajoutant d'autres opérations plus complexes (jointures, statistiques par groupes, etc.)
 :::
 
 ::: {.content-visible when-profile="en"}
@@ -973,24 +970,21 @@ des usages de manipulation des données. Nous allons en décrire, par le suite, 
 
 The most frequent operations in `SQL` are summarized in the following table. It is useful to know them (many data manipulation syntaxes use these terms) because, one way or another, they cover most data manipulation uses. We will describe some of them later:
 
-| Operation | SQL | pandas | dplyr (`R`) | data.table (`R`) |
-|-----------|-----|--------|-------------|------------------|
-| Select variables by name | `SELECT` | `df[['Autres transports','Energie']]` | `df %>% select(Autres transports, Energie)` | `df[, c('Autres transports','Energie')]` |
-| Select observations based on one or more conditions | `FILTER` | `df[df['Agriculture']>2000]` | `df %>% filter(Agriculture>2000)` | `df[Agriculture>2000]` |
-| Sort the table by one or more variables | `SORT BY` | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(Commune, Agriculture)` | `df[order(Commune, Agriculture)]` |
-| Add variables that are functions of other variables | `SELECT *, LOG(Agriculture) AS x FROM df` | `df['x'] = np.log(df['Agriculture'])` | `df %>% mutate(x = log(Agriculture))` | `df[,x := log(Agriculture)]` |
-| Perform an operation by group | `GROUP BY` | `df.groupby('Commune').mean()` | `df %>% group_by(Commune) %>% summarise(m = mean)` | `df[,mean(Commune), by = Commune]` |
-| Join two databases (inner join) | `SELECT * FROM table1 INNER JOIN table2 ON table1.id = table2.x` | `table1.merge(table2, left_on = 'id', right_on = 'x')` | `table1 %>% inner_join(table2, by = c('id'='x'))` | `merge(table1, table2, by.x = 'id', by.y = 'x')` |
+| Operation | SQL | pandas | dplyr (`R`) |
+|-----------|-----|--------|-------------|
+| Select variables by name | `SELECT` | `df.loc[:, ['Autres transports','Energie']]` | `df %>% select(Autres transports, Energie)` |
+| Select observations based on one or more conditions | `FILTER` | `df.loc[pd.col('Agriculture')>2000]` | `df %>% filter(Agriculture>2000)` |
+| Sort the table by one or more variables | `SORT BY` | `df.sort_values(['Commune','Agriculture'])` | `df %>% arrange(Commune, Agriculture)` |
+| Add variables that are functions of other variables | `SELECT *, LOG(Agriculture) AS x FROM df` | `df = df.assign(x = np.log(pd.col('Agriculture')))` | `df %>% mutate(x = log(Agriculture))` |
 
+The next chapters will let us go further by adding other, more complex operations (joins, group-by statistics, etc.)
 :::
 
 ::: {.content-visible when-profile="fr"}
 
 ## Opérations sur les colonnes : ajouter ou retirer des variables, les renommer, etc. 
 
-Sur le plan technique, les `DataFrames` `Pandas` sont des objets *mutables* en langage `Python`,
-c'est-à-dire qu'il est possible de faire évoluer le `DataFrame` au grès
-des opérations mises en oeuvre. 
+Sur le plan technique, les `DataFrames` `Pandas` sont des objets *mutables* en langage `Python`, c'est-à-dire qu'il est possible de faire évoluer le `DataFrame` au grès des opérations mises en oeuvre. 
 
 L'opération la plus classique consiste à ajouter ou retirer des variables à la table de données.
 La manière la plus simple d'opérer pour ajouter des colonnes est
@@ -1058,6 +1052,14 @@ df.assign(
 )
 ```
 
+Depuis `Pandas` 3.0, `pd.col` permet d'éviter la _lambda function_ tout en restant dans `assign` :
+
+```python
+df.assign(
+  Energie_log = np.log(pd.col('Energie'))
+)
+```
+
 Avec des méthodes de `Pandas` ou de `Numpy` comme ici, cela n'a pas d'intérêt, c'est même contreproductif car cela ralentit le code.
 
 ::::
@@ -1078,6 +1080,14 @@ This is possible thanks to the native vectorization of `Numpy` operations and th
 ```python
 df.assign(
   Energie_log = lambda x: np.log(x['Energie'])
+)
+```
+
+Since `Pandas` 3.0, `pd.col` lets you avoid the lambda function while still using `assign`:
+
+```python
+df.assign(
+  Energie_log = np.log(pd.col('Energie'))
 )
 ```
 
@@ -1183,6 +1193,13 @@ du 92:
 df.loc[df['INSEE commune'].str.startswith("92")].head(2)
 ```
 
+Depuis `Pandas` 3.0, il existe une notation alternative, `pd.col`, qui permet de désigner une colonne sans répéter le nom du `DataFrame`. Elle est à privilégier car elle rend le code plus lisible et plus facile à chaîner (elle se rapproche de la notation `pl.col` de `Polars`) :
+
+```{python}
+#| echo: true
+df.loc[pd.col('INSEE commune').str.startswith("92")].head(2)
+```
+
 Le code SQL équivalent peu varier selon le moteur d'exécution (`DuckDB`, `PostGre`, `MySQL`) mais prendrait une forme similaire à celle-ci:
 
 ```sql
@@ -1212,6 +1229,13 @@ Thus, by combining these two elements, we can filter our data to get only the re
 ```{python}
 #| echo: true
 df.loc[df['INSEE commune'].str.startswith("92")].head(2)
+```
+
+Since `Pandas` 3.0, an alternative notation exists, `pd.col`, which lets you reference a column without repeating the `DataFrame` name. It should be preferred as it makes code more readable and easier to chain (it is close to `Polars`' `pl.col` notation):
+
+```{python}
+#| echo: true
+df.loc[pd.col('INSEE commune').str.startswith("92")].head(2)
 ```
 
 The equivalent SQL code may vary depending on the execution engine (`DuckDB`, `PostGre`, `MySQL`) but would take a form similar to this:
