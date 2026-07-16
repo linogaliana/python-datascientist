@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.26">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Lino Galiana">
+<meta name="dcterms.date" content="2026-07-16">
+<meta name="description" content="After exploring the Pandas ecosystem in depth, this short chapter takes a step back to look at some limitations of its syntax and presents the main alternative paradigms (Polars, DuckDB, Spark) that make it possible to go further, especially with large volumes of data.">
+
+<title>Pandas: limitations and alternative ecosystems – Python for data science</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../content/manipulation/03_geopandas_intro.html" rel="next">
+<link href="../../content/manipulation/02_pandas_stats.html" rel="prev">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-d640c705e8c17715bca3574aa719063f.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-d6a2ae2cb249da1580f0a11f71b8f854.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-d640c705e8c17715bca3574aa719063f.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-0898f28448ab3745c8d8305246074fd2.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-715e6ec87ef7c7f1b64a9c21a26b4eeb.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-0898f28448ab3745c8d8305246074fd2.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/quarto-contrib/fontawesome6-0.1.0/all.css" rel="stylesheet">
+<link href="../../site_libs/quarto-contrib/fontawesome6-0.1.0/latex-fontsize.css" rel="stylesheet">
+<script src="../../site_libs/quarto-contrib/iconify-3.0.0/iconify-icon.min.js"></script>
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #e9f3fa;
+      }
+</style>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+<link rel="stylesheet" href="../../styles/styles.css">
+<meta name="twitter:title" content="Pandas: limitations and alternative ecosystems – Python for data science">
+<meta name="twitter:description" content="Après avoir exploré en profondeur l’écosystème Pandas, ce court chapitre prend du recul sur quelques limites de sa syntaxe et présente les principaux paradigmes alternatifs (Polars, DuckDB, Spark) qui permettent d’aller au-delà, notamment sur de gros volumes de données.">
+<meta name="twitter:image" content="https://minio.lab.sspcloud.fr/lgaliana/generative-art/pythonds/panda_stretching.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="citation_title" content="Python pour la data science">
+<meta name="citation_author" content="Lino Galiana">
+<meta name="citation_publication_date" content="2025">
+<meta name="citation_cover_date" content="2025">
+<meta name="citation_year" content="2025">
+<meta name="citation_online_date" content="2026-07-16">
+<meta name="citation_fulltext_html_url" content="https://pythonds.linogaliana.fr/">
+<meta name="citation_doi" content="10.5281/zenodo.8229676">
+<meta name="citation_language" content="en">
+<meta name="citation_reference" content="citation_title=Coding for economists;,citation_author=undefined Turrell;,citation_author=undefined contributors;,citation_publication_date=2021;,citation_cover_date=2021;,citation_year=2021;,citation_fulltext_html_url=https://aeturrell.github.io/coding-for-economists;">
+<meta name="citation_reference" content="citation_title=psyTeachR book template;,citation_author=Lisa DeBruine;,citation_publication_date=2021-10-14;,citation_cover_date=2021-10-14;,citation_year=2021;,citation_fulltext_html_url=https://github.com/psyteachr/template/;,citation_publisher=https://github.com/psyteachr/template/;">
+<meta name="citation_reference" content="citation_title=The hugging face course, 2022;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_publisher=https://huggingface.co/course;">
+<meta name="citation_reference" content="citation_title=The signal and the noise: Why so many predictions fail-but some don’t;,citation_author=Nate Silver;,citation_publication_date=2012;,citation_cover_date=2012;,citation_year=2012;">
+<meta name="citation_reference" content="citation_title=Efficient estimation of word representations in vector space;,citation_author=Tomas Mikolov;,citation_publication_date=2013;,citation_cover_date=2013;,citation_year=2013;,citation_volume=3781;,citation_journal_title=arXiv preprint arXiv:1301.3781;">
+<meta name="citation_reference" content="citation_title=Attention is all you need;,citation_author=A Vaswani;,citation_publication_date=2017;,citation_cover_date=2017;,citation_year=2017;,citation_journal_title=Advances in Neural Information Processing Systems;">
+<meta name="citation_reference" content="citation_title=Caractéristiques socio-économiques des individus aux formes sévères de covid-19 au fil des vagues épidémiques;,citation_author=Lino Galiana;,citation_author=Olivier Meslin;,citation_author=Noémie Courtejoie;,citation_author=Simon Delage;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_publisher=Dossiers de la Drees;">
+<meta name="citation_reference" content="citation_title=Quels formats pour quelles données?;,citation_author=Alexis Dondon;,citation_author=Pierre Lamarche;,citation_publication_date=2023;,citation_cover_date=2023;,citation_year=2023;,citation_journal_title=Courrier des statistiques;">
+<meta name="citation_reference" content="citation_title=Tableau politique de la france de l’ouest sous la troisième république: 102 cartes et croquis, 1 carte hors texte;,citation_author=André Siegfried;,citation_publication_date=1913;,citation_cover_date=1913;,citation_year=1913;">
+<meta name="citation_reference" content="citation_title=Statistical learning;,citation_author=Gareth James;,citation_author=Daniela Witten;,citation_author=Trevor Hastie;,citation_author=Robert Tibshirani;,citation_author=Jonathan Taylor;,citation_publication_date=2023;,citation_cover_date=2023;,citation_year=2023;,citation_inbook_title=An introduction to statistical learning: With applications in python;">
+<meta name="citation_reference" content="citation_title=Une histoire du conflit politique: Elections et inégalités sociales en france, 1789-2022;,citation_author=Thomas Piketty;,citation_author=Julia Cagé;,citation_publication_date=2023;,citation_cover_date=2023;,citation_year=2023;">
+<meta name="citation_reference" content="citation_title=Interpretable machine learning: A guide for making black box models explainable;,citation_author=Molnar Christoph;,citation_publication_date=2020;,citation_cover_date=2020;,citation_year=2020;">
+<meta name="citation_reference" content="citation_title=A gentle introduction to conformal prediction and distribution-free uncertainty quantification;,citation_author=Anastasios N Angelopoulos;,citation_author=Stephen Bates;,citation_publication_date=2021;,citation_cover_date=2021;,citation_year=2021;,citation_journal_title=arXiv preprint arXiv:2107.07511;">
+<meta name="citation_reference" content="citation_title=A brief history of data visualization;,citation_author=Chun-houh Chen;,citation_author=Wolfgang Härdle;,citation_author=Antony Unwin;,citation_author=Michael Friendly;,citation_publication_date=2008;,citation_cover_date=2008;,citation_year=2008;,citation_journal_title=Handbook of data visualization;,citation_publisher=Springer;">
+<meta name="citation_reference" content="citation_title=Discovering Statistics Using R;,citation_author=Andy Field;,citation_author=Jeremy Miles;,citation_author=Zoë Field;,citation_publication_date=2012;,citation_cover_date=2012;,citation_year=2012;,citation_fulltext_html_url=https://uk.sagepub.com/en-gb/eur/discovering-statistics-using-r/book236067;,citation_isbn=9781446200469;">
+<meta name="citation_reference" content="citation_title=psyTeachR Book Template;,citation_author=DeBruine Lisa;,citation_publication_date=2021-10;,citation_cover_date=2021-10;,citation_year=2021;,citation_fulltext_html_url=https://github.com/psyteachr/template/;">
+<meta name="citation_reference" content="citation_title=The grammar of graphics;,citation_author=Leland Wilkinson;,citation_publication_date=2011;,citation_cover_date=2011;,citation_year=2011;,citation_inbook_title=Handbook of computational statistics: Concepts and methods;">
+<meta name="citation_reference" content="citation_title=Data visualisation using r, for researchers who don’t use r;,citation_author=Emily Nordmann;,citation_author=Phil McAleer;,citation_author=William Toivo;,citation_author=Helen Paterson;,citation_author=Lisa DeBruine;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_fulltext_html_url=https://doi.org/10.1177/25152459221074654;,citation_doi=10.1177/25152459221074654;,citation_journal_title=Advances in Methods and Practices in Psychological Science;">
+<meta name="citation_reference" content="citation_title=Hands-on machine learning with scikit-learn, keras, and TensorFlow;,citation_author=Aurélien Géron;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;">
+<meta name="citation_reference" content="citation_title=A brief history of data visualization;,citation_author=Chun-houh Chen;,citation_author=Wolfgang Härdle;,citation_author=Antony Unwin;,citation_author=Michael Friendly;,citation_publication_date=2008;,citation_cover_date=2008;,citation_year=2008;,citation_journal_title=Handbook of data visualization;,citation_publisher=Springer;">
+<meta name="citation_reference" content="citation_title=Random forests;,citation_author=Leo Breiman;,citation_publication_date=2001;,citation_cover_date=2001;,citation_year=2001;,citation_volume=45;,citation_journal_title=Machine learning;,citation_publisher=Springer;">
+<meta name="citation_reference" content="citation_title=Bagging predictors;,citation_author=Leo Breiman;,citation_publication_date=1996;,citation_cover_date=1996;,citation_year=1996;,citation_volume=24;,citation_journal_title=Machine learning;,citation_publisher=Springer;">
+<meta name="citation_reference" content="citation_title=Le Code statistique non signifiant (CSNS) : un service pour faciliter les appariements de fichiers;,citation_author=Yves-Laurent Bénichou;,citation_author=Lionel Espinasse;,citation_author=Séverine Gilles;,citation_publication_date=2023-06;,citation_cover_date=2023-06;,citation_year=2023;,citation_fulltext_html_url=https://insee.hal.science/hal-05295572;,citation_issue=9;,citation_journal_title=Courrier des Statistiques;,citation_publisher=Institut national de la statistique et des études économiques (INSEE);">
+<meta name="citation_reference" content="citation_title=R for data science;,citation_author=Hadley Wickham;,citation_author=Mine Çetinkaya-Rundel;,citation_author=Garrett Grolemund;,citation_publication_date=2023;,citation_cover_date=2023;,citation_year=2023;">
+<meta name="citation_reference" content="citation_title=Computational reproducibility of jupyter notebooks from biomedical publications;,citation_author=Sheeba Samuel;,citation_author=Daniel Mietchen;,citation_publication_date=2023;,citation_cover_date=2023;,citation_year=2023;,citation_fulltext_html_url=https://arxiv.org/abs/2308.07333;">
+<meta name="citation_reference" content="citation_title=Python data science handbook: Essential tools for working with data;,citation_author=Jake VanderPlas;,citation_publication_date=2016;,citation_cover_date=2016;,citation_year=2016;">
+<meta name="citation_reference" content="citation_title=Machine learning methods that economists should know about;,citation_author=Susan Athey;,citation_author=Guido W Imbens;,citation_publication_date=2019;,citation_cover_date=2019;,citation_year=2019;,citation_volume=11;,citation_journal_title=Annual Review of Economics;,citation_publisher=Annual Reviews;">
+<meta name="citation_reference" content="citation_title=Fuzzy matching on big-data an illustration with scanner data and crowd-sourced nutritional data;,citation_author=Lino Galiana;,citation_author=Milena Suarez Castillo;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_publisher=Proceedings of the 2022 &amp;amp;amp;quot;Journées de Méthodologie Statistiques&amp;quot;;">
+<meta name="citation_reference" content="citation_title=Data visualization with python and JavaScript;,citation_author=Kyran Dale;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;">
+<meta name="citation_reference" content="citation_title=Sémiologie graphique;,citation_author=Jacques Bertin;,citation_publication_date=1967;,citation_cover_date=1967;,citation_year=1967;">
+<meta name="citation_reference" content="citation_title=La sémiologie graphique de jacques bertin a cinquante ans;,citation_author=Gilles Palsky;,citation_publication_date=2017;,citation_cover_date=2017;,citation_year=2017;,citation_journal_title=Visions carto (en ligne);">
+<meta name="citation_reference" content="citation_title=Fundamentals of data visualization: A primer on making informative and compelling figures;,citation_author=Claus O Wilke;,citation_publication_date=2019;,citation_cover_date=2019;,citation_year=2019;">
+<meta name="citation_reference" content="citation_title=How to train BERT with an academic budget;,citation_author=Peter Izsak;,citation_author=Moshe Berchansky;,citation_author=Omer Levy;,citation_publication_date=2021;,citation_cover_date=2021;,citation_year=2021;,citation_fulltext_html_url=https://arxiv.org/abs/2104.07705;">
+<meta name="citation_reference" content="citation_title=Python for data analysis: Data wrangling with pandas, NumPy, and IPython;,citation_author=Wes McKinney;,citation_publication_date=2012;,citation_cover_date=2012;,citation_year=2012;">
+<meta name="citation_reference" content="citation_title=Residential segregation, daytime segregation and spatial frictions: An analysis from mobile phone data;,citation_author=Lino Galiana;,citation_author=François Sémécurbe;,citation_author=Benjamin Sakarovitch;,citation_author=Zbigniew Smoreda;,citation_publication_date=2020;,citation_cover_date=2020;,citation_year=2020;,citation_publisher=Insee Working Paper;">
+<meta name="citation_reference" content="citation_title=Fuzzy matching on big-data: An illustration with scanner and crowd-sourced nutritional datasets;,citation_abstract=Food retailers’ scanner data provide unprecedented details on local consumption, provided that product identifiers allow a linkage with features of interest, such as nutritional information. In this paper, we enrich a large retailer dataset with nutritional information extracted from crowd-sourced and administrative nutritional datasets. To compensate for imperfect matching through the barcode, we develop a methodology to efficiently match short textual descriptions. After a preprocessing step to normalize short labels, we resort to fuzzy matching based on several tokenizers (including n-grams) by querying an ElasticSearch customized index and validate candidates echos as matches with a Levensthein edit-distance and an embedding-based similarity measure created from a siamese neural network model. The pipeline is composed of several steps successively relaxing constraints to find relevant matching candidates.;,citation_author=Lino Galiana;,citation_author=Milena Suarez Castillo;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_fulltext_html_url=https://doi.org/10.1145/3524458.3547244;,citation_doi=10.1145/3524458.3547244;,citation_isbn=9781450392846;,citation_conference_title=Proceedings of the 2022 ACM conference on information technology for social good;,citation_conference=Association for Computing Machinery;,citation_series_title=GoodIT ’22;">
+<meta name="citation_reference" content="citation_title=Guide de sémiologie cartographique;,citation_author=undefined Insee;,citation_publication_date=2018;,citation_cover_date=2018;,citation_year=2018;,citation_publisher=Insee Working Paper;">
+<meta name="citation_reference" content="citation_title=Energy and policy considerations for deep learning in NLP;,citation_author=Emma Strubell;,citation_author=Ananya Ganesh;,citation_author=Andrew McCallum;,citation_publication_date=2019;,citation_cover_date=2019;,citation_year=2019;,citation_fulltext_html_url=https://arxiv.org/abs/1906.02243;">
+<meta name="citation_reference" content="citation_title=High-resolution image synthesis with latent diffusion models;,citation_author=Robin Rombach;,citation_author=Andreas Blattmann;,citation_author=Dominik Lorenz;,citation_author=Patrick Esser;,citation_author=Björn Ommer;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_conference_title=Proceedings of the IEEE/CVF conference on computer vision and pattern recognition (CVPR);">
+<meta name="citation_reference" content="citation_title=Apache arrow and the&amp;amp;amp;quot; 10 things i hate about pandas;,citation_author=Wes McKinney;,citation_publication_date=2017;,citation_cover_date=2017;,citation_year=2017;,citation_volume=21;,citation_journal_title=Blog, September;">
+<meta name="citation_reference" content="citation_title=Many researchers were not compliant with their published data sharing statement: Mixed-methods study;,citation_author=Mirko Gabelica;,citation_author=Ružica Bojčić;,citation_author=Livia Puljak;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_journal_title=Journal of Clinical Epidemiology;,citation_publisher=Elsevier;">
+<meta name="citation_reference" content="citation_title=Credit scoring in the era of big data;,citation_author=Mikella Hurley;,citation_author=Julius Adebayo;,citation_publication_date=2016;,citation_cover_date=2016;,citation_year=2016;,citation_volume=18;,citation_journal_title=Yale JL &amp;amp;amp; Tech.;,citation_publisher=HeinOnline;">
+<meta name="citation_reference" content="citation_title=Econometrics and machine learning;,citation_author=Arthur Charpentier;,citation_author=Emmanuel Flachaire;,citation_author=Antoine Ly;,citation_publication_date=2018;,citation_cover_date=2018;,citation_year=2018;,citation_issue=1;,citation_volume=505;,citation_journal_title=Economie et Statistique;,citation_publisher=Persée-Portail des revues scientifiques en SHS;">
+<meta name="citation_reference" content="citation_title=Machine learning: An applied econometric approach;,citation_author=Sendhil Mullainathan;,citation_author=Jann Spiess;,citation_publication_date=2017-05;,citation_cover_date=2017-05;,citation_year=2017;,citation_fulltext_html_url=https://www.aeaweb.org/articles?id=10.1257/jep.31.2.87;,citation_issue=2;,citation_doi=10.1257/jep.31.2.87;,citation_volume=31;,citation_journal_title=Journal of Economic Perspectives;">
+<meta name="citation_reference" content="citation_title=Le problème du réalisme des hypothèses en économie politique;,citation_author=Pierre Salmon;,citation_publication_date=2010;,citation_cover_date=2010;,citation_year=2010;">
+<meta name="citation_reference" content="citation_title=The methodology of positive economics;,citation_author=Milton Friedman;,citation_publication_date=1953;,citation_cover_date=1953;,citation_year=1953;,citation_inbook_title=Essays in positive economics;">
+<meta name="citation_reference" content="citation_title=L’empreinte carbone du numérique;,citation_author=undefined Arcep;,citation_publication_date=2019;,citation_cover_date=2019;,citation_year=2019;">
+<meta name="citation_reference" content="citation_title=Leakage and the reproducibility crisis in ML-based science;,citation_author=Sayash Kapoor;,citation_author=Arvind Narayanan;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_fulltext_html_url=https://arxiv.org/abs/2207.07048;,citation_doi=10.48550/ARXIV.2207.07048;,citation_publisher=arXiv;">
+<meta name="citation_reference" content="citation_title=Growth in a time of debt;,citation_author=Carmen M Reinhart;,citation_author=Kenneth S Rogoff;,citation_publication_date=2010;,citation_cover_date=2010;,citation_year=2010;,citation_issue=2;,citation_volume=100;,citation_journal_title=American economic review;,citation_publisher=American Economic Association;">
+<meta name="citation_reference" content="citation_title=We do not know the population of every country in the world for the past two thousand years;,citation_author=Timothy W Guinnane;,citation_publication_date=2023;,citation_cover_date=2023;,citation_year=2023;,citation_issue=3;,citation_volume=83;,citation_journal_title=The Journal of Economic History;">
+<meta name="citation_reference" content="citation_title=Artificial intelligence: A modern approach (4th edition);,citation_author=Stuart J. Russell;,citation_author=Peter Norvig;,citation_publication_date=2020;,citation_cover_date=2020;,citation_year=2020;,citation_fulltext_html_url=http://aima.cs.berkeley.edu/;,citation_isbn=9781292401133;">
+<meta name="citation_reference" content="citation_title=Data scientist, the sexiest job of the 21st century;,citation_author=Thomas H Davenport;,citation_author=DJ Patil;,citation_publication_date=2012;,citation_cover_date=2012;,citation_year=2012;,citation_fulltext_html_url=https://hbr.org/2012/10/data-scientist-the-sexiest-job-of-the-21st-century;,citation_issue=5;,citation_volume=90;,citation_journal_title=Harvard business review;">
+<meta name="citation_reference" content="citation_title=Is data scientist still the sexiest job of the 21st century?;,citation_author=Thomas H Davenport;,citation_author=DJ Patil;,citation_publication_date=2022;,citation_cover_date=2022;,citation_year=2022;,citation_volume=90;,citation_journal_title=Harvard Business Review;,citation_publisher=Harvard Business Publishing;">
+<meta name="citation_reference" content="citation_title=Leakage and the reproducibility crisis in machine-learning-based science;,citation_author=Sayash Kapoor;,citation_author=Arvind Narayanan;,citation_publication_date=2023;,citation_cover_date=2023;,citation_year=2023;,citation_issue=9;,citation_volume=4;,citation_journal_title=Patterns;,citation_publisher=Elsevier;">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const queryPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    const darkModeDefault = queryPrefersDark.matches;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    queryPrefersDark.addEventListener("change", e => {
+      if(window.localStorage.getItem("quarto-color-scheme") !== null)
+        return;
+      const alternate = e.matches
+      toggleColorMode(alternate);
+      localAlternateSentinel = e.matches ? 'alternate' : 'default'; // this is used alongside local storage!
+      toggleGiscusIfUsed(alternate, darkModeDefault);
+    });
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-introduction" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Introduction</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-introduction">    
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/01_environment.html">
+ <span class="dropdown-text">A functional Python environment for data science</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/02_data_analysis.html">
+ <span class="dropdown-text">How to deal with a data set</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/getting-started/03_revisions.html">
+ <span class="dropdown-text">A few refresher exercises to get back in the saddle</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-wrangle" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Wrangle</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-wrangle">    
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/01_numpy.html">
+ <span class="dropdown-text">Numpy, the foundation of data science</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/02_pandas_intro.html">
+ <span class="dropdown-text">Introduction to Pandas</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/02_pandas_joins.html">
+ <span class="dropdown-text">Associating data with Pandas: joins</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/02_pandas_stats.html">
+ <span class="dropdown-text">Data wrangling with Pandas: statistics and reshaping</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/02_pandas_beyond.html">
+ <span class="dropdown-text">Pandas: limitations and alternative ecosystems</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/03_geopandas_intro.html">
+ <span class="dropdown-text">Introduction to spatial data with Geopandas</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/04a_webscraping_TP.html">
+ <span class="dropdown-text">Web scraping with Python</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/04c_API_TP.html">
+ <span class="dropdown-text">Retrieve data with APIs from Python</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/manipulation/04b_regex_TP.html">
+ <span class="dropdown-text">Mastering regular expressions</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-communicate" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Communicate</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-communicate">    
+        <li>
+    <a class="dropdown-item" href="../../content/visualisation/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/visualisation/matplotlib.html">
+ <span class="dropdown-text">Building graphics with Python</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/visualisation/maps.html">
+ <span class="dropdown-text">Introduction to cartography with Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-model" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Model</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-model">    
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/0_preprocessing.html">
+ <span class="dropdown-text">Preprocessing before building machine learning models</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/1_modelevaluation.html">
+ <span class="dropdown-text">Evaluating model quality</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/2_classification.html">
+ <span class="dropdown-text">Discovering classification with decision trees</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/3_regression.html">
+ <span class="dropdown-text">An introduction to regression</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/4_featureselection.html">
+ <span class="dropdown-text">Variable selection: an introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/5_clustering.html">
+ <span class="dropdown-text">Clustering</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/6_pipeline.html">
+ <span class="dropdown-text">Premier pas vers l’industrialisation avec les pipelines scikit</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/modelisation/7_mlapi.html">
+ <span class="dropdown-text">Mettre à disposition un modèle par le biais d’une API</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-nlp" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">NLP</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-nlp">    
+        <li>
+    <a class="dropdown-item" href="../../content/NLP/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/NLP/01_intro.html">
+ <span class="dropdown-text">Cleaning and structuring information in textual data</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/NLP/02_exoclean.html">
+ <span class="dropdown-text">Frequentist analysis using the bag-of-words approach: forces and limitations</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/NLP/03_embedding.html">
+ <span class="dropdown-text">Synthetizing textual information with embeddings</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-git" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Git</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-git">    
+        <li>
+    <a class="dropdown-item" href="../../content/git/index.html">
+ <span class="dropdown-text">Introduction</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/git/introgit.html">
+ <span class="dropdown-text">Découvrir Git par la pratique: la gymnastique quotidienne</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/git/exogit.html">
+ <span class="dropdown-text">Un cadavre exquis pour découvrir le travail collaboratif <code>Git</code></span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-annexes" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Annexes</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-annexes">    
+        <li>
+    <a class="dropdown-item" href="../../content/annexes/evaluation.html">
+ <span class="dropdown-text">Evaluation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../content/annexes/corrections.html">
+ <span class="dropdown-text">Corrections</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://linogaliana.github.io/python-datascientist-slides/#/title-slide">
+ <span class="dropdown-text">Slides de présentation</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools tools-wide">
+    <a href="https://github.com/linogaliana/python-datascientist" title="" class="quarto-navigation-tool px-1" aria-label=""><i class="bi bi-github"></i></a>
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../content/manipulation/02_pandas_beyond.html">Pandas: limitations and alternative ecosystems</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Pandas: limitations and alternative ecosystems</h1>
+                  <div>
+        <div class="description">
+          <p>After exploring the <code>Pandas</code> ecosystem in depth, this short chapter takes a step back to look at some limitations of its syntax and presents the main alternative paradigms (<code>Polars</code>, <code>DuckDB</code>, <code>Spark</code>) that make it possible to go further, especially with large volumes of data.</p>
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">Tutoriel</div>
+                <div class="quarto-category">Manipulation</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Lino Galiana </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">2026-07-16</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/01_numpy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Numpy, the foundation of data science</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/02_pandas_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction to Pandas</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/02_pandas_joins.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Associating data with Pandas: joins</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/02_pandas_stats.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Data wrangling with Pandas: statistics and reshaping</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/02_pandas_beyond.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Pandas: limitations and alternative ecosystems</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/03_geopandas_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction to spatial data with Geopandas</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/04a_webscraping_TP.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Web scraping with Python</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/04c_API_TP.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Retrieve data with APIs from Python</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../content/manipulation/04b_regex_TP.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Mastering regular expressions</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a>
+  <ul class="collapse">
+  <li><a href="#data-used-in-this-chapter" id="toc-data-used-in-this-chapter" class="nav-link" data-scroll-target="#data-used-in-this-chapter"><span class="header-section-number">1.1</span> Data used in this chapter</a></li>
+  </ul></li>
+  <li><a href="#pandas-in-a-chain-of-operations" id="toc-pandas-in-a-chain-of-operations" class="nav-link" data-scroll-target="#pandas-in-a-chain-of-operations"><span class="header-section-number">2</span> <code>Pandas</code> in a chain of operations</a>
+  <ul class="collapse">
+  <li><a href="#some-limitations-regarding-pandas-syntax" id="toc-some-limitations-regarding-pandas-syntax" class="nav-link" data-scroll-target="#some-limitations-regarding-pandas-syntax"><span class="header-section-number">2.1</span> Some limitations regarding <code>Pandas</code> syntax</a></li>
+  </ul></li>
+  <li><a href="#other-paradigms" id="toc-other-paradigms" class="nav-link" data-scroll-target="#other-paradigms"><span class="header-section-number">3</span> Other paradigms</a>
+  <ul class="collapse">
+  <li><a href="#polars-1" id="toc-polars-1" class="nav-link" data-scroll-target="#polars-1"><span class="header-section-number">3.1</span> <code>Polars</code></a></li>
+  <li><a href="#duckdb-1" id="toc-duckdb-1" class="nav-link" data-scroll-target="#duckdb-1"><span class="header-section-number">3.2</span> <code>DuckDB</code></a></li>
+  <li><a href="#spark" id="toc-spark" class="nav-link" data-scroll-target="#spark"><span class="header-section-number">3.3</span> <code>Spark</code></a></li>
+  <li><a href="#informations-additionnelles" id="toc-informations-additionnelles" class="nav-link" data-scroll-target="#informations-additionnelles">Informations additionnelles</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/linogaliana/python-datascientist/edit/master/content/manipulation/02_pandas_beyond.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/linogaliana/python-datascientist/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+<script>
+  const langButton = document.createElement("div");
+  langButton.className = "lang-switch-button";
+  langButton.style.textAlign = "right";
+  langButton.style.marginTop = "1rem";
+  langButton.style.marginBottom = "1rem";
+
+  const currentPath = window.location.pathname;
+  const isEnglish = currentPath.startsWith("/en/");
+  let targetHref, label, svg;
+
+  if (isEnglish) {
+    targetHref = currentPath.replace(/^\/en\//, "/");
+    label = "Passer à la version française";
+    svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" style="vertical-align: middle; margin-left: 0.5em; display: inline-block;"><mask id="circleFlagsLangFr"><circle cx="256" cy="256" r="256" fill="#fff"/></mask><g mask="url(#circleFlagsLangFr)"><path fill="#0055A4" d="M0 0h512v512H0z"/><path fill="#fff" d="M170.7 0h170.6v512H170.7z"/><path fill="#EF4135" d="M341.3 0H512v512H341.3z"/></g></svg>`;
+  } else {
+    targetHref = "/en" + currentPath;
+    label = "Switch to English version";
+    svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" style="vertical-align: middle; margin-left: 0.5em; display: inline-block;"><mask id="circleFlagsLangEn"><circle cx="256" cy="256" r="256" fill="#fff"/></mask><g mask="url(#circleFlagsLangEn)"><path fill="#eee" d="M256 0L0 256v64l32 32l-32 32v128l22-8l23 8h23l54-32l54 32h32l48-32l48 32h32l54-32l54 32h68l-8-22l8-23v-23l-32-54l32-54v-32l-32-48l32-48v-32l-32-54l32-54V0z"/><path fill="#d80027" d="M224 64v64h160l64-64zm0 128l32 64l-48 48v208h96V304h208v-96H304l16-16zM0 320v64h128l-64 64H0v64h45l131-131v-45l16-16zm336 16l176 176v-45L381 336Z"/><path fill="#0052b4" d="M0 0v256h256V0zm512 68L404 176h108zM404 336l108 108V336zm-228 68L68 512h108zm160 0v108h108z"/><path fill="#eee" d="m187 243l57-41h-70l57 41l-22-67zm-81 0l57-41H93l57 41l-22-67zm-81 0l57-41H12l57 41l-22-67zm162-81l57-41h-70l57 41l-22-67zm-81 0l57-41H93l57 41l-22-67zm-81 0l57-41H12l57 41l-22-67Zm162-82l57-41h-70l57 41l-22-67zm-81 0l57-41H93l57 41l-22-67Zm-81 0l57-41H12l57 41l-22-67Z"/></g></svg>`;
+  }
+
+  langButton.innerHTML = `
+    <a href="${targetHref}" class="button-cta">
+      <button class="btn"><i class="fa fa-language"></i> ${label} ${svg}</button>
+    </a>
+  `;
+
+  const main = document.querySelector("main#quarto-document-content");
+  if (main) main.insertAdjacentElement("afterbegin", langButton);
+</script>
+    
+
+
+
+
+
+
+<div class="badge-container"><div class="badge-text">If you want to try the examples in this tutorial:</div><a href="https://github.com/linogaliana/python-datascientist-notebooks/blob/main/notebooks/en/manipulation/02_pandas_beyond.ipynb" target="_blank" rel="noopener"><img src="https://img.shields.io/static/v1?logo=github&amp;label=&amp;message=View%20on%20GitHub&amp;color=181717" alt="View on GitHub"></a>
+<a href="https://datalab.sspcloud.fr/launcher/ide/vscode-python?autoLaunch=true&amp;name=«02_pandas_beyond»&amp;init.personalInit=«https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmain%2Fsspcloud%2Finit-vscode.sh»&amp;init.personalInitArgs=«en/manipulation%2002_pandas_beyond»" target="_blank" rel="noopener"><img src="https://custom-icon-badges.demolab.com/badge/SSP%20Cloud-Lancer_avec_VSCode-blue?logo=vsc&amp;logoColor=white" alt="Onyxia"></a>
+<a href="https://datalab.sspcloud.fr/launcher/ide/jupyter-python?autoLaunch=true&amp;name=«02_pandas_beyond»&amp;init.personalInit=«https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmain%2Fsspcloud%2Finit-jupyter.sh»&amp;init.personalInitArgs=«en/manipulation%2002_pandas_beyond»" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_Jupyter-orange?logo=Jupyter&amp;logoColor=orange" alt="Onyxia"></a>
+<a href="https://colab.research.google.com/github/linogaliana/python-datascientist-notebooks-colab//en/blob/main//notebooks/en/manipulation/02_pandas_beyond.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a><br></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="true" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Skills to be acquired by the end of this chapter
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse show">
+<div class="callout-body-container callout-body">
+<ul>
+<li>Know the main limitations of <code>Pandas</code> syntax;</li>
+<li>Know how to chain operations more readably using pipes;</li>
+<li>Know the main alternative packages to <code>Pandas</code> (<code>Polars</code>, <code>DuckDB</code>, <code>Spark</code>).</li>
+</ul>
+</div>
+</div>
+</div>
+<section id="introduction" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
+<p>The previous two chapters explored in depth the richness of the <code>Pandas</code> ecosystem, whether it was <a href="../../content/manipulation/02_pandas_joins.html">associating data through joins</a> or <a href="../../content/manipulation/02_pandas_stats.html">building descriptive statistics and reshaping data</a>. <code>Pandas</code> is indispensable in the data scientist’s toolbox.</p>
+<p>This short chapter takes a step back. Despite all its qualities, <code>Pandas</code> is not perfect: its syntax, inherited from more than fifteen years of history, has a few rough edges. We will also see that other, more recent, paradigms make it possible to go beyond <code>Pandas</code>, especially when it comes to handling larger volumes of data.</p>
+<section id="data-used-in-this-chapter" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="data-used-in-this-chapter"><span class="header-section-number">1.1</span> Data used in this chapter</h2>
+<p>To illustrate this chapter, we start again from the raw Ademe greenhouse gas emissions dataset, already used in the previous chapters:</p>
+<div id="1087e312" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://data.ademe.fr/data-fair/api/v1/datasets/igt-pouvoir-de-rechauffement-global/convert"</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>emissions <span class="op">=</span> pd.read_csv(url)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>emissions[<span class="st">'dep'</span>] <span class="op">=</span> emissions[<span class="st">"INSEE commune"</span>].<span class="bu">str</span>[:<span class="dv">2</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>To obtain reproducible results, you can set the seed of the pseudo-random number generator.</p>
+<div id="566f7bdc" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">123</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="pandas-in-a-chain-of-operations" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> <code>Pandas</code> in a chain of operations</h1>
+<p>Generally, in a project, data cleaning will consist of a series of methods applied to a <code>DataFrame</code> or a <code>Series</code> when working exclusively on a single column. In other words, what is usually expected when working with <code>Pandas</code> is to have a chain that takes a <code>DataFrame</code> as input and outputs the same <code>DataFrame</code> enriched or an aggregated version of it.</p>
+<p>This way of proceeding is at the heart of the <code>dplyr</code> syntax in <code>R</code> but is not necessarily native in <code>Pandas</code> depending on the operations you want to implement. Indeed, the natural way to update a dataframe in <code>Pandas</code> often involves syntax like:</p>
+<div id="c4c3c21a" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> [[<span class="dv">8000</span>, <span class="dv">1000</span>], [<span class="dv">9500</span>, np.nan], [<span class="dv">5000</span>, <span class="dv">2000</span>]]</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.DataFrame(data, columns<span class="op">=</span>[<span class="st">'salaire'</span>, <span class="st">'autre_info'</span>])</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'salaire_net'</span>] <span class="op">=</span> df[<span class="st">'salaire'</span>]<span class="op">*</span><span class="fl">0.8</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>In <code>SQL</code> you could directly update your database with the new column:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="op">*</span>, salaire<span class="op">*</span><span class="fl">0.8</span> <span class="kw">AS</span> salaire_net <span class="kw">FROM</span> df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <code>tidyverse</code> ecosystem in <code>R</code>, the equivalent of <code>Pandas</code>, works according to the same logic as SQL table updates. Indeed, you would use the following command with <code>dplyr</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">salaire_net =</span> salaire<span class="sc">*</span><span class="fl">0.8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Technically, you could do this with an <code>assign</code> in <code>Pandas</code>:</p>
+<div id="a13f62f6" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="annotated-cell-24"><pre class="sourceCode python code-annotation-code code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-24" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-24-1" class="code-annotation-target"><a href="#annotated-cell-24-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df.drop(<span class="st">"salaire_net"</span>, axis <span class="op">=</span> <span class="st">"columns"</span>)</span>
+<span id="annotated-cell-24-2"><a href="#annotated-cell-24-2" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df.assign(salaire_net <span class="op">=</span> <span class="kw">lambda</span> s: s[<span class="st">'salaire'</span>]<span class="op">*</span><span class="fl">0.8</span>)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-annotation">
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-24" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-24" data-code-lines="1" data-code-annotation="1">To delete the variable to start from the initial example</span>
+</dd>
+</dl>
+</div>
+</div>
+<p>However, this <code>assign</code> syntax is not very natural. It requires passing a lambda function that expects a <code>DataFrame</code> as input where you would want a column. So, it is not really a readable and practical syntax.</p>
+<p>It is nevertheless possible to chain operations on datasets using <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.pipe.html">pipes</a>. These follow the same philosophy as <code>dplyr</code>, itself inspired by the Linux pipe. This approach will make the code more readable by defining functions that perform operations on one or more columns of a DataFrame. The first argument to the function is the <code>DataFrame</code>, the others are those controlling its behavior:</p>
+<div id="9ae0bab3" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calcul_salaire_net(df: pd.DataFrame, col: <span class="bu">str</span>, taux: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.8</span>):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  df[<span class="st">"salaire_net"</span>] <span class="op">=</span> df[col]<span class="op">*</span>taux</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>This transforms our production chain into:</p>
+<div id="8ea7e72a" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  df</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  .pipe(calcul_salaire_net, <span class="st">"salaire"</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="7">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">salaire</th>
+<th data-quarto-table-cell-role="th">autre_info</th>
+<th data-quarto-table-cell-role="th">salaire_net</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>8000</td>
+<td>1000.0</td>
+<td>6400.0</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>9500</td>
+<td>NaN</td>
+<td>7600.0</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>5000</td>
+<td>2000.0</td>
+<td>4000.0</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<section id="some-limitations-regarding-pandas-syntax" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="some-limitations-regarding-pandas-syntax"><span class="header-section-number">2.1</span> Some limitations regarding <code>Pandas</code> syntax</h2>
+<p>There is a before and after <code>Pandas</code> in data analysis with <code>Python</code>. Without this incredibly practical package, Python, despite all its strengths, would have struggled to establish itself in the data analysis landscape. However, while <code>Pandas</code> offers a coherent syntax in many aspects, it is not perfect either. More recent data analysis paradigms in <code>Python</code> sometimes aim to correct these syntactical imperfections.</p>
+<p>Among the most annoying points in everyday use is the need to regularly perform <code>reset_index</code> when building descriptive statistics. Indeed, it can be dangerous to keep indices that are not well controlled because, if we are not careful during the merge phases, they can be misused by <code>Pandas</code> to join data, leading to surprises.</p>
+<p><code>Pandas</code> is extremely well-designed for restructuring data from long to wide format or vice versa. However, this is not the only way to restructure a dataset that we might want to implement. It often happens that we want to compare the value of an observation to that of a group to which it belongs. This is particularly useful in anomaly analysis, outlier detection, or fraud investigation. Natively, in <code>Pandas</code>, you need to build an aggregate statistic by group and then merge it back to the initial data using the group variable. This is somewhat tedious:</p>
+<div id="39c32937" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>emissions_moyennes <span class="op">=</span> emissions.groupby(<span class="st">"dep"</span>).agg({<span class="st">"Agriculture"</span>: <span class="st">"mean"</span>}).reset_index()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>emissions_enrichies <span class="op">=</span> (</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  emissions</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  .merge(emissions_moyennes, on <span class="op">=</span> <span class="st">"dep"</span>, suffixes <span class="op">=</span> [<span class="st">''</span>, <span class="st">'_moyenne_dep'</span>])</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>emissions_enrichies[<span class="st">'relatives'</span>] <span class="op">=</span> emissions_enrichies[<span class="st">"Agriculture"</span>]<span class="op">/</span>emissions_enrichies[<span class="st">"Agriculture_moyenne_dep"</span>]</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>emissions_enrichies.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="8">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">INSEE commune</th>
+<th data-quarto-table-cell-role="th">Commune</th>
+<th data-quarto-table-cell-role="th">Agriculture</th>
+<th data-quarto-table-cell-role="th">Autres transports</th>
+<th data-quarto-table-cell-role="th">Autres transports international</th>
+<th data-quarto-table-cell-role="th">CO2 biomasse hors-total</th>
+<th data-quarto-table-cell-role="th">Déchets</th>
+<th data-quarto-table-cell-role="th">Energie</th>
+<th data-quarto-table-cell-role="th">Industrie hors-énergie</th>
+<th data-quarto-table-cell-role="th">Résidentiel</th>
+<th data-quarto-table-cell-role="th">Routier</th>
+<th data-quarto-table-cell-role="th">Tertiaire</th>
+<th data-quarto-table-cell-role="th">dep</th>
+<th data-quarto-table-cell-role="th">Agriculture_moyenne_dep</th>
+<th data-quarto-table-cell-role="th">relatives</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>01001</td>
+<td>L'ABERGEMENT-CLEMENCIAT</td>
+<td>3711.425991</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>432.751835</td>
+<td>101.430476</td>
+<td>2.354558</td>
+<td>6.911213</td>
+<td>309.358195</td>
+<td>793.156501</td>
+<td>367.036172</td>
+<td>01</td>
+<td>1974.535382</td>
+<td>1.879645</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>01002</td>
+<td>L'ABERGEMENT-DE-VAREY</td>
+<td>475.330205</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>140.741660</td>
+<td>140.675439</td>
+<td>2.354558</td>
+<td>6.911213</td>
+<td>104.866444</td>
+<td>348.997893</td>
+<td>112.934207</td>
+<td>01</td>
+<td>1974.535382</td>
+<td>0.240730</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>01004</td>
+<td>AMBERIEU-EN-BUGEY</td>
+<td>499.043526</td>
+<td>212.577908</td>
+<td>NaN</td>
+<td>10313.446515</td>
+<td>5314.314445</td>
+<td>998.332482</td>
+<td>2930.354461</td>
+<td>16616.822534</td>
+<td>15642.420313</td>
+<td>10732.376934</td>
+<td>01</td>
+<td>1974.535382</td>
+<td>0.252740</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">3</th>
+<td>01005</td>
+<td>AMBERIEUX-EN-DOMBES</td>
+<td>1859.160954</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>1144.429311</td>
+<td>216.217508</td>
+<td>94.182310</td>
+<td>276.448534</td>
+<td>663.683146</td>
+<td>1756.341319</td>
+<td>782.404357</td>
+<td>01</td>
+<td>1974.535382</td>
+<td>0.941569</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4</th>
+<td>01006</td>
+<td>AMBLEON</td>
+<td>448.966808</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>77.033834</td>
+<td>48.401549</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>43.714019</td>
+<td>398.786800</td>
+<td>51.681756</td>
+<td>01</td>
+<td>1974.535382</td>
+<td>0.227378</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>In the <code>tidyverse</code>, this two-step operation could be done in a single step, which is more convenient:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>emissions <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dep) <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">relatives =</span> Agriculture<span class="sc">/</span><span class="fu">mean</span>(Agriculture))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This isn’t too bad, but it does make <code>Pandas</code> processing chains longer and therefore increases the maintenance burden to keep them running over time.</p>
+<p>More generally, <code>Pandas</code> processing chains can be quite verbose because it is often necessary to redefine the <code>DataFrame</code> rather than just the columns. For example, to filter rows and columns, you have to:</p>
+<div id="f56c46e9" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  emissions</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  .loc[</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    (emissions[<span class="st">"dep"</span>] <span class="op">==</span> <span class="st">"12"</span>) <span class="op">&amp;</span> (emissions[<span class="st">"Routier"</span>]<span class="op">&gt;</span><span class="dv">500</span>), [<span class="st">'INSEE commune'</span>, <span class="st">'Commune'</span>]</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  .head(<span class="dv">5</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="9">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">INSEE commune</th>
+<th data-quarto-table-cell-role="th">Commune</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4058</th>
+<td>12001</td>
+<td>AGEN-D'AVEYRON</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">4059</th>
+<td>12002</td>
+<td>AGUESSAC</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4062</th>
+<td>12006</td>
+<td>ALRANCE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">4063</th>
+<td>12007</td>
+<td>AMBEYRAC</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4064</th>
+<td>12008</td>
+<td>ANGLARS-SAINT-FELIX</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>In SQL, you could simply refer to the columns in the filter:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="ot">"INSEE commune"</span>, <span class="st">'Commune'</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> emissions</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> dep<span class="op">==</span><span class="ot">"12"</span> <span class="kw">AND</span> Routier<span class="op">&gt;</span><span class="dv">500</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>In the <code>tidyverse</code> (R), you could also do this simply:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">%&gt;%</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dep<span class="sc">==</span><span class="st">"12"</span>, Routier<span class="sc">&gt;</span><span class="dv">500</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">INSEE commune</span><span class="st">`</span>, <span class="st">`</span><span class="at">Commune</span><span class="st">`</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="other-paradigms" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Other paradigms</h1>
+<p>Despite all the limitations we have just mentioned, and the alternative solutions we will present, <code>Pandas</code> remains the central package of the data ecosystem with <code>Python</code>. In the following chapters, we will see its native integration with the <code>Scikit</code> ecosystem for machine learning or the extension of <code>Pandas</code> to spatial data with <code>GeoPandas</code>.</p>
+<p>Other technical solutions that we will discuss here may be relevant if you want to handle large volumes of data or if you want to use alternative syntaxes.</p>
+<p>The main alternatives to <code>Pandas</code> are <a href="https://pola.rs/"><code>Polars</code></a>, <a href="https://duckdb.org/"><code>DuckDB</code></a>, and <a href="https://spark.apache.org/docs/latest/api/python/index.html"><code>Spark</code></a>. There is also <a href="https://www.dask.org/"><code>Dask</code></a>, a library for parallelizing <code>Pandas</code> operations.</p>
+<section id="polars-1" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="polars-1"><span class="header-section-number">3.1</span> <code>Polars</code></h2>
+<p><code>Polars</code> is certainly the paradigm most inspired by <code>Pandas</code>, even in the choice of name. The first fundamental difference lies in the internal layers used. <code>Polars</code> relies on the <code>Rust</code> implementation of <code>Arrow</code>, whereas <code>Pandas</code> relies on <code>Numpy</code>, which results in performance loss. This allows <code>Polars</code> to be more efficient on large volumes of data, especially since many operations are parallelized and rely on lazy evaluation, a programming principle that optimizes queries for logical rather than defined execution order.</p>
+<p>Another strength of <code>Polars</code> is its more coherent syntax, benefiting from over fifteen years of <code>Pandas</code> existence and almost a decade of <code>dplyr</code> (the data manipulation package within the <code>R</code> tidyverse paradigm). To take the previous example, there is no longer a need to force the reference to the DataFrame; in an execution chain, all subsequent references will be made with respect to the initial DataFrame.</p>
+<div id="43a22f35" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> polars <span class="im">as</span> pl</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>emissions_polars <span class="op">=</span> pl.from_pandas(emissions)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>(</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  emissions_polars</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  .<span class="bu">filter</span>(pl.col(<span class="st">"dep"</span>) <span class="op">==</span> <span class="st">"12"</span>, pl.col(<span class="st">"Routier"</span>) <span class="op">&gt;</span> <span class="dv">500</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  .select(<span class="st">'INSEE commune'</span>, <span class="st">'Commune'</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  .head(<span class="dv">5</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="10">
+<div><style>
+.dataframe > thead > tr,
+.dataframe > tbody > tr {
+  text-align: right;
+  white-space: pre-wrap;
+}
+</style>
+<small>shape: (5, 2)</small>
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">INSEE commune</th>
+<th data-quarto-table-cell-role="th">Commune</th>
+</tr>
+<tr class="even">
+<td>str</td>
+<td>str</td>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>"12001"</td>
+<td>"AGEN-D'AVEYRON"</td>
+</tr>
+<tr class="even">
+<td>"12002"</td>
+<td>"AGUESSAC"</td>
+</tr>
+<tr class="odd">
+<td>"12006"</td>
+<td>"ALRANCE"</td>
+</tr>
+<tr class="even">
+<td>"12007"</td>
+<td>"AMBEYRAC"</td>
+</tr>
+<tr class="odd">
+<td>"12008"</td>
+<td>"ANGLARS-SAINT-FELIX"</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>To learn about <code>Polars</code>, many online resources are available, including <a href="https://github.com/InseeFrLab/ssphub/blob/main/post/polars/polars-tuto.ipynb">this notebook</a> built for the public statistics data scientists network.</p>
+</section>
+<section id="duckdb-1" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="duckdb-1"><span class="header-section-number">3.2</span> <code>DuckDB</code></h2>
+<p><code>DuckDB</code> is the newcomer in the data analysis ecosystem, pushing the limits of data processing with <code>Python</code> without resorting to big data tools like <code>Spark</code>. <code>DuckDB</code> epitomizes a new paradigm, the <a href="https://motherduck.com/blog/big-data-is-dead/">“Big data is dead”</a> paradigm, where large data volumes can be processed without imposing infrastructures.</p>
+<p>Besides its great efficiency, as <code>DuckDB</code> can handle data volumes larger than the computer or server’s RAM, it offers the advantage of a uniform syntax across languages that call <code>DuckDB</code> (<code>Python</code>, <code>R</code>, <code>C++</code>, or <code>Javascript</code>). <code>DuckDB</code> favors SQL syntax for data processing with many pre-implemented functions to simplify certain data transformations (e.g., for <a href="https://duckdb.org/docs/sql/functions/char.html">text data</a>, <a href="https://duckdb.org/docs/sql/functions/time">time data</a>, etc.).</p>
+<p>Compared to other SQL-based systems like <a href="https://www.postgresql.org/"><code>PostGreSQL</code></a>, <code>DuckDB</code> is very simple to install, as it is just a <code>Python</code> library, whereas many tools like <code>PostGreSQL</code> require an appropriate infrastructure.</p>
+<p>To reuse the previous example, we can directly use the SQL code mentioned earlier.</p>
+<div id="150f67a5" class="cell" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> duckdb</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>duckdb.sql(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"""</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="st">  SELECT "INSEE commune", "Commune"</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="st">  FROM emissions</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="st">  WHERE dep=='12' AND Routier&gt;500</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="st">  LIMIT 5</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="st">  """</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="11">
+<pre><code>┌───────────────┬─────────────────────┐
+│ INSEE commune │       Commune       │
+│    varchar    │       varchar       │
+├───────────────┼─────────────────────┤
+│ 12001         │ AGEN-D'AVEYRON      │
+│ 12002         │ AGUESSAC            │
+│ 12006         │ ALRANCE             │
+│ 12007         │ AMBEYRAC            │
+│ 12008         │ ANGLARS-SAINT-FELIX │
+└───────────────┴─────────────────────┘</code></pre>
+</div>
+</div>
+<p>Here, the clause <code>FROM emissions</code> comes from the fact that we can directly execute SQL from a <code>Pandas</code> object via <code>DuckDB</code>. If we read directly in the query, it gets slightly more complex, but the logic remains the same.</p>
+<div id="e023ab65" class="cell" data-execution_count="14">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> duckdb</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>duckdb.sql(</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="ss">f"""</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="ss">  SELECT "INSEE commune", "Commune"</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="ss">  FROM read_csv_auto("</span><span class="sc">{</span>url<span class="sc">}</span><span class="ss">")</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="ss">  WHERE</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="ss">    substring("INSEE commune",1,2)=='12'</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="ss">    AND</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="ss">    Routier&gt;500</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="ss">  LIMIT 5</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="ss">  """</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="12">
+<pre><code>┌───────────────┬─────────────────────┐
+│ INSEE commune │       Commune       │
+│    varchar    │       varchar       │
+├───────────────┼─────────────────────┤
+│ 12001         │ AGEN-D'AVEYRON      │
+│ 12002         │ AGUESSAC            │
+│ 12006         │ ALRANCE             │
+│ 12007         │ AMBEYRAC            │
+│ 12008         │ ANGLARS-SAINT-FELIX │
+└───────────────┴─────────────────────┘</code></pre>
+</div>
+</div>
+<p>The rendering of the DataFrame is slightly different from <code>Pandas</code> because, like <code>Polars</code> and many large data processing systems, <code>DuckDB</code> relies on lazy evaluation and thus only displays a sample of data. <code>DuckDB</code> and <code>Polars</code> are also well integrated with each other. You can run SQL on a <code>Polars</code> object via <code>DuckDB</code> or apply <code>Polars</code> functions to an initially read <code>DuckDB</code> object.</p>
+<p>One of the interests of <code>DuckDB</code> is its excellent integration with the <code>Parquet</code> ecosystem, the already mentioned data format that is becoming a standard in data sharing (for example, it is the cornerstone of data sharing on the HuggingFace platform). To learn more about <code>DuckDB</code> and discover its usefulness for reading data from the French population census, you can check out <a href="https://ssphub.netlify.app/post/parquetrp/">this blog post</a>.</p>
+</section>
+<section id="spark" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="spark"><span class="header-section-number">3.3</span> <code>Spark</code></h2>
+<p><code>DuckDB</code> has pushed the boundaries of big data, which can be defined as the volume of data that can no longer be processed on a single machine without implementing a parallelization strategy.</p>
+<p>Nevertheless, for very large data volumes, <code>Python</code> is well-equipped with the <a href="https://spark.apache.org/docs/latest/api/python/index.html"><code>PySpark</code></a> library. This is a Python API for the Spark language, a big data language based on Scala. This paradigm is built on the idea that <code>Python</code> users access it via clusters with many nodes to process data in parallel. The data will be read in blocks, processed in parallel depending on the number of parallel nodes. The <code>Spark</code> DataFrame API has a syntax close to previous paradigms with more complex engineering in the background related to native parallelization.</p>
+</section>
+<section id="informations-additionnelles" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="informations-additionnelles">Informations additionnelles</h2>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Python environment   
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>This site was built automatically through a <code>Github</code> <i class="fa-brands fa-github" aria-label="github"></i> action using the <code>Quarto</code> <iconify-icon role="img" inline="" icon="simple-icons:quarto" aria-label="Icon quarto from simple-icons Iconify.design set." title="Icon quarto from simple-icons Iconify.design set."></iconify-icon> reproducible publishing software (version 1.8.26).</p>
+<p>The <i class="fa-brands fa-python" aria-label="python"></i> environment used to obtain the results is reproducible via <a href="https://docs.astral.sh/uv/guides/install-python/">uv</a>. The <code>pyproject.toml</code> file used to build this environment is available on the <a href="https://github.com/linogaliana/python-datascientist/blob/main/pyproject.toml"><code>linogaliana/python-datascientist</code></a> repository</p>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>pyproject.toml</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18" data-filename="pyproject.toml" data-code-fold="true" data-code-summary="pyproject.toml"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>[project]</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>name <span class="op">=</span> <span class="st">"python-datascientist"</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>version <span class="op">=</span> <span class="st">"0.1.0"</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>description <span class="op">=</span> <span class="st">"Source code for Lino Galiana's Python for data science course"</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>readme <span class="op">=</span> <span class="st">"README.md"</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>requires<span class="op">-</span>python <span class="op">=</span> <span class="st">"&gt;=3.13,&lt;3.14"</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>dependencies <span class="op">=</span> [</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"altair&gt;=6.0.0"</span>,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"cartiflette"</span>,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"contextily==1.6.2"</span>,</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"duckdb&gt;=0.10.1"</span>,</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"folium&gt;=0.19.6"</span>,</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"gdal==3.11.4"</span>,</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"graphviz==0.20.3"</span>,</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"great-tables&gt;=0.12.0"</span>,</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"gt-extras&gt;=0.0.8"</span>,</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ipykernel&gt;=6.29.5"</span>,</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"jupyter&gt;=1.1.1"</span>,</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">"jupyter-cache&gt;=1.0.0"</span>,</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"kaleido&gt;=0.2.1"</span>,</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"langchain-community&gt;=0.3.27"</span>,</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"loguru==0.7.3"</span>,</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"markdown&gt;=3.8"</span>,</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">"nbclient&gt;=0.10.0"</span>,</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">"nbformat&gt;=5.10.4"</span>,</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">"nltk&gt;=3.9.1"</span>,</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">"pandas&gt;=3.0"</span>,</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">"pip&gt;=25.1.1"</span>,</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">"plotly&gt;=6.1.2"</span>,</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">"plotnine&gt;=0.15"</span>,</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">"polars&gt;=1.8.2"</span>,</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">"pyarrow&gt;=17.0.0"</span>,</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">"pynsee&gt;=0.1.8"</span>,</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>    <span class="st">"python-dotenv&gt;=1.0.1"</span>,</span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">"python-frontmatter&gt;=1.1.0"</span>,</span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>    <span class="st">"pywaffle&gt;=1.1.1"</span>,</span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>    <span class="st">"requests&gt;=2.32.3"</span>,</span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>    <span class="st">"scikit-image&gt;=0.24.0"</span>,</span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>    <span class="st">"scikit-learn&gt;=1.8.0"</span>,</span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>    <span class="st">"scipy&gt;=1.13.0"</span>,</span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>    <span class="st">"seaborn&gt;=0.13.2"</span>,</span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>    <span class="st">"selenium&lt;4.39.0"</span>,</span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>    <span class="st">"spacy&gt;=3.8.4"</span>,</span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a>    <span class="st">"webdriver-manager&gt;=4.0.2"</span>,</span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a>    <span class="st">"wordcloud==1.9.3"</span>,</span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a>[tool.uv.sources]</span>
+<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a>cartiflette <span class="op">=</span> { git <span class="op">=</span> <span class="st">"https://github.com/inseefrlab/cartiflette"</span> }</span>
+<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a>gdal <span class="op">=</span> [</span>
+<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a>  { index <span class="op">=</span> <span class="st">"gdal-wheels"</span>, marker <span class="op">=</span> <span class="st">"sys_platform == 'linux'"</span> },</span>
+<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a>  { index <span class="op">=</span> <span class="st">"geospatial_wheels"</span>, marker <span class="op">=</span> <span class="st">"sys_platform == 'win32'"</span> },</span>
+<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb18-54"><a href="#cb18-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-55"><a href="#cb18-55" aria-hidden="true" tabindex="-1"></a>[[tool.uv.index]]</span>
+<span id="cb18-56"><a href="#cb18-56" aria-hidden="true" tabindex="-1"></a>name <span class="op">=</span> <span class="st">"geospatial_wheels"</span></span>
+<span id="cb18-57"><a href="#cb18-57" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://nathanjmcdougall.github.io/geospatial-wheels-index/"</span></span>
+<span id="cb18-58"><a href="#cb18-58" aria-hidden="true" tabindex="-1"></a>explicit <span class="op">=</span> true</span>
+<span id="cb18-59"><a href="#cb18-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-60"><a href="#cb18-60" aria-hidden="true" tabindex="-1"></a>[[tool.uv.index]]</span>
+<span id="cb18-61"><a href="#cb18-61" aria-hidden="true" tabindex="-1"></a>name <span class="op">=</span> <span class="st">"gdal-wheels"</span></span>
+<span id="cb18-62"><a href="#cb18-62" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://gitlab.com/api/v4/projects/61637378/packages/pypi/simple"</span></span>
+<span id="cb18-63"><a href="#cb18-63" aria-hidden="true" tabindex="-1"></a>explicit <span class="op">=</span> true</span>
+<span id="cb18-64"><a href="#cb18-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-65"><a href="#cb18-65" aria-hidden="true" tabindex="-1"></a>[dependency<span class="op">-</span>groups]</span>
+<span id="cb18-66"><a href="#cb18-66" aria-hidden="true" tabindex="-1"></a>dev <span class="op">=</span> [</span>
+<span id="cb18-67"><a href="#cb18-67" aria-hidden="true" tabindex="-1"></a>    <span class="st">"nb-clean&gt;=4.0.1"</span>,</span>
+<span id="cb18-68"><a href="#cb18-68" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb18-69"><a href="#cb18-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-70"><a href="#cb18-70" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>To use exactly the same environment (version of <code>Python</code> and <em>packages</em>), please refer to the <a href="https://docs.astral.sh/uv/pip/environments/">documentation for <code>uv</code></a>.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>File history   
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb19" data-startfrom="579" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 578;"><span id="cb19-579"><a href="#cb19-579" aria-hidden="true" tabindex="-1"></a><span class="fu">md</span><span class="vs">`This file has been modified __</span><span class="sc">${</span>table_commit<span class="op">.</span><span class="at">length</span><span class="sc">}</span><span class="vs">__ times since its creation on </span><span class="sc">${</span>creation_string<span class="sc">}</span><span class="vs"> (last modified on </span><span class="sc">${</span>last_modification_string<span class="sc">}</span><span class="vs">)`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-4" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb20" data-startfrom="584" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 583;"><span id="cb20-584"><a href="#cb20-584" aria-hidden="true" tabindex="-1"></a><span class="fu">html</span><span class="vs">`&lt;div&gt;</span><span class="sc">${</span>git_history_table<span class="sc">}</span><span class="vs">&lt;/div&gt;`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-5" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb21" data-startfrom="589" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 588;"><span id="cb21-589"><a href="#cb21-589" aria-hidden="true" tabindex="-1"></a><span class="fu">html</span><span class="vs">`&lt;div&gt;</span><span class="sc">${</span>git_history_plot<span class="sc">}</span><span class="vs">&lt;/div&gt;`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-6" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<table class="commit-table" border="1">
+<thead>
+<tr>
+<th>
+SHA
+</th>
+<th>
+Date
+</th>
+<th>
+Author
+</th>
+<th>
+Description
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/linogaliana/python-datascientist/commit/56ad5bc8">56ad5bc8</a>
+</td>
+<td>
+2026-07-14 21:57:39
+</td>
+<td>
+Lino Galiana
+</td>
+<td>
+Données filosofi plus à jour pour le chapitre Pandas (#699)
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb22" data-startfrom="606" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 605;"><span id="cb22-606"><a href="#cb22-606" aria-hidden="true" tabindex="-1"></a>creation <span class="op">=</span> d3<span class="op">.</span><span class="fu">min</span>(</span>
+<span id="cb22-607"><a href="#cb22-607" aria-hidden="true" tabindex="-1"></a>  table_commit<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> <span class="kw">new</span> <span class="bu">Date</span>(d<span class="op">.</span><span class="at">Date</span>))</span>
+<span id="cb22-608"><a href="#cb22-608" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb22-609"><a href="#cb22-609" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-610"><a href="#cb22-610" aria-hidden="true" tabindex="-1"></a>last_modification <span class="op">=</span> d3<span class="op">.</span><span class="fu">max</span>(</span>
+<span id="cb22-611"><a href="#cb22-611" aria-hidden="true" tabindex="-1"></a>  table_commit<span class="op">.</span><span class="fu">map</span>(d <span class="kw">=&gt;</span> <span class="kw">new</span> <span class="bu">Date</span>(d<span class="op">.</span><span class="at">Date</span>))</span>
+<span id="cb22-612"><a href="#cb22-612" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb22-613"><a href="#cb22-613" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-614"><a href="#cb22-614" aria-hidden="true" tabindex="-1"></a>creation_string <span class="op">=</span> creation<span class="op">.</span><span class="fu">toLocaleString</span>(<span class="st">"fr"</span><span class="op">,</span> {</span>
+<span id="cb22-615"><a href="#cb22-615" aria-hidden="true" tabindex="-1"></a>  <span class="st">"day"</span><span class="op">:</span> <span class="st">"numeric"</span><span class="op">,</span></span>
+<span id="cb22-616"><a href="#cb22-616" aria-hidden="true" tabindex="-1"></a>  <span class="st">"month"</span><span class="op">:</span> <span class="st">"long"</span><span class="op">,</span></span>
+<span id="cb22-617"><a href="#cb22-617" aria-hidden="true" tabindex="-1"></a>  <span class="st">"year"</span><span class="op">:</span> <span class="st">"numeric"</span></span>
+<span id="cb22-618"><a href="#cb22-618" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb22-619"><a href="#cb22-619" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-620"><a href="#cb22-620" aria-hidden="true" tabindex="-1"></a>last_modification_string <span class="op">=</span> last_modification<span class="op">.</span><span class="fu">toLocaleString</span>(<span class="st">"fr"</span><span class="op">,</span> {</span>
+<span id="cb22-621"><a href="#cb22-621" aria-hidden="true" tabindex="-1"></a>  <span class="st">"day"</span><span class="op">:</span> <span class="st">"numeric"</span><span class="op">,</span></span>
+<span id="cb22-622"><a href="#cb22-622" aria-hidden="true" tabindex="-1"></a>  <span class="st">"month"</span><span class="op">:</span> <span class="st">"long"</span><span class="op">,</span></span>
+<span id="cb22-623"><a href="#cb22-623" aria-hidden="true" tabindex="-1"></a>  <span class="st">"year"</span><span class="op">:</span> <span class="st">"numeric"</span></span>
+<span id="cb22-624"><a href="#cb22-624" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<div id="ojs-cell-7-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<div id="ojs-cell-7-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<div id="ojs-cell-7-3" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<div id="ojs-cell-7-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell hidden">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb23" data-startfrom="636" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 635;"><span id="cb23-636"><a href="#cb23-636" aria-hidden="true" tabindex="-1"></a>git_history_table <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">table</span>(</span>
+<span id="cb23-637"><a href="#cb23-637" aria-hidden="true" tabindex="-1"></a>  table_commit<span class="op">,</span></span>
+<span id="cb23-638"><a href="#cb23-638" aria-hidden="true" tabindex="-1"></a>  {</span>
+<span id="cb23-639"><a href="#cb23-639" aria-hidden="true" tabindex="-1"></a>    <span class="dt">format</span><span class="op">:</span> {</span>
+<span id="cb23-640"><a href="#cb23-640" aria-hidden="true" tabindex="-1"></a>      <span class="dt">SHA</span><span class="op">:</span> x <span class="kw">=&gt;</span> <span class="fu">md</span><span class="vs">`[</span><span class="sc">${</span>x<span class="sc">}</span><span class="vs">](</span><span class="sc">${</span>github_repo<span class="sc">}</span><span class="vs">/commit/</span><span class="sc">${</span>x<span class="sc">}</span><span class="vs">)`</span><span class="op">,</span></span>
+<span id="cb23-641"><a href="#cb23-641" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Description</span><span class="op">:</span> x <span class="kw">=&gt;</span> <span class="fu">md</span><span class="vs">`</span><span class="sc">${</span><span class="fu">replacePullRequestPattern</span>(x<span class="op">,</span> github_repo)<span class="sc">}</span><span class="vs">`</span><span class="op">,</span></span>
+<span id="cb23-642"><a href="#cb23-642" aria-hidden="true" tabindex="-1"></a>      <span class="co">/*Date: x =&gt; x.toLocaleString("fr", {</span></span>
+<span id="cb23-643"><a href="#cb23-643" aria-hidden="true" tabindex="-1"></a><span class="co">        "month": "numeric",</span></span>
+<span id="cb23-644"><a href="#cb23-644" aria-hidden="true" tabindex="-1"></a><span class="co">        "day": "numeric",</span></span>
+<span id="cb23-645"><a href="#cb23-645" aria-hidden="true" tabindex="-1"></a><span class="co">        "year": "numeric"</span></span>
+<span id="cb23-646"><a href="#cb23-646" aria-hidden="true" tabindex="-1"></a><span class="co">        })</span></span>
+<span id="cb23-647"><a href="#cb23-647" aria-hidden="true" tabindex="-1"></a><span class="co">      */</span></span>
+<span id="cb23-648"><a href="#cb23-648" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb23-649"><a href="#cb23-649" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb23-650"><a href="#cb23-650" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-8" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell hidden">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb24" data-startfrom="656" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 655;"><span id="cb24-656"><a href="#cb24-656" aria-hidden="true" tabindex="-1"></a>git_history_plot <span class="op">=</span> Plot<span class="op">.</span><span class="fu">plot</span>({</span>
+<span id="cb24-657"><a href="#cb24-657" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marks</span><span class="op">:</span> [</span>
+<span id="cb24-658"><a href="#cb24-658" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">ruleY</span>([<span class="dv">0</span>]<span class="op">,</span> {<span class="dt">stroke</span><span class="op">:</span> <span class="st">"royalblue"</span>})<span class="op">,</span></span>
+<span id="cb24-659"><a href="#cb24-659" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">dot</span>(</span>
+<span id="cb24-660"><a href="#cb24-660" aria-hidden="true" tabindex="-1"></a>          table_commit<span class="op">,</span></span>
+<span id="cb24-661"><a href="#cb24-661" aria-hidden="true" tabindex="-1"></a>          Plot<span class="op">.</span><span class="fu">pointerX</span>({<span class="dt">x</span><span class="op">:</span> (d) <span class="kw">=&gt;</span> <span class="kw">new</span> <span class="bu">Date</span>(d<span class="op">.</span><span class="at">date</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">stroke</span><span class="op">:</span> <span class="st">"red"</span>}))<span class="op">,</span></span>
+<span id="cb24-662"><a href="#cb24-662" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">dot</span>(table_commit<span class="op">,</span> {<span class="dt">x</span><span class="op">:</span> (d) <span class="kw">=&gt;</span> <span class="kw">new</span> <span class="bu">Date</span>(d<span class="op">.</span><span class="at">Date</span>)<span class="op">,</span> <span class="dt">y</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">fill</span><span class="op">:</span> <span class="st">"royalblue"</span>})</span>
+<span id="cb24-663"><a href="#cb24-663" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb24-664"><a href="#cb24-664" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-9" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb25" data-startfrom="670" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 669;"><span id="cb25-670"><a href="#cb25-670" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">replacePullRequestPattern</span>(inputString<span class="op">,</span> githubRepo) {</span>
+<span id="cb25-671"><a href="#cb25-671" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Use a regular expression to match the pattern #digit</span></span>
+<span id="cb25-672"><a href="#cb25-672" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> pattern <span class="op">=</span> <span class="ss">/#</span><span class="sc">(\d+)</span><span class="ss">/g</span><span class="op">;</span></span>
+<span id="cb25-673"><a href="#cb25-673" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-674"><a href="#cb25-674" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Replace the pattern with ${github_repo}/pull/#digit</span></span>
+<span id="cb25-675"><a href="#cb25-675" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> replacedString <span class="op">=</span> inputString<span class="op">.</span><span class="fu">replace</span>(pattern<span class="op">,</span> <span class="st">'[#$1]('</span> <span class="op">+</span> githubRepo <span class="op">+</span> <span class="st">'/pull/$1)'</span>)<span class="op">;</span></span>
+<span id="cb25-676"><a href="#cb25-676" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-677"><a href="#cb25-677" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> replacedString<span class="op">;</span></span>
+<span id="cb25-678"><a href="#cb25-678" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-10" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb26" data-startfrom="684" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 683;"><span id="cb26-684"><a href="#cb26-684" aria-hidden="true" tabindex="-1"></a>github_repo <span class="op">=</span> <span class="st">"https://github.com/linogaliana/python-datascientist"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-11" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb27" data-startfrom="689" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 688;"><span id="cb27-689"><a href="#cb27-689" aria-hidden="true" tabindex="-1"></a>table_commit <span class="op">=</span> {</span>
+<span id="cb27-690"><a href="#cb27-690" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-691"><a href="#cb27-691" aria-hidden="true" tabindex="-1"></a><span class="co">// Get the HTML table by its class name</span></span>
+<span id="cb27-692"><a href="#cb27-692" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> table <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">querySelector</span>(<span class="st">'.commit-table'</span>)<span class="op">;</span></span>
+<span id="cb27-693"><a href="#cb27-693" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-694"><a href="#cb27-694" aria-hidden="true" tabindex="-1"></a><span class="co">// Check if the table exists</span></span>
+<span id="cb27-695"><a href="#cb27-695" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (table) {</span>
+<span id="cb27-696"><a href="#cb27-696" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Initialize an array to store the table data</span></span>
+<span id="cb27-697"><a href="#cb27-697" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> dataArray <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb27-698"><a href="#cb27-698" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-699"><a href="#cb27-699" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Extract headers from the first row</span></span>
+<span id="cb27-700"><a href="#cb27-700" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> headers <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb27-701"><a href="#cb27-701" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> table<span class="op">.</span><span class="at">rows</span>[<span class="dv">0</span>]<span class="op">.</span><span class="at">cells</span><span class="op">.</span><span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb27-702"><a href="#cb27-702" aria-hidden="true" tabindex="-1"></a>        headers<span class="op">.</span><span class="fu">push</span>(table<span class="op">.</span><span class="at">rows</span>[<span class="dv">0</span>]<span class="op">.</span><span class="at">cells</span>[i]<span class="op">.</span><span class="at">textContent</span><span class="op">.</span><span class="fu">trim</span>())<span class="op">;</span></span>
+<span id="cb27-703"><a href="#cb27-703" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb27-704"><a href="#cb27-704" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-705"><a href="#cb27-705" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Iterate through the rows, starting from the second row</span></span>
+<span id="cb27-706"><a href="#cb27-706" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">var</span> i <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&lt;</span> table<span class="op">.</span><span class="at">rows</span><span class="op">.</span><span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb27-707"><a href="#cb27-707" aria-hidden="true" tabindex="-1"></a>        <span class="kw">var</span> row <span class="op">=</span> table<span class="op">.</span><span class="at">rows</span>[i]<span class="op">;</span></span>
+<span id="cb27-708"><a href="#cb27-708" aria-hidden="true" tabindex="-1"></a>        <span class="kw">var</span> rowData <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb27-709"><a href="#cb27-709" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-710"><a href="#cb27-710" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Iterate through the cells in the row</span></span>
+<span id="cb27-711"><a href="#cb27-711" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> (<span class="kw">var</span> j <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> j <span class="op">&lt;</span> row<span class="op">.</span><span class="at">cells</span><span class="op">.</span><span class="at">length</span><span class="op">;</span> j<span class="op">++</span>) {</span>
+<span id="cb27-712"><a href="#cb27-712" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Use headers as keys and cell content as values</span></span>
+<span id="cb27-713"><a href="#cb27-713" aria-hidden="true" tabindex="-1"></a>            rowData[headers[j]] <span class="op">=</span> row<span class="op">.</span><span class="at">cells</span>[j]<span class="op">.</span><span class="at">textContent</span><span class="op">.</span><span class="fu">trim</span>()<span class="op">;</span></span>
+<span id="cb27-714"><a href="#cb27-714" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb27-715"><a href="#cb27-715" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-716"><a href="#cb27-716" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Push the rowData object to the dataArray</span></span>
+<span id="cb27-717"><a href="#cb27-717" aria-hidden="true" tabindex="-1"></a>        dataArray<span class="op">.</span><span class="fu">push</span>(rowData)<span class="op">;</span></span>
+<span id="cb27-718"><a href="#cb27-718" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb27-719"><a href="#cb27-719" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb27-720"><a href="#cb27-720" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-721"><a href="#cb27-721" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> dataArray</span>
+<span id="cb27-722"><a href="#cb27-722" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-723"><a href="#cb27-723" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-12" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell hidden">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb28" data-startfrom="729" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 728;"><span id="cb28-729"><a href="#cb28-729" aria-hidden="true" tabindex="-1"></a><span class="co">// Get the element with class 'git-details'</span></span>
+<span id="cb28-730"><a href="#cb28-730" aria-hidden="true" tabindex="-1"></a>{</span>
+<span id="cb28-731"><a href="#cb28-731" aria-hidden="true" tabindex="-1"></a>  <span class="kw">var</span> gitDetails <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">querySelector</span>(<span class="st">'.commit-table'</span>)<span class="op">;</span></span>
+<span id="cb28-732"><a href="#cb28-732" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-733"><a href="#cb28-733" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Check if the element exists</span></span>
+<span id="cb28-734"><a href="#cb28-734" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (gitDetails) {</span>
+<span id="cb28-735"><a href="#cb28-735" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Hide the element</span></span>
+<span id="cb28-736"><a href="#cb28-736" aria-hidden="true" tabindex="-1"></a>      gitDetails<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">display</span> <span class="op">=</span> <span class="st">'none'</span><span class="op">;</span></span>
+<span id="cb28-737"><a href="#cb28-737" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb28-738"><a href="#cb28-738" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-13" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb29" data-startfrom="744" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 743;"><span id="cb29-744"><a href="#cb29-744" aria-hidden="true" tabindex="-1"></a>Plot <span class="op">=</span> <span class="pp">require</span>(<span class="st">'@observablehq/plot@0.6.12/dist/plot.umd.min.js'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-14" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+
+
+</section>
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@book{galiana2025,
+  author = {Galiana, Lino},
+  title = {Python Pour La Data Science},
+  date = {2025},
+  url = {https://pythonds.linogaliana.fr/},
+  doi = {10.5281/zenodo.8229676},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-galiana2025" class="csl-entry quarto-appendix-citeas" role="listitem">
+Galiana, Lino. 2025. <em>Python Pour La Data Science</em>. <a href="https://doi.org/10.5281/zenodo.8229676">https://doi.org/10.5281/zenodo.8229676</a>.
+</div></div></section></div></main> <!-- /main -->
+<script type="text/javascript">
+
+// replace cmd keyboard shortcut w/ control on non-Mac platforms
+const kPlatformMac = typeof navigator !== 'undefined' ? /Mac/.test(navigator.platform) : false;
+if (!kPlatformMac) {
+   var kbds = document.querySelectorAll("kbd")
+   kbds.forEach(function(kbd) {
+      kbd.innerHTML = kbd.innerHTML.replace(/⌘/g, '⌃');
+   });
+}
+
+// tweak headings in pymd
+document.querySelectorAll(".pymd span.co").forEach(el => {
+   if (!el.innerText.startsWith("#|")) {
+      el.style.fontWeight = 1000;
+   }
+});
+
+</script>
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6Im1kYENlIGZpY2hpZXIgYSDDqXTDqSBtb2RpZmnDqSBfXyR7dGFibGVfY29tbWl0Lmxlbmd0aH1fXyBmb2lzIGRlcHVpcyBzYSBjcsOpYXRpb24gbGUgJHtjcmVhdGlvbl9zdHJpbmd9IChkZXJuacOocmUgbW9kaWZpY2F0aW9uIGxlICR7bGFzdF9tb2RpZmljYXRpb25fc3RyaW5nfSlgXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTIiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJodG1sYDxkaXY+JHtnaXRfaGlzdG9yeV90YWJsZX08L2Rpdj5gXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTMiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJodG1sYDxkaXY+JHtnaXRfaGlzdG9yeV9wbG90fTwvZGl2PmBcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6Im1kYFRoaXMgZmlsZSBoYXMgYmVlbiBtb2RpZmllZCBfXyR7dGFibGVfY29tbWl0Lmxlbmd0aH1fXyB0aW1lcyBzaW5jZSBpdHMgY3JlYXRpb24gb24gJHtjcmVhdGlvbl9zdHJpbmd9IChsYXN0IG1vZGlmaWVkIG9uICR7bGFzdF9tb2RpZmljYXRpb25fc3RyaW5nfSlgXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTUiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJodG1sYDxkaXY+JHtnaXRfaGlzdG9yeV90YWJsZX08L2Rpdj5gXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTYiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJodG1sYDxkaXY+JHtnaXRfaGlzdG9yeV9wbG90fTwvZGl2PmBcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImNyZWF0aW9uID0gZDMubWluKFxuICB0YWJsZV9jb21taXQubWFwKGQgPT4gbmV3IERhdGUoZC5EYXRlKSlcbilcblxubGFzdF9tb2RpZmljYXRpb24gPSBkMy5tYXgoXG4gIHRhYmxlX2NvbW1pdC5tYXAoZCA9PiBuZXcgRGF0ZShkLkRhdGUpKVxuKVxuXG5jcmVhdGlvbl9zdHJpbmcgPSBjcmVhdGlvbi50b0xvY2FsZVN0cmluZyhcImZyXCIsIHtcbiAgXCJkYXlcIjogXCJudW1lcmljXCIsXG4gIFwibW9udGhcIjogXCJsb25nXCIsXG4gIFwieWVhclwiOiBcIm51bWVyaWNcIlxufSlcblxubGFzdF9tb2RpZmljYXRpb25fc3RyaW5nID0gbGFzdF9tb2RpZmljYXRpb24udG9Mb2NhbGVTdHJpbmcoXCJmclwiLCB7XG4gIFwiZGF5XCI6IFwibnVtZXJpY1wiLFxuICBcIm1vbnRoXCI6IFwibG9uZ1wiLFxuICBcInllYXJcIjogXCJudW1lcmljXCJcbn0pXG5cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtOCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImdpdF9oaXN0b3J5X3RhYmxlID0gSW5wdXRzLnRhYmxlKFxuICB0YWJsZV9jb21taXQsXG4gIHtcbiAgICBmb3JtYXQ6IHtcbiAgICAgIFNIQTogeCA9PiBtZGBbJHt4fV0oJHtnaXRodWJfcmVwb30vY29tbWl0LyR7eH0pYCxcbiAgICAgIERlc2NyaXB0aW9uOiB4ID0+IG1kYCR7cmVwbGFjZVB1bGxSZXF1ZXN0UGF0dGVybih4LCBnaXRodWJfcmVwbyl9YCxcbiAgICAgIC8qRGF0ZTogeCA9PiB4LnRvTG9jYWxlU3RyaW5nKFwiZnJcIiwge1xuICAgICAgICBcIm1vbnRoXCI6IFwibnVtZXJpY1wiLFxuICAgICAgICBcImRheVwiOiBcIm51bWVyaWNcIixcbiAgICAgICAgXCJ5ZWFyXCI6IFwibnVtZXJpY1wiXG4gICAgICAgIH0pXG4gICAgICAqL1xuICAgIH1cbiAgfVxuKVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC05IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiZ2l0X2hpc3RvcnlfcGxvdCA9IFBsb3QucGxvdCh7XG4gIG1hcmtzOiBbXG4gICAgUGxvdC5ydWxlWShbMF0sIHtzdHJva2U6IFwicm95YWxibHVlXCJ9KSxcbiAgICBQbG90LmRvdChcbiAgICAgICAgICB0YWJsZV9jb21taXQsXG4gICAgICAgICAgUGxvdC5wb2ludGVyWCh7eDogKGQpID0+IG5ldyBEYXRlKGQuZGF0ZSksIHk6IDAsIHN0cm9rZTogXCJyZWRcIn0pKSxcbiAgICBQbG90LmRvdCh0YWJsZV9jb21taXQsIHt4OiAoZCkgPT4gbmV3IERhdGUoZC5EYXRlKSwgeTogMCwgZmlsbDogXCJyb3lhbGJsdWVcIn0pXG4gIF1cbn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTEwIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiZnVuY3Rpb24gcmVwbGFjZVB1bGxSZXF1ZXN0UGF0dGVybihpbnB1dFN0cmluZywgZ2l0aHViUmVwbykge1xuICAgIC8vIFVzZSBhIHJlZ3VsYXIgZXhwcmVzc2lvbiB0byBtYXRjaCB0aGUgcGF0dGVybiAjZGlnaXRcbiAgICB2YXIgcGF0dGVybiA9IC8jKFxcZCspL2c7XG5cbiAgICAvLyBSZXBsYWNlIHRoZSBwYXR0ZXJuIHdpdGggJHtnaXRodWJfcmVwb30vcHVsbC8jZGlnaXRcbiAgICB2YXIgcmVwbGFjZWRTdHJpbmcgPSBpbnB1dFN0cmluZy5yZXBsYWNlKHBhdHRlcm4sICdbIyQxXSgnICsgZ2l0aHViUmVwbyArICcvcHVsbC8kMSknKTtcblxuICAgIHJldHVybiByZXBsYWNlZFN0cmluZztcbn1cbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTEiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJnaXRodWJfcmVwbyA9IFwiaHR0cHM6Ly9naXRodWIuY29tL2xpbm9nYWxpYW5hL3B5dGhvbi1kYXRhc2NpZW50aXN0XCJcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTIiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ0YWJsZV9jb21taXQgPSB7XG5cbi8vIEdldCB0aGUgSFRNTCB0YWJsZSBieSBpdHMgY2xhc3MgbmFtZVxudmFyIHRhYmxlID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcignLmNvbW1pdC10YWJsZScpO1xuXG4vLyBDaGVjayBpZiB0aGUgdGFibGUgZXhpc3RzXG5pZiAodGFibGUpIHtcbiAgICAvLyBJbml0aWFsaXplIGFuIGFycmF5IHRvIHN0b3JlIHRoZSB0YWJsZSBkYXRhXG4gICAgdmFyIGRhdGFBcnJheSA9IFtdO1xuXG4gICAgLy8gRXh0cmFjdCBoZWFkZXJzIGZyb20gdGhlIGZpcnN0IHJvd1xuICAgIHZhciBoZWFkZXJzID0gW107XG4gICAgZm9yICh2YXIgaSA9IDA7IGkgPCB0YWJsZS5yb3dzWzBdLmNlbGxzLmxlbmd0aDsgaSsrKSB7XG4gICAgICAgIGhlYWRlcnMucHVzaCh0YWJsZS5yb3dzWzBdLmNlbGxzW2ldLnRleHRDb250ZW50LnRyaW0oKSk7XG4gICAgfVxuXG4gICAgLy8gSXRlcmF0ZSB0aHJvdWdoIHRoZSByb3dzLCBzdGFydGluZyBmcm9tIHRoZSBzZWNvbmQgcm93XG4gICAgZm9yICh2YXIgaSA9IDE7IGkgPCB0YWJsZS5yb3dzLmxlbmd0aDsgaSsrKSB7XG4gICAgICAgIHZhciByb3cgPSB0YWJsZS5yb3dzW2ldO1xuICAgICAgICB2YXIgcm93RGF0YSA9IHt9O1xuXG4gICAgICAgIC8vIEl0ZXJhdGUgdGhyb3VnaCB0aGUgY2VsbHMgaW4gdGhlIHJvd1xuICAgICAgICBmb3IgKHZhciBqID0gMDsgaiA8IHJvdy5jZWxscy5sZW5ndGg7IGorKykge1xuICAgICAgICAgICAgLy8gVXNlIGhlYWRlcnMgYXMga2V5cyBhbmQgY2VsbCBjb250ZW50IGFzIHZhbHVlc1xuICAgICAgICAgICAgcm93RGF0YVtoZWFkZXJzW2pdXSA9IHJvdy5jZWxsc1tqXS50ZXh0Q29udGVudC50cmltKCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBQdXNoIHRoZSByb3dEYXRhIG9iamVjdCB0byB0aGUgZGF0YUFycmF5XG4gICAgICAgIGRhdGFBcnJheS5wdXNoKHJvd0RhdGEpO1xuICAgIH1cbiAgfVxuXG4gIHJldHVybiBkYXRhQXJyYXlcblxufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xMyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6IlxuLy8gR2V0IHRoZSBlbGVtZW50IHdpdGggY2xhc3MgJ2dpdC1kZXRhaWxzJ1xue1xuICB2YXIgZ2l0RGV0YWlscyA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoJy5jb21taXQtdGFibGUnKTtcblxuICAvLyBDaGVjayBpZiB0aGUgZWxlbWVudCBleGlzdHNcbiAgaWYgKGdpdERldGFpbHMpIHtcbiAgICAgIC8vIEhpZGUgdGhlIGVsZW1lbnRcbiAgICAgIGdpdERldGFpbHMuc3R5bGUuZGlzcGxheSA9ICdub25lJztcbiAgfVxufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC0xNCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6IlBsb3QgPSByZXF1aXJlKCdAb2JzZXJ2YWJsZWhxL3Bsb3RAMC42LjEyL2Rpc3QvcGxvdC51bWQubWluLmpzJylcbiJ9XX0=
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../content/manipulation";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/pythonds\.linogaliana\.fr");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "linogaliana/python-datascientist";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyODAxNjE2Nzc=";
+    script.dataset.category = "General";
+    script.dataset.categoryId = "DIC_kwDOELLtjc4B-5TX";
+    script.dataset.mapping = "title";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "top";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../content/manipulation/02_pandas_stats.html" class="pagination-link" aria-label="Data wrangling with Pandas: statistics and reshaping">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Data wrangling with Pandas: statistics and reshaping</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../content/manipulation/03_geopandas_intro.html" class="pagination-link" aria-label="Introduction to spatial data with Geopandas">
+        <span class="nav-page-text">Introduction to spatial data with Geopandas</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Python pour la <em>data science</em>, Lino Galiana.<br>
+Licence <i class="fa-brands fa-creative-commons" aria-label="creative-commons"></i><br>
+Code source disponible sur <a href="https://github.com/linogaliana/python-datascientist"><code>Github</code></a></p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/linogaliana/python-datascientist/edit/master/content/manipulation/02_pandas_beyond.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/linogaliana/python-datascientist/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="nav-footer-right">
+<p>Site construit avec <i class="fa-brands fa-python" aria-label="python"></i> et <a href="https://quarto.org/"><code>Quarto</code></a><br>
+<a href="https://github.com/linogaliana/python-datascientist">Code source disponible sur <i class="fa-brands fa-github" aria-label="github"></i> <code>GitHub</code></a></p>
+</div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
