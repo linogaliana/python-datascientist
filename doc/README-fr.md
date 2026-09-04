@@ -156,13 +156,12 @@ https://ensae-reproductibilite.github.io/website/
 
 ---
 
-## 🚀 Accéder au cours via des notebooks Jupyter
+## 🚀 Accéder au cours en ligne
 
 > [!TIP]  
 > **Exécutez les exemples instantanément** sur SSP Cloud ou Google Colab. Voici un exemple pour le chapitre `Pandas` :
 
 <a href="https://datalab.sspcloud.fr/launcher/ide/vscode-python?autoLaunch=true&amp;name=02_pandas_intro&amp;init.personalInit=https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmain%2Fsspcloud%2Finit-vscode.sh&amp;init.personalInitArgs=fr/manipulation%2002_pandas_intro%20correction" target="_blank"><img src="https://custom-icon-badges.demolab.com/badge/SSP%20Cloud-Lancer_avec_VSCode-blue?logo=vsc&amp;logoColor=white" alt="SSP Cloud VSCode"></a>
-<a href="https://datalab.sspcloud.fr/launcher/ide/jupyter-python?autoLaunch=true&amp;name=02_pandas_intro&amp;init.personalInit=https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist%2Fmain%2Fsspcloud%2Finit-jupyter.sh&amp;init.personalInitArgs=fr/manipulation%2002_pandas_intro%20correction" target="_blank"><img src="https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_Jupyter-orange?logo=Jupyter&amp;logoColor=orange" alt="SSP Cloud Jupyter"></a>
 <a href="https://colab.research.google.com/github/linogaliana/python-datascientist-notebooks-colab/blob/main/notebooks/fr/manipulation/02_pandas_intro.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Ouvrir dans Colab"></a>
 
 ---
