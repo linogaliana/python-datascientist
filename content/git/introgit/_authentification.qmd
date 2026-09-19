@@ -1,0 +1,126 @@
+:::: {.content-visible when-profile="fr"}
+
+### S'authentifier à `Github` avec un jeton: principe
+[👉️ __Authentification__: processus permettant à un système informatique de s'assurer de l'identité désirant effectuer une action.]{.aside}
+
+`Git` est un système décentralisé de contrôle de version :
+les codes sont modifiés par chaque personne sur son poste de travail,
+puis sont mis en conformité avec la version collective disponible
+sur le dépôt distant au moment où le contributeur le décide.
+
+Il est donc nécessaire que la forge connaisse l’identité de chacun des
+contributeurs, afin de déterminer qui est l’auteur d’une modification apportée
+aux codes stockés dans le dépôt distant.
+Pour que `Github` reconnaisse un utilisateur proposant des modifications,
+il est nécessaire de s’authentifier (un dépôt distant, même public, ne peut pas être modifié par n’importe qui). L’authentification consiste ainsi à fournir un élément que seul vous et la forge êtes censés connaître : un mot de passe, une clé compliquée, un jeton d’accès...
+
+Plus précisément, il existe deux modalités pour faire connaître son identité à `Github` :
+
+* une __authentification HTTPS__ (décrite ici) : l’authentification se fait avec un login et un mot de passe ou avec un _token_ (un mot de passe compliqué généré automatiquement par `Github` et connu exclusivement du détenteur du compte `Github`)  ;
+* une __authentification SSH__ : l’authentification se fait par une clé cryptée disponible sur le poste de travail et que `GitHub` ou `GitLab` connaît. Une fois configurée, cette méthode ne nécessite plus de faire connaître son identité : l’empreinte digitale que constitue la clé suffit à reconnaître un utilisateur. Ce n'est pas la méthode que nous appliquerons ici[^ssh-utilitr].
+
+[^ssh-utilitr]: La [documentation collaborative `utilitR`](https://www.book.utilitr.org/03_fiches_thematiques/fiche_configurer_git.html#interaction-avec-un-d%C3%A9p%C3%B4t-distant-principe) présente les raisons pour lesquelles il convient de favoriser
+la méthode HTTPS sur la méthode SSH. 
+
+::: {.callout-note}
+## Note sur la double authentification
+[👉️ __Double authentification__ ou __authentification à deux facteurs__ (2FA): pratique de sécurité consistant à autoriser une authentification seulement après avoir présenté deux preuves d'identité distinctes à un mécanisme d'authentification. Par exemple, sur une application bancaire, fournir un numéro client et un code envoyé par SMS]{.aside}
+
+
+Depuis Août 2021, `Github` n'autorise plus l'authentification par mot de passe
+lorsqu'on interagit (`pull`/`push`) avec un dépôt distant
+([raisons ici](https://github.blog/changelog/2021-08-12-git-password-authentication-is-shutting-down/)).
+Il est nécessaire d'utiliser un *token* (jeton d'accès) qui présente l'avantage
+d'être révoquable (on peut à tout moment supprimer un jeton si, par exemple,
+on suspecte qu'il a été diffusé par erreur) et à droits limités 
+(le jeton permet certaines opérations standards mais
+n'autorise pas certaines opérations déterminantes comme la suppression
+d'un dépôt).
+
+GitHub commencera progressivement à exiger que tous les utilisateurs de GitHub activent une ou plusieurs formes d'authentification à deux facteurs (2FA). Pour plus d’informations sur le déploiement de l’inscription 2FA, consultez [cet article de blog](https://github.blog/2023-03-09-raising-the-bar-for-software-security-github-2fa-begins-march-13/). Concrètement, cela signifie que vous devrez au choix :
+
+- Renseigner votre numéro de portable pour valider certaines connexions grâce à un code que vous recevrez par sms ;
+- Installer une application d'authentification (Ex : Microsoft Authenticator) installée sur votre téléphone qui génèrera un QR code que vous pourrez scanner depuis github, ce qui ne nécessite pas que vous ayez à fournir votre numéro de téléphone
+- Utiliser une clef USB de sécurité 
+
+Pour choisir entre ces différentes options, vous pouvez vous rendre sur *Settings > Password and authentication > Enable two-factor authentication*.
+
+:::
+
+### Créer un jeton
+
+[👉️ __L’authentification par jeton__ (_token authentication_) est une forme d’authentification qui permet à un utilisateur d’accéder à un service en ligne, une application, ou un site web sans qu’il n’ait à ressaisir ses identifiants. Les jetons d’authentification fonctionnent à la manière d’un ticket d’entrée à validité limitée : ils accordent un accès en continu pendant leur durée de validité. Dès que l’utilisateur se déconnecte ou quitte l’application, le jeton est invalidé.]{.aside}
+
+
+La [documentation officielle](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) comporte un certain nombre de captures d'écran expliquant
+comment procéder. En gardant cette documentation ouverte en cas de doute, et les instructions du prochain exercice, nous allons pouvoir créer un jeton d'authentification. 
+
+::: {.callout-tip}
+## Exercice 2 : Créer un _token_
+
+Suivre la
+[documentation officielle](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) en ne donnant que les droits `repo` au jeton[^droits].
+
+[^droits]: Comme vous pouvez le voir, il y a de nombreux niveaux de droits différents. Votre mot de passe a en fait tout ces droits, ce qui illustre bien le pouvoir dangereux de celui-ci s'il est découvert, que ce soit du fait d'une révélation par erreur ou d'un _hacking_ de celui-ci par quelqu'un malveillant. L'utilisation de _token_ sécurise énormément votre dépôt puisqu'il ne peut pas être supprimé si le _token_ a des droits limités. De plus, si la branche principale est protégée, ce qui est le comportement par défaut de `Github`, il ne sera pas possible sans mot de passe de détruire l'historique du dépôt. 
+
+Pour résumer les étapes devraient être les suivantes :
+
+*Settings (account) > Developers Settings > Personal Access Token > Tokens (classic) > Generate a new token (classic) > "MyToken" > Expiration "90 days" > cocher juste "repo" > Generate token > Le copier*
+
+__⚠️ Gardez la page ouverte__, le _token_ n'apparaît qu'une fois et nous n'avons pas encore fait l'effort de le stocker à un endroit pérenne. Cela sera l'objet du prochain exercice. Néanmoins pas d'inquiétude si vous avez perdu le _token_ avant de pouvoir le sauvegarder, vous pouvez en regénérer un nouveau en suivant à nouveau la procédure ci-dessus.
+
+:::
+
+Nous avons créé un _token_ et comme cela est indiqué sur la page de `Github` ou dans les consignes de l'exercice, celui-ci n'est pas pérenne. Il va donc falloir trouver un moyen de conserver celui-ci quelque part. Nous allons proposer plusieurs solutions pour cela. Ecrire celui-ci dans un fichier texte créé avec le bloc note ne fait pas parti de ces solutions, au contraire c'est une très mauvaise pratique. 
+
+::: {.callout-important}
+
+Il est important de ne jamais stocker un _token_, et encore moins son mot de passe, dans un projet.
+Il est possible de stocker un mot de passe ou *token* de manière sécurisée et durable
+avec le *credential helper* de `Git`. Celui-ci est présenté par la suite.
+
+S'il n'est pas possible d'utiliser le *credential helper* de `Git`, un mot de passe 
+ou _token_ peut être stocké de manière sécurisé dans
+un système de gestion de mot de passe comme [Keepass](https://keepass.fr/).
+
+Ne jamais stocker un jeton `Github`, ou pire un mot de passe, dans un fichier
+texte non crypté. Les logiciels de gestion de mot de passe
+(comme [Keepass](https://keepass.fr/), recommandé par l'Anssi)
+sont simples
+d'usage et permettent de ne conserver sur l'ordinateur qu'une version
+hashée du mot de passe qui ne peut être décryptée qu'avec un mot de passe
+connu de vous seuls. 
+
+:::
+
+
+
+::: {.callout-tip}
+## Exercice 3: stocker son jeton (pour les utilisateurs du `SSPCloud`)
+
+Le `SSPCloud` propose un service de stockage d'un jeton qui peut ensuite servir facilement pour s'authentifier sur `Github` quand on utilise `VSCode` ou `Jupyter`. 
+
+* Copier le jeton qui est affiché sur la page de `Github` qui a été ouverte précédemment. Ne faites pas la sélection des lettres à la main, utilisez le bouton dédié au copier-coller ({{< fa solid clipboard >}})
+* Cliquer sur la section ["Mon Compte"](https://datalab.sspcloud.fr/account/) du `SSPCloud`. Aller dans l'onglet `Git` et coller la valeur précédemment copiée. 
+
+On peut s'arrêter à ce stade, nous utiliserons ce jeton lors du prochain exercice. 
+
+:::
+
+::: {.callout-tip}
+## Exercice 3bis: stocker son jeton (pour les personnes n'ayant pas l'accès au `SSPCloud`)
+
+La solution recommandée est de stocker son jeton dans un un gestionnaire de mot de passe comme 
+[Keepass](https://keepass.fr/) (recommandé par l'Anssi). Il s'agit d'un logiciel qui stocke, de manière chiffrée, les mots de passe qui y sont conservés selon la logique du coffre fort numérique. 
+
+Au-delà de l'intérêt pour stocker un jeton Github pour ce cours, ces logiciels sont très pratiques au quotidien et sécurisent l'accès à des services numériques sensibles. Ils comportent aussi des générateurs de mot de passe forts qui permettent de réduire les risques d'usurpation numérique en rendant quasi-impossible des techniques comme [l'attaque par force brute](https://fr.wikipedia.org/wiki/Attaque_par_force_brute).
+
+:::
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+<!-- TODO: translate to English -->
+
+::::
