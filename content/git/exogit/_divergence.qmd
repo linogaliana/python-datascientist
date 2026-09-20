@@ -1,0 +1,137 @@
+:::: {.content-visible when-profile="fr"}
+
+## Divergence d'historique: les différentes situations
+
+### Cas simple
+
+Imaginons deux personnes qui collaborent sur un projet, Alice et Bob. Bob a mis de côté le projet quelques jours. Il veut récupérer les avancées faites par Alice pendant cette période. Celle-ci a fait évoluer le projet, supposons avec un seul _commit_ puisque cela ne change rien. 
+
+![Historique de Bob en retard (cas simple)](https://raw.githubusercontent.com/InseeFrLab/formation-bonnes-pratiques-git-R/main/slides/img/ff.png){#fig-history-simple}
+
+L'historique de Bob est cohérent avec celui sur `Github`, il lui manque juste le dernier _commit_ en bleu (@fig-history-simple). Il suffit donc à Bob de récupérer ce _commit_ en local avant de commencer à éditer ses fichiers.
+
+Ce type de fusion est un _fast-forward merge_. Le commit distant est rajouté à l’historique local, sans difficulté. Le dépôt local est à nouveau à jour avec le dépôt distant. 
+
+Il s'agit du _merge_ idéal car celui-ci peut être automatisé, il n'y a aucun risque d'écraser des modifications faites par Bob par celles d'Alice. Une organisation d'équipe adéquate permettra de s'assurer que la plupart des _merges_ seront de ce type. 
+
+### Cas plus compliqué
+
+Maintenant, imaginons le cas plus compliqué où Bob avait fait évoluer son code en parallèle, sans récupérer les modifications d'Alice avant de revenir sur le projet. 
+
+Son historique local diverge donc de l'historique distant:
+
+![Historique de Bob en retard (cas plus compliqué)](https://raw.githubusercontent.com/InseeFrLab/formation-bonnes-pratiques-git-R/main/slides/img/divergence.png){#fig-history-complicated}
+
+Les derniers commits ne sont pas les mêmes. `Git` ne peut pas résoudre de lui-même la divergence. C'est à Bob de trancher sur la version qu'il préfère. Deux stratégies pour réconcilier les historiques sont accessibles:
+
+* Le _merge_ ;
+* Le _rebase_.
+
+La première méthode, la plus simple, est le _merge_. 
+
+![Historique de Bob en retard: résolution par _merge_](https://raw.githubusercontent.com/InseeFrLab/formation-bonnes-pratiques-git-R/main/slides/img/merge_commit_local.png){#fig-history-merge}
+
+Le rapatriement des modifications d'Alice dans l'historique de Bob crée un premier commit de _merge_. Les fichiers en question présenteront alors des balises permettant d'identifier la divergence de version et la source de celle-ci. Dans le fichier brut, cela donnera
+
+  ```python
+  import pandas as pd
+
+  <<<<<<< main
+  toto = pd.read_csv("source.csv")
+  =======
+  toto = pd.read_csv("source.csv", sep = ";")
+  >>>>>>> zyx911fhjehzafoldfkjknvjnvjnj;
+
+  toto.head(2)
+  ```
+
+`VSCode`, grâce à l'extension `Git`, propose une visualisation native de ce bout de code et propose, en clique-bouton, différentes manières de réconcilier les versions. Il est bien sûr toujours possible d'éditer ces fichiers : il suffit de supprimer les balises et modifier les lignes en question. 
+
+![Les conflits dans VSCode](./img/conflict.png){#fig-conflict}
+
+Une fois les versions réconciliées, il ne reste plus qu'à faire un nouveau _commit_. Cette histoire réconcilie les versions d'Alice et Bob. L'inconvénient est qu'elle rend l'historique non linéaire (voir la [documentation d'Atlassian](https://www.atlassian.com/fr/git/tutorials/using-branches/git-merge) pour plus de détails) mais c'est `Git` qui a géré automatiquement ce sujet en créant une branche temporaire. Jusqu'à récemment, ceci était le comportement par défaut de `Git`. 
+
+Une autre approche est accessible, le _rebase_. _In fine_ ceci va correspondre à cet historique, propre. 
+
+![](https://raw.githubusercontent.com/InseeFrLab/formation-bonnes-pratiques-git-R/main/slides/img/rebase1.png){#fig-history-rebase1}
+
+Néanmoins ceci implique des étapes intermédiaires qui consistent à réécrire l'historique, ce qui est déjà une opération avancée. En fait, `Git` effectue trois étapes: 
+
+1. Supprime temporairement le _commit_ local
+2. Réalise un _fast forward merge_ maintenant que le _commit_ local n'est plus là
+3. Rajoute le commit local au bout de l'historique
+
+![](https://raw.githubusercontent.com/InseeFrLab/formation-bonnes-pratiques-git-R/main/slides/img/rebase2.png){#fig-history-rebase2}
+
+Le _commit_ local a changé d'identité, ce qui explique son nouveau SHA. Cette approche présente l'avantage de garder un historique linéaire. Néanmoins, elle peut avoir des effects de bord et est donc à utiliser avec précaution (plus d'explications dans [la documentation de `Git`](https://git-scm.com/book/fr/v2/Les-branches-avec-Git-Rebaser-Rebasing#s_rebase_peril)). Quand on débute, et même après, il est recommandé de privilégier la méthode _merge_, qui est celle mise en oeuvre par défaut. Lorsque vous serez plus à l'aise, vous pourrez vous essayer à d'autres méthodes de *merge*. 
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+## History divergence: the different situations
+
+### Simple case
+
+Imagine two people collaborating on a project, Alice and Bob. Bob put the project aside for a few days. He wants to retrieve the progress Alice made during this period. She made the project evolve, let us assume with a single _commit_ since it changes nothing.
+
+![Bob's history when behind (simple case)](https://raw.githubusercontent.com/InseeFrLab/formation-bonnes-pratiques-git-R/main/slides/img/ff.png){#fig-history-simple}
+
+Bob's history is consistent with the one on `Github`, it is only missing the last _commit_ in blue (@fig-history-simple). Bob therefore just needs to retrieve this _commit_ locally before starting to edit his files.
+
+This type of merge is a _fast-forward merge_. The remote commit is added to the local history, without difficulty. The local repository is up to date with the remote repository again.
+
+This is the ideal _merge_ because it can be automated, and there is no risk of overwriting changes made by Bob with those of Alice. Adequate team organisation will make sure that most _merges_ are of this type.
+
+### A more complicated case
+
+Now, imagine the more complicated case where Bob had made his code evolve in parallel, without retrieving Alice's changes before coming back to the project.
+
+His local history therefore diverges from the remote history:
+
+![Bob's history when behind (more complicated case)](https://raw.githubusercontent.com/InseeFrLab/formation-bonnes-pratiques-git-R/main/slides/img/divergence.png){#fig-history-complicated}
+
+The last commits are not the same. `Git` cannot resolve the divergence by itself. It is up to Bob to decide which version he prefers. Two strategies are available to reconcile the histories:
+
+* The _merge_;
+* The _rebase_.
+
+The first method, the simplest, is the _merge_.
+
+![Bob's history when behind: resolution by _merge_](https://raw.githubusercontent.com/InseeFrLab/formation-bonnes-pratiques-git-R/main/slides/img/merge_commit_local.png){#fig-history-merge}
+
+Bringing Alice's changes into Bob's history creates a first merge commit. The files in question will then contain markers identifying the version divergence and its source. In the raw file, this will give
+
+  ```python
+  import pandas as pd
+
+  <<<<<<< main
+  toto = pd.read_csv("source.csv")
+  =======
+  toto = pd.read_csv("source.csv", sep = ";")
+  >>>>>>> zyx911fhjehzafoldfkjknvjnvjnj;
+
+  toto.head(2)
+  ```
+
+`VSCode`, thanks to the `Git` extension, offers a native visualisation of this piece of code and offers, with a button click, different ways of reconciling the versions. It is of course always possible to edit these files: simply delete the markers and modify the lines in question.
+
+![Conflicts in VSCode](./img/conflict.png){#fig-conflict}
+
+Once the versions are reconciled, all that remains is to make a new _commit_. This history reconciles Alice's and Bob's versions. The drawback is that it makes the history non-linear (see the [Atlassian documentation](https://www.atlassian.com/git/tutorials/using-branches/git-merge) for more details) but it is `Git` that automatically handled this matter by creating a temporary branch. Until recently, this was the default behaviour of `Git`.
+
+Another approach is available, the _rebase_. _In fine_ this will correspond to this clean history.
+
+![](https://raw.githubusercontent.com/InseeFrLab/formation-bonnes-pratiques-git-R/main/slides/img/rebase1.png){#fig-history-rebase1}
+
+Nevertheless, this involves intermediate steps that consist in rewriting the history, which is already an advanced operation. In fact, `Git` performs three steps:
+
+1. Temporarily removes the local _commit_
+2. Performs a _fast forward merge_ now that the local _commit_ is no longer there
+3. Adds the local commit back at the end of the history
+
+![](https://raw.githubusercontent.com/InseeFrLab/formation-bonnes-pratiques-git-R/main/slides/img/rebase2.png){#fig-history-rebase2}
+
+The local _commit_ has changed identity, which explains its new SHA. This approach has the advantage of keeping a linear history. Nevertheless, it can have side effects and should therefore be used with caution (more explanations in [the `Git` documentation](https://git-scm.com/book/en/v2/Git-Branching-Rebasing#_rebase_peril)). When you are starting out, and even afterwards, it is recommended to favour the _merge_ method, which is the one implemented by default. When you are more comfortable, you can try other *merge* methods.
+
+::::
