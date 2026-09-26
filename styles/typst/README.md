@@ -37,6 +37,17 @@ en CI augmente le risque de retomber sur un bug déjà réglé ailleurs. Pas de
 régression identifiée en la testant, mais pas non plus testée sur le vrai
 site (voir plus bas).
 
+## Figures en PNG
+
+En Typst, Quarto produit par défaut les figures `matplotlib`/`plotnine` en SVG.
+Pour les cartes `geopandas` (contours de communes, de départements), chaque
+sommet de polygone est alors écrit dans le SVG: une seule carte des Landes
+dépasse 180 Mo et le notebook exécuté de `maps.qmd` atteint ~880 Mo, au-delà
+de la taille maximale d'une chaîne que Quarto (Deno) sait relire:
+`TypeError: failed to allocate string; buffer exceeds maximum length`.
+`fig-format: png` (avec `fig-dpi: 200` pour l'impression) ramène ce notebook
+à ~65 Mo, le même ordre de grandeur que pour le HTML.
+
 ## Téléchargement PDF sur le site et coût de rendu
 
 Le lien « Télécharger le PDF » sur une page HTML vient de `format-links:`
@@ -75,6 +86,7 @@ chaque run repart de zéro, par choix.
 | `style.typ` | Chargé via `include-in-header`: blocs de code, code en ligne, encadrés, notes, figures, tableaux, citations |
 | `inline-code.lua` | Filtre (Typst uniquement): envoie le code en ligne à `ds-inline` de `style.typ` |
 | `resolve-remote-images.lua` | Filtre (Typst uniquement): télécharge les images distantes vers `_typst-image-cache/` (voir « Images distantes » plus haut) |
+| `drop-widgets.lua` | Filtre (Typst uniquement): supprime la sortie des cellules qui affichent une carte `folium` (le code reste affiché) |
 
 ## Choix
 
