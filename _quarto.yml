@@ -25,6 +25,13 @@ profile:
 execute:
   cache: true
   keep-ipynb: true
+  # freeze: laisse quarto réutiliser les résultats d'exécution déjà calculés
+  # pour un (document, format) donné au sein d'un même render de projet.
+  # Comme les profils fr/en n'exécutent jamais du code différent (le filtre
+  # when-profile ne filtre que le texte visible, après exécution), ça évite
+  # de recalculer 2x (fr, en) pour un même format, et fait qu'ajouter typst
+  # coûte 1 passe d'exécution en plus (par document), pas une par profil.
+  freeze: auto
 
 # WEBSITE ARCHITECTURE ---------------------
 
@@ -67,6 +74,11 @@ website:
 
 format:
   html:
+    # gitlink ne sert qu'au HTML (widget): en Typst il plante sur `bibliography`
+    # (pandoc.utils.references lit un nom de fichier vide)
+    filters:
+      - path: gitlink
+        at: post-quarto
     include-after-body: build/js/mac.html
     respect-user-color-scheme: true
     theme:
@@ -84,8 +96,37 @@ format:
     mainfont: "Open Sans"
     monofont: "JetBrains Mono"
     linestretch: 1.65
+  typst:
+    # Mise en forme des chapitres en PDF: voir styles/typst/README.md
+    font-paths:
+      - fonts
+      - _extensions/quarto-ext/fontawesome/assets/webfonts
+    papersize: a4
+    fontsize: 10.5pt
+    toc: true
+    toc-depth: 2
+    linkcolor: "#447099"
+    highlight-style: atom-one-dark
+    date-format: long
+    filters:
+      - styles/typst/inline-code.lua
+    template-partials:
+      - styles/typst/typst-template.typ
+      - styles/typst/typst-show.typ
+      - styles/typst/page.typ
+    include-in-header:
+      - styles/typst/style.typ
   ipynb: default
 
+# Lien "Télécharger le PDF" sur les pages HTML qui déclarent aussi le format
+# typst dans leur propre en-tête (le projet ne suffit pas: voir
+# https://quarto.org/docs/output-formats/html-multi-format.html, `format`
+# n'est pas fusionné entre _quarto.yml et le YAML du document).
+format-links:
+  - html
+  - format: typst
+    text: PDF
+    icon: file-pdf
 
 
 # PAGE OPTIONS ---------------------
@@ -101,8 +142,6 @@ filters:
   - build/replace-title.lua
   - _extensions/linogaliana/details-iframe/details.lua
   - _extensions/linogaliana/lang-switch/button.lua
-  - path: gitlink
-    at: post-quarto
 extensions:
   gitlink:
     enabled: false
