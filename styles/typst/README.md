@@ -4,6 +4,36 @@ Mise en forme des chapitres compilés avec `quarto render --to typst`. La config
 est dans `format: typst:` de `_quarto.yml`, `_quarto-prod.yml` et
 `_quarto-test.yml` (les trois doivent rester alignées).
 
+## Téléchargement PDF sur le site et coût de rendu
+
+Le lien « Télécharger le PDF » sur une page HTML vient de `format-links:`
+(même 3 fichiers), mais Quarto ne fusionne pas la clé `format:` entre le
+projet et le document ([doc](https://quarto.org/docs/output-formats/html-multi-format.html)):
+chaque `.qmd` qui doit avoir un PDF déclare donc lui-même
+`format: {html: default, typst: default}` dans son en-tête. Les pages qui
+n'en ont pas besoin (`index.qmd`, `404.qmd`, `content/annexes/*.qmd`)
+déclarent `format: {html: default}` pour ne pas hériter du format `typst`
+(ni `ipynb`) du projet sous `--to all`.
+
+Le CI (`pages` dans `prod.yml`) rend avec `quarto render --to all` (un appel
+par profil fr/en) plutôt que `--to html` puis `--to typst` séparément: rendre
+les formats séparément sur un projet `website` fait que chaque appel
+supprime les fichiers de sortie de l'autre format dans `_site` (testé,
+reproductible) — `--to all` rend tous les formats déclarés par chaque
+document en une seule passe, donc pas de collision.
+
+`execute: freeze: auto` (même 3 fichiers) évite de réexécuter le code pour
+rien: les divs `.content-visible when-profile=...` ne font que masquer du
+texte *après* exécution (le code des deux profils tourne dans tous les cas),
+donc les résultats d'exécution d'un (document, format) sont réutilisables
+d'un profil à l'autre. En pratique, pour un chapitre, ça fait 1 exécution
+pour `html` + 1 pour `typst` (partagées entre fr et en), au lieu d'une par
+profil et par format. Ça ne rend pas le rendu `typst` gratuit — freeze est
+gardé par format, pas partagé entre `html` et `typst` — mais ça compense
+exactement la redondance fr/en qui existait déjà avant l'ajout de `typst`.
+Ce cache (`_freeze/`) n'est pas persisté entre les runs CI (`.gitignore`):
+chaque run repart de zéro, par choix.
+
 | Fichier | Rôle |
 |---|---|
 | `typst-template.typ` | Partial Quarto `typst-template.typ`: palette (`ds-*`), polices, titres, bloc de titre (titre, filet, auteur·date, description en chapeau), table des matières |
