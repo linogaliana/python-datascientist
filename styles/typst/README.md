@@ -4,6 +4,39 @@ Mise en forme des chapitres compilés avec `quarto render --to typst`. La config
 est dans `format: typst:` de `_quarto.yml`, `_quarto-prod.yml` et
 `_quarto-test.yml` (les trois doivent rester alignées).
 
+## Images distantes
+
+Typst n'a pas d'accès réseau: `image("https://...")` échoue avec
+`network access is not supported`. Comme toutes les images du site sont
+servies depuis `https://minio.lab.sspcloud.fr/...` (pas de copie locale dans
+le repo), ça peut faire échouer la compilation typst de n'importe quel
+chapitre contenant une image — pas seulement celles migrées depuis des URLs
+externes.
+
+Quarto a un mécanisme interne pour ça (téléchargement dans le mediabag puis
+réécriture vers un chemin local), mais il ne s'applique pas systématiquement:
+il est court-circuité quand l'image est enveloppée pour l'alignement
+(attribut `fig-align`, avec ou sans `width`), ce qui produit
+`#align(...)[#box(image("https://..."))]` où l'URL reste distante — testé et
+reproduit avec Quarto 1.10.18, donc pas qu'un problème de version trop
+ancienne ([quarto-dev/quarto-cli#7962](https://github.com/quarto-dev/quarto-cli/issues/7962),
+toujours ouvert). `resolve-remote-images.lua` contourne ça en forçant, pour
+toute image distante et uniquement en sortie Typst, le téléchargement et la
+réécriture vers un chemin local (`_typst-image-cache/`, gitignoré) avant que
+Quarto ne génère le code Typst — indépendamment de `fig-align`/`width`.
+
+Par ailleurs le job `pages` de `prod.yml` est passé de Quarto 1.8.26 à
+1.10.18. Ça ne corrige ni ce bug (toujours présent en 1.10.18, d'où le
+filtre) ni le problème de `content-to-string` non défini (voir plus bas,
+corrigé indépendamment en dur dans `typst-template.typ`) — les deux marchent
+donc aussi bien avec 1.8.26. La bascule reste utile en précaution: le format
+Typst de Quarto a reçu plusieurs correctifs propres à Typst entre 1.8 et
+1.10 (accessibilité, logos, blocs de code Skylighting...), donc rester sur
+une version aussi ancienne pour un usage typst qui n'était pas testé jusqu'ici
+en CI augmente le risque de retomber sur un bug déjà réglé ailleurs. Pas de
+régression identifiée en la testant, mais pas non plus testée sur le vrai
+site (voir plus bas).
+
 ## Téléchargement PDF sur le site et coût de rendu
 
 Le lien « Télécharger le PDF » sur une page HTML vient de `format-links:`
@@ -41,6 +74,7 @@ chaque run repart de zéro, par choix.
 | `page.typ` | Partial Quarto `page.typ`: A4, en-tête (titre du chapitre + adresse du site, sauf page 1), pied de page « n / N », marges de notes |
 | `style.typ` | Chargé via `include-in-header`: blocs de code, code en ligne, encadrés, notes, figures, tableaux, citations |
 | `inline-code.lua` | Filtre (Typst uniquement): envoie le code en ligne à `ds-inline` de `style.typ` |
+| `resolve-remote-images.lua` | Filtre (Typst uniquement): télécharge les images distantes vers `_typst-image-cache/` (voir « Images distantes » plus haut) |
 
 ## Choix
 
