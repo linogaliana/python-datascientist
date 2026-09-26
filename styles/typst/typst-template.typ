@@ -12,6 +12,22 @@
 #let ds-body-font = ("Libertinus Serif",)
 #let ds-code-font = ("JetBrains Mono", "DejaVu Sans Mono")
 
+// Normalement fournie par la partial `definitions.typ` de Quarto, qu'on
+// n'inclut pas (on ne garde que `typst-template.typ`/`typst-show.typ`/
+// `page.typ` dans `template-partials`) : convertit un `content` pandoc
+// (ex: auteur, `linkcolor`) en chaîne de caractères.
+#let content-to-string(content) = {
+  if content.has("text") {
+    content.text
+  } else if content.has("children") {
+    content.children.map(content-to-string).join("")
+  } else if content.has("body") {
+    content-to-string(content.body)
+  } else if content == [ ] {
+    " "
+  }
+}
+
 #let article(
   title: none,
   subtitle: none,
