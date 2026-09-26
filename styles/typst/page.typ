@@ -19,7 +19,7 @@ $if(title)$
 $else$
         [],
 $endif$
-        [pythonds.linogaliana.fr],
+        [#link("https://pythonds.linogaliana.fr")[pythonds.linogaliana.fr]],
       )
       v(-0.5em)
       line(length: 100%, stroke: 0.4pt + ds-rule)
