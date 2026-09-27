@@ -148,10 +148,11 @@ jobs:
 
   # ── 2. Site assembly and publication ────────────────────────────────────────
   # Downloads all freeze artifacts, merges them, then runs the two-profile
-  # site render without re-executing any Python (--freeze flag).
-  # sidebar.py modifies .qmd frontmatter between the two renders; --freeze
-  # forces cache use regardless of source-file hash, which is required here
-  # because append_environment.py and sidebar.py both modify the .qmd files.
+  # site render without re-executing any Python.
+  # Quarto has no --freeze CLI flag: `freeze: true` is set in _quarto.yml
+  # instead. Unlike `freeze: auto`, it reuses _freeze/ regardless of the
+  # source-file hash, which is required here because append_environment.py
+  # and sidebar.py both modify the .qmd files.
   pages:
     name: Assemble and publish
     runs-on: ubuntu-latest
@@ -184,32 +185,27 @@ jobs:
         run: |
           rm _quarto.yml
           cp _quarto-prod.yml _quarto.yml
+          sed -i 's/^  freeze: auto$/  freeze: true/' _quarto.yml
+          grep -q '^  freeze: true$' _quarto.yml
 
       - name: Prepare environment metadata
         env:
           TOKEN_API_INSEE: ${{ secrets.TOKEN_API_INSEE }}
         run: uv run build/append-environment/append_environment.py
 
+      # upload-artifact stores the *contents* of _freeze/ (no _freeze/ prefix),
+      # so the artifacts are merged straight into _freeze/.
       - name: Download all freeze artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: freeze-chunk-*
-          path: freeze-artifacts/
-          merge-multiple: false
-
-      - name: Merge freeze artifacts into _freeze/
-        run: |
-          mkdir -p _freeze
-          for dir in freeze-artifacts/freeze-chunk-*/; do
-            if [ -d "${dir}_freeze" ]; then
-              cp -r "${dir}_freeze/." _freeze/
-            fi
-          done
+          path: _freeze
+          merge-multiple: true
 
       - name: Render website (fr)
         env:
           TOKEN_API_INSEE: ${{ secrets.TOKEN_API_INSEE }}
-        run: uv run quarto render --profile fr --to all --freeze
+        run: uv run quarto render --profile fr --to all
 
       - name: Switch sidebar to English
         run: uv run build/sidebar.py --to english
@@ -217,7 +213,7 @@ jobs:
       - name: Render website (en)
         env:
           TOKEN_API_INSEE: ${{ secrets.TOKEN_API_INSEE }}
-        run: uv run quarto render --profile en --to all --freeze
+        run: uv run quarto render --profile en --to all
 
       - name: Reset sidebar to French
         run: uv run build/sidebar.py --to french
