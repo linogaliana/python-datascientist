@@ -33,10 +33,13 @@ return {
         
         -- return as string
         if tags ~= nil then
+            -- "-citations": un message de commit contenant "@user" ne doit pas
+            -- être lu comme une clé bibliographique (erreur fatale en Typst)
             return pandoc.read(
                 "<table class='commit-table' border='1'>" ..
                 header .. divider .. tags ..
-                "</tbody></table>\n\n"
+                "</tbody></table>\n\n",
+                "markdown-citations"
             ).blocks
         else
             return pandoc.Null()

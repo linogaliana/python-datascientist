@@ -1,8 +1,9 @@
 -- badges.lua
 
 -- Helper function to generate badge HTML
-function make_badge(link, image_url, alt_text)
-  return string.format('<a href="%s" target="_blank" rel="noopener"><img src="%s" alt="%s"></a>', link, image_url, alt_text)
+function make_badge(link, image_url, alt_text, badge_class)
+  badge_class = badge_class or "badge"
+  return string.format('<a href="%s" class="%s" target="_blank" rel="noopener"><img src="%s" alt="%s"></a>', link, badge_class, image_url, alt_text)
 end
 
 -- Escape special characters in dirname
@@ -96,22 +97,6 @@ function reminder_badges(args, kwargs)
   end
 
   -- Modify URLs for SSPCloud based on language
-  local sspcloudJupyterLinkLauncher = string.format(
-    "https://datalab.sspcloud.fr/launcher/ide/jupyter-%s%s?autoLaunch=true&name=%s",
-    sspCloudService, 
-    gpuSuffix, 
-    "«" .. chapterNoExtension .. "»"
-  )
-  
-  sspcloudJupyterLinkLauncher = sspcloudJupyterLinkLauncher ..
-      "&init.personalInit=" ..
-      "«https%3A%2F%2Fraw.githubusercontent.com%2Flinogaliana%2Fpython-datascientist" .. "%2Fmain%2Fsspcloud%2Finit-jupyter.sh»" ..
-      "&init.personalInitArgs=" ..
-      "«" .. table.concat(onyxiaInitArgs, "%20") .. "»" ..
-      ""
-
-  local sspcloudJupyterBadge = make_badge(sspcloudJupyterLinkLauncher, "https://img.shields.io/badge/SSP%20Cloud-Lancer_avec_Jupyter-orange?logo=Jupyter&logoColor=orange", "Onyxia", badge_class)
-
   local sspcloudVscodeLinkLauncher = string.format(
     "https://datalab.sspcloud.fr/launcher/ide/vscode-%s%s?autoLaunch=true&name=%s",
     sspCloudService, 
@@ -135,10 +120,17 @@ function reminder_badges(args, kwargs)
 
   local colabBadge = make_badge(colabLink, "https://colab.research.google.com/assets/colab-badge.svg", "Open In Colab", badge_class)
 
-  local badges = { githubBadge, sspcloudVscodeBadge, sspcloudJupyterBadge }
+  local codespacesLink = string.format(
+    "https://codespaces.new/%s?quickstart=1&ref=main",
+    githubAlias:gsub("^github%.com/", "")
+  )
+  local codespacesBadge = make_badge(codespacesLink, "https://github.com/codespaces/badge.svg", "Open in GitHub Codespaces", badge_class)
+
+  local badges = { githubBadge, sspcloudVscodeBadge }
 
   if not onyxiaOnly then
     table.insert(badges, colabBadge)
+    table.insert(badges, codespacesBadge)
   end
 
   -- Concatenate badges and ensure the result is treated as HTML

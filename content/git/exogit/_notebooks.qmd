@@ -1,0 +1,205 @@
+:::: {.content-visible when-profile="fr"}
+
+# Les enjeux spécifiques liés à l'interaction difficile entre `Git` et les _notebooks_
+
+Le format _notebook_ est très intéressant pour l'expérimentation et la diffusion finale de résultats. Néanmoins, la structure complexe d'un _notebook_ rend compliquée le contrôle de version. En effet, l'ouverture dans un éditeur adapté (`Jupyter` ou `VSCode`) offre une mise en forme qui ne correspond pas à la structure brute du fichier, tel qu'il est stocké sur le disque. En arrière plan, les _notebooks_ sont des JSON qui embarquent de nombreux éléments: code, résultats d'exécution, métadonnées annexes... Le suivi fin des modifications du fichier permis par `Git` est compliqué sur un fichier ayant une telle structure. L'objectif de cet exercice est d'illustrer ces enjeux et évoque quelques solutions possibles. 
+
+::: {.callout-tip}
+## Exercice 4 : Contrôle de version et _notebooks_, un ménage difficile
+
+Cet exercice se fait toujours en équipe. Lorsqu'il est demandé de faire un _commit_,
+lui donner un nom signifiant pour s'y retrouver facilement quand il est demandé de regarder l'historique. 
+Ne pas faire de _push_ ou _pull_ avant d'en arriver
+à la partie où cela est demandé. 
+
+1. Tous les membres de l'équipe reviennent à leur branche `main` sur leur copie de travail
+
+Chaque membre de l'équipe fait les questions suivantes. 
+
+2. Mesurer le poids de l'ensemble de l'historique en ligne de commande avec la commande
+
+```{.bash}
+du -sh .git
+```
+
+3. Télécharger le _notebook_ servant à cet exercice avant la commande suivante, en ligne de commande: 
+
+```{.bash}
+curl "https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/git/exemple.ipynb" -o "notebook.ipynb"
+```
+
+* Ne pas ouvrir ce fichier (objet de la prochaine question). 
+
+* Faire un _commit_ de ce _notebook_ puis refaire
+
+```{.bash}
+du -sh .git
+```
+
+* Observez le premier changement de poids de notre historique
+
+4. Ouvrir le _notebook_, exécuter ses cellules en les réordonnant si nécessaire pour débugger
+le fichier.
+
+* Faire un _commit_ de ce _notebook_ quand il fonctionne puis refaire
+
+```{.bash}
+du -sh .git
+```
+
+5. Maintenant, faire les modifications suivantes du fichier:
+    * Modifier la cellule `df.head(3)` en `df.head(20)` 
+    * Créer une nouvelle cellule avec le code `df["TYPEQU"].value_counts().plot(kind = "bar")`
+    * Modifier la variable `zoom_start` dans la cellule produisant la carte interactive. Fixer sa valeur à 13 plutôt que 15. 
+
+* Faire un _commit_ de ce _notebook_ quand il fonctionne puis refaire
+
+```{.bash}
+du -sh .git
+```
+
+6. Changer la couleur du _barplot_ avec l'argument `color`. Sauvegarder, committer puis refaire
+
+```{.bash}
+du -sh .git
+```
+
+7. Regarder l'historique depuis l'extension `VSCode`. Observer la manière dont évolue votre fichier à chaque _commit_. 
+
+Maintenant, nous pouvons passer à l'étape collaborative. 
+
+8. Chaque membre de l'équipe _push_:
+  * Si le _push_ fonctionne (personne la plus rapide), modifier à nouveau à nouveau la couleur du _barplot_. _Committer_ mais ne pas _pusher_ (attendre que les autres membres du groupe l'ait fait puis passer à la question 9)
+  * Si le _push_ ne fonctionne pas (personnes moins rapides), passer à la question 9. 
+  
+
+9. Dans l'extension `VSCode`, afficher l'arbre en cliquant sur le bouton `View Git Graph`.
+
+* En haut de celui-ci, cliquer sur `Uncommitted changes`. Cela affiche les modifications qui ne sont pas encore acceptées.
+* Cliquer sur `notebook.ipynb` pour voir le _diff_ entre votre version et celle de votre camarade. Comprenez-vous le problème ?
+* Accepter à la main chaque différence serait trop coûteux. Accepter la version de votre camarade (_Accept incoming_). _Committer_ et observer le _diff_. Pusher. 
+
+Pour la dernière personne du groupe n'ayant pas pu pusher, refaire la question 9. Après avoir pushé, la personne ayant été la plus rapide à la question 8 peut faire la question 9 en récupérant les derniers _commits_. 
+
+:::
+
+
+Cet exercice permet d'illustrer trois points de difficultés avec les _notebooks_:
+
+* La taille des fichiers `ipynb` devient vite importante car les _outputs_ sont insérés dedans, de manière brute.
+* Il devient vite difficile de suivre les changements du code car celui-ci est noyé au milieu d'autres modifications (notamment celles des _outputs_).
+* La résolution de conflits est compliquée car il faut garder la structure JSON. Il est d'ailleurs fréquent qu'un _merge_ casse cette structure et rende le _notebook_ illisible.
+
+
+Pour régler ces problèmes, il existe plusieurs méthodes:
+
+* Si on désire rester sur le _notebook_ comme endroit où est stocké le code, il faut cliquer sur le bouton `Clear all outputs` avant de faire une étape `git add`. Le _package_ [`nbstripout`](https://github.com/kynan/nbstripout) peut être une solution intéressante pour ne pas avoir à le faire manuellement à chaque fois car on prend le risque d'oublier et donc de faire quand même grossir la taille du dépôt. Néanmoins, cette approche ne règle qu'une partie des problèmes puisqu'elle ne fait qu'alléger le JSON versionné, elle rend moins probable mais ne rend pas impossible le risque de casser le _notebook_ lors d'une résolution de conflit.
+* Travailler en équipe sur des _notebooks_ différents comme ceci était conseillé pour les fichiers texte. Cela permet de ne plus avoir de conflit. Cependant, cela risque d'induire des redondances de code et donc des problèmes ultérieurement si on désire synthétiser les différents travaux.
+* Adopter une structure plus modulaire en déportant le maximum de code dans des fichiers `.py` et en important les éléments adéquats dans les notebooks. Ceci permet de tirer avantage de `Git`, qui suit très bien les fichiers `.py`, tout en offrant des bénéfices sur la qualité des _notebooks_. En étant moins monolithiques, ils seront probablement de meilleure qualité. 
+
+Cette dernière approche est une manière de s'ouvrir aux bonnes pratiques qui sont évoquées dans le cours de 3e année de ["Mise en production"](https://ensae-reproductibilite.github.io/website/).
+
+::::
+
+:::: {.content-visible when-profile="en"}
+
+# The specific challenges of the difficult interaction between `Git` and _notebooks_
+
+The _notebook_ format is very interesting for experimentation and for the final dissemination of results. Nevertheless, the complex structure of a _notebook_ makes version control complicated. Indeed, opening it in a suitable editor (`Jupyter` or `VSCode`) provides a rendering that does not match the raw structure of the file as stored on disk. Behind the scenes, _notebooks_ are JSON files that embed many elements: code, execution results, additional metadata... The fine-grained tracking of file changes that `Git` allows is complicated on a file with such a structure. The goal of this exercise is to illustrate these challenges and to mention some possible solutions.
+
+::: {.callout-tip}
+## Exercise 4: Version control and _notebooks_, an uneasy marriage
+
+This exercise is still done as a team. When asked to make a _commit_,
+give it a meaningful name so that you can easily find your way when asked to look at the history.
+Do not _push_ or _pull_ until you get
+to the part where this is requested.
+
+1. All team members go back to their `main` branch on their working copy
+
+Each team member does the following questions.
+
+2. Measure the size of the whole history on the command line with the command
+
+```{.bash}
+du -sh .git
+```
+
+3. Download the _notebook_ used for this exercise before the following command, on the command line:
+
+```{.bash}
+curl "https://minio.lab.sspcloud.fr/lgaliana/python-ENSAE/inputs/git/exemple.ipynb" -o "notebook.ipynb"
+```
+
+* Do not open this file (the subject of the next question).
+
+* Make a _commit_ of this _notebook_ then redo
+
+```{.bash}
+du -sh .git
+```
+
+* Observe the first change in the size of our history
+
+4. Open the _notebook_, run its cells, reordering them if necessary to debug
+the file.
+
+* Make a _commit_ of this _notebook_ when it works then redo
+
+```{.bash}
+du -sh .git
+```
+
+5. Now, make the following changes to the file:
+    * Change the `df.head(3)` cell to `df.head(20)`
+    * Create a new cell with the code `df["TYPEQU"].value_counts().plot(kind = "bar")`
+    * Change the `zoom_start` variable in the cell producing the interactive map. Set its value to 13 instead of 15.
+
+* Make a _commit_ of this _notebook_ when it works then redo
+
+```{.bash}
+du -sh .git
+```
+
+6. Change the colour of the _barplot_ with the `color` argument. Save, commit then redo
+
+```{.bash}
+du -sh .git
+```
+
+7. Look at the history from the `VSCode` extension. Observe how your file evolves at each _commit_.
+
+Now, we can move on to the collaborative step.
+
+8. Each team member _pushes_:
+  * If the _push_ works (the fastest person), modify the colour of the _barplot_ again. _Commit_ but do not _push_ (wait until the other group members have done so then move on to question 9)
+  * If the _push_ does not work (the slower people), move on to question 9.
+
+
+9. In the `VSCode` extension, display the tree by clicking on the `View Git Graph` button.
+
+* At the top of it, click on `Uncommitted changes`. This displays the changes that are not yet accepted.
+* Click on `notebook.ipynb` to see the _diff_ between your version and your teammate's. Do you understand the problem?
+* Manually accepting each difference would be too costly. Accept your teammate's version (_Accept incoming_). _Commit_ and observe the _diff_. Push.
+
+For the last person in the group who could not push, redo question 9. After pushing, the person who was fastest in question 8 can do question 9 by retrieving the latest _commits_.
+
+:::
+
+
+This exercise illustrates three points of difficulty with _notebooks_:
+
+* The size of `ipynb` files quickly becomes large because the _outputs_ are inserted into them, in raw form.
+* It quickly becomes difficult to follow code changes because the code is drowned among other changes (notably those of the _outputs_).
+* Conflict resolution is complicated because the JSON structure has to be preserved. It is in fact common for a _merge_ to break this structure and make the _notebook_ unreadable.
+
+
+To solve these problems, there are several methods:
+
+* If you want to keep the _notebook_ as the place where code is stored, you must click on the `Clear all outputs` button before a `git add` step. The [`nbstripout`](https://github.com/kynan/nbstripout) _package_ can be an interesting solution to avoid doing this manually each time, as you risk forgetting and thus making the repository size grow anyway. Nevertheless, this approach only solves part of the problems since it only lightens the versioned JSON; it makes the risk of breaking the _notebook_ during conflict resolution less likely but does not make it impossible.
+* Work in a team on different _notebooks_, as was advised for text files. This avoids conflicts altogether. However, it risks inducing code redundancy and therefore problems later on if you want to synthesise the different pieces of work.
+* Adopt a more modular structure by moving as much code as possible into `.py` files and importing the appropriate elements into the notebooks. This allows you to take advantage of `Git`, which tracks `.py` files very well, while also providing benefits for the quality of the _notebooks_. Being less monolithic, they will probably be of better quality.
+
+This last approach is a way of opening up to the good practices discussed in the 3rd-year course on ["Putting into production"](https://ensae-reproductibilite.github.io/website/) (in French).
+
+::::

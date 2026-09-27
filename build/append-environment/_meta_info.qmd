@@ -18,6 +18,8 @@ Pour utiliser exactement le même environnement (version de `Python` et _package
 
 
 
+::: {.content-visible when-format="html"}
+
 ::: {.callout-note collapse="true"}
 ## Historique du fichier {{< fa brands git-alt >}}
 
@@ -33,10 +35,12 @@ html`<div>${git_history_table}</div>`
 
 ```{ojs}
 //| echo: false
-html`<div>${git_history_plot}</div>`
+html`<div>${git_history_graph}</div>`
 ```
 
 {{< rev-history >}}
+
+:::
 
 :::
 
@@ -59,6 +63,8 @@ To use exactly the same environment (version of `Python` and _packages_), please
 
 :::
 
+::: {.content-visible when-format="html"}
+
 ::: {.callout-note collapse="true"}
 ## File history {{< fa brands git-alt >}}
 
@@ -74,11 +80,13 @@ html`<div>${git_history_table}</div>`
 
 ```{ojs}
 //| echo: false
-html`<div>${git_history_plot}</div>`
+html`<div>${git_history_graph}</div>`
 ```
 
 
 {{< rev-history >}}
+
+:::
 
 :::
 
@@ -87,6 +95,8 @@ html`<div>${git_history_plot}</div>`
 
 
 
+
+::: {.content-visible when-format="html"}
 
 ```{ojs}
 //| echo: false
@@ -141,15 +151,58 @@ git_history_table = Inputs.table(
 ```{ojs}
 //| echo: false
 //| output: false
-git_history_plot = Plot.plot({
-  marks: [
-    Plot.ruleY([0], {stroke: "royalblue"}),
-    Plot.dot(
-          table_commit,
-          Plot.pointerX({x: (d) => new Date(d.date), y: 0, stroke: "red"})),
-    Plot.dot(table_commit, {x: (d) => new Date(d.Date), y: 0, fill: "royalblue"})
-  ]
-})
+
+// Historique du fichier sous forme d'arbre git (style: styles/styles.css, `.fh-*`).
+// L'historique d'un fichier est linéaire (`git log --follow`) : une seule ligne,
+// du commit le plus récent (en haut) à la création du fichier (en bas).
+git_history_graph = {
+  const lang = document.documentElement.lang === "en" ? "en" : "fr"
+  const labels = {
+    fr: {latest: "dernière version", created: "création", plain: "commit", pr: "commit issu d'une pull request", by: "par"},
+    en: {latest: "latest", created: "created", plain: "commit", pr: "commit from a pull request", by: "by"}
+  }[lang]
+
+  const commits = (table_commit || []).map(d => {
+    // "(#667)" en fin de message: numéro de la pull request, affiché sous forme de pastille
+    const pr = d.Description.match(/\s*\(#(\d+)\)\s*$/)
+    return {
+      sha: d.SHA,
+      author: d.Author,
+      // "YYYY-MM-DD HH:MM:SS" -> ISO 8601, que tous les navigateurs savent lire
+      date: new Date(d.Date.replace(" ", "T")),
+      message: pr ? d.Description.slice(0, pr.index) : d.Description,
+      pr: pr ? pr[1] : null
+    }
+  })
+
+  if (commits.length === 0) return html`<em>-</em>`
+
+  const fmt = new Intl.DateTimeFormat(lang, {day: "numeric", month: "short", year: "numeric"})
+  const fmtFull = new Intl.DateTimeFormat(lang, {dateStyle: "full", timeStyle: "short"})
+
+  // une ligne par commit, avec un séparateur à chaque changement d'année
+  const rows = []
+  commits.forEach((c, i) => {
+    const year = c.date.getFullYear()
+    if (i === 0 || year !== commits[i - 1].date.getFullYear()) {
+      rows.push(html`<li class="fh-row fh-year ${i === 0 ? "fh-top" : ""}">${year}</li>`)
+    }
+    const isFirst = i === 0
+    const isLast = i === commits.length - 1
+    const head = isFirst ? html`<span class="fh-pill fh-pill-head">${labels.latest}</span>` : ""
+    const root = isLast ? html`<span class="fh-pill fh-pill-root">${labels.created}</span>` : ""
+    const pr = c.pr ? html`<a class="fh-pill fh-pill-pr" href="${github_repo}/pull/${c.pr}">#${c.pr}</a>` : ""
+    const title = html`<div class="fh-title">${head}${root}<a class="fh-sha" href="${github_repo}/commit/${c.sha}">${c.sha}</a><span class="fh-msg">${c.message}</span>${pr}</div>`
+    const meta = html`<div class="fh-meta" title="${fmtFull.format(c.date)}">${fmt.format(c.date)} · ${labels.by} ${c.author}</div>`
+    rows.push(html`<li class="fh-row fh-commit ${c.pr ? "fh-pr" : ""} ${isFirst ? "fh-first" : ""} ${isLast ? "fh-last fh-root" : ""}"><span class="fh-dot"></span>${title}${meta}</li>`)
+  })
+
+  // Les gabarits html tiennent sur une seule ligne: en sortie Typst, ce code n'est pas
+  // interprété par Quarto et pandoc le lit comme du markdown; une balise `<div` en début
+  // de ligne y ouvrirait une vraie div.
+  const legend = html`<div class="fh-legend"><span><span class="fh-dot"></span>${labels.plain}</span><span class="fh-pr"><span class="fh-dot"></span>${labels.pr}</span></div>`
+  return html`<div class="fh"><div class="fh-scroll"><ol class="fh-list">${rows}</ol></div>${legend}</div>`
+}
 ```
 
 
@@ -227,10 +280,4 @@ if (table) {
 }
 ```
 
-```{ojs}
-//| echo: false
-Plot = require('@observablehq/plot@0.6.12/dist/plot.umd.min.js')
-```
-
-
-
+:::

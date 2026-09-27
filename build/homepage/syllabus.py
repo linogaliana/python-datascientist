@@ -268,9 +268,11 @@ def add_titles_from_qmd(
     )
 
     # Construire lien markdown [titre](chemin)
+    # Le chemin est préfixé par "/" pour être résolu depuis la racine du
+    # projet Quarto, indépendamment de la page où le lien est affiché.
     df2 = df2.with_columns(
         pl.struct(["_file_norm", title_col]).map_elements(
-            lambda s: _md_link(s[title_col], s["_file_norm"]),
+            lambda s: _md_link(s[title_col], "/" + s["_file_norm"]),
             return_dtype=pl.Utf8,
         ).alias(link_col)
     ).drop("_file_norm")
