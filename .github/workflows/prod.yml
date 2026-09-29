@@ -4,7 +4,11 @@ on:
   push:
     branches:
       - main
-      - parallel
+      - parallel2
+
+env:
+  # Guard: keep 'false' so no run of this workflow publishes to GitHub Pages.
+  PUBLISH_PAGES: 'false'
 
 jobs:
 
@@ -17,14 +21,31 @@ jobs:
       packages: write
     uses: ./.github/workflows/build-image.yml
 
-  # ── 1. Parallel chunk rendering ─────────────────────────────────────────────
-  # Each chunk runs independently: installs deps, executes Python in its .qmd
-  # files, and uploads the resulting _freeze/ entries as an artifact.
-  # All 43 files from _quarto-prod.yml are covered across the 7 chunks.
-  render-chunk:
-    name: Render (${{ matrix.chunk }})
+  # ── 1. Parallel per-file rendering ──────────────────────────────────────────
+  # The file list is read from project.render in _quarto-prod.yml, so it
+  # stays the single source of truth.
+  list-files:
+    name: List files to render
     runs-on: ubuntu-latest
-    needs: image
+    if: ${{ !github.event.pull_request.head.repo.fork }}
+    outputs:
+      files: ${{ steps.list.outputs.files }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: Extract project.render
+        id: list
+        run: echo "files=$(yq -o=json -I=0 '.project.render' _quarto-prod.yml)" >> "$GITHUB_OUTPUT"
+
+  # Each .qmd file runs in its own job: installs deps, executes its Python
+  # code, and uploads the resulting _freeze/ entries as an artifact.
+  render-chunk:
+    name: Render (${{ matrix.file }})
+    runs-on: ubuntu-latest
+    needs: [image, list-files]
     if: ${{ !github.event.pull_request.head.repo.fork }}
     container:
       image: ghcr.io/${{ github.repository }}:latest
@@ -32,71 +53,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - chunk: light
-            files: >-
-              index.qmd
-              404.qmd
-              content/getting-started/index.qmd
-              content/getting-started/01_environment.qmd
-              content/getting-started/02_data_analysis.qmd
-              content/getting-started/03_revisions.qmd
-              content/annexes/about.qmd
-              content/annexes/evaluation.qmd
-              content/annexes/corrections.qmd
-              content/git/index.qmd
-              content/git/introgit.qmd
-              content/git/exogit.qmd
-
-          - chunk: manip-1
-            files: >-
-              content/manipulation/index.qmd
-              content/manipulation/01_numpy.qmd
-              content/manipulation/02_pandas_intro.qmd
-              content/manipulation/02_pandas_joins.qmd
-              content/manipulation/02_pandas_stats.qmd
-              content/manipulation/02_pandas_beyond.qmd
-              content/manipulation/02a_pandas_tutorial.qmd
-              content/manipulation/02b_pandas_TP.qmd
-
-          - chunk: manip-2
-            files: >-
-              content/manipulation/03_geopandas_intro.qmd
-              content/manipulation/03_geopandas_tutorial.qmd
-              content/manipulation/03_geopandas_TP.qmd
-              content/manipulation/04a_webscraping_TP.qmd
-              content/manipulation/04c_API_TP.qmd
-              content/manipulation/04b_regex_TP.qmd
-              content/manipulation/05_parquet_s3.qmd
-
-          - chunk: visu
-            files: >-
-              content/visualisation/index.qmd
-              content/visualisation/matplotlib.qmd
-              content/visualisation/maps.qmd
-
-          - chunk: model-1
-            files: >-
-              content/modelisation/index.qmd
-              content/modelisation/0_preprocessing.qmd
-              content/modelisation/1_modelevaluation.qmd
-              content/modelisation/2_classification.qmd
-
-          - chunk: model-2
-            files: >-
-              content/modelisation/3_regression.qmd
-              content/modelisation/4_featureselection.qmd
-              content/modelisation/5_clustering.qmd
-              content/modelisation/6_pipeline.qmd
-              content/modelisation/7_mlapi.qmd
-
-          - chunk: nlp
-            files: >-
-              content/NLP/index.qmd
-              content/NLP/01_intro.qmd
-              content/NLP/02_exoclean.qmd
-              content/NLP/03_embedding.qmd
+        file: ${{ fromJSON(needs.list-files.outputs.files) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -126,15 +85,15 @@ jobs:
           TOKEN_API_INSEE: ${{ secrets.TOKEN_API_INSEE }}
         run: uv run build/append-environment/append_environment.py
 
-      - name: Render chunk files
+      - name: Render file
         env:
           TOKEN_API_INSEE: ${{ secrets.TOKEN_API_INSEE }}
-        run: |
-          for file in ${{ matrix.files }}; do
-            echo "::group::Rendering $file"
-            uv run quarto render "$file" --profile fr
-            echo "::endgroup::"
-          done
+        run: uv run quarto render "${{ matrix.file }}" --profile fr
+
+      # Artifact names cannot contain '/', so derive a slug from the path.
+      - name: Compute artifact name
+        id: slug
+        run: echo "name=$(echo '${{ matrix.file }}' | sed 's/\.qmd$//; s#[/.]#-#g')" >> "$GITHUB_OUTPUT"
 
       # _freeze/ entries are the execution results Quarto needs to skip
       # re-execution in the assembly step. Profile is not part of the freeze
@@ -142,7 +101,7 @@ jobs:
       - name: Upload freeze artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: freeze-chunk-${{ matrix.chunk }}
+          name: freeze-chunk-${{ steps.slug.outputs.name }}
           path: _freeze
           if-no-files-found: warn
 
@@ -224,8 +183,11 @@ jobs:
           name: sitedir
           path: _site
 
+      # Safety switch: publication is disabled while testing per-file
+      # parallelism. Set PUBLISH_PAGES to 'true' at the top of this file to
+      # re-enable it (still restricted to main).
       - name: Publish to Pages
-        if: github.ref == 'refs/heads/main'
+        if: env.PUBLISH_PAGES == 'true' && github.ref == 'refs/heads/main'
         run: |
           git config --global user.email quarto-github-actions-publish@example.com
           git config --global user.name "Quarto GHA Workflow Runner"
