@@ -4,15 +4,16 @@ on:
   push:
     branches:
       - main
-      - parallel2
-
-env:
-  # Guard: keep 'false' so no run of this workflow publishes to GitHub Pages.
-  PUBLISH_PAGES: 'false'
 
 jobs:
 
-  # ── 0. CI image ─────────────────────────────────────────────────────────────
+  # Rendering is split in two stages to go faster:
+  # 1. render-chunk: one job per .qmd (list taken from project.render in
+  #    _quarto-prod.yml) that executes the Python code and uploads _freeze/
+  # 2. pages: merges every _freeze/ and renders the fr and en site
+  #    without re-executing anything, then publishes to gh-pages
+  # enonces and corrections build the notebooks independently.
+
   image:
     name: Build CI image
     if: ${{ !github.event.pull_request.head.repo.fork }}
@@ -21,9 +22,6 @@ jobs:
       packages: write
     uses: ./.github/workflows/build-image.yml
 
-  # ── 1. Parallel per-file rendering ──────────────────────────────────────────
-  # The file list is read from project.render in _quarto-prod.yml, so it
-  # stays the single source of truth.
   list-files:
     name: List files to render
     runs-on: ubuntu-latest
@@ -40,8 +38,6 @@ jobs:
         id: list
         run: echo "files=$(yq -o=json -I=0 '.project.render' _quarto-prod.yml)" >> "$GITHUB_OUTPUT"
 
-  # Each .qmd file runs in its own job: installs deps, executes its Python
-  # code, and uploads the resulting _freeze/ entries as an artifact.
   render-chunk:
     name: Render (${{ matrix.file }})
     runs-on: ubuntu-latest
@@ -90,14 +86,11 @@ jobs:
           TOKEN_API_INSEE: ${{ secrets.TOKEN_API_INSEE }}
         run: uv run quarto render "${{ matrix.file }}" --profile fr
 
-      # Artifact names cannot contain '/', so derive a slug from the path.
       - name: Compute artifact name
         id: slug
         run: echo "name=$(echo '${{ matrix.file }}' | sed 's/\.qmd$//; s#[/.]#-#g')" >> "$GITHUB_OUTPUT"
 
-      # _freeze/ entries are the execution results Quarto needs to skip
-      # re-execution in the assembly step. Profile is not part of the freeze
-      # path, so fr freeze entries are reused by the en render as well.
+      # freeze is shared between fr and en profiles
       - name: Upload freeze artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -105,13 +98,6 @@ jobs:
           path: _freeze
           if-no-files-found: warn
 
-  # ── 2. Site assembly and publication ────────────────────────────────────────
-  # Downloads all freeze artifacts, merges them, then runs the two-profile
-  # site render without re-executing any Python.
-  # Quarto has no --freeze CLI flag: `freeze: true` is set in _quarto.yml
-  # instead. Unlike `freeze: auto`, it reuses _freeze/ regardless of the
-  # source-file hash, which is required here because append_environment.py
-  # and sidebar.py both modify the .qmd files.
   pages:
     name: Assemble and publish
     runs-on: ubuntu-latest
@@ -144,6 +130,7 @@ jobs:
         run: |
           rm _quarto.yml
           cp _quarto-prod.yml _quarto.yml
+          # freeze: true because append_environment.py and sidebar.py modify the .qmd
           sed -i 's/^  freeze: auto$/  freeze: true/' _quarto.yml
           grep -q '^  freeze: true$' _quarto.yml
 
@@ -152,8 +139,6 @@ jobs:
           TOKEN_API_INSEE: ${{ secrets.TOKEN_API_INSEE }}
         run: uv run build/append-environment/append_environment.py
 
-      # upload-artifact stores the *contents* of _freeze/ (no _freeze/ prefix),
-      # so the artifacts are merged straight into _freeze/.
       - name: Download all freeze artifacts
         uses: actions/download-artifact@v4
         with:
@@ -183,17 +168,13 @@ jobs:
           name: sitedir
           path: _site
 
-      # Safety switch: publication is disabled while testing per-file
-      # parallelism. Set PUBLISH_PAGES to 'true' at the top of this file to
-      # re-enable it (still restricted to main).
       - name: Publish to Pages
-        if: env.PUBLISH_PAGES == 'true' && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         run: |
           git config --global user.email quarto-github-actions-publish@example.com
           git config --global user.name "Quarto GHA Workflow Runner"
           quarto publish gh-pages . --no-render --no-browser
 
-  # ── 3. Exercises and corrections (unchanged, run in parallel with above) ────
   enonces:
     name: Render exercises
     runs-on: ubuntu-latest
