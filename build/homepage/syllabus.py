@@ -119,8 +119,10 @@ def build_syllabus_df(
 
     # 2) Mapper vers une section lisible
     df = df.with_columns(
-        section=pl.col("part").replace(section_map, default="Autre")
-    )
+        section=pl.col("part").replace_strict(
+            section_map, default="Autre", return_dtype=pl.Utf8
+        )
+)
 
     # 3) Icône classroom: active si classroom non nul
     df = df.with_columns(
