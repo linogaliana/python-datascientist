@@ -11,7 +11,9 @@ jobs:
   # 1. render-chunk: one job per .qmd (list taken from project.render in
   #    _quarto-prod.yml) that executes the Python code and uploads _freeze/
   # 2. pages: merges every _freeze/ and renders the fr and en site
-  #    without re-executing anything, then publishes to gh-pages
+  #    without re-executing anything, then uploads _site/ as a Pages artifact
+  # 3. deploy: publishes that artifact to GitHub Pages (no gh-pages branch,
+  #    so no ever-growing history in the repository)
   # enonces and corrections build the notebooks independently.
 
   image:
@@ -162,18 +164,35 @@ jobs:
       - name: Reset sidebar to French
         run: uv run build/sidebar.py --to french
 
-      - name: Archive build as artifacts
-        uses: actions/upload-artifact@v4
+      # Custom domain is configured in Settings > Pages, CNAME kept for safety
+      - name: Add CNAME and .nojekyll
+        run: |
+          cp CNAME _site/CNAME
+          touch _site/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: sitedir
           path: _site
 
-      - name: Publish to Pages
-        if: github.ref == 'refs/heads/main'
-        run: |
-          git config --global user.email quarto-github-actions-publish@example.com
-          git config --global user.name "Quarto GHA Workflow Runner"
-          quarto publish gh-pages . --no-render --no-browser
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: pages
+    if: ${{ github.ref == 'refs/heads/main' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   enonces:
     name: Render exercises
